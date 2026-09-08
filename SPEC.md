@@ -4,7 +4,7 @@
 
 # VERIFICATION
 
-- at first step we will no prove correctness of tactic itself, but all meta code should not depends from built-in tactic of lean so we can later able to prove them more easily
+- at first step we will no prove correctness of tactic itself, but all meta code should not depends from built-in tactic of lean/mathlib so we can later able to prove them more easily
 - all decision procedures should produce proof of proposition
 
 # PATTERN MATCHING
@@ -33,3 +33,5 @@
 - we need map from both side of hypergeom table
 - **MeijerGReduce** can be used to make hypergeom and just writing MeijerG[{{}, {}}, {{a}, {b}}, z^3] gives its simplified form
 - in sympy, `hyperexpand` reduces/normalizes hypergeom by using certain properties of the pochhammer symbol and gamma function, then it tries to match the result with known hypergeom identities from internal table and returns the result. tables are listed [here](https://docs.sympy.org/latest/modules/simplify/hyperexpand.html). but wolfram have more identities in his table like [Specialized values](https://functions.wolfram.com/HypergeometricFunctions/Hypergeometric1F1/03/01/) section of each hypergeom function. but [For fixed z](https://functions.wolfram.com/HypergeometricFunctions/Hypergeometric1F1/03/02/) contains just reduced forms identities from Specialized values section for given contant values(we still can use them for just testing to make sure that our procedures are able to reduce all of them)
+- to debug sympy we can run `export SYMPY_DEBUG=True isympy` and then `z = Symbol('z'); print(hyperexpand(hyper([3], [x], z)))`
+- to convert into hypergeom we can use `from sympy.integrals.meijerint import _rewrite1; print(_rewrite1(sin(x),x))` or `_rewrite2` function
