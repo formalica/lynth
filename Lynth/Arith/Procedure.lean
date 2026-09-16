@@ -2,34 +2,43 @@
 --
 -- Internal pipeline mirrors Z3's arithmetic theory solver split: the goal
 -- + hypotheses are translated to the procedure's own language
--- (`Fourier.LeC` systems via `Recognize`), the FM elimination oracle
--- (`Fourier.solve`, standing in for Z3's Simplex core) searches for a
--- refutation with Farkas lineage, and reconstruction is kernel-checked
--- `omega` (complete for Presburger goals). The computed certificate is
--- traced; `Lynth.lynth_farkas` activates once Farkas validation lands.
+-- (`Fourier.LeC` systems via `Recognize`); two oracles cross-check the
+-- refutation — FM elimination with Farkas lineage (`Fourier.solve`) and
+-- tableau Simplex à la Dutertre–de Moura (`Simplex.solve`, standing in
+-- for Z3's Simplex core) — and reconstruction is kernel-checked `omega`
+-- (complete for Presburger goals). Certificates are traced;
+-- `Lynth.lynth_farkas` activates once Farkas validation lands.
 import Lean
 import Lynth.Procedure
 import Lynth.Arith.Linear
 import Lynth.Arith.Fourier
+import Lynth.Arith.Simplex
 import Lynth.Arith.Recognize
 
 namespace Lynth.Arith.Procedure
 
 open Lean Elab Tactic
 
-/-- Try to close a linear-arithmetic goal. Runs the FM oracle for a
-refutation certificate, then closes with kernel-checked `omega`. -/
+/-- Try to close a linear-arithmetic goal. Runs the FM + Simplex oracles
+for refutation certificates (cross-checked), then closes with
+kernel-checked `omega`. -/
 def run : TacticM ProcedureOutcome := do
   let snapshot ← saveState
-  -- FM oracle attempt (pure MetaM read; no goal modification).
+  -- Oracle attempts (pure MetaM reads; no goal modification).
   try
     match ← Recognize.buildSys with
     | some sys =>
-      match Fourier.solve sys 128 with
-      | some cert =>
-        logInfo m!"[lynth:arith] FM refutation found (Farkas size {cert.length})"
-      | none =>
-        logInfo "[lynth:arith] FM inconclusive (relaxation SAT or nonlinear)"
+      let fm := Fourier.solve sys 128
+      let sx := Simplex.solve (sys.map fun c => (c.coeffs, c.const)) 1024
+      match fm, sx with
+      | some cert, some none =>
+        logInfo m!"[lynth:arith] FM+Simplex agree: refutation (Farkas size {cert.length})"
+      | some cert, _ =>
+        logInfo m!"[lynth:arith] FM refutation (Farkas size {cert.length}); Simplex inconclusive"
+      | none, some none =>
+        logInfo "[lynth:arith] WARNING: Simplex refutes but FM does not (oracle mismatch)"
+      | _, _ =>
+        logInfo "[lynth:arith] oracles inconclusive (relaxation SAT or nonlinear)"
     | none => pure ()
   catch _ => pure ()
   restoreState snapshot

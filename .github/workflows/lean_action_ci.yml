@@ -33,4 +33,5 @@ jobs:
           lake env lean Test/CdclFuzz.lean
           lake env lean Test/Ring.lean
           lake env lean Test/Corpus.lean
+          lake env lean Test/Simplex.lean
       - uses: leanprover-community/docgen-action@v1
