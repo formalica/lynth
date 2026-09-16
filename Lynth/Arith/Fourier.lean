@@ -52,6 +52,20 @@ def combine (u l : LeC) (j n nOrig : Nat) : LeC :=
 def isContra (c : LeC) : Bool :=
   c.coeffs.all (· == 0) && decide (0 < c.const)
 
+/-- Certificate validation: `w` is a genuine Farkas refutation of `sys`
+iff weights are nonnegative, the weighted LHS vanishes, and the
+weighted constant is positive (`0 < 0` derived). Decidable: this is the
+checker the reconstruction theorem will consume. -/
+def checkCert (sys : List LeC) (w : List Rat) : Bool :=
+  if w.length != sys.length then false
+  else if !(w.all fun k => decide (0 ≤ k)) then false
+  else
+    let n := nVars sys
+    let lhsOk := List.range n |>.all fun j =>
+      (sys.zip w).foldl (fun acc (c, k) => acc + k * coeffAt c j) 0 == 0
+    let c0 := (sys.zip w).foldl (fun acc (c, k) => acc + k * c.const) (0 : Rat)
+    lhsOk && decide ((0 : Rat) < c0)
+
 /-- One elimination step on variable `j`: immediate-contradiction check,
 then FM combination. `Except` carries the Farkas certificate on the
 error channel. -/

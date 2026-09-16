@@ -35,4 +35,5 @@ jobs:
           lake env lean Test/Corpus.lean
           lake env lean Test/Simplex.lean
           lake env lean Test/BranchBound.lean
+          lake env lean Test/Farkas.lean
       - uses: leanprover-community/docgen-action@v1

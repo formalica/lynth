@@ -37,9 +37,15 @@ def run : TacticM ProcedureOutcome := do
         (List.range nVars) 4 1024
       match fm, sx with
       | some cert, some none =>
-        logInfo m!"[lynth:arith] FM+Simplex agree: refutation (Farkas size {cert.length})"
+        if Fourier.checkCert sys cert then
+          logInfo m!"[lynth:arith] FM+Simplex agree: verified refutation (Farkas size {cert.length})"
+        else
+          logInfo "[lynth:arith] WARNING: FM certificate FAILED validation (solver bug)"
       | some cert, _ =>
-        logInfo m!"[lynth:arith] FM refutation (Farkas size {cert.length}); Simplex inconclusive"
+        if Fourier.checkCert sys cert then
+          logInfo m!"[lynth:arith] FM verified refutation (Farkas size {cert.length}); Simplex inconclusive"
+        else
+          logInfo "[lynth:arith] WARNING: FM certificate FAILED validation (solver bug)"
       | none, some none =>
         logInfo "[lynth:arith] WARNING: Simplex refutes but FM does not (oracle mismatch)"
       | _, _ =>
