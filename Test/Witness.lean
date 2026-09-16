@@ -45,3 +45,11 @@ def pp : { p : Nat × Nat // p.1 + p.2 = 3 } := by lynth
 #print axioms ex_conj
 #print axioms ex_big
 #print axioms pp
+
+-- finite domains enumerate completely
+def ff : { i : Fin 5 // i.val > 2 } := by lynth
+
+#eval (ff : Fin 5) -- expect 3
+#eval (ff : Nat) -- expect 3
+
+#print axioms ff

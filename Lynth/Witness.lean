@@ -41,6 +41,28 @@ def candidatesAux (dom : Expr) (bound depth : Nat) : MetaM (List Expr) := do
     pure ((pos.zip neg).flatMap fun (p, n) => [p, n] |>.take bound)
   else if dom.isConstOf ``Bool then
     pure [mkConst ``Bool.true, mkConst ``Bool.false]
+  else if dom.isAppOf ``Fin then
+    -- finite domain: complete enumeration with kernel-checked bounds
+    let args := dom.getAppArgs
+    if args.size != 1 then pure []
+    else
+      let a0 ← whnfR args[0]!
+      let n? : Option Nat := match a0 with
+        | .lit (.natVal n) => some n
+        | .app (.app (.app (.const ``OfNat.ofNat _) _) (.lit (.natVal n))) _ =>
+          some n
+        | _ => none
+      match n? with
+      | none => pure []
+      | some n =>
+        let arr ← (List.range n).toArray.filterMapM fun i => do
+          try
+            let iLit := mkNatLit i
+            let hlt ← mkAppM ``LT.lt #[iLit, mkNatLit n]
+            let pf ← mkDecideProof hlt
+            some <$> mkAppM ``Fin.mk #[iLit, pf]
+          catch _ => pure none
+        pure arr.toList
   else if dom.isAppOf ``Prod then
     match depth with
     | 0 => pure []
