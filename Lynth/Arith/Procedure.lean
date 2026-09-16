@@ -12,6 +12,7 @@ import Lean
 import Lynth.Procedure
 import Lynth.Arith.Linear
 import Lynth.Arith.Fourier
+import Lynth.Arith.FarkasSound
 import Lynth.Arith.Simplex
 import Lynth.Arith.BranchBound
 import Lynth.Arith.Recognize
@@ -37,12 +38,12 @@ def run : TacticM ProcedureOutcome := do
         (List.range nVars) 4 1024
       match fm, sx with
       | some cert, some none =>
-        if Fourier.checkCert sys cert then
+        if FarkasSound.checkCert sys cert then
           logInfo m!"[lynth:arith] FM+Simplex agree: verified refutation (Farkas size {cert.length})"
         else
           logInfo "[lynth:arith] WARNING: FM certificate FAILED validation (solver bug)"
       | some cert, _ =>
-        if Fourier.checkCert sys cert then
+        if FarkasSound.checkCert sys cert then
           logInfo m!"[lynth:arith] FM verified refutation (Farkas size {cert.length}); Simplex inconclusive"
         else
           logInfo "[lynth:arith] WARNING: FM certificate FAILED validation (solver bug)"

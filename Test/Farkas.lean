@@ -1,7 +1,9 @@
 -- Farkas validation: every FM refutation certificate verifies.
 import Lynth.Arith.Fourier
+import Lynth.Arith.FarkasSound
 
 open Lynth.Arith.Fourier
+open Lynth.Arith.FarkasSound
 
 -- hand certificates verify
 #eval checkCert [mkLe [1] (-1) 2 0, mkLe [-1] 2 2 1] [1, 1]
