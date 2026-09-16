@@ -39,6 +39,18 @@ theorem k7 (a : Nat) : (0 : Int) ≤ (a : Int) := by lynth
 
 theorem k8 : ∀ i : Fin 3, i.val < 3 := by lynth
 
+-- division/parity, abs, min/max, branching, powers
+theorem k9 (n : Nat) (h : n % 2 = 0) : Even n := by lynth
+
+theorem k10 (a : Int) : |a| ≥ 0 := by lynth
+
+theorem k11 (a b : Nat) : min a b ≤ a := by lynth
+
+theorem k12 (p : Prop) [Decidable p] (a b : Nat) :
+    (if p then a else b) ≤ max a b := by lynth
+
+theorem k13 (n : Nat) : 2 ^ n ≥ 1 := by lynth
+
 #eval (c7 : Nat) -- expect 4
 
 #print axioms c1
@@ -59,3 +71,8 @@ theorem k8 : ∀ i : Fin 3, i.val < 3 := by lynth
 #print axioms k6
 #print axioms k7
 #print axioms k8
+#print axioms k9
+#print axioms k10
+#print axioms k11
+#print axioms k12
+#print axioms k13

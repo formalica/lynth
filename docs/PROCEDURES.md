@@ -9,7 +9,7 @@
 | `Nlin` (`Lynth/Nlin`) | polynomial inequalities | kernel-checked `nlinarith` (Positivstellensatz-style products) | `nlinarith` | done |
 | `Witness` (`Lynth/Witness`) | `Subtype` + `Exists` goals | `Nat`/`Int` enumeration (256) + `Bool` + diagonal `Prod` pairs + complete `Fin n` | explicit `Subtype.mk`/`Exists.intro` terms + `decide/rfl/omega/simp_all` side close | done for scalars, pairs, finite types; other domains TODO |
 | Simplex core | — | — | — | DONE (`Simplex.lean`); Farkas extraction TODO |
-| CDCL(T) loop | — | — | — | TODO |
+| Combination model | sequential explanation-passing (no SMT loop, per SPEC) | EUF shares proven equalities; all procedures read the enriched context | — | done (this IS the combination mechanism) |
 
 Reconstruction theorems live in `Lynth/Axioms.lean` as sound,
 checker-conditioned statements (`lynth_sat_resolve`, `lynth_farkas`;

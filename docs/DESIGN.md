@@ -74,8 +74,9 @@ Done: procedure plumbing, CDCL core, Tseitin oracle, EUF, FM, Simplex,
 branch-and-bound, witnesses, ring, reconstruction-theorem statements,
 16 green suites with native-axioms-only discipline.
 Next: watched literals, DRAT emission, Farkas-from-Simplex extraction,
-activating `lynth_sat_resolve` / `lynth_farkas` end-to-end, CDCL(T) loop
-(see `docs/PROCEDURES.md` and `docs/Z3-NOTES.md`).
+activating `lynth_sat_resolve` / `lynth_farkas` end-to-end
+(see `docs/PROCEDURES.md` and `docs/Z3-NOTES.md`). Combination stays
+sequential (no SMT loop, per SPEC).
 
 ## Testing discipline
 

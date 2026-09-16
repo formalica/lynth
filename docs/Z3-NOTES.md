@@ -50,4 +50,5 @@ cuts on top; equalities shared through congruence-closure adapters.
 2. Learned clauses + resolution-trace checker → discharge `lynth_sat_resolve`.
 3. Simplex tableau over `Rat` in `Lynth.Arith`, Farkas extraction → discharge `lynth_farkas`.
 4. Congruence-closure (EUF) procedure for `var = value` fact propagation.
-5. CDCL(T) loop: partial assignments → theory hooks → explanation clauses.
+5. Combination stays sequential explanation-passing (SPEC: no iterative
+or staged SMT solving); EUF sharing is the mechanism, extended per procedure.
