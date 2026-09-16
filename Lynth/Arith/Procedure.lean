@@ -6,7 +6,7 @@
 -- (`Fourier.solve`, standing in for Z3's Simplex core) searches for a
 -- refutation with Farkas lineage, and reconstruction is kernel-checked
 -- `omega` (complete for Presburger goals). The computed certificate is
--- traced; `lynth_farkas` tracks future direct certificate reconstruction.
+-- traced; `Lynth.lynth_farkas` activates once Farkas validation lands.
 import Lean
 import Lynth.Procedure
 import Lynth.Arith.Linear

@@ -26,7 +26,7 @@ def genClause : Nat → Nat → Nat → List Int × Nat
 def genCNF : Nat → Nat → Nat → Nat → CNF × Nat
   | s, 0, _, _ => ([], s)
   | s, k + 1, nv, len =>
-    let (cl, s1) := genClause s nv len
+    let (cl, s1) := genClause s len nv
     let (rest, s2) := genCNF s1 k nv len
     (cl :: rest, s2)
 

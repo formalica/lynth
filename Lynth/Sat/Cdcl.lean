@@ -5,8 +5,9 @@
 -- branching and restarts. This module upgrades our DPLL (`Solver.lean`,
 -- kept as a differential-test reference) with the learning half:
 -- reason-tracked propagation, first-UIP resolution, learned clauses and
--- non-chronological backjumping. Watched literals, VSIDS and restarts
--- remain TODO (tracked in `docs/Z3-NOTES.md`).
+-- non-chronological backjumping, plus VSIDS activity-based branching.
+-- Watched literals and restarts remain TODO (tracked in
+-- `docs/Z3-NOTES.md`).
 import Lynth.Sat.Syntax
 import Lynth.Sat.Solver
 
@@ -83,7 +84,8 @@ def findUnit (cnf : CNF) (t : Trail) : Option (Lit × Clause) := do
     | _ => pure ()
   none
 
-/-- First unassigned literal in the first unsatisfied clause. -/
+/-- First unassigned literal in the first unsatisfied clause.
+(Legacy clause-local pick; VSIDS below is the default.) -/
 def pickBranch (cnf : CNF) (t : Trail) : Option Lit := do
   for cl in cnf do
     if cl.any fun l => tevalLit t l == some true then pure ()
@@ -91,6 +93,46 @@ def pickBranch (cnf : CNF) (t : Trail) : Option Lit := do
       | some l => return l
       | none => pure ()
   none
+
+/-- VSIDS activities, indexed by `var - 1`. -/
+abbrev Activities := Array Nat
+
+/-- Grow activities to cover variable `v`. -/
+def growAct (act : Activities) (v : Nat) : Activities :=
+  if v ≤ act.size then act
+  else act ++ List.replicate (v - act.size) 0
+
+/-- Activity lookup (0 if unseen). -/
+def actOf (act : Activities) (v : Nat) : Nat :=
+  if h : v - 1 < act.size then act[v - 1]'(by omega) else 0
+
+/-- Bump activities of a learned clause's variables. -/
+def bumpAct (act : Activities) (cl : Clause) : Activities :=
+  cl.foldl (fun a l =>
+    let v := varOf l
+    if v == 0 then a
+    else
+      let a' := growAct a v
+      a'.setIfInBounds (v - 1) (actOf a' v + 1)) act
+
+/-- Periodic decay keeps scores bounded (every 64 conflicts, halve). -/
+def decayAct (act : Activities) (confTotal : Nat) : Activities :=
+  if confTotal % 64 == 63 then act.map (· / 2) else act
+
+/-- VSIDS decision: unassigned variable with maximal activity
+(positive polarity). `none` ⟹ every variable assigned. -/
+def pickVsids (t : Trail) (act : Activities) (maxV : Nat) : Option Lit := do
+  let mut best : Option (Nat × Nat) := none -- (var, activity)
+  for v in List.range maxV do
+    let w := v + 1
+    if (tlookup t w).isNone then
+      let a := actOf act w
+      match best with
+      | none => best := some (w, a)
+      | some (_, b) => if b < a then best := some (w, a) else pure ()
+  match best with
+  | none => none
+  | some (w, _) => some (Int.ofNat w)
 
 /-- Propagation outcome. `stuck` means fuel ran out with unit
 consequences still pending (must not be read as a model). -/
@@ -158,35 +200,50 @@ def backjumpLevel (learnt : Clause) (t : Trail) (level : Nat) : Nat :=
   let rest := learnt.filter fun l => tlevel t (varOf l) != level
   rest.foldl (fun m l => Nat.max m (tlevel t (varOf l))) 0
 
+/-- A clause is useless if tautological (`p` and `¬p` both present). -/
+def isTaut (cl : Clause) : Bool :=
+  cl.any fun l => cl.contains (-l)
+
 /-- CDCL driver. Returns `none` on fuel exhaustion (never conflated
 with UNSAT), plus the number of learned clauses. -/
-def cdcl : CNF → Trail → Order → Nat → Nat → Nat →
-    (Option SatResult × Nat)
-  | _, _, _, _, learnt, 0 => (none, learnt)
-  | cnf, t, ord, level, learnt, fuel + 1 =>
+def cdcl : CNF → Trail → Order → Nat → Nat → Nat → Activities → Nat →
+    Nat → (Option SatResult × Nat)
+  | _, _, _, _, _, 0, _, _, _ => (none, 0)
+  | cnf, t, ord, level, learnt, fuel + 1, act, confTotal, maxV =>
     match propagateAll cnf t ord level fuel with
     | (.stuck, _, _) => (none, learnt)
     | (.conflict c, t1, ord1) =>
       if level == 0 then (some .unsat, learnt)
       else
         let learntCl := analyze c t1 ord1 level fuel
-        let blvl := backjumpLevel learntCl t1 level
+        -- Useless learnt clauses are skipped (never re-added); the
+        -- backjump below still guarantees progress.
+        let useful := !(isTaut learntCl) && !(cnf.contains learntCl)
+        let cnf' := if useful then cnf ++ [learntCl] else cnf
+        let learnt' := if useful then learnt + 1 else learnt
+        let unclamped := backjumpLevel learntCl t1 level
+        -- Clamp: always erase at least the current decision level, so
+        -- every conflict strictly shrinks the trail.
+        let blvl := if unclamped < level then unclamped else level - 1
         let t' := eraseAbove t1 blvl
         let ord' := ord1.filter fun v =>
           match tlookup t' v with | some _ => true | none => false
-        cdcl (cnf ++ [learntCl]) t' ord' blvl (learnt + 1) fuel
+        let act' :=
+          if useful then decayAct (bumpAct act learntCl) confTotal else act
+        cdcl cnf' t' ord' blvl learnt' fuel
+          act' (confTotal + 1) maxV
     | (.ok, t', ord') =>
-      match pickBranch cnf t' with
+      match pickVsids t' act maxV with
       | none =>
-        -- no conflict, nothing left to decide: model found
+        -- no conflict, every variable assigned: model found
         (some (.sat (t'.map fun e => e.val)), learnt)
       | some l =>
         let v := varOf l
         cdcl cnf (tassign t' v (0 < l) (level + 1) none)
-          (ord' ++ [v]) (level + 1) learnt fuel
+          (ord' ++ [v]) (level + 1) learnt fuel act confTotal maxV
 
 /-- Top-level CDCL solver: result plus learned-clause count. -/
 def cdclSolve (cnf : CNF) (fuel : Nat := 10000) : Option SatResult × Nat :=
-  cdcl cnf [] [] 0 0 fuel
+  cdcl cnf [] [] 0 0 fuel #[] 0 (numVars cnf)
 
 end Lynth.Sat.Cdcl

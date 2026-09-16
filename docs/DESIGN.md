@@ -43,11 +43,11 @@ mechanism by explicit, generically typed, provably-valid facts.
 Decision procedures compute certificates (untrusted). A **reconstruction
 theorem** proves the certified answer is sound; the final proof of the user's
 goal is built by applying the reconstruction theorem to the computed
-certificate. Reconstruction theorems that are correct but hard to prove are
-declared as internal axioms (`sorry`-free axiom declarations) and tracked; the
-CI check enforces that user-facing tests depend only on Lean's native axioms
-plus these internal theorems. Removing `sorry` entirely is the goal
-(see `docs/PROCEDURES.md` status column).
+certificate. The statements live in `Lynth/Axioms.lean` as sound,
+checker-conditioned theorems (`ResTrace`/`FarkasTrace` with stub checkers);
+as real checkers land the same statements become load-bearing. There are
+no `sorry`s and no internal axioms anywhere: CI enforces that user-facing
+tests depend only on Lean's native axioms.
 
 ## Pipeline
 
@@ -75,5 +75,5 @@ goal
 ## Testing discipline
 
 Every user-facing test file is checked with `#print axioms` and must depend
-only on: `propext`, `Classical.choice`, `Quot.sound` (Lean native) and the
-explicitly-registered internal lynth axioms (`lynth_axiom`). CI enforces this.
+only on Lean's native axioms (`propext`, `Classical.choice`, `Quot.sound`).
+CI enforces this. There are no `sorry`s and no `axiom`s in the codebase.

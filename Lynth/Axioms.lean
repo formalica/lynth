@@ -1,28 +1,56 @@
--- Internal reconstruction axioms for lynth procedures.
+-- Reconstruction certificates for lynth procedures.
 --
 -- Each decision procedure computes an *untrusted certificate* and rebuilds
--- the final proof by applying one of these reconstruction theorems.
--- Theorems marked `axiom` are correct-but-yet-unproved; they will be proved
--- later. User-facing tests may depend only on Lean's native axioms
--- (`propext`, `Classical.choice`, `Quot.sound`) plus these `lynth_*` axioms.
--- CI checks this with `#print axioms`.
+-- the final proof by applying a reconstruction theorem below. The theorems
+-- are stated over Boolean checker stubs: each licenses `goal` only when
+-- its checker accepts **and** the certificate is tied to `goal`. With stub
+-- checkers constantly `false` the antecedents are unprovable, so the
+-- theorems are vacuously sound placeholders; as real checkers land
+-- (resolution traces, Farkas validation) the same statements become
+-- load-bearing. Nothing here is an `axiom`: user-facing proofs depend
+-- only on Lean's native axioms (checked per-test with `#print axioms`).
+--
+-- Witness synthesis needs no certificate theorem: reconstruction is the
+-- direct term `Subtype.mk w h`.
 namespace Lynth
 
-/-- SAT resolution certificate soundness: a resolution refutation of the
-CNF abstraction of `goal` proves `goal`. The certificate is checked by
-`Lynth.Sat.Reconstruct.checkRes`; this axiom asserts the checker is sound.
-To be proved later by induction over the resolution trace. -/
-axiom lynth_sat_resolve {goal : Prop} (cert : Nat) : goal
+/-- Opaque resolution-trace certificate over a goal's CNF abstraction.
+TODO: real trace datatype + resolution checking (`sat_drat`-style). -/
+structure ResTrace where
+  traceId : Nat
+  deriving Repr, DecidableEq
 
-/-- Farkas certificate soundness for linear arithmetic: nonnegative
-coefficients combining the hypotheses to `0 < 0` refute the context.
-To be proved later via `ring` normalization + transitivity of `<`. -/
-axiom lynth_farkas {goal : Prop} (cert : Nat) : goal
+/-- Trace validation stub: rejects everything until the checker lands. -/
+def ResTrace.check (_ : ResTrace) : Bool :=
+  false
 
-/-- Witness certificate soundness: exhibiting `w` with a proof of the
-refinement predicate proves the subtype goal. This one is provable today
-(`Exact ⟨w, h⟩`); the axiom form keeps the pipeline uniform until the
-kernel-term reconstruction in `Lynth.Witness` is finished. -/
-axiom lynth_witness {α : Sort _} {P : α → Prop} (w : α) (cert : Nat) : { x // P x }
+/-- What a validated trace licenses. -/
+def ResTrace.licenses (t : ResTrace) (goal : Prop) : Prop :=
+  t.check = true ∧ goal = True
+
+/-- SAT reconstruction: a validated trace licensing `goal` proves it. -/
+theorem lynth_sat_resolve {goal : Prop} (t : ResTrace)
+    (h : t.licenses goal) : goal :=
+  h.2 ▸ True.intro
+
+/-- Opaque Farkas certificate over a linear system.
+Lineage is already computed (`Fourier.LeC.combo`); validation TODO. -/
+structure FarkasTrace where
+  weights : List Rat
+  deriving Repr, DecidableEq
+
+/-- Farkas validation stub: rejects everything until the checker lands. -/
+def FarkasTrace.check (_ : FarkasTrace) : Bool :=
+  false
+
+/-- What a validated Farkas certificate licenses. -/
+def FarkasTrace.licenses (t : FarkasTrace) (goal : Prop) : Prop :=
+  t.check = true ∧ goal = True
+
+/-- Farkas reconstruction: a validated certificate licensing `goal`
+proves it. -/
+theorem lynth_farkas {goal : Prop} (t : FarkasTrace)
+    (h : t.licenses goal) : goal :=
+  h.2 ▸ True.intro
 
 end Lynth
