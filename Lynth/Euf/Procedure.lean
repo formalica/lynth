@@ -1,13 +1,15 @@
--- EUF procedure (part 1): close `a = b` goals from `Eq` hypotheses
--- by transitivity/symmetry chains, rebuilding kernel-checked proofs.
---
--- Each `Eq` hypothesis becomes a graph edge carrying its proof term;
--- BFS finds a path between the goal's sides and folds it with
--- `Eq.trans`/`Eq.symm`. Failure returns an empty explanation (derived
--- equalities as shareable `Fact`s land with the CDCL(T) loop).
 import Lean
 import Lynth.Procedure
 
+/-!
+EUF procedure (part 1): close `a = b` goals from `Eq` hypotheses
+by transitivity/symmetry chains, rebuilding kernel-checked proofs.
+
+Each `Eq` hypothesis becomes a graph edge carrying its proof term;
+BFS finds a path between the goal's sides and folds it with
+`Eq.trans`/`Eq.symm`. Failure returns an empty explanation (derived
+equalities as shareable `Fact`s land with the CDCL(T) loop).
+-/
 namespace Lynth.Euf.Procedure
 
 open Lean Elab Tactic Meta

@@ -1,8 +1,3 @@
--- Soundness of Farkas combinations (the mathematics behind
--- `Fourier.checkCert`): nonnegative weights combining satisfiable
--- `≤`-rows to `0 < 0` is impossible. This is the reconstruction core
--- for arithmetic refutations; the remaining step (reflecting runtime
--- `LeC` systems into this finite form) is tracked in `docs/Z3-NOTES.md`.
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.BigOperators.Fin
@@ -14,6 +9,13 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 import Lynth.Arith.Fourier
 
+/-!
+Soundness of Farkas combinations (the mathematics behind
+`Fourier.checkCert`): nonnegative weights combining satisfiable
+`≤`-rows to `0 < 0` is impossible. This is the reconstruction core
+for arithmetic refutations; the remaining step (reflecting runtime
+`LeC` systems into this finite form) is tracked in `docs/Z3-NOTES.md`.
+-/
 namespace Lynth.Arith.FarkasSound
 
 open Finset
@@ -126,13 +128,13 @@ theorem mem_le_nVars (l : List LeC) (acc : Nat) (c : LeC) (hc : c ∈ l) :
 theorem getD_eq_default_of_le {α : Type} [Inhabited α] (l : List α) (d : α)
     (i : Nat) (h : l.length ≤ i) : l.getD i d = d := by
   induction l generalizing i with
-  | nil => simp [List.getD_nil]
+  | nil => simp
   | cons h t ih =>
     cases i with
     | zero => simp at h
     | succ k =>
       simp only [List.getD_cons_succ] at *
-      simp only [List.length_cons, Nat.succ_le_succ] at h
+      simp only [List.length_cons] at h
       exact ih k (Nat.le_of_succ_le_succ h)
 
 /-- Coefficients past the end are zero. -/
@@ -225,7 +227,7 @@ theorem checkCert_sound (sys : List LeC) (w : List Rat) (v : Nat → Rat)
           coeffAt (sys.getD i.1 default) j * v j :=
       (sum_range_getD_univ
         (F := fun j => coeffAt (sys.getD i.1 default) j * v j)).symm
-    simp only [evalLeC, denoteSys] at h0
+    simp only [evalLeC] at h0
     rw [hext, ← h1] at h0
     exact h0
   have hcomb : ∀ j : Fin (nVars sys),

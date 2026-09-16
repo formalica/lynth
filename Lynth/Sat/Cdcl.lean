@@ -1,16 +1,18 @@
--- CDCL SAT solver: conflict-driven clause learning over `Syntax.CNF`.
---
--- Z3's core (`src/sat/sat_solver.cpp`) is CDCL: watched-literal unit
--- propagation, first-UIP conflict analysis, learned clauses, VSIDS
--- branching and restarts. This module upgrades our DPLL (`Solver.lean`,
--- kept as a differential-test reference) with the learning half:
--- reason-tracked propagation, first-UIP resolution, learned clauses and
--- non-chronological backjumping, plus VSIDS activity-based branching.
--- Watched literals and restarts remain TODO (tracked in
--- `docs/Z3-NOTES.md`).
 import Lynth.Sat.Syntax
 import Lynth.Sat.Solver
 
+/-!
+CDCL SAT solver: conflict-driven clause learning over `Syntax.CNF`.
+
+Z3's core (`src/sat/sat_solver.cpp`) is CDCL: watched-literal unit
+propagation, first-UIP conflict analysis, learned clauses, VSIDS
+branching and restarts. This module upgrades our DPLL (`Solver.lean`,
+kept as a differential-test reference) with the learning half:
+reason-tracked propagation, first-UIP resolution, learned clauses and
+non-chronological backjumping, plus VSIDS activity-based branching.
+Watched literals and restarts remain TODO (tracked in
+`docs/Z3-NOTES.md`).
+-/
 namespace Lynth.Sat.Cdcl
 
 /-- Trail entry: value, decision level, and forcing clause (`none` for

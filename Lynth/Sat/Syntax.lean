@@ -1,9 +1,13 @@
--- Internal SAT representation for `Lynth.Sat`.
--- Mirrors the role of Z3's `src/sat` core: clauses over boolean literals,
--- but kept minimal (DPLL over DIMACS-style `List (List Int)`).
--- Z3 uses CDCL with clause learning, VSIDS branching, restarts and DRAT
--- proofs (`sat_solver.cpp`, `sat_drat.cpp`); we start with DPLL + unit
--- propagation and grow towards clause learning (see docs/Z3-NOTES.md).
+
+
+/-!
+Internal SAT representation for `Lynth.Sat`.
+Mirrors the role of Z3's `src/sat` core: clauses over boolean literals,
+but kept minimal (DPLL over DIMACS-style `List (List Int)`).
+Z3 uses CDCL with clause learning, VSIDS branching, restarts and DRAT
+proofs (`sat_solver.cpp`, `sat_drat.cpp`); we start with DPLL + unit
+propagation and grow towards clause learning (see docs/Z3-NOTES.md).
+-/
 namespace Lynth.Sat
 
 /-- A literal: nonzero `Int`. `n > 0` means variable `n` is true,

@@ -1,16 +1,18 @@
--- Translation from Lean `Int`/`Nat` comparisons to `Fourier.LeC` systems.
---
--- This is the arithmetic procedure's internal theory boundary (à la Z3
--- theory solvers with their own language): linear terms become
--- coefficient vectors over an atom table, comparisons become `≤`
--- constraints. Nonlinear subterms (`x * y`, `a - b` on `Nat`, divisions)
--- become opaque atoms — sound for refutation, since every occurrence maps
--- to the same atom. `Nat` comparisons map through `Int` exactly for
--- `≤`/`<`/`=`; `Nat` subtraction truncates, so it is kept opaque.
 import Lean
 import Lynth.Arith.Linear
 import Lynth.Arith.Fourier
 
+/-!
+Translation from Lean `Int`/`Nat` comparisons to `Fourier.LeC` systems.
+
+This is the arithmetic procedure's internal theory boundary (à la Z3
+theory solvers with their own language): linear terms become
+coefficient vectors over an atom table, comparisons become `≤`
+constraints. Nonlinear subterms (`x * y`, `a - b` on `Nat`, divisions)
+become opaque atoms — sound for refutation, since every occurrence maps
+to the same atom. `Nat` comparisons map through `Int` exactly for
+`≤`/`<`/`=`; `Nat` subtraction truncates, so it is kept opaque.
+-/
 namespace Lynth.Arith.Recognize
 
 open Lean Elab Tactic Meta

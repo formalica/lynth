@@ -1,11 +1,13 @@
--- Core result/explanation types for lynth procedures.
---
--- A procedure explains failure (or new inference) as a list of Lean `Prop`s
--- together with their proofs, so the next procedure can consume them directly.
--- This replaces Z3-style variable sharing: variable assignments are just
--- equality facts (`x = v`) with proofs.
 import Lean
 
+/-!
+Core result/explanation types for lynth procedures.
+
+A procedure explains failure (or new inference) as a list of Lean `Prop`s
+together with their proofs, so the next procedure can consume them directly.
+This replaces Z3-style variable sharing: variable assignments are just
+equality facts (`x = v`) with proofs.
+-/
 namespace Lynth
 
 /-- A single piece of new information produced by a procedure:

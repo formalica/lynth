@@ -1,12 +1,16 @@
--- Tableau Simplex for `≤` systems over `Rat`, à la Dutertre–de Moura
--- (the algorithm behind Z3's `LRA` theory solver over `src/math/lp`).
---
--- Each `∑ cᵢxᵢ + c₀ ≤ 0` gets a slack `s ≥ 0` with row
--- `s = Σ(-cᵢ)xᵢ + (-c₀)`; originals are unbounded nonbasic vars.
--- `check` repairs bound-violating basic vars by pivoting, returning a
--- model on success. UNSAT answers carry no Farkas certificate yet
--- (`Fourier.solve` is the certifying oracle); the two cores are
--- differential-tested against each other.
+
+
+/-!
+Tableau Simplex for `≤` systems over `Rat`, à la Dutertre–de Moura
+(the algorithm behind Z3's `LRA` theory solver over `src/math/lp`).
+
+Each `∑ cᵢxᵢ + c₀ ≤ 0` gets a slack `s ≥ 0` with row
+`s = Σ(-cᵢ)xᵢ + (-c₀)`; originals are unbounded nonbasic vars.
+`check` repairs bound-violating basic vars by pivoting, returning a
+model on success. UNSAT answers carry no Farkas certificate yet
+(`Fourier.solve` is the certifying oracle); the two cores are
+differential-tested against each other.
+-/
 namespace Lynth.Arith.Simplex
 
 /-- Variable id. -/
@@ -183,7 +187,7 @@ def init (sys : List (List Rat × Rat)) (n : Nat) : State :=
   let bounds : Array Bounds :=
     (List.range total).toArray.map fun v =>
       if n ≤ v then { lo := some 0, hi := none } else { lo := none, hi := none }
-  let rows : Array Row := (sys.zipIdx.map fun ((cs, c0), k) =>
+  let rows : Array Row := (sys.map fun (cs, c0) =>
     { coeffs := (List.range total).toArray.map fun j =>
         if j < n then -(cs.getD j 0) else 0,
       const := -c0 }).toArray

@@ -1,12 +1,14 @@
--- Proof reconstruction for `Lynth.Sat`: checking certificates.
---
--- Today the checker validates SAT certificates (`checkSat`); UNSAT
--- certificates (resolution traces / DRAT, cf. Z3's `sat_drat.cpp`) are
--- represented as opaque `Nat` ids until the trace checker lands.
--- Soundness of applying a checked certificate is `Lynth.lynth_sat_resolve`.
 import Lynth.Sat.Solver
 import Lynth.Axioms
 
+/-!
+Proof reconstruction for `Lynth.Sat`: checking certificates.
+
+Today the checker validates SAT certificates (`checkSat`); UNSAT
+certificates (resolution traces / DRAT, cf. Z3's `sat_drat.cpp`) are
+represented as opaque `Nat` ids until the trace checker lands.
+Soundness of applying a checked certificate is `Lynth.lynth_sat_resolve`.
+-/
 namespace Lynth.Sat.Reconstruct
 
 /-- Check a SAT certificate: the assignment must satisfy the CNF. -/

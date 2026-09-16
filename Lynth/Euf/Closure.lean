@@ -1,10 +1,14 @@
--- Congruence-free equality closure (union-find over `Eq` hypotheses).
---
--- This is the first half of the EUF procedure (cf. Z3's `dyn_ack`,
--- `smt_cg_table`, congruence-closure core): maintain equivalence classes
--- of terms from `Eq` hypotheses and prove new equalities by `Eq.trans` /
--- `Eq.symm` chains. Congruence over applications (`a = b → f a = f b`)
--- lands next; the union-find core here is shared.
+
+
+/-!
+Congruence-free equality closure (union-find over `Eq` hypotheses).
+
+This is the first half of the EUF procedure (cf. Z3's `dyn_ack`,
+`smt_cg_table`, congruence-closure core): maintain equivalence classes
+of terms from `Eq` hypotheses and prove new equalities by `Eq.trans` /
+`Eq.symm` chains. Congruence over applications (`a = b → f a = f b`)
+lands next; the union-find core here is shared.
+-/
 namespace Lynth.Euf
 
 /-- Union-find over `Nat`-indexed nodes. -/

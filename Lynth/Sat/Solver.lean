@@ -1,17 +1,19 @@
--- DPLL SAT solver over `Lynth.Sat.Syntax.CNF`.
---
--- Z3's core (`src/sat/sat_solver.cpp`) is CDCL: unit propagation with
--- watched literals, first-UIP conflict analysis, clause learning, VSIDS
--- branching heuristics and restarts. This module implements the same
--- *interface* (satisfying assignment or UNSAT) with a simpler algorithm:
--- recursive DPLL with unit propagation and pure-literal elimination,
--- bounded by fuel so it always terminates inside the tactic.
---
--- Next steps towards Z3 parity: watched literals, conflict analysis with
--- learned clauses, VSIDS scores, restarts, and DRAT certificates checked
--- by `Lynth.Sat.Reconstruct`.
 import Lynth.Sat.Syntax
 
+/-!
+DPLL SAT solver over `Lynth.Sat.Syntax.CNF`.
+
+Z3's core (`src/sat/sat_solver.cpp`) is CDCL: unit propagation with
+watched literals, first-UIP conflict analysis, clause learning, VSIDS
+branching heuristics and restarts. This module implements the same
+*interface* (satisfying assignment or UNSAT) with a simpler algorithm:
+recursive DPLL with unit propagation and pure-literal elimination,
+bounded by fuel so it always terminates inside the tactic.
+
+Next steps towards Z3 parity: watched literals, conflict analysis with
+learned clauses, VSIDS scores, restarts, and DRAT certificates checked
+by `Lynth.Sat.Reconstruct`.
+-/
 namespace Lynth.Sat
 
 /-- Assignment: `List (Option Bool)` indexed by `var - 1`. -/

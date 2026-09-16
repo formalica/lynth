@@ -1,12 +1,16 @@
--- Fourier–Motzkin elimination over a rational relaxation.
---
--- Z3's arithmetic stack centers on Simplex over rationals
--- (`src/math/simplex`, `src/math/lp`) with branch-and-bound/cuts for
--- integers. This module is the elimination core we start from: linear
--- `≤` systems over `Rat` (a sound relaxation of `Int`/`Nat` for
--- *refutation*: ℚ-UNSAT ⟹ ℤ-UNSAT), with full combination lineage so
--- every derived constraint carries its Farkas certificate over the
--- original atoms (`combo` weights feed `lynth_farkas` later).
+
+
+/-!
+Fourier–Motzkin elimination over a rational relaxation.
+
+Z3's arithmetic stack centers on Simplex over rationals
+(`src/math/simplex`, `src/math/lp`) with branch-and-bound/cuts for
+integers. This module is the elimination core we start from: linear
+`≤` systems over `Rat` (a sound relaxation of `Int`/`Nat` for
+*refutation*: ℚ-UNSAT ⟹ ℤ-UNSAT), with full combination lineage so
+every derived constraint carries its Farkas certificate over the
+original atoms (`combo` weights feed `lynth_farkas` later).
+-/
 namespace Lynth.Arith.Fourier
 
 /-- A `≤` constraint `∑ coeffs[i]·xᵢ + const ≤ 0` with lineage `combo`

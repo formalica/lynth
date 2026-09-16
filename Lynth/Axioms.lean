@@ -1,17 +1,21 @@
--- Reconstruction certificates for lynth procedures.
---
--- Each decision procedure computes an *untrusted certificate* and rebuilds
--- the final proof by applying a reconstruction theorem below. The theorems
--- are stated over Boolean checker stubs: each licenses `goal` only when
--- its checker accepts **and** the certificate is tied to `goal`. With stub
--- checkers constantly `false` the antecedents are unprovable, so the
--- theorems are vacuously sound placeholders; as real checkers land
--- (resolution traces, Farkas validation) the same statements become
--- load-bearing. Nothing here is an `axiom`: user-facing proofs depend
--- only on Lean's native axioms (checked per-test with `#print axioms`).
---
--- Witness synthesis needs no certificate theorem: reconstruction is the
--- direct term `Subtype.mk w h`.
+
+
+/-!
+Reconstruction certificates for lynth procedures.
+
+Each decision procedure computes an *untrusted certificate* and rebuilds
+the final proof by applying a reconstruction theorem below. The theorems
+are stated over Boolean checker stubs: each licenses `goal` only when
+its checker accepts **and** the certificate is tied to `goal`. With stub
+checkers constantly `false` the antecedents are unprovable, so the
+theorems are vacuously sound placeholders; as real checkers land
+(resolution traces, Farkas validation) the same statements become
+load-bearing. Nothing here is an `axiom`: user-facing proofs depend
+only on Lean's native axioms (checked per-test with `#print axioms`).
+
+Witness synthesis needs no certificate theorem: reconstruction is the
+direct term `Subtype.mk w h`.
+-/
 namespace Lynth
 
 /-- Opaque resolution-trace certificate over a goal's CNF abstraction.

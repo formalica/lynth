@@ -1,16 +1,20 @@
--- Internal linear-arithmetic representation for `Lynth.Arith`.
---
--- Z3's arithmetic stack (`src/math/simplex`, `src/math/lp`, `src/smt`
--- arithmetic solvers) centers on Simplex over rationals with
--- branch-and-bound/Gomory cuts for integers, plus Fourier-Motzkin-style
--- elimination in preprocessing. We mirror that split:
--- * `LinAtom`/`LinSys`: the procedure's internal language (linear
---   (in)equalities over integer coefficients),
--- * `fourierMotzkin`: quantifier elimination à la FM for the integer
---   fragment starter (exponential in the worst case, like Z3's
---   preprocessing use; the Simplex core lands next),
--- * reconstruction via Farkas certificates (`lynth_farkas`), today
---   discharged by kernel-checked `omega`.
+
+
+/-!
+Internal linear-arithmetic representation for `Lynth.Arith`.
+
+Z3's arithmetic stack (`src/math/simplex`, `src/math/lp`, `src/smt`
+arithmetic solvers) centers on Simplex over rationals with
+branch-and-bound/Gomory cuts for integers, plus Fourier-Motzkin-style
+elimination in preprocessing. We mirror that split:
+* `LinAtom`/`LinSys`: the procedure's internal language (linear
+(in)equalities over integer coefficients),
+* `fourierMotzkin`: quantifier elimination à la FM for the integer
+fragment starter (exponential in the worst case, like Z3's
+preprocessing use; the Simplex core lands next),
+* reconstruction via Farkas certificates (`lynth_farkas`), today
+discharged by kernel-checked `omega`.
+-/
 namespace Lynth.Arith
 
 /-- Comparison operators in the internal language. -/

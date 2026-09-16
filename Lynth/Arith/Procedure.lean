@@ -1,13 +1,3 @@
--- Arithmetic procedure: linear (in)equalities over `Nat`/`Int`.
---
--- Internal pipeline mirrors Z3's arithmetic theory solver split: the goal
--- + hypotheses are translated to the procedure's own language
--- (`Fourier.LeC` systems via `Recognize`); two oracles cross-check the
--- refutation — FM elimination with Farkas lineage (`Fourier.solve`) and
--- tableau Simplex à la Dutertre–de Moura (`Simplex.solve`, standing in
--- for Z3's Simplex core) — and reconstruction is kernel-checked `omega`
--- (complete for Presburger goals). Certificates are traced;
--- `Lynth.lynth_farkas` activates once Farkas validation lands.
 import Lean
 import Lynth.Procedure
 import Lynth.Arith.Linear
@@ -17,6 +7,18 @@ import Lynth.Arith.Simplex
 import Lynth.Arith.BranchBound
 import Lynth.Arith.Recognize
 
+/-!
+Arithmetic procedure: linear (in)equalities over `Nat`/`Int`.
+
+Internal pipeline mirrors Z3's arithmetic theory solver split: the goal
++ hypotheses are translated to the procedure's own language
+(`Fourier.LeC` systems via `Recognize`); two oracles cross-check the
+refutation — FM elimination with Farkas lineage (`Fourier.solve`) and
+tableau Simplex à la Dutertre–de Moura (`Simplex.solve`, standing in
+for Z3's Simplex core) — and reconstruction is kernel-checked `omega`
+(complete for Presburger goals). Certificates are traced;
+`Lynth.lynth_farkas` activates once Farkas validation lands.
+-/
 namespace Lynth.Arith.Procedure
 
 open Lean Elab Tactic
@@ -39,12 +41,14 @@ def run : TacticM ProcedureOutcome := do
       match fm, sx with
       | some cert, some none =>
         if FarkasSound.checkCert sys cert then
-          logInfo m!"[lynth:arith] FM+Simplex agree: verified refutation (Farkas size {cert.length})"
+          logInfo m!"[lynth:arith] FM+Simplex agree \
+            (verified Farkas size {cert.length})"
         else
-          logInfo "[lynth:arith] WARNING: FM certificate FAILED validation (solver bug)"
+          logInfo "[lynth:arith] WARNING: FM cert FAILED validation"
       | some cert, _ =>
         if FarkasSound.checkCert sys cert then
-          logInfo m!"[lynth:arith] FM verified refutation (Farkas size {cert.length}); Simplex inconclusive"
+          logInfo m!"[lynth:arith] FM verified refutation \
+            (Farkas size {cert.length}); Simplex inconclusive"
         else
           logInfo "[lynth:arith] WARNING: FM certificate FAILED validation (solver bug)"
       | none, some none =>

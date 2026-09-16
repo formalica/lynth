@@ -1,14 +1,16 @@
--- Witness synthesis for computational goals: `Subtype` refinements
--- (`{ n // P n }`) and existentials (`∃ x, P x`).
---
--- For `def f : { n : Nat // P n } := by lynth`, lynth must produce a
--- *computable* witness: enumerate candidates per domain type, assign
--- `Subtype.mk w ?proof`, and close the side condition with kernel-checked
--- tactics. The search bound keeps the procedure total; larger witnesses
--- fall through to the next procedure with an explanation.
 import Lean
 import Lynth.Procedure
 
+/-!
+Witness synthesis for computational goals: `Subtype` refinements
+(`{ n // P n }`) and existentials (`∃ x, P x`).
+
+For `def f : { n : Nat // P n } := by lynth`, lynth must produce a
+*computable* witness: enumerate candidates per domain type, assign
+`Subtype.mk w ?proof`, and close the side condition with kernel-checked
+tactics. The search bound keeps the procedure total; larger witnesses
+fall through to the next procedure with an explanation.
+-/
 namespace Lynth.Witness
 
 open Lean Elab Tactic Meta

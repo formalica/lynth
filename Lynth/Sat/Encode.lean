@@ -1,14 +1,16 @@
--- Propositional skeleton + Tseitin encoding into `Lynth.Sat.Syntax.CNF`.
---
--- `PropForm` is the SAT procedure's internal language for the propositional
--- skeleton of a Lean goal (cf. Z3's `src/sat` boolean core, which likewise
--- sees only the boolean structure while theories handle atoms). Tseitin
--- encoding keeps CNF conversion linear; validity of `f` is reduced to
--- UNSAT of `¬f`, exactly like a Z3 `check` on the negated goal.
 import Lynth.Sat.Syntax
 import Lynth.Sat.Solver
 import Lynth.Sat.Cdcl
 
+/-!
+Propositional skeleton + Tseitin encoding into `Lynth.Sat.Syntax.CNF`.
+
+`PropForm` is the SAT procedure's internal language for the propositional
+skeleton of a Lean goal (cf. Z3's `src/sat` boolean core, which likewise
+sees only the boolean structure while theories handle atoms). Tseitin
+encoding keeps CNF conversion linear; validity of `f` is reduced to
+UNSAT of `¬f`, exactly like a Z3 `check` on the negated goal.
+-/
 namespace Lynth.Sat.Encode
 
 /-- Propositional skeleton with `Nat`-indexed opaque atoms. -/

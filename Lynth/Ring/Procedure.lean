@@ -1,13 +1,15 @@
--- Ring-normalization procedure: semiring identities by `ring`.
---
--- Nonlinear goals (`(a + b)^2 = …`, `x * y` manipulation) fall outside
--- every linear fragment; like Z3's `grobner`/`polynomial` theory
--- (`src/math/grobner`, `src/math/polynomial`), this procedure owns its
--- normalizer. Reconstruction is kernel-checked `ring` itself.
 import Lean
 import Mathlib.Tactic.Ring
 import Lynth.Procedure
 
+/-!
+Ring-normalization procedure: semiring identities by `ring`.
+
+Nonlinear goals (`(a + b)^2 = …`, `x * y` manipulation) fall outside
+every linear fragment; like Z3's `grobner`/`polynomial` theory
+(`src/math/grobner`, `src/math/polynomial`), this procedure owns its
+normalizer. Reconstruction is kernel-checked `ring` itself.
+-/
 namespace Lynth.Ring.Procedure
 
 open Lean Elab Tactic

@@ -1,6 +1,8 @@
--- `lynth` tactic entry point.
 import Lynth.Frontend
 
+/-!
+`lynth` tactic entry point.
+-/
 namespace Lynth
 
 open Lean Elab Tactic

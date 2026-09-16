@@ -1,13 +1,15 @@
--- Abstraction of Lean goals to `Lynth.Sat.Encode.PropForm` skeletons.
---
--- Non-propositional subterms (arithmetic, binders, opaque predicates)
--- become atoms; this is sound for validity-guided oracle use because the
--- final proof is always rebuilt by kernel-checked tactics. Hypotheses are
--- *not* abstracted yet — the oracle sees the goal only (context
--- abstraction is TODO in `docs/Z3-NOTES.md` step 1).
 import Lean
 import Lynth.Sat.Encode
 
+/-!
+Abstraction of Lean goals to `Lynth.Sat.Encode.PropForm` skeletons.
+
+Non-propositional subterms (arithmetic, binders, opaque predicates)
+become atoms; this is sound for validity-guided oracle use because the
+final proof is always rebuilt by kernel-checked tactics. Hypotheses are
+*not* abstracted yet — the oracle sees the goal only (context
+abstraction is TODO in `docs/Z3-NOTES.md` step 1).
+-/
 namespace Lynth.Sat.Abstract
 
 open Lean Elab Tactic Meta

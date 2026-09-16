@@ -1,12 +1,3 @@
--- SAT procedure: Lean `Prop` skeleton → internal CNF → solver → proof.
---
--- Translation (`Abstract`) maps goal + hypotheses to a `PropForm`
--- skeleton; `Encode` Tseitin-encodes its negation and the CDCL oracle
--- (`Cdcl`) checks it. UNSAT ⟹ tautology: reconstruction tries closing
--- tactics. SAT ⟹ inconclusive: an (empty) explanation is returned for the
--- next procedure. Reconstruction is always kernel-checked; the
--- certificate path via `Lynth.lynth_sat_resolve` activates once trace
--- validation lands.
 import Lean
 import Lynth.Procedure
 import Lynth.Sat.Solver
@@ -14,6 +5,17 @@ import Lynth.Sat.Reconstruct
 import Lynth.Sat.Encode
 import Lynth.Sat.Abstract
 
+/-!
+SAT procedure: Lean `Prop` skeleton → internal CNF → solver → proof.
+
+Translation (`Abstract`) maps goal + hypotheses to a `PropForm`
+skeleton; `Encode` Tseitin-encodes its negation and the CDCL oracle
+(`Cdcl`) checks it. UNSAT ⟹ tautology: reconstruction tries closing
+tactics. SAT ⟹ inconclusive: an (empty) explanation is returned for the
+next procedure. Reconstruction is always kernel-checked; the
+certificate path via `Lynth.lynth_sat_resolve` activates once trace
+validation lands.
+-/
 namespace Lynth.Sat.Procedure
 
 open Lean Elab Tactic

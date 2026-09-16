@@ -1,15 +1,17 @@
--- Branch-and-bound over `Simplex.solve` for integer completeness.
---
--- Z3 decides integer arithmetic by Simplex over rationals with
--- branch-and-bound and cuts on top (`src/math/lp`, `src/smt` arith
--- solvers). Our `Fourier`/`Simplex` cores are ℚ-relaxations: sound for
--- refutation but incomplete over `Int` (e.g. `2x = 3`). This module
--- closes that gap the same way Z3 does: a fractional model value `v`
--- for an integer variable spawns `x ≤ ⌊v⌋` / `x ≥ ⌊v⌋ + 1`, both
--- exhaustive over `ℤ`. Depth- and fuel-bounded; `unknown` is always a
--- legal answer (other procedures take over).
 import Lynth.Arith.Simplex
 
+/-!
+Branch-and-bound over `Simplex.solve` for integer completeness.
+
+Z3 decides integer arithmetic by Simplex over rationals with
+branch-and-bound and cuts on top (`src/math/lp`, `src/smt` arith
+solvers). Our `Fourier`/`Simplex` cores are ℚ-relaxations: sound for
+refutation but incomplete over `Int` (e.g. `2x = 3`). This module
+closes that gap the same way Z3 does: a fractional model value `v`
+for an integer variable spawns `x ≤ ⌊v⌋` / `x ≥ ⌊v⌋ + 1`, both
+exhaustive over `ℤ`. Depth- and fuel-bounded; `unknown` is always a
+legal answer (other procedures take over).
+-/
 namespace Lynth.Arith.BranchBound
 
 open Lynth.Arith.Simplex
