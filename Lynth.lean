@@ -2,6 +2,7 @@ import Lynth.Axioms
 import Lynth.Procedure
 import Lynth.Sat.Syntax
 import Lynth.Sat.Solver
+import Lynth.Sat.Cdcl
 import Lynth.Sat.Encode
 import Lynth.Sat.Abstract
 import Lynth.Sat.Reconstruct

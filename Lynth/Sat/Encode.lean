@@ -7,6 +7,7 @@
 -- UNSAT of `¬f`, exactly like a Z3 `check` on the negated goal.
 import Lynth.Sat.Syntax
 import Lynth.Sat.Solver
+import Lynth.Sat.Cdcl
 
 namespace Lynth.Sat.Encode
 
@@ -72,10 +73,12 @@ def encodeNeg (f : PropForm) (nAtoms : Nat) : CNF :=
   cls ++ [[top]]
 
 /-- Validity oracle: `true` if the skeleton is a tautology
-(solver proves UNSAT of the negation within `fuel`). -/
+(CDCL proves UNSAT of the negation within `fuel`).
+`none` (out of fuel) reads as `false`: inconclusive, never a
+false-positive. -/
 def isTautology (f : PropForm) (nAtoms : Nat) (fuel : Nat := 10000) : Bool :=
-  match solve (encodeNeg f nAtoms) fuel with
-  | .unsat => true
-  | .sat _ => false
+  match Cdcl.cdclSolve (encodeNeg f nAtoms) fuel with
+  | (some .unsat, _) => true
+  | _ => false
 
 end Lynth.Sat.Encode
