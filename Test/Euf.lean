@@ -32,6 +32,18 @@ theorem euf_congr2 (a b c : Nat) (f : Nat → Nat → Nat) (h : a = b) :
 theorem euf_congr_chain (a b : Nat) (f g : Nat → Nat) (h1 : a = b)
     (h2 : f b = g a) : f a = g b := by lynth
 
+-- disequality via congruence: equal functions applied to equal args
+-- cannot be disequal
+theorem euf_ne (f : Nat → Nat) (a b : Nat) (h1 : a = b) (h2 : f a ≠ f b) :
+    False := by lynth
+
+-- direct `Ne` goal: intro + congruence contradicts the `≠` hyp
+theorem euf_ne_direct (f : Nat → Nat) (a b : Nat) (h : f a ≠ f b) :
+    a ≠ b := by lynth
+
+theorem euf_ne_goal (a b c : Nat) (h1 : a = b) (h2 : b = c) :
+    a ≠ c → False := by lynth
+
 #print axioms euf_trans
 #print axioms euf_symm
 #print axioms euf_chain
@@ -39,4 +51,7 @@ theorem euf_congr_chain (a b : Nat) (f g : Nat → Nat) (h1 : a = b)
 #print axioms euf_congr
 #print axioms euf_congr2
 #print axioms euf_congr_chain
+#print axioms euf_ne
+#print axioms euf_ne_direct
+#print axioms euf_ne_goal
 #print axioms euf_share

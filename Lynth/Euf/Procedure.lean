@@ -19,10 +19,32 @@ def asEq (e : Expr) : MetaM (Option (Expr × Expr)) := do
   | .app (.app (.app (.const ``Eq _) _) lhs) rhs => pure (some (lhs, rhs))
   | _ => pure none
 
+/-- Split `e` as `(lhs, rhs)` if it is a disequality `lhs ≠ rhs`
+(either `Ne` or `¬(_ = _)`). -/
+def asNe (e : Expr) : MetaM (Option (Expr × Expr)) := do
+  let e ← whnf e
+  match e with
+  | .app (.app (.const ``Ne _) lhs) rhs => pure (some (lhs, rhs))
+  | .app (.const ``Not _) a => asEq a
+  | .forallE _ d b _ =>
+    if b.hasLooseBVars then pure none
+    else asEq d
+  | _ => pure none
+
 /-- Proof term of a local hypothesis declaration. -/
 def hypProof : LocalDecl → Expr
   | .ldecl _ fvarId _ _ _ _ _ => .fvar fvarId
   | .cdecl _ fvarId _ _ _ _ => .fvar fvarId
+
+/-- Collect `(lhs, rhs, proof)` from `≠`-typed local hypotheses. -/
+def collectNe : TacticM (Array (Expr × Expr × Expr)) := do
+  let mut nes := #[]
+  for decl in ← getLCtx do
+    if (decl.kind == .default) then
+      match ← asNe decl.type with
+      | some (lhs, rhs) => nes := nes.push (lhs, rhs, hypProof decl)
+      | none => pure ()
+  pure nes
 
 /-- Collect `(lhs, rhs, proof)` edges from `Eq`-typed local hypotheses.
 Skips auxiliary declarations (e.g. the `_example` self-reference Lean
@@ -119,15 +141,16 @@ def reg (atoms : Array Expr) (e : Expr) : Array Expr :=
 
 /-- Atom table + adjacency from edges plus goal sides (including every
 function/argument subterm, so congruence candidates are nodes). -/
-def buildGraph (edges : Array (Expr × Expr × Expr)) (lhs rhs : Expr) :
+def buildGraph (edges : Array (Expr × Expr × Expr)) (seeds : List Expr) :
     Array Expr × Adj :=
   Id.run do
   let mut atoms : Array Expr := #[]
   for (a, b, _) in edges do
     for s in collectSubterms a ++ collectSubterms b do
       atoms := reg atoms s
-  for s in collectSubterms lhs ++ collectSubterms rhs do
-    atoms := reg atoms s
+  for e in seeds do
+    for s in collectSubterms e do
+      atoms := reg atoms s
   let n := atoms.size
   let mut adj : Adj := Array.replicate n #[]
   for (a, b, prf) in edges do
@@ -144,7 +167,7 @@ def dedup : List Expr → List Expr
 
 /-- Congruence-closure fixpoint over `edges`: returns the closed edge
 set with `congr` proof terms. Fuel-bounded. -/
-def congrClose (edges0 : Array (Expr × Expr × Expr)) (lhs rhs : Expr) :
+def congrClose (edges0 : Array (Expr × Expr × Expr)) (seeds : List Expr) :
     TacticM (Array (Expr × Expr × Expr)) := do
   let mut edges := edges0
   let mut rounds := 8
@@ -152,8 +175,8 @@ def congrClose (edges0 : Array (Expr × Expr × Expr)) (lhs rhs : Expr) :
   while changed && rounds > 0 do
     changed := false
     rounds := rounds - 1
-    let (atoms, adj) := buildGraph edges lhs rhs
-    let subs := dedup (collectSubterms lhs ++ collectSubterms rhs ++
+    let (atoms, adj) := buildGraph edges seeds
+    let subs := dedup ((seeds.flatMap collectSubterms) ++
       (edges.toList.flatMap fun (a, b, _) => collectSubterms a ++ collectSubterms b))
     let apps := subs.filter fun e => match e with
       | .app _ _ => true
@@ -189,12 +212,15 @@ def shareDerived (maxFacts : Nat := 8) : TacticM Nat := do
   if edges0.isEmpty then return 0
   -- scope atoms: edge endpoints (+ goal sides when the goal is an `Eq`)
   let goal ← getMainTarget
-  let (seedL, seedR) :=
+  let seeds : List Expr :=
     match ← asEq goal with
-    | some (l, r) => (l, r)
-    | none => (edges0[0]!.1, edges0[0]!.2.1)
-  let edges ← congrClose edges0 seedL seedR
-  let (atoms, adj) := buildGraph edges seedL seedR
+    | some (l, r) => [l, r]
+    | none =>
+      match edges0[0]? with
+      | some (a, b, _) => [a, b]
+      | none => []
+  let edges ← congrClose edges0 seeds
+  let (atoms, adj) := buildGraph edges seeds
   let m := atoms.size
   let mut count := 0
   let mut seen : Array (Nat × Nat) := #[]
@@ -222,36 +248,84 @@ def shareDerived (maxFacts : Nat := 8) : TacticM Nat := do
     logInfo m!"[lynth:euf] shared {count} derived equalities"
   pure count
 
-/-- Try to close an `Eq` goal by equality closure. On failure, shares
-derived equalities into context before yielding to the next procedure. -/
-def run : TacticM ProcedureOutcome := do
-  let goal ← getMainTarget
-  let some (lhs, rhs) ← asEq goal | return .failure []
-  if lhs == rhs then
-    let rfl ← `(tactic| rfl)
-    evalTactic rfl
-    if (← getUnsolvedGoals).isEmpty then return .success
-    else return .failure []
+/-- Reachability close for `lhs = rhs` over current hypotheses. -/
+def closeEq (lhs rhs : Expr) : TacticM Bool := do
   let edges0 ← collectEdges
-  if edges0.isEmpty then return .failure []
-  let edges ← congrClose edges0 lhs rhs
-  -- Final reachability over the congruence-closed graph.
-  let (atoms, adj) := buildGraph edges lhs rhs
-  let s := idxOf atoms lhs
-  let t := idxOf atoms rhs
-  match bfsPath adj s t with
-  | none =>
-    logInfo "[lynth:euf] no equality path; sharing derived facts"
-    let _ ← shareDerived
-    return .failure []
+  if edges0.isEmpty then return false
+  let edges ← congrClose edges0 [lhs, rhs]
+  let (atoms, adj) := buildGraph edges [lhs, rhs]
+  match bfsPath adj (idxOf atoms lhs) (idxOf atoms rhs) with
+  | none => pure false
   | some path =>
     try
       let prf ← buildProof lhs path
       let mvar ← getMainGoal
       mvar.assign prf
       replaceMainGoal []
-      return .success
-    catch _ =>
-      return .failure []
+      pure true
+    catch _ => pure false
+
+/-- Close a `False` goal by contradicting a `≠` hypothesis: if closure
+connects some hyp's `l ~ r`, `exact (neHyp proof)`. Sound: the equality
+proof may use every hypothesis in context, including intro'd ones. -/
+def closeFalse : TacticM Bool := do
+  let nes ← collectNe
+  if nes.isEmpty then return false
+  let edges0 ← collectEdges
+  let seeds := nes.toList.flatMap fun (l, r, _) => [l, r]
+  let edges ← congrClose edges0 seeds
+  let (atoms, adj) := buildGraph edges seeds
+  for (l, r, neprf) in nes do
+    match bfsPath adj (idxOf atoms l) (idxOf atoms r) with
+    | none => pure ()
+    | some path =>
+      try
+        let prf ← buildProof l path
+        let mvar ← getMainGoal
+        mvar.assign (mkApp neprf prf)
+        replaceMainGoal []
+        return true
+      catch _ => pure ()
+  pure false
+
+/-- Try to close an `Eq` goal by equality closure, or a `Ne`/`False` goal
+by disequality-driven closure. On failure, shares derived equalities
+into context before yielding to the next procedure. -/
+def run : TacticM ProcedureOutcome := do
+  let snapshot ← saveState
+  let goal ← getMainTarget
+  match ← asEq goal with
+  | some (lhs, rhs) =>
+    if lhs == rhs then
+      let rfl ← `(tactic| rfl)
+      evalTactic rfl
+      if (← getUnsolvedGoals).isEmpty then return .success
+      else
+        restoreState snapshot
+        return .failure []
+    else match ← closeEq lhs rhs with
+      | true => return .success
+      | false =>
+        logInfo "[lynth:euf] no equality path; sharing derived facts"
+        let _ ← shareDerived
+        return .failure []
+  | none =>
+    -- Disequality-driven close: intro the equation (if the goal is `Ne`),
+    -- then contradict a `≠` hypothesis by closure. Also handles a bare
+    -- `False` goal directly.
+    match ← asNe goal with
+    | none =>
+      if (← whnfR goal).isConstOf ``False then
+        if ← closeFalse then return .success else return .failure []
+      else return .failure []
+    | some _ =>
+      let introStx ← `(tactic| intro h_euf_ne)
+      try evalTactic introStx catch _ => return .failure []
+      -- re-focus: `intro` changes the main goal's context, refresh it
+      withMainContext do
+        if ← closeFalse then return .success
+        else
+          restoreState snapshot
+          return .failure []
 
 end Lynth.Euf.Procedure
