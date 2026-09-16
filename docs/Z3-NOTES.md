@@ -43,7 +43,10 @@ cuts on top; equalities shared through congruence-closure adapters.
 ## Incremental plan
 
 1. CNF translation from Lean `Prop` skeletons (Tseitin) into `Lynth.Sat.Syntax.CNF`.
-   DONE for goal skeletons (`Encode.lean`, `Abstract.lean`); hypotheses TODO.
+   DONE for goal + hypotheses (`Encode.lean`, `Abstract.lean`).
+   NOTE: collectors must skip non-`default` local decls — Lean parks the
+   declaration itself (`_example`, `auxDecl`) in context, and using it
+   "proves" goals from themselves (caught + fixed).
 2. Learned clauses + resolution-trace checker → discharge `lynth_sat_resolve`.
 3. Simplex tableau over `Rat` in `Lynth.Arith`, Farkas extraction → discharge `lynth_farkas`.
 4. Congruence-closure (EUF) procedure for `var = value` fact propagation.

@@ -27,4 +27,6 @@ jobs:
           lake env lean Test/Euf.lean
           lake env lean Test/Arith.lean
           lake env lean Test/ArithTactics.lean
+          lake env lean Test/Spec.lean
+          lake env lean Test/Robust.lean
       - uses: leanprover-community/docgen-action@v1
