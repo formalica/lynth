@@ -14,11 +14,23 @@ namespace Lynth.Witness
 open Lean Elab Tactic Meta
 
 /-- Search bound for automatic witness enumeration. -/
-def searchBound : Nat := 64
+def searchBound : Nat := 256
 
-/-- Candidate witnesses for a domain type: `Nat` enumerates `0..bound`;
-`Int` interleaves `0, 1, -1, 2, -2, …`; `Bool` tries both values. -/
-def candidates (dom : Expr) (bound : Nat) : MetaM (List Expr) := do
+/-- Diagonal pairing of two candidate lists (sum order). -/
+def diagonal (xs : List Expr) (ys : List Expr) : List (Expr × Expr) :=
+  let n := Nat.max xs.length ys.length
+  (List.range n).flatMap fun s =>
+    (List.range (s + 1)).filterMap fun i =>
+      match xs[i]?, ys[s - i]? with
+      | some a, some b => some (a, b)
+      | _, _ => none
+
+/-- Pair value constructor (implicits inferred from explicit args). -/
+def mkProdVal (_α _β a b : Expr) : MetaM Expr := do
+  mkAppM ``Prod.mk #[a, b]
+
+/-- Candidate witnesses with nesting depth (products recurse). -/
+def candidatesAux (dom : Expr) (bound depth : Nat) : MetaM (List Expr) := do
   let dom ← whnfR dom
   if dom.isConstOf ``Nat then
     pure ((List.range bound).map fun w => mkNatLit w)
@@ -29,7 +41,24 @@ def candidates (dom : Expr) (bound : Nat) : MetaM (List Expr) := do
     pure ((pos.zip neg).flatMap fun (p, n) => [p, n] |>.take bound)
   else if dom.isConstOf ``Bool then
     pure [mkConst ``Bool.true, mkConst ``Bool.false]
+  else if dom.isAppOf ``Prod then
+    match depth with
+    | 0 => pure []
+    | depth + 1 =>
+      let args := dom.getAppArgs
+      if args.size != 2 then pure []
+      else
+        let ca ← candidatesAux args[0]! 16 depth
+        let cb ← candidatesAux args[1]! 16 depth
+        ((diagonal ca cb).take 512).mapM fun (a, b) =>
+          mkProdVal args[0]! args[1]! a b
   else pure []
+
+/-- Candidate witnesses for a domain type: `Nat` enumerates `0..bound`;
+`Int` interleaves `0, 1, -1, 2, -2, …`; `Bool` tries both values;
+`Prod` enumerates diagonally (capped). -/
+def candidates (dom : Expr) (bound : Nat) : MetaM (List Expr) :=
+  candidatesAux dom bound 4
 
 /-- Value constructor for `Subtype` goals (explicit implicits). -/
 def mkSubtypeVal (dom pred w sidePrf : Expr) : MetaM Expr := do
@@ -74,9 +103,9 @@ def run (bound : Nat := searchBound) : TacticM ProcedureOutcome := do
   let cands ← candidates shape.dom bound
   if cands.isEmpty then return .failure []
   let s1 ← `(tactic| decide)
-  let s2 ← `(tactic| omega)
-  let s3 ← `(tactic| simp_all)
-  let s4 ← `(tactic| rfl)
+  let s2 ← `(tactic| rfl)
+  let s3 ← `(tactic| omega)
+  let s4 ← `(tactic| simp_all)
   let sideProbes : List (TSyntax `tactic) := [s1, s2, s3, s4]
   let others ← getUnsolvedGoals
   for w in cands do

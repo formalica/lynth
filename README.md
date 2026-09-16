@@ -11,6 +11,8 @@ def f : { n : Nat // 0 < n } := by lynth  -- f = ⟨1, ⋯⟩, computable
 #eval (f : Nat)  -- 1
 
 theorem ex : ∃ n : Int, n < 0 := by lynth  -- −1
+
+def pp : { p : Nat × Nat // p.1 + p.2 = 3 } := by lynth  -- (0, 3)
 ```
 
 ## Architecture (Z3-style procedures, Lean-native)
@@ -39,7 +41,7 @@ axioms (`propext`, `Classical.choice`, `Quot.sound`).
 
 - `Lynth/` — procedures (`Sat/`, `Euf/`, `Arith/`, `Ring/`, `Witness.lean`),
   dispatcher (`Frontend.lean`), entry point (`Basic.lean`: `by lynth`).
-- `Test/` — 17 suites run via `lake env lean Test/<Name>.lean`
+- `Test/` — 16 suites run via `lake env lean Test/<Name>.lean`
   (also enforced by CI).
 - `docs/` — `DESIGN.md` (architecture), `PROCEDURES.md` (registry),
   `Z3-NOTES.md` (pinned Z3 survey + mapping).

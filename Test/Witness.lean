@@ -32,6 +32,16 @@ theorem ex_int : ∃ n : Int, n < 0 := by lynth
 
 theorem ex_conj : ∃ n : Nat, n > 3 ∧ n < 6 := by lynth
 
+-- larger witnesses within the raised bound
+theorem ex_big : ∃ n : Nat, n = 100 := by lynth
+
+-- product domains enumerate diagonally
+def pp : { p : Nat × Nat // p.1 + p.2 = 3 } := by lynth
+
+#eval (pp : Nat × Nat) -- expect (0, 3)
+
 #print axioms ex_nat
 #print axioms ex_int
 #print axioms ex_conj
+#print axioms ex_big
+#print axioms pp
