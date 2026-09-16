@@ -21,6 +21,15 @@ theorem c9 (x y : Int) : (x + y) ^ 2 = x ^ 2 + 2 * x * y + y ^ 2 := by lynth
 
 theorem c10 : (2 + 2 : Nat) = 4 := by lynth
 
+-- combinations: rewriting + arithmetic + propositions together
+theorem k1 (a b : Nat) (h : a = b) : a + 1 ≤ b + 1 := by lynth
+
+theorem k2 (x y : Int) (h1 : x = y) (h2 : x + 1 ≤ 0) : y + 1 ≤ 0 := by lynth
+
+theorem k3 (a b : Nat) (h : 2 * a = 2 * b) : a = b := by lynth
+
+theorem k4 (p : Prop) (h : p) (n : Nat) : n + 0 = n ∧ p := by lynth
+
 #eval (c7 : Nat) -- expect 4
 
 #print axioms c1
@@ -33,3 +42,7 @@ theorem c10 : (2 + 2 : Nat) = 4 := by lynth
 #print axioms c8
 #print axioms c9
 #print axioms c10
+#print axioms k1
+#print axioms k2
+#print axioms k3
+#print axioms k4
