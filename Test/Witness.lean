@@ -53,3 +53,8 @@ def ff : { i : Fin 5 // i.val > 2 } := by lynth
 #eval (ff : Nat) -- expect 3
 
 #print axioms ff
+
+-- inductive predicates as side conditions go through the same probes
+theorem even_ex : ∃ n : Nat, Even n ∧ n > 10 := by lynth
+
+#print axioms even_ex

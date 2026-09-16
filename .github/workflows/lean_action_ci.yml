@@ -37,4 +37,5 @@ jobs:
           lake env lean Test/BranchBound.lean
           lake env lean Test/Farkas.lean
           lake env lean Test/Tseitin.lean
+          lake env lean Test/Readme.lean
       - uses: leanprover-community/docgen-action@v1
