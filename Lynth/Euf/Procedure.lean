@@ -138,19 +138,10 @@ def dedup : List Expr → List Expr
   | [] => []
   | e :: rest => if rest.any (· == e) then dedup rest else e :: dedup rest
 
-/-- Try to close an `Eq` goal by equality closure. -/
-def run : TacticM ProcedureOutcome := do
-  let goal ← getMainTarget
-  let some (lhs, rhs) ← asEq goal | return .failure []
-  if lhs == rhs then
-    let rfl ← `(tactic| rfl)
-    evalTactic rfl
-    if (← getUnsolvedGoals).isEmpty then return .success
-    else return .failure []
-  let edges0 ← collectEdges
-  if edges0.isEmpty then return .failure []
-  -- Congruence closure fixpoint: `f₁ ~ f₂` and `a₁ ~ a₂` give
-  -- `f₁ a₁ = f₂ a₂` with a `congr` proof term. Fuel-bounded.
+/-- Congruence-closure fixpoint over `edges`: returns the closed edge
+set with `congr` proof terms. Fuel-bounded. -/
+def congrClose (edges0 : Array (Expr × Expr × Expr)) (lhs rhs : Expr) :
+    TacticM (Array (Expr × Expr × Expr)) := do
   let mut edges := edges0
   let mut rounds := 8
   let mut changed := true
@@ -182,13 +173,72 @@ def run : TacticM ProcedureOutcome := do
               catch _ => pure ()
             | _ => pure ()
           | _ => pure ()
+  pure edges
+
+/-- Share derived equalities with the rest of the pipeline: assert every
+newly reachable `u = v` (up to `maxFacts`) as a hypothesis with its
+proof, so later procedures can use it. This is lynth's variable-sharing
+mechanism: explanations flow as proven equality facts in context.
+Returns the number of facts asserted. -/
+def shareDerived (maxFacts : Nat := 8) : TacticM Nat := do
+  let edges0 ← collectEdges
+  if edges0.isEmpty then return 0
+  -- scope atoms: edge endpoints (+ goal sides when the goal is an `Eq`)
+  let goal ← getMainTarget
+  let (seedL, seedR) :=
+    match ← asEq goal with
+    | some (l, r) => (l, r)
+    | none => (edges0[0]!.1, edges0[0]!.2.1)
+  let edges ← congrClose edges0 seedL seedR
+  let (atoms, adj) := buildGraph edges seedL seedR
+  let m := atoms.size
+  let mut count := 0
+  let mut seen : Array (Nat × Nat) := #[]
+  for i in List.range m do
+    for j in List.range m do
+      if count < maxFacts && i != j then
+        -- skip pairs already directly linked by a hypothesis edge
+        let linked := edges.any fun (a, b, _) =>
+          (idxOf atoms a == i && idxOf atoms b == j) ||
+          (idxOf atoms a == j && idxOf atoms b == i)
+        if !linked && !(seen.any fun (x, y) => (x == i && y == j) || (x == j && y == i)) then
+          match bfsPath adj i j with
+          | some path =>
+            try
+              let prf ← buildProof atoms[i]! path
+              let ty ← mkAppM ``Eq #[atoms[i]!, atoms[j]!]
+              let mvar ← getMainGoal
+              let (_, mvar') ← mvar.note (Name.mkStr1 s!"lynth_eq_{i}_{j}") prf (some ty)
+              replaceMainGoal [mvar']
+              seen := seen.push (i, j)
+              count := count + 1
+            catch _ => pure ()
+          | none => pure ()
+  if count > 0 then
+    logInfo m!"[lynth:euf] shared {count} derived equalities"
+  pure count
+
+/-- Try to close an `Eq` goal by equality closure. On failure, shares
+derived equalities into context before yielding to the next procedure. -/
+def run : TacticM ProcedureOutcome := do
+  let goal ← getMainTarget
+  let some (lhs, rhs) ← asEq goal | return .failure []
+  if lhs == rhs then
+    let rfl ← `(tactic| rfl)
+    evalTactic rfl
+    if (← getUnsolvedGoals).isEmpty then return .success
+    else return .failure []
+  let edges0 ← collectEdges
+  if edges0.isEmpty then return .failure []
+  let edges ← congrClose edges0 lhs rhs
   -- Final reachability over the congruence-closed graph.
   let (atoms, adj) := buildGraph edges lhs rhs
   let s := idxOf atoms lhs
   let t := idxOf atoms rhs
   match bfsPath adj s t with
   | none =>
-    logInfo "[lynth:euf] no equality path"
+    logInfo "[lynth:euf] no equality path; sharing derived facts"
+    let _ ← shareDerived
     return .failure []
   | some path =>
     try
