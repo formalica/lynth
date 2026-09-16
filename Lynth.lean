@@ -9,6 +9,7 @@ import Lynth.Sat.Reconstruct
 import Lynth.Sat.Procedure
 import Lynth.Arith.Linear
 import Lynth.Arith.Fourier
+import Lynth.Arith.FarkasSound
 import Lynth.Arith.Simplex
 import Lynth.Arith.BranchBound
 import Lynth.Arith.Recognize

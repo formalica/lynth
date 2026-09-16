@@ -38,4 +38,5 @@ jobs:
           lake env lean Test/Farkas.lean
           lake env lean Test/Tseitin.lean
           lake env lean Test/Readme.lean
+          lake env lean Test/FarkasSound.lean
       - uses: leanprover-community/docgen-action@v1
