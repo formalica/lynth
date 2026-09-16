@@ -30,6 +30,13 @@ theorem k3 (a b : Nat) (h : 2 * a = 2 * b) : a = b := by lynth
 
 theorem k4 (p : Prop) (h : p) (n : Nat) : n + 0 = n ∧ p := by lynth
 
+theorem k5 (f : Nat → Nat) (a b c : Nat) (h1 : a = b) (h2 : b = c) :
+    f a + 0 ≤ f c := by lynth
+
+theorem k6 (p : Prop) : p ∨ ¬p := by lynth
+
+theorem k7 (a : Nat) : (0 : Int) ≤ (a : Int) := by lynth
+
 #eval (c7 : Nat) -- expect 4
 
 #print axioms c1
@@ -46,3 +53,6 @@ theorem k4 (p : Prop) (h : p) (n : Nat) : n + 0 = n ∧ p := by lynth
 #print axioms k2
 #print axioms k3
 #print axioms k4
+#print axioms k5
+#print axioms k6
+#print axioms k7
