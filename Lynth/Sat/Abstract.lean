@@ -54,4 +54,19 @@ def abstractGoal : TacticM (Encode.PropForm × Nat) := do
   let f ← abstract tbl goal
   pure (f, (← tbl.get).size)
 
+/-- Abstract goal *with* local hypotheses: `(∧ hyps) → goal`.
+Only hypotheses whose type is a `Prop` are included; everything else
+is skipped (other procedures own those fragments). -/
+def abstractContext : TacticM (Encode.PropForm × Nat) := do
+  let tbl ← IO.mkRef #[]
+  let goal ← getMainTarget
+  let mut hyps : Encode.PropForm := .tru
+  for decl in ← getLCtx do
+    let ty := decl.type
+    if ← isProp ty then
+      let h ← abstract tbl ty
+      hyps := .conj hyps h
+  let g ← abstract tbl goal
+  pure (.imp hyps g, (← tbl.get).size)
+
 end Lynth.Sat.Abstract

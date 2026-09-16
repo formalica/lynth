@@ -18,6 +18,11 @@ theorem thm_conj_elim (p q : Prop) : p ∧ q → p := by lynth
 
 theorem thm_disj_comm (p q : Prop) : p ∨ q → q ∨ p := by lynth
 
+-- hypothesis-driven: oracle must see the context, not just the goal
+theorem thm_hyp_mp (p q : Prop) (h1 : p → q) (h2 : p) : q := by lynth
+
+theorem thm_hyp_conj (p q r : Prop) (h : p ∧ q) : q ∧ p ∧ (p ∨ r) := by lynth
+
 #print axioms thm_add_comm
 #print axioms thm_triv
 #print axioms thm_and
@@ -25,3 +30,5 @@ theorem thm_disj_comm (p q : Prop) : p ∨ q → q ∨ p := by lynth
 #print axioms thm_mp
 #print axioms thm_conj_elim
 #print axioms thm_disj_comm
+#print axioms thm_hyp_mp
+#print axioms thm_hyp_conj

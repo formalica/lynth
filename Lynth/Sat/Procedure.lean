@@ -20,10 +20,10 @@ open Lean Elab Tactic
 /-- Try to close a propositional goal using the SAT oracle to guide
 reconstruction. Returns `.success` if the goal is closed. -/
 def run : TacticM ProcedureOutcome := do
-  -- Real oracle path: abstract the goal, check validity of the skeleton.
+  -- Real oracle path: abstract goal + hypotheses, check skeleton validity.
   let taut ←
     try
-      let (form, nAtoms) ← Abstract.abstractGoal
+      let (form, nAtoms) ← Abstract.abstractContext
       pure (Encode.isTautology form nAtoms 10000)
     catch _ => pure false
   logInfo m!"[lynth:sat] skeleton tautology: {taut}"

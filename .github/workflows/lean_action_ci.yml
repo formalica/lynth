@@ -24,4 +24,5 @@ jobs:
           lake env lean Test/Encode.lean
           lake env lean Test/Tactics.lean
           lake env lean Test/Witness.lean
+          lake env lean Test/Euf.lean
       - uses: leanprover-community/docgen-action@v1

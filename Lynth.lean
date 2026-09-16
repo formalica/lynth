@@ -8,6 +8,8 @@ import Lynth.Sat.Reconstruct
 import Lynth.Sat.Procedure
 import Lynth.Arith.Linear
 import Lynth.Arith.Procedure
+import Lynth.Euf.Closure
+import Lynth.Euf.Procedure
 import Lynth.Witness
 import Lynth.Frontend
 import Lynth.Basic

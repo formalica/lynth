@@ -9,6 +9,7 @@
 -- (variable sharing = equality facts with proofs); all are traced.
 import Lean
 import Lynth.Procedure
+import Lynth.Euf.Procedure
 import Lynth.Witness
 import Lynth.Sat.Procedure
 import Lynth.Arith.Procedure
@@ -21,6 +22,7 @@ open Lean Elab Tactic
 def dispatch : TacticM Unit := do
   let procs : List (String × TacticM ProcedureOutcome) := [
     ("witness", Lynth.Witness.run),
+    ("euf", Lynth.Euf.Procedure.run),
     ("sat", Lynth.Sat.Procedure.run),
     ("arith", Lynth.Arith.Procedure.run)
   ]
