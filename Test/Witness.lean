@@ -57,4 +57,14 @@ def ff : { i : Fin 5 // i.val > 2 } := by lynth
 -- inductive predicates as side conditions go through the same probes
 theorem even_ex : ∃ n : Nat, Even n ∧ n > 10 := by lynth
 
+-- nested existentials: outer witness + tactic side-close compose
+theorem nest1 : ∃ a : Nat, ∃ b : Nat, a + b = 3 := by lynth
+
+theorem sq_ex : ∃ x : Int, x > 0 ∧ x < 5 ∧ x * x = 16 := by lynth
+
+theorem mix1 (p : Nat → Prop) (h : ∀ n, p n) : ∃ n, p (n + 1) := by lynth
+
 #print axioms even_ex
+#print axioms nest1
+#print axioms sq_ex
+#print axioms mix1
