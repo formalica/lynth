@@ -1,4 +1,5 @@
--- Witness synthesis for computational (`Subtype`/refinement) goals.
+-- Witness synthesis for computational goals: `Subtype` refinements
+-- (`{ n // P n }`) and existentials (`∃ x, P x`).
 --
 -- For `def f : { n : Nat // P n } := by lynth`, lynth must produce a
 -- *computable* witness: enumerate candidates per domain type, assign
@@ -30,19 +31,47 @@ def candidates (dom : Expr) (bound : Nat) : MetaM (List Expr) := do
     pure [mkConst ``Bool.true, mkConst ``Bool.false]
   else pure []
 
-/-- Try `Subtype.mk w ?side` for each candidate, closing the side
-condition with `decide`/`omega`/`simp_all`/`rfl`. -/
-def run (bound : Nat := searchBound) : TacticM ProcedureOutcome := do
-  let goal ← getMainTarget
+/-- Value constructor for `Subtype` goals (explicit implicits). -/
+def mkSubtypeVal (dom pred w sidePrf : Expr) : MetaM Expr := do
+  let u ← getLevel dom
+  pure (mkAppN (mkConst ``Subtype.mk [u]) #[dom, pred, w, sidePrf])
+
+/-- Value constructor for `Exists` goals (explicit implicits). -/
+def mkExistsVal (dom pred w sidePrf : Expr) : MetaM Expr := do
+  let u ← getLevel dom
+  pure (mkAppN (mkConst ``Exists.intro [u]) #[dom, pred, w, sidePrf])
+
+/-- Goal shape for witness synthesis: `Subtype` or `Exists` with
+domain, predicate, and value constructor. -/
+structure WitShape where
+  dom : Expr
+  pred : Expr
+  mkVal : Expr → Expr → MetaM Expr
+
+/-- Classify the goal; `none` ⟹ not a synthesis goal. -/
+def classify (goal : Expr) : MetaM (Option WitShape) := do
   let ty ← whnf goal
   match ty.getAppFn with
-  | .const ``Subtype _ => pure ()
-  | _ => return .failure []
-  let args := ty.getAppArgs
-  if args.size != 2 then return .failure []
-  let dom := args[0]!
-  let pred := args[1]!
-  let cands ← candidates dom bound
+  | .const ``Subtype _ =>
+    let args := ty.getAppArgs
+    if args.size != 2 then return none
+    let dom := args[0]!
+    let pred := args[1]!
+    pure (some { dom := dom, pred := pred, mkVal := mkSubtypeVal dom pred })
+  | .const ``Exists _ =>
+    let args := ty.getAppArgs
+    if args.size != 2 then return none
+    let dom := args[0]!
+    let pred := args[1]!
+    pure (some { dom := dom, pred := pred, mkVal := mkExistsVal dom pred })
+  | _ => pure none
+
+/-- Try every candidate: build the value, close the side condition with
+`decide`/`omega`/`simp_all`/`rfl`. -/
+def run (bound : Nat := searchBound) : TacticM ProcedureOutcome := do
+  let goal ← getMainTarget
+  let some shape ← classify goal | return .failure []
+  let cands ← candidates shape.dom bound
   if cands.isEmpty then return .failure []
   let s1 ← `(tactic| decide)
   let s2 ← `(tactic| omega)
@@ -54,11 +83,10 @@ def run (bound : Nat := searchBound) : TacticM ProcedureOutcome := do
     let snapshot ← saveState
     try
       let mvar ← getMainGoal
-      let sideTy := mkApp pred w
+      let sideTy := mkApp shape.pred w
       let sidePrf ← mkFreshExprSyntheticOpaqueMVar sideTy
       -- explicit implicits from the goal's own `dom`/`pred`: no inference.
-      let u ← getLevel dom
-      let val := mkAppN (mkConst ``Subtype.mk [u]) #[dom, pred, w, sidePrf]
+      let val ← shape.mkVal w sidePrf
       mvar.assign val
       replaceMainGoal (sidePrf.mvarId! :: others.filter (· != mvar))
       let mut closed := false

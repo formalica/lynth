@@ -24,3 +24,14 @@ def btrue : { b : Bool // b = true } := by lynth
 #print axioms hneg
 #print axioms hpos
 #print axioms btrue
+
+-- existential goals use the same enumeration machinery
+theorem ex_nat : ∃ n : Nat, n > 5 := by lynth
+
+theorem ex_int : ∃ n : Int, n < 0 := by lynth
+
+theorem ex_conj : ∃ n : Nat, n > 3 ∧ n < 6 := by lynth
+
+#print axioms ex_nat
+#print axioms ex_int
+#print axioms ex_conj
