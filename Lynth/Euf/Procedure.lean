@@ -33,6 +33,16 @@ def collectEdges : TacticM (Array (Expr × Expr × Expr)) := do
     | none => pure ()
   pure edges
 
+/-- All subterms of `e` (including `e`), for congruence candidate mining. -/
+def collectSubterms : Expr → List Expr
+  | e@(.app f a) => e :: (collectSubterms f ++ collectSubterms a)
+  | e@(.mdata _ b) => e :: collectSubterms b
+  | e@(.proj _ _ b) => e :: collectSubterms b
+  | e@(.lam _ _ b _) => e :: collectSubterms b
+  | e@(.forallE _ t b _) => e :: (collectSubterms t ++ collectSubterms b)
+  | e@(.letE _ t v b _) => e :: (collectSubterms t ++ collectSubterms v ++ collectSubterms b)
+  | e => [e]
+
 /-- Adjacency: for each node, `(neighbor, edgeProof, forward)` steps. -/
 abbrev Adj := Array (Array (Nat × Expr × Bool))
 
@@ -95,6 +105,39 @@ def buildProof (lhs : Expr) (path : List (Expr × Bool)) : MetaM Expr := do
     cur ← mkAppM ``Eq.trans #[cur, step]
   pure cur
 
+/-- Node id lookup (all queried exprs are pre-registered). -/
+def idxOf (atoms : Array Expr) (e : Expr) : Nat :=
+  (atoms.findIdx? (· == e)).getD 0
+
+/-- Register `e` in the atom table if absent. -/
+def reg (atoms : Array Expr) (e : Expr) : Array Expr :=
+  if (atoms.findIdx? (· == e)).isNone then atoms.push e else atoms
+
+/-- Atom table + adjacency from edges plus goal sides (including every
+function/argument subterm, so congruence candidates are nodes). -/
+def buildGraph (edges : Array (Expr × Expr × Expr)) (lhs rhs : Expr) :
+    Array Expr × Adj :=
+  Id.run do
+  let mut atoms : Array Expr := #[]
+  for (a, b, _) in edges do
+    for s in collectSubterms a ++ collectSubterms b do
+      atoms := reg atoms s
+  for s in collectSubterms lhs ++ collectSubterms rhs do
+    atoms := reg atoms s
+  let n := atoms.size
+  let mut adj : Adj := Array.replicate n #[]
+  for (a, b, prf) in edges do
+    let ia := idxOf atoms a
+    let ib := idxOf atoms b
+    adj := adj.set! ia (adj[ia]! ++ [(ib, prf, true)])
+    adj := adj.set! ib (adj[ib]! ++ [(ia, prf, false)])
+  (atoms, adj)
+
+/-- Deduplicate a list of exprs (syntactic `==`). -/
+def dedup : List Expr → List Expr
+  | [] => []
+  | e :: rest => if rest.any (· == e) then dedup rest else e :: dedup rest
+
 /-- Try to close an `Eq` goal by equality closure. -/
 def run : TacticM ProcedureOutcome := do
   let goal ← getMainTarget
@@ -104,24 +147,43 @@ def run : TacticM ProcedureOutcome := do
     evalTactic rfl
     if (← getUnsolvedGoals).isEmpty then return .success
     else return .failure []
-  let edges ← collectEdges
-  if edges.isEmpty then return .failure []
-  -- atom table over all edge endpoints + goal sides
-  let mut atoms : Array Expr := #[]
-  let idxOf : Array Expr → Expr → Nat :=
-    fun arr e => (arr.findIdx? (· == e)).getD 0
-  for (a, b, _) in edges do
-    if (atoms.findIdx? (· == a)).isNone then atoms := atoms.push a
-    if (atoms.findIdx? (· == b)).isNone then atoms := atoms.push b
-  if (atoms.findIdx? (· == lhs)).isNone then atoms := atoms.push lhs
-  if (atoms.findIdx? (· == rhs)).isNone then atoms := atoms.push rhs
-  let n := atoms.size
-  let mut adj : Adj := Array.replicate n #[]
-  for (a, b, prf) in edges do
-    let ia := idxOf atoms a
-    let ib := idxOf atoms b
-    adj := adj.set! ia (adj[ia]! ++ [(ib, prf, true)])
-    adj := adj.set! ib (adj[ib]! ++ [(ia, prf, false)])
+  let edges0 ← collectEdges
+  if edges0.isEmpty then return .failure []
+  -- Congruence closure fixpoint: `f₁ ~ f₂` and `a₁ ~ a₂` give
+  -- `f₁ a₁ = f₂ a₂` with a `congr` proof term. Fuel-bounded.
+  let mut edges := edges0
+  let mut rounds := 8
+  let mut changed := true
+  while changed && rounds > 0 do
+    changed := false
+    rounds := rounds - 1
+    let (atoms, adj) := buildGraph edges lhs rhs
+    let subs := dedup (collectSubterms lhs ++ collectSubterms rhs ++
+      (edges.toList.flatMap fun (a, b, _) => collectSubterms a ++ collectSubterms b))
+    let apps := subs.filter fun e => match e with
+      | .app _ _ => true
+      | _ => false
+    for u in apps do
+      for v in apps do
+        if u != v then
+          match (u, v) with
+          | (.app f1 a1, .app f2 a2) =>
+            let i1 := idxOf atoms f1; let j1 := idxOf atoms a1
+            let i2 := idxOf atoms f2; let j2 := idxOf atoms a2
+            let iu := idxOf atoms u; let iv := idxOf atoms v
+            match (bfsPath adj i1 i2, bfsPath adj j1 j2, bfsPath adj iu iv) with
+            | (some pf, some pa, none) =>
+              try
+                let hf ← buildProof f1 pf
+                let ha ← buildProof a1 pa
+                let h ← mkAppM ``congr #[hf, ha]
+                edges := edges.push (u, v, h)
+                changed := true
+              catch _ => pure ()
+            | _ => pure ()
+          | _ => pure ()
+  -- Final reachability over the congruence-closed graph.
+  let (atoms, adj) := buildGraph edges lhs rhs
   let s := idxOf atoms lhs
   let t := idxOf atoms rhs
   match bfsPath adj s t with
