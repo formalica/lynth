@@ -214,6 +214,9 @@ def buildSys : TacticM (Option (List Fourier.LeC)) := do
       | none => return none
       | some ts => raw := raw ++ ts.toArray
   if raw.isEmpty then return none
+  -- Explosion guard: FM can double constraints per eliminated variable;
+  -- oversized systems skip the oracle (`omega` still tries downstream).
+  if 48 < raw.size then return none
   let nVars := raw.foldl (fun m t => Nat.max m t.coeffs.size) 0
   let nOrig := raw.size
   let sys := raw.toList.zipIdx.map fun (t, k) =>

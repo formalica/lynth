@@ -16,7 +16,7 @@ open Lean Elab Tactic Meta
 def searchBound : Nat := 64
 
 /-- Candidate witnesses for a domain type: `Nat` enumerates `0..bound`;
-`Int` interleaves `0, 1, -1, 2, -2, …`. -/
+`Int` interleaves `0, 1, -1, 2, -2, …`; `Bool` tries both values. -/
 def candidates (dom : Expr) (bound : Nat) : MetaM (List Expr) := do
   let dom ← whnfR dom
   if dom.isConstOf ``Nat then
@@ -26,6 +26,8 @@ def candidates (dom : Expr) (bound : Nat) : MetaM (List Expr) := do
     let neg := (List.range bound).map fun w => mkApp (mkConst ``Int.negSucc) (mkNatLit w)
     -- interleave 0, 1, -1, 2, -2, …
     pure ((pos.zip neg).flatMap fun (p, n) => [p, n] |>.take bound)
+  else if dom.isConstOf ``Bool then
+    pure [mkConst ``Bool.true, mkConst ``Bool.false]
   else pure []
 
 /-- Try `Subtype.mk w ?side` for each candidate, closing the side

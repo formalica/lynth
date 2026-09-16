@@ -169,6 +169,14 @@ def dedup : List Expr → List Expr
 set with `congr` proof terms. Fuel-bounded. -/
 def congrClose (edges0 : Array (Expr × Expr × Expr)) (seeds : List Expr) :
     TacticM (Array (Expr × Expr × Expr)) := do
+  -- Explosion guard: huge atom graphs skip congruence mining entirely
+  -- (plain BFS over the raw edges still runs downstream).
+  let nAtoms := dedup (seeds.flatMap collectSubterms ++
+    (edges0.toList.flatMap fun (a, b, _) =>
+      collectSubterms a ++ collectSubterms b)) |>.length
+  if 200 < nAtoms then
+    logInfo "[lynth:euf] atom graph too large, skipping congruence"
+    return edges0
   let mut edges := edges0
   let mut rounds := 8
   let mut changed := true

@@ -6,7 +6,7 @@
 | `Arith` (`Lynth/Arith`) | `LinSys` (`Linear.lean`); `LeC` ℚ-systems (`Fourier.lean`) | FM elimination with Farkas lineage + tableau Simplex à la Dutertre–de Moura, differential-tested (`Fourier.solve`, `Simplex.solve`); `Recognize` translates `Int`/`Nat` comparisons exactly (`+1` shifts for strict) | certs traced; kernel-checked `omega` closes | Simplex core done (models); Farkas extraction from Simplex rows + `lynth_farkas` validation TODO |
 | `EUF` (`Lynth/Euf`) | equality graph over `Eq` hyps (`Closure.lean` union-find) | BFS path search + congruence fixpoint (`congr` edges) + `Ne`/`False` close by contradiction | `Eq.trans`/`Eq.symm`/`congr` proof terms, kernel-checked, zero axioms | done; failure shares derived equalities into context (`shareDerived`) for later procedures |
 | `Ring` (`Lynth/Ring`) | semiring identities | kernel-checked `ring` normalizer (cf. Z3 `grobner`/`polynomial`) | `ring` | done |
-| `Witness` (`Lynth/Witness`) | `Subtype` goals | `Nat` range + `Int` interleave enumeration (bound 64) | explicit `Subtype.mk` term + `decide/omega/simp_all/rfl` side close | `Nat`+`Int` done; other domains TODO |
+| `Witness` (`Lynth/Witness`) | `Subtype` goals | `Nat` range + `Int` interleave enumeration (bound 64) + `Bool` | explicit `Subtype.mk` term + `decide/omega/simp_all/rfl` side close | `Nat`+`Int`+`Bool` done; other domains TODO |
 | Simplex core | — | — | — | DONE (`Simplex.lean`); Farkas extraction TODO |
 | CDCL(T) loop | — | — | — | TODO |
 
