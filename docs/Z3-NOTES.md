@@ -34,7 +34,7 @@ cuts on top; equalities shared through congruence-closure adapters.
 
 | Z3 piece | lynth status |
 |---|---|
-| CDCL core (`sat_solver.cpp`) | CDCL with first-UIP learning + backjump + VSIDS (`Lynth/Sat/Cdcl.lean`); DPLL reference (`Solver.lean`); watched literals / restarts TODO |
+| CDCL core (`sat_solver.cpp`) | CDCL with first-UIP learning + backjump + VSIDS + geometric restarts (`Lynth/Sat/Cdcl.lean`); DPLL reference (`Solver.lean`); watched literals TODO |
 | DRAT proofs (`sat_drat.*`) | SAT-cert checker stub (`Lynth/Sat/Reconstruct.lean`); resolution-trace validation TODO |
 | Simplex/LP (`math/simplex`, `math/lp`) | FM elimination with Farkas lineage (`Lynth/Arith/Fourier.lean`); tableau Simplex à la Dutertre–de Moura with models (`Lynth/Arith/Simplex.lean`), differential-tested vs FM |
 | Theory combination (`smt/*`, eq adapters) | Explanation facts with proofs (`Lynth/Procedure.lean`); no Nelson-Oppen, sharing is explicit equality facts |

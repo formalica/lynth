@@ -204,16 +204,26 @@ def backjumpLevel (learnt : Clause) (t : Trail) (level : Nat) : Nat :=
 def isTaut (cl : Clause) : Bool :=
   cl.any fun l => cl.contains (-l)
 
+/-- Geometric restart limit (MiniSAT-style): `base * 2^min(idx,8)`
+conflicts per restart period. -/
+def restartLimit (base idx : Nat) : Nat :=
+  base * 2 ^ Nat.min idx 8
+
 /-- CDCL driver. Returns `none` on fuel exhaustion (never conflated
-with UNSAT), plus the number of learned clauses. -/
+with UNSAT), plus learned-clause and restart counts. -/
 def cdcl : CNF → Trail → Order → Nat → Nat → Nat → Activities → Nat →
-    Nat → (Option SatResult × Nat)
-  | _, _, _, _, _, 0, _, _, _ => (none, 0)
-  | cnf, t, ord, level, learnt, fuel + 1, act, confTotal, maxV =>
-    match propagateAll cnf t ord level fuel with
-    | (.stuck, _, _) => (none, learnt)
+    Nat → Nat → Nat → Nat → (Option SatResult × Nat × Nat)
+  | _, _, _, _, _, 0, _, _, _, _, _, _ => (none, 0, 0)
+  | cnf, t, ord, level, learnt, fuel + 1, act, confTotal, maxV,
+      rIdx, sinceR, rBase =>
+    -- restart: keep learnt clauses + activities, erase decisions
+    if restartLimit rBase rIdx ≤ sinceR && level != 0 then
+      cdcl cnf (eraseAbove t 0) [] 0 learnt fuel act confTotal maxV
+        (rIdx + 1) 0 rBase
+    else match propagateAll cnf t ord level fuel with
+    | (.stuck, _, _) => (none, learnt, rIdx)
     | (.conflict c, t1, ord1) =>
-      if level == 0 then (some .unsat, learnt)
+      if level == 0 then (some .unsat, learnt, rIdx)
       else
         let learntCl := analyze c t1 ord1 level fuel
         -- Useless learnt clauses are skipped (never re-added); the
@@ -231,19 +241,21 @@ def cdcl : CNF → Trail → Order → Nat → Nat → Nat → Activities → Na
         let act' :=
           if useful then decayAct (bumpAct act learntCl) confTotal else act
         cdcl cnf' t' ord' blvl learnt' fuel
-          act' (confTotal + 1) maxV
+          act' (confTotal + 1) maxV rIdx (sinceR + 1) rBase
     | (.ok, t', ord') =>
       match pickVsids t' act maxV with
       | none =>
         -- no conflict, every variable assigned: model found
-        (some (.sat (t'.map fun e => e.val)), learnt)
+        (some (.sat (t'.map fun e => e.val)), learnt, rIdx)
       | some l =>
         let v := varOf l
         cdcl cnf (tassign t' v (0 < l) (level + 1) none)
           (ord' ++ [v]) (level + 1) learnt fuel act confTotal maxV
+          rIdx sinceR rBase
 
-/-- Top-level CDCL solver: result plus learned-clause count. -/
-def cdclSolve (cnf : CNF) (fuel : Nat := 10000) : Option SatResult × Nat :=
-  cdcl cnf [] [] 0 0 fuel #[] 0 (numVars cnf)
+/-- Top-level CDCL solver: result, learned-clause count, restart count. -/
+def cdclSolve (cnf : CNF) (fuel : Nat := 10000) (restartBase : Nat := 100) :
+    Option SatResult × Nat × Nat :=
+  cdcl cnf [] [] 0 0 fuel #[] 0 (numVars cnf) 0 0 restartBase
 
 end Lynth.Sat.Cdcl

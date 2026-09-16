@@ -5,10 +5,10 @@ import Lynth.Sat.Cdcl
 open Lynth.Sat
 
 /-- Project a CDCL result to `Bool` (`none` = out of fuel). -/
-def proj : Option SatResult × Nat → Option Bool
-  | (some (.sat _), _) => some true
-  | (some .unsat, _) => some false
-  | (none, _) => none
+def proj : Option SatResult × Nat × Nat → Option Bool
+  | (some (.sat _), _, _) => some true
+  | (some .unsat, _, _) => some false
+  | (none, _, _) => none
 
 /-- Project a DPLL result to `Bool`. -/
 def projD : SatResult → Bool
@@ -29,19 +29,19 @@ def projD : SatResult → Bool
 
 -- immediate (level-0) conflicts learn nothing: UNSAT is direct
 #eval match Cdcl.cdclSolve [[1], [-1]] 1000 with
-  | (some .unsat, n) => n == 0
+  | (some .unsat, n, _) => n == 0
   | _ => false
 -- expect true
 
 -- deeper UNSAT learns at least one clause (pigeonhole needs search)
 #eval match Cdcl.cdclSolve [[1, 2], [-1, 2], [1, -2], [-1, -2]] 1000 with
-  | (some .unsat, n) => decide (0 < n)
+  | (some .unsat, n, _) => decide (0 < n)
   | _ => false
 -- expect true
 
 -- SAT models verify against the original CNF
 #eval match Cdcl.cdclSolve [[1, 2], [-1, 2], [-1, -2]] 1000 with
-  | (some (.sat a), _) => checkSat [[1, 2], [-1, 2], [-1, -2]] a
+  | (some (.sat a), _, _) => checkSat [[1, 2], [-1, 2], [-1, -2]] a
   | _ => false
 -- expect true
 
@@ -51,3 +51,12 @@ def projD : SatResult → Bool
 #eval (proj (Cdcl.cdclSolve [[1, 2], [-1, 2], [1, -2], [-1, -2]] 1000),
   projD (solve [[1, 2], [-1, 2], [1, -2], [-1, -2]] 1000))
 -- expect (some false, false)
+
+-- restarts fire with an aggressive base yet the verdict stays UNSAT
+-- (3-var cube needs several conflicts, forcing restart periods)
+#eval match Cdcl.cdclSolve
+    [[1, 2, 3], [1, 2, -3], [1, -2, 3], [1, -2, -3],
+     [-1, 2, 3], [-1, 2, -3], [-1, -2, 3], [-1, -2, -3]] 1000 1 with
+  | (some .unsat, _, r) => decide (0 < r)
+  | _ => false
+-- expect true

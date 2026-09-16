@@ -78,7 +78,7 @@ def encodeNeg (f : PropForm) (nAtoms : Nat) : CNF :=
 false-positive. -/
 def isTautology (f : PropForm) (nAtoms : Nat) (fuel : Nat := 10000) : Bool :=
   match Cdcl.cdclSolve (encodeNeg f nAtoms) fuel with
-  | (some .unsat, _) => true
+  | (some .unsat, _, _) => true
   | _ => false
 
 end Lynth.Sat.Encode

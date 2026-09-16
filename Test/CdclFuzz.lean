@@ -34,8 +34,8 @@ def genCNF : Nat → Nat → Nat → Nat → CNF × Nat
 def checkSeed (s : Nat) : Bool :=
   let (cnf, _) := genCNF (s + 1) 12 4 3
   match Cdcl.cdclSolve cnf 10000, solve cnf 10000 with
-  | (some (.sat a), _), (.sat _) => checkSat cnf a
-  | (some .unsat, _), .unsat => true
+  | (some (.sat a), _, _), (.sat _) => checkSat cnf a
+  | (some .unsat, _, _), .unsat => true
   | _, _ => false
 
 -- mismatch count over 80 seeds; expect 0
