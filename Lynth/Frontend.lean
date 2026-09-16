@@ -2,6 +2,7 @@ import Lean
 import Lynth.Procedure
 import Lynth.Euf.Procedure
 import Lynth.Ring.Procedure
+import Lynth.Nlin.Procedure
 import Lynth.Witness
 import Lynth.Sat.Procedure
 import Lynth.Arith.Procedure
@@ -30,7 +31,8 @@ def dispatch : TacticM Unit := do
     ("euf", Lynth.Euf.Procedure.run),
     ("ring", Lynth.Ring.Procedure.run),
     ("sat", Lynth.Sat.Procedure.run),
-    ("arith", Lynth.Arith.Procedure.run)
+    ("arith", Lynth.Arith.Procedure.run),
+    ("nlin", Lynth.Nlin.Procedure.run)
   ]
   let mut notes : Array String := #[]
   for (name, proc) in procs do
