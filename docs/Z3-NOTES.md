@@ -1,0 +1,50 @@
+# Z3 implementation notes (pinned)
+
+Pinned Z3 commit: `d5d92669ebccc2bb00cecfa72f0f2787941ba3ce`
+(cloned to `/tmp/opencode/z3`; `git rev-parse HEAD`).
+
+## SAT core — `src/sat/`
+
+Entry: `src/sat/sat_solver.cpp` — `solver::propagate_core` (unit
+propagation, line ~989), `solver::resolve_conflict` /
+`resolve_conflict_core` (conflict analysis, lines ~2464–2521),
+`resolve_conflict_for_unsat_core` (line ~2761). Supporting machinery:
+
+- watched literals + binary/non-learned clause paths (line ~2265),
+- DRAT proof logging: `src/sat/sat_drat.h`, `sat_drat.cpp`,
+- equation elimination: `sat_elim_eqs.cpp`, AIG finding, ANF simplifier,
+  asymmetric branching (`sat_asymm_branch.cpp`), big-clause handling.
+
+So Z3 SAT = CDCL with first-UIP learning, VSIDS-style heuristics,
+restarts, preprocessing/inprocessing, and proof emission.
+
+## Arithmetic — `src/math/`, `src/smt/`
+
+- `src/math/simplex/simplex.h` — `class simplex` (legacy tableau Simplex).
+- `src/math/lp/` — modern LP solver (`lp_settings.h`:
+  `simplex_strategy_enum`), used by the arithmetic theory solver.
+- `src/smt/` — theory integration: `arith_eq_solver.*`,
+  `arith_eq_adapter.*`, `smt_arith_value.*`, `diff_logic.h`,
+  plus `dyn_ack`, `mam`, `qi_queue` (E-matching/MBQI for quantifiers).
+
+So Z3 LRA = Simplex over rationals; integers via branch-and-bound and
+cuts on top; equalities shared through congruence-closure adapters.
+
+## What lynth borrows (incrementally)
+
+| Z3 piece | lynth status |
+|---|---|
+| CDCL core (`sat_solver.cpp`) | DPLL + unit propagation + pure literals (`Lynth/Sat/Solver.lean`); clause learning / VSIDS / restarts TODO |
+| DRAT proofs (`sat_drat.*`) | SAT-cert checker stub (`Lynth/Sat/Reconstruct.lean`); resolution-trace validation TODO |
+| Simplex/LP (`math/simplex`, `math/lp`) | FM-style internal language stub (`Lynth/Arith/Linear.lean`); Simplex core TODO |
+| Theory combination (`smt/*`, eq adapters) | Explanation facts with proofs (`Lynth/Procedure.lean`); no Nelson-Oppen, sharing is explicit equality facts |
+| Untrusted oracle + proof | Oracle-guided kernel-checked tactics today; `lynth_sat_resolve` / `lynth_farkas` axioms track future certificate soundness |
+
+## Incremental plan
+
+1. CNF translation from Lean `Prop` skeletons (Tseitin) into `Lynth.Sat.Syntax.CNF`.
+   DONE for goal skeletons (`Encode.lean`, `Abstract.lean`); hypotheses TODO.
+2. Learned clauses + resolution-trace checker → discharge `lynth_sat_resolve`.
+3. Simplex tableau over `Rat` in `Lynth.Arith`, Farkas extraction → discharge `lynth_farkas`.
+4. Congruence-closure (EUF) procedure for `var = value` fact propagation.
+5. CDCL(T) loop: partial assignments → theory hooks → explanation clauses.
