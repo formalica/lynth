@@ -22,6 +22,11 @@ example (x y : Int) (h : x + 2 * y = 10) : 2 * x + 4 * y ≤ 20 := by
   lynth_trace_sys
   omega
 
+/-- `Nat` comparisons translate too (`Nat` subtraction stays opaque). -/
+example (x : Nat) (h : x ≤ 1) : x ≤ 5 := by
+  lynth_trace_sys
+  omega
+
 theorem arith_fm1 (x : Int) (h1 : x ≤ 1) (h2 : 2 ≤ x) : x ≤ 0 := by lynth
 
 theorem arith_fm2 (x y : Int) (h : x + 2 * y = 10) : 2 * x + 4 * y = 20 := by lynth

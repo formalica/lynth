@@ -198,7 +198,8 @@ def buildSys : TacticM (Option (List Fourier.LeC)) := do
   let atoms ← IO.mkRef #[]
   let mut raw : Array LinTerm := #[]
   for decl in ← getLCtx do
-    if ← isProp decl.type then
+    -- skip auxiliary decls (e.g. Lean's `_example` self-reference)
+    if (decl.kind == .default) && (← isProp decl.type) then
       if let some (k, a, b) := ← asComp decl.type then
         if let some natMode := ← intOrNatMode a then
           raw := raw ++ (← hypTerms atoms k a b natMode).toArray

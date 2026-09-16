@@ -24,13 +24,17 @@ def hypProof : LocalDecl → Expr
   | .ldecl _ fvarId _ _ _ _ _ => .fvar fvarId
   | .cdecl _ fvarId _ _ _ _ => .fvar fvarId
 
-/-- Collect `(lhs, rhs, proof)` edges from `Eq`-typed local hypotheses. -/
+/-- Collect `(lhs, rhs, proof)` edges from `Eq`-typed local hypotheses.
+Skips auxiliary declarations (e.g. the `_example` self-reference Lean
+parks in context, which `assumption` also ignores): using it as an edge
+would "prove" a goal from itself. -/
 def collectEdges : TacticM (Array (Expr × Expr × Expr)) := do
   let mut edges := #[]
   for decl in ← getLCtx do
-    match ← asEq decl.type with
-    | some (lhs, rhs) => edges := edges.push (lhs, rhs, hypProof decl)
-    | none => pure ()
+    if (decl.kind == .default) then
+      match ← asEq decl.type with
+      | some (lhs, rhs) => edges := edges.push (lhs, rhs, hypProof decl)
+      | none => pure ()
   pure edges
 
 /-- All subterms of `e` (including `e`), for congruence candidate mining. -/

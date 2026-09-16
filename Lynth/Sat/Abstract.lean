@@ -62,10 +62,11 @@ def abstractContext : TacticM (Encode.PropForm × Nat) := do
   let goal ← getMainTarget
   let mut hyps : Encode.PropForm := .tru
   for decl in ← getLCtx do
-    let ty := decl.type
-    if ← isProp ty then
-      let h ← abstract tbl ty
-      hyps := .conj hyps h
+    -- skip auxiliary decls (e.g. Lean's `_example` self-reference)
+    if (decl.kind == .default) then
+      if ← isProp decl.type then
+        let h ← abstract tbl decl.type
+        hyps := .conj hyps h
   let g ← abstract tbl goal
   pure (.imp hyps g, (← tbl.get).size)
 
