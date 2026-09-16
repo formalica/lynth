@@ -7,6 +7,8 @@ import Lynth.Sat.Abstract
 import Lynth.Sat.Reconstruct
 import Lynth.Sat.Procedure
 import Lynth.Arith.Linear
+import Lynth.Arith.Fourier
+import Lynth.Arith.Recognize
 import Lynth.Arith.Procedure
 import Lynth.Euf.Closure
 import Lynth.Euf.Procedure

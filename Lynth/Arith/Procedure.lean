@@ -1,23 +1,39 @@
 -- Arithmetic procedure: linear (in)equalities over `Nat`/`Int`.
 --
--- Internal representation is `Lynth.Arith.LinSys`; the decision oracle is
--- Fourier-Motzkin-style elimination today (Simplex core next, mirroring
--- Z3's `src/math/simplex` + `src/math/lp`). Reconstruction is delegated
--- to kernel-checked `omega`, which validates whatever the oracle claims;
--- the Farkas-certificate path (`lynth_farkas`) is tracked in `Axioms`.
+-- Internal pipeline mirrors Z3's arithmetic theory solver split: the goal
+-- + hypotheses are translated to the procedure's own language
+-- (`Fourier.LeC` systems via `Recognize`), the FM elimination oracle
+-- (`Fourier.solve`, standing in for Z3's Simplex core) searches for a
+-- refutation with Farkas lineage, and reconstruction is kernel-checked
+-- `omega` (complete for Presburger goals). The computed certificate is
+-- traced; `lynth_farkas` tracks future direct certificate reconstruction.
 import Lean
 import Lynth.Procedure
 import Lynth.Arith.Linear
+import Lynth.Arith.Fourier
+import Lynth.Arith.Recognize
 
 namespace Lynth.Arith.Procedure
 
 open Lean Elab Tactic
 
-/-- Try to close a linear-arithmetic goal. `omega` is complete for
-Presburger goals and kernel-checked, so it doubles as oracle +
-reconstructor for this fragment. -/
+/-- Try to close a linear-arithmetic goal. Runs the FM oracle for a
+refutation certificate, then closes with kernel-checked `omega`. -/
 def run : TacticM ProcedureOutcome := do
   let snapshot ← saveState
+  -- FM oracle attempt (pure MetaM read; no goal modification).
+  try
+    match ← Recognize.buildSys with
+    | some sys =>
+      match Fourier.solve sys 128 with
+      | some cert =>
+        logInfo m!"[lynth:arith] FM refutation found (Farkas size {cert.length})"
+      | none =>
+        logInfo "[lynth:arith] FM inconclusive (relaxation SAT or nonlinear)"
+    | none => pure ()
+  catch _ => pure ()
+  restoreState snapshot
+  -- Kernel-checked reconstruction (complete for Presburger `Int`/`Nat`).
   try
     let om ← `(tactic| omega)
     evalTactic om
