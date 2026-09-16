@@ -67,7 +67,7 @@ theorem mix1 (p : Nat → Prop) (h : ∀ n, p n) : ∃ n, p (n + 1) := by lynth
 -- bound-directed synthesis: thresholds beyond enumeration range
 theorem thr1 : ∃ n : Nat, n > 100 := by lynth
 
-theorem thr2 : { n : Nat // 100 ≤ n ∧ n ≤ 105 } := by lynth
+def thr2 : { n : Nat // 100 ≤ n ∧ n ≤ 105 } := by lynth
 
 theorem thr3 : ∃ n : Int, n < -100 := by lynth
 
