@@ -77,8 +77,8 @@ def encodeNeg (f : PropForm) (nAtoms : Nat) : CNF :=
 `none` (out of fuel) reads as `false`: inconclusive, never a
 false-positive. -/
 def isTautology (f : PropForm) (nAtoms : Nat) (fuel : Nat := 10000) : Bool :=
-  match Cdcl.cdclSolve (encodeNeg f nAtoms) fuel with
-  | (some .unsat, _, _) => true
+  match (Cdcl.cdclSolve (encodeNeg f nAtoms) fuel).result with
+  | some .unsat => true
   | _ => false
 
 end Lynth.Sat.Encode

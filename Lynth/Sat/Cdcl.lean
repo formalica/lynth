@@ -169,30 +169,71 @@ def resolve (c r : Clause) (l : Lit) : Clause :=
   let r' := r.filter (· != -l)
   c' ++ r'.filter fun m => !(c'.contains m)
 
+/-- A resolution step: resolve `current` (∋ `pivot`) with `reason`
+(∋ `¬pivot`). The resolvent is recomputed by the checker. -/
+abbrev ResStep := Clause × Lit
+
+/-- Resolution trace: the conflict clause plus derivation steps. -/
+abbrev ResTrace := List ResStep
+
+/-- A validated learning event: conflict, steps, and final learnt clause. -/
+abbrev TraceEntry := Clause × ResTrace × Clause
+
+/-- CDCL output bundle. -/
+structure CdclOut where
+  result : Option SatResult
+  learnt : Nat
+  restarts : Nat
+  traces : List TraceEntry
+  deriving Repr
+
 /-- Last-assigned variable among `vars` per `order`. -/
 def lastAssigned (vars : List Nat) (order : Order) : Option Nat :=
   order.reverse.find? vars.contains
 
 /-- First-UIP conflict analysis: resolve the conflict clause with reasons
 of last-assigned current-level literals until at most one current-level
-literal remains. -/
+literal remains. Records the resolution trace alongside. -/
+def analyzeT (conflict : Clause) (t : Trail) (ord : Order) (level : Nat)
+    (fuel : Nat) : Clause × ResTrace :=
+  go conflict [] fuel
+where
+  go (c : Clause) (tr : ResTrace) : Nat → Clause × ResTrace
+    | 0 => (c, tr.reverse)
+    | fuel + 1 =>
+      let curVars := (c.filter fun l => tlevel t (varOf l) == level).map varOf
+      if curVars.length ≤ 1 then (c, tr.reverse)
+      else match lastAssigned curVars ord with
+        | none => (c, tr.reverse)
+        | some v =>
+          match c.find? fun l => varOf l == v with
+          | none => (c, tr.reverse)
+          | some l =>
+            match treason t v with
+            | none => (c, tr.reverse)
+            | some r => go (resolve c r l) ((r, l) :: tr) fuel
+
+/-- First-UIP conflict analysis (trace-discarding wrapper). -/
 def analyze (conflict : Clause) (t : Trail) (ord : Order) (level : Nat)
     (fuel : Nat) : Clause :=
-  match fuel with
-  | 0 => conflict
-  | fuel + 1 =>
-    let curVars := (conflict.filter fun l => tlevel t (varOf l) == level).map varOf
-    if curVars.length ≤ 1 then conflict
-    else match lastAssigned curVars ord with
-      | none => conflict
-      | some v =>
-        -- find the literal of `v` in the clause
-        match conflict.find? fun l => varOf l == v with
-        | none => conflict
-        | some l =>
-          match treason t v with
-          | none => conflict -- decision literal: cannot resolve further
-          | some r => analyze (resolve conflict r l) t ord level fuel
+  (analyzeT conflict t ord level fuel).1
+
+/-- Independent trace checker: replay the derivation, verifying every
+parent against the clause database. -/
+def checkTrace (db : CNF) (conflict : Clause) (steps : ResTrace)
+    (learnt : Clause) : Bool :=
+  if !(db.contains conflict) then false
+  else match go conflict steps with
+    | some final => final == learnt
+    | none => false
+where
+  go : Clause → ResTrace → Option Clause
+    | cur, [] => some cur
+    | cur, (r, l) :: rest =>
+      if !(db.contains r) then none
+      else if !(cur.contains l) then none
+      else if !(r.contains (-l)) then none
+      else go (resolve cur r l) rest
 
 /-- Backjump level: max level in `learnt` excluding the asserting
 (current-level) literal. -/
@@ -210,27 +251,31 @@ def restartLimit (base idx : Nat) : Nat :=
   base * 2 ^ Nat.min idx 8
 
 /-- CDCL driver. Returns `none` on fuel exhaustion (never conflated
-with UNSAT), plus learned-clause and restart counts. -/
+with UNSAT). Every learnt clause carries its resolution trace. -/
 def cdcl : CNF → Trail → Order → Nat → Nat → Nat → Activities → Nat →
-    Nat → Nat → Nat → Nat → (Option SatResult × Nat × Nat)
-  | _, _, _, _, _, 0, _, _, _, _, _, _ => (none, 0, 0)
+    Nat → Nat → Nat → Nat → List TraceEntry → CdclOut
+  | _, _, _, _, _, 0, _, _, _, _, _, _, acc =>
+    { result := none, learnt := 0, restarts := 0, traces := acc }
   | cnf, t, ord, level, learnt, fuel + 1, act, confTotal, maxV,
-      rIdx, sinceR, rBase =>
+      rIdx, sinceR, rBase, acc =>
     -- restart: keep learnt clauses + activities, erase decisions
     if restartLimit rBase rIdx ≤ sinceR && level != 0 then
       cdcl cnf (eraseAbove t 0) [] 0 learnt fuel act confTotal maxV
-        (rIdx + 1) 0 rBase
+        (rIdx + 1) 0 rBase acc
     else match propagateAll cnf t ord level fuel with
-    | (.stuck, _, _) => (none, learnt, rIdx)
+    | (.stuck, _, _) =>
+      { result := none, learnt, restarts := rIdx, traces := acc }
     | (.conflict c, t1, ord1) =>
-      if level == 0 then (some .unsat, learnt, rIdx)
+      if level == 0 then
+        { result := some .unsat, learnt, restarts := rIdx, traces := acc }
       else
-        let learntCl := analyze c t1 ord1 level fuel
+        let (learntCl, steps) := analyzeT c t1 ord1 level fuel
         -- Useless learnt clauses are skipped (never re-added); the
         -- backjump below still guarantees progress.
         let useful := !(isTaut learntCl) && !(cnf.contains learntCl)
         let cnf' := if useful then cnf ++ [learntCl] else cnf
         let learnt' := if useful then learnt + 1 else learnt
+        let acc' := if useful then acc ++ [(c, steps, learntCl)] else acc
         let unclamped := backjumpLevel learntCl t1 level
         -- Clamp: always erase at least the current decision level, so
         -- every conflict strictly shrinks the trail.
@@ -241,21 +286,23 @@ def cdcl : CNF → Trail → Order → Nat → Nat → Nat → Activities → Na
         let act' :=
           if useful then decayAct (bumpAct act learntCl) confTotal else act
         cdcl cnf' t' ord' blvl learnt' fuel
-          act' (confTotal + 1) maxV rIdx (sinceR + 1) rBase
+          act' (confTotal + 1) maxV rIdx (sinceR + 1) rBase acc'
     | (.ok, t', ord') =>
       match pickVsids t' act maxV with
       | none =>
         -- no conflict, every variable assigned: model found
-        (some (.sat (t'.map fun e => e.val)), learnt, rIdx)
+        { result := some (.sat (t'.map fun e => e.val)), learnt,
+          restarts := rIdx, traces := acc }
       | some l =>
         let v := varOf l
         cdcl cnf (tassign t' v (0 < l) (level + 1) none)
           (ord' ++ [v]) (level + 1) learnt fuel act confTotal maxV
-          rIdx sinceR rBase
+          rIdx sinceR rBase acc
 
-/-- Top-level CDCL solver: result, learned-clause count, restart count. -/
+/-- Top-level CDCL solver: result, learned-clause count, restart count,
+and resolution traces for every learnt clause. -/
 def cdclSolve (cnf : CNF) (fuel : Nat := 10000) (restartBase : Nat := 100) :
-    Option SatResult × Nat × Nat :=
-  cdcl cnf [] [] 0 0 fuel #[] 0 (numVars cnf) 0 0 restartBase
+    CdclOut :=
+  cdcl cnf [] [] 0 0 fuel #[] 0 (numVars cnf) 0 0 restartBase []
 
 end Lynth.Sat.Cdcl

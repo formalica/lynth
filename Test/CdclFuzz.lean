@@ -33,10 +33,20 @@ def genCNF : Nat → Nat → Nat → Nat → CNF × Nat
 /-- Agreement + model check for one seed. -/
 def checkSeed (s : Nat) : Bool :=
   let (cnf, _) := genCNF (s + 1) 12 4 3
-  match Cdcl.cdclSolve cnf 10000, solve cnf 10000 with
-  | (some (.sat a), _, _), (.sat _) => checkSat cnf a
-  | (some .unsat, _, _), .unsat => true
+  match (Cdcl.cdclSolve cnf 10000).result, solve cnf 10000 with
+  | some (.sat a), (.sat _) => checkSat cnf a
+  | some .unsat, .unsat => true
   | _, _ => false
 
 -- mismatch count over 80 seeds; expect 0
 #eval (List.range 80).foldl (fun n s => if checkSeed s then n else n + 1) 0
+
+/-- Every recorded resolution trace validates against the final DB. -/
+def checkTraces (s : Nat) : Bool :=
+  let (cnf, _) := genCNF (s + 1) 12 4 3
+  let o := Cdcl.cdclSolve cnf 10000
+  let db := cnf ++ (o.traces.map fun (_, _, learnt) => learnt)
+  o.traces.all fun (c, steps, learnt) => Cdcl.checkTrace db c steps learnt
+
+#eval (List.range 80).foldl (fun n s => if checkTraces s then n else n + 1) 0
+-- expect 0
