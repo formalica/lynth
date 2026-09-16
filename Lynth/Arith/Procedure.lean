@@ -13,6 +13,7 @@ import Lynth.Procedure
 import Lynth.Arith.Linear
 import Lynth.Arith.Fourier
 import Lynth.Arith.Simplex
+import Lynth.Arith.BranchBound
 import Lynth.Arith.Recognize
 
 namespace Lynth.Arith.Procedure
@@ -30,6 +31,10 @@ def run : TacticM ProcedureOutcome := do
     | some sys =>
       let fm := Fourier.solve sys 128
       let sx := Simplex.solve (sys.map fun c => (c.coeffs, c.const)) 1024
+      -- branch-and-bound closes the ℤ-completeness gap of the relaxations
+      let nVars := sys.foldl (fun m c => Nat.max m c.coeffs.length) 0
+      let bbv := BranchBound.bb (sys.map fun c => (c.coeffs, c.const))
+        (List.range nVars) 4 1024
       match fm, sx with
       | some cert, some none =>
         logInfo m!"[lynth:arith] FM+Simplex agree: refutation (Farkas size {cert.length})"
@@ -38,7 +43,11 @@ def run : TacticM ProcedureOutcome := do
       | none, some none =>
         logInfo "[lynth:arith] WARNING: Simplex refutes but FM does not (oracle mismatch)"
       | _, _ =>
-        logInfo "[lynth:arith] oracles inconclusive (relaxation SAT or nonlinear)"
+        match bbv with
+        | .unsat =>
+          logInfo "[lynth:arith] branch-and-bound refutation (needs integrality)"
+        | _ =>
+          logInfo "[lynth:arith] oracles inconclusive (relaxation SAT or nonlinear)"
     | none => pure ()
   catch _ => pure ()
   restoreState snapshot

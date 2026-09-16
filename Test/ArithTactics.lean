@@ -27,6 +27,15 @@ example (x : Nat) (h : x ≤ 1) : x ≤ 5 := by
   lynth_trace_sys
   omega
 
+/-- B&B-only refutation: `2x = 3 ∧ x ≥ 1` is ℚ-SAT but ℤ-UNSAT. -/
+example (x : Int) (h : 2 * x = 3) : x ≤ 0 := by
+  lynth_trace_sys
+  omega
+
+theorem bb_demo (x : Int) (h : 2 * x = 3) : x ≤ 0 := by lynth
+
+#print axioms bb_demo
+
 theorem arith_fm1 (x : Int) (h1 : x ≤ 1) (h2 : 2 ≤ x) : x ≤ 0 := by lynth
 
 theorem arith_fm2 (x y : Int) (h : x + 2 * y = 10) : 2 * x + 4 * y = 20 := by lynth

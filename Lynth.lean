@@ -10,6 +10,7 @@ import Lynth.Sat.Procedure
 import Lynth.Arith.Linear
 import Lynth.Arith.Fourier
 import Lynth.Arith.Simplex
+import Lynth.Arith.BranchBound
 import Lynth.Arith.Recognize
 import Lynth.Arith.Procedure
 import Lynth.Euf.Closure
