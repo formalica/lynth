@@ -31,16 +31,142 @@ def diagonal (xs : List Expr) (ys : List Expr) : List (Expr × Expr) :=
 def mkProdVal (_α _β a b : Expr) : MetaM Expr := do
   mkAppM ``Prod.mk #[a, b]
 
-/-- Candidate witnesses with nesting depth (products recurse). -/
-def candidatesAux (dom : Expr) (bound depth : Nat) : MetaM (List Expr) := do
+/-- Integer literal expression. -/
+def intLit : Int → Expr
+  | Int.ofNat n => mkApp (mkConst ``Int.ofNat) (mkNatLit n)
+  | Int.negSucc n => mkApp (mkConst ``Int.negSucc) (mkNatLit n)
+
+/-- Numeric literal core (no recursion). -/
+def numLitCore : Expr → Option Int
+  | .lit (.natVal n) => some (n : Int)
+  | .app (.app (.app (.const ``OfNat.ofNat _) _) (.lit (.natVal n))) _ =>
+    some (n : Int)
+  | .app (.const ``Int.ofNat _) (.lit (.natVal n)) => some (n : Int)
+  | .app (.const ``Int.negSucc _) (.lit (.natVal n)) => some (-((n : Int) + 1))
+  | _ => none
+
+/-- Numeric literal, including one negation layer. -/
+def numLit (e : Expr) : MetaM (Option Int) := do
+  let e ← whnfR e
+  match numLitCore e with
+  | some k => pure (some k)
+  | none =>
+    match e.getAppFn with
+    | .const n _ =>
+      if n == ``Neg.neg then
+        match e.getAppArgs.back? with
+        | some a =>
+          match numLitCore a with
+          | some k => pure (some (-k))
+          | none => pure none
+        | none => pure none
+      else pure none
+    | _ => pure none
+
+/-- Comparison split after whnf: `(headName, lhs, rhs)`. -/
+def cmpSplit (e : Expr) : MetaM (Option (Name × Expr × Expr)) := do
+  let e ← whnfR e
+  match e.getAppFn with
+  | .const n _ =>
+    let args := e.getAppArgs
+    if args.size < 2 then pure none
+    else pure (some (n, args[args.size - 2]!, args[args.size - 1]!))
+  | _ => pure none
+
+/-- Bound info from a predicate: forced equality and/or lower bound
+(as integers; `Nat` clamps at `0`). -/
+structure Bounds where
+  eq : Option Int := none
+  lo : Int := 0
+
+/-- Merge: first equality wins, lower bounds maximize. -/
+def mergeB (x y : Bounds) : Bounds :=
+  { eq := x.eq <|> y.eq, lo := max x.lo y.lo }
+
+/-- Analyze a predicate body for bounds on fvar `v`.
+`flip` tracks negation polarity (`¬(a ≤ b)` ⟺ `b < a`).
+Fuel-bounded (formula depth). -/
+def analyzeBody (body : Expr) (v : FVarId) (flip : Bool) (depth : Nat := 8) :
+    MetaM Bounds := do
+  match depth with
+  | 0 => pure {}
+  | depth + 1 =>
+    let e ← whnfR body
+    match e with
+    | .app (.app (.const ``And _) a) b =>
+      pure (mergeB (← analyzeBody a v flip depth) (← analyzeBody b v flip depth))
+    | .app (.const ``Not _) a => analyzeBody a v (!flip) depth
+    | _ =>
+      match ← cmpSplit e with
+      | none => pure {}
+      | some (n, a, b) =>
+        -- normalize `GT`/`GE` and polarity (flipped LE/LT swap+dualize)
+        let (n0, a0, b0) :=
+          if n == ``GT.gt then (``LT.lt, b, a)
+          else if n == ``GE.ge then (``LE.le, b, a)
+          else (n, a, b)
+        let (nn, aa, bb) :=
+          if flip then
+            if n0 == ``LE.le then (``LT.lt, b0, a0)
+            else if n0 == ``LT.lt then (``LE.le, b0, a0)
+            else (n0, a0, b0) -- flipped `Eq` is `Ne`: no bound info
+          else (n0, a0, b0)
+        let isV : Expr → Bool :=
+          let fv := Expr.fvar v
+          (· == fv)
+        if nn == ``Eq then
+          if isV aa then
+            match ← numLit bb with
+            | some k => pure { eq := some k }
+            | none => pure {}
+          else if isV bb then
+            match ← numLit aa with
+            | some k => pure { eq := some k }
+            | none => pure {}
+          else pure {}
+        else if nn == ``LE.le then
+          -- `k ≤ v` lower-bounds `v`
+          if !(isV aa) && isV bb then
+            match ← numLit aa with
+            | some k => pure { lo := k }
+            | none => pure {}
+          else pure {}
+        else if nn == ``LT.lt then
+          -- `k < v` lower-bounds `v` at `k + 1`
+          if !(isV aa) && isV bb then
+            match ← numLit aa with
+            | some k => pure { lo := k + 1 }
+            | none => pure {}
+          else pure {}
+        else pure {}
+
+/-- Extract `(start, forced)` from a predicate by opening its binder.
+Falls back to `(0, none)` for unrecognized shapes. -/
+def boundInfo (pred : Expr) : MetaM (Int × Option Int) := do
+  let p ← whnf pred
+  match p with
+  | .lam _ _ _ _ =>
+    lambdaTelescope p fun fvars body => do
+      if fvars.size != 1 then pure (0, none)
+      else match fvars[0]! with
+        | .fvar v =>
+          let bi ← analyzeBody body v false
+          pure (bi.lo, bi.eq)
+        | _ => pure (0, none)
+  | _ => pure (0, none)
+
+/-- Candidate witnesses with nesting depth (products recurse).
+`start` shifts the search window (from bound analysis); `0` by default. -/
+def candidatesAux (dom : Expr) (bound depth : Nat) (start : Int := 0) :
+    MetaM (List Expr) := do
   let dom ← whnfR dom
   if dom.isConstOf ``Nat then
-    pure ((List.range bound).map fun w => mkNatLit w)
+    let s := start.toNat
+    pure ((List.range bound).map fun w => mkNatLit (w + s))
   else if dom.isConstOf ``Int then
-    let pos := (List.range bound).map fun w => mkApp (mkConst ``Int.ofNat) (mkNatLit w)
-    let neg := (List.range bound).map fun w => mkApp (mkConst ``Int.negSucc) (mkNatLit w)
-    -- interleave 0, 1, -1, 2, -2, …
-    pure ((pos.zip neg).flatMap fun (p, n) => [p, n] |>.take bound)
+    -- interleave start, start+1, start-1, start+2, start-2, …
+    pure (((List.range bound).map fun i =>
+      [start + Int.ofNat i, start - Int.ofNat i - 1]).flatten |>.take bound |>.map intLit)
   else if dom.isConstOf ``Bool then
     pure [mkConst ``Bool.true, mkConst ``Bool.false]
   else if dom.isAppOf ``Fin then
@@ -78,11 +204,18 @@ def candidatesAux (dom : Expr) (bound depth : Nat) : MetaM (List Expr) := do
           mkProdVal args[0]! args[1]! a b
   else pure []
 
-/-- Candidate witnesses for a domain type: `Nat` enumerates `0..bound`;
-`Int` interleaves `0, 1, -1, 2, -2, …`; `Bool` tries both values;
-`Prod` enumerates diagonally (capped). -/
-def candidates (dom : Expr) (bound : Nat) : MetaM (List Expr) :=
-  candidatesAux dom bound 4
+/-- Candidate witnesses for a domain type, directed by bound analysis:
+forced equalities short-circuit; lower bounds shift the window. -/
+def candidates (dom pred : Expr) (bound : Nat) : MetaM (List Expr) := do
+  let (start, forced) ← boundInfo pred
+  let domR ← whnfR dom
+  match forced with
+  | some k =>
+    if domR.isConstOf ``Nat then
+      pure (if k < 0 then [] else [mkNatLit k.toNat])
+    else if domR.isConstOf ``Int then pure [intLit k]
+    else candidatesAux dom bound 4 0
+  | none => candidatesAux dom bound 4 start
 
 /-- Value constructor for `Subtype` goals (explicit implicits). -/
 def mkSubtypeVal (dom pred w sidePrf : Expr) : MetaM Expr := do
@@ -124,7 +257,7 @@ def classify (goal : Expr) : MetaM (Option WitShape) := do
 def run (bound : Nat := searchBound) : TacticM ProcedureOutcome := do
   let goal ← getMainTarget
   let some shape ← classify goal | return .failure []
-  let cands ← candidates shape.dom bound
+  let cands ← candidates shape.dom shape.pred bound
   if cands.isEmpty then return .failure []
   let s1 ← `(tactic| decide)
   let s2 ← `(tactic| rfl)
