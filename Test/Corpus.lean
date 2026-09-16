@@ -37,6 +37,8 @@ theorem k6 (p : Prop) : p ∨ ¬p := by lynth
 
 theorem k7 (a : Nat) : (0 : Int) ≤ (a : Int) := by lynth
 
+theorem k8 : ∀ i : Fin 3, i.val < 3 := by lynth
+
 #eval (c7 : Nat) -- expect 4
 
 #print axioms c1
@@ -56,3 +58,4 @@ theorem k7 (a : Nat) : (0 : Int) ≤ (a : Int) := by lynth
 #print axioms k5
 #print axioms k6
 #print axioms k7
+#print axioms k8

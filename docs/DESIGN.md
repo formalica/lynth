@@ -53,24 +53,29 @@ tests depend only on Lean's native axioms.
 
 ```
 goal
- └─ Preprocessing: collect atoms, facts, type-class context
- └─ CDCL SAT core over atoms (Lean-native proofs)
-     ├─ theory hooks (procedures) called on partial assignments
-     └─ theory conflicts produce explanations → new clauses
+ └─ Frontend.dispatch: procedures in order (witness → euf → ring → sat → arith)
+     ├─ each failure returns an explanation + may assert proven facts
+     │  (e.g. EUF shares derived equalities) for later procedures
+     └─ final error lists every procedure's outcome
  └─ Procedures (each with internal representation + explanation)
-     ├─ EufLiteral / eq procedures
-     ├─ Arithmetic: LinearPol / omega / simplex certificates
-     ├─ Witness search for subtype/refinement goals (computable)
- └─ Reconstruction: certificate + reconstruction theorem = final proof
+     ├─ Witness: Subtype/Exists over Nat/Int/Bool/Prod/Fin (computable)
+     ├─ EUF: equality graph, congruence, Ne/False, sharing (zero axioms)
+     ├─ Ring: semiring normalizer
+     ├─ Sat: CDCL (learning, VSIDS, restarts, traces) over Tseitin skeleton
+     └─ Arith: FM + Simplex + branch-and-bound over exact Int/Nat translation
+ └─ Reconstruction: certificates (Farkas lineage, resolution traces) are
+    validated by independent checkers; final proofs are kernel-checked
+    tactics guided by oracle verdicts (`omega`, `grind`, `ring`, …)
 ```
 
-## Roadmap
+## Roadmap status
 
-1. `Lynth.Procedure` — explanation/result plumbing (done).
-2. `Lynth.Sat.CDCL` — core SAT solving with certificates (in progress).
-3. `Lynth.Arith.Linear` — linear arithmetic via certificates.
-4. `Lynth.Witness` — computational witness synthesis for subtype goals.
-5. Map further problem classes to procedures, extending step by step.
+Done: procedure plumbing, CDCL core, Tseitin oracle, EUF, FM, Simplex,
+branch-and-bound, witnesses, ring, reconstruction-theorem statements,
+16 green suites with native-axioms-only discipline.
+Next: watched literals, DRAT emission, Farkas-from-Simplex extraction,
+activating `lynth_sat_resolve` / `lynth_farkas` end-to-end, CDCL(T) loop
+(see `docs/PROCEDURES.md` and `docs/Z3-NOTES.md`).
 
 ## Testing discipline
 

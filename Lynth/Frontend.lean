@@ -19,7 +19,9 @@ namespace Lynth.Frontend
 
 open Lean Elab Tactic
 
-/-- Run all procedures in order until one closes the goal. -/
+/-- Run all procedures in order until one closes the goal.
+Failures accumulate notes; the final error reports every procedure's
+outcome so users can see how far the pipeline got. -/
 def dispatch : TacticM Unit := do
   let procs : List (String × TacticM ProcedureOutcome) := [
     ("witness", Lynth.Witness.run),
@@ -28,7 +30,7 @@ def dispatch : TacticM Unit := do
     ("sat", Lynth.Sat.Procedure.run),
     ("arith", Lynth.Arith.Procedure.run)
   ]
-  let mut explanations : List Explanation := []
+  let mut notes : Array String := #[]
   for (name, proc) in procs do
     match ← proc with
     | .success =>
@@ -36,7 +38,7 @@ def dispatch : TacticM Unit := do
       return
     | .failure expl =>
       logInfo m!"[lynth] procedure `{name}` failed ({expl.length} new facts)"
-      explanations := expl :: explanations
-  throwError "[lynth] all procedures failed"
+      notes := notes.push s!"- `{name}` failed ({expl.length} new facts)"
+  throwError m!"[lynth] all procedures failed:\n{"\n".intercalate notes.toList}"
 
 end Lynth.Frontend
