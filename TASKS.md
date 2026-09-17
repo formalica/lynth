@@ -72,7 +72,18 @@ Loop-friendly one-liners: `implement TASKS.md#<id>, verify, commit`.
 - Remaining (future): soundness theorem for `checkExplanation`, Lean-term
   denotes link, `lynth_farkas` activation.
 
-## Q6 — Cross-theory feedback (combination gap)
+## Q6 — DRAT emission for the SAT core
+
+- Emit standard DRAT (clause IDs + deletion) alongside internal
+  `ResTrace`s; validate emitted proofs with the internal checker on fuzz.
+- Done when: fuzz emits + validates, committed.
+
+## Q7 — Watched literals for CDCL propagation
+
+- Perf-only; semantics must not change: full fuzz agreement before/after
+  (`Test/CdclFuzz.lean` must stay 0 mismatches), committed.
+
+## Q8 — Cross-theory feedback (combination gap)
 
 Problem class Z3 solves, we don't: goals needing facts to flow
 *backward* through the pipeline. Example shape: arithmetic hyps pin
@@ -88,7 +99,7 @@ this must terminate by construction, not by fixpoint detection.
 - Start test-driven: write 2–3 concrete failing goals first, make them
   pass. Full suite green, commit.
 
-## Q7 — Chained quantifier instantiation
+## Q9 — Chained quantifier instantiation
 
 Problem class: instances that enable further instances. Example shape:
 transitive chains (`R x y`, `R y z`, `∀ a b c, R a b → R b c → R a c`
@@ -100,7 +111,7 @@ E-matching inside its loop, so derived instances become new triggers.
   dup-suppressed; terminates by construction).
 - Tests incl. a transitive-closure chain; full suite green, commit.
 
-## Q8 — BV operator coverage
+## Q10 — BV operator coverage
 
 Problem class: shifts (`≪`, `≫`), comparisons (`ult`, `ule`, `slt`),
 concat/extract, multiply/divide. Example: `(x ≪ 2) = x * 4`.
@@ -112,7 +123,7 @@ the full operator set (plus simplifications).
 - Extend the bidirectional differential fuzz + e2e `Test/BV.lean`
   goals; full suite green, commit.
 
-## Q9 — Arrays: nested stores + extensionality
+## Q11 — Arrays: nested stores + extensionality
 
 Problem class: `select` over `store (store …)`, array equalities,
 `select a i ≠ select b i → a ≠ b`.
@@ -123,7 +134,7 @@ no extensionality rule; Z3's array solver saturates both.
   yields array disequality) through the existing `Ne`-close path.
 - Tests + full suite green, commit.
 
-## Q10 — Datatype selectors and testers
+## Q12 — Datatype selectors and testers
 
 Problem class: `head`/`tail`/`get?`/`isSome` goals, e.g.
 `(h : l ≠ []) : l.head?.isSome = true`.
@@ -135,12 +146,24 @@ datatype solver also eliminates selectors and splits testers.
 - Wire as EUF sub-procedure; `Test/Datatypes.lean` additions; full
   suite green, commit.
 
-## Q11 — Scheduled regression watch (recurring tick)
+## Q13 — Finite-domain search pilot (Sudoku)
+
+Problem class: constraint problems over finite domains whose answer is
+a subtype, e.g. `{ g : SudokuGrid // Valid g ∧ extends g clues }`
+with `SudokuGrid := Fin 9 → Fin 9 → Fin 9`.
+Why we fail: `Witness` cannot form candidates (function-typed domain,
+no enumeration procedure for it) and blind enumeration caps at 256
+against a 9^81 ≈ 2×10^77 search space; `decide` needs to evaluate all
+of it (hangs/OOMs); Z3 maps this to SAT. Tiny analogues (`Fin 2 →
+Fin 2`) already close via `decide` — only scale is missing.
+- New procedure: translate decidable finite-domain constraints to CNF,
+  solve with `Cdcl.cdclSolve`, decode the model to a concrete grid,
+  verify by kernel-checked `decide`/`rfl` (search untrusted, verdict
+  proved — the standard split).
+- Pilot target: 4×4 mini-Sudoku end to end, then 9×9; tests with
+  `#print axioms` (native only); full suite green, commit.
+
+## Q14 — Scheduled regression watch (recurring tick)
 
 - `lake build` + every `Test/*.lean` suite; report failures only.
-- One-liner: `run the Q11 regression watch in /root/lynth`.
-
-## Deprioritized (no new capability — speed/format only)
-
-- DRAT emission, watched literals: correct ideas, but they change no
-  answers. Revisit after the capability gaps above are closed.
+- One-liner: `run the Q14 regression watch in /root/lynth`.

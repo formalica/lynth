@@ -47,8 +47,8 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
 
 ## Next (lowest unfinished first)
 
-- `TASKS.md#Q6` — Cross-theory feedback (combination gap: facts flowing
-  backward through the pipeline, bounded, SPEC-compliant).
+- `TASKS.md#Q6` — DRAT emission for the SAT core
+  (fuzz emits + validates).
 - Then Q7 watched literals; Q8 is the recurring regression watch.
 
 ## Open gaps / risks (honest list)
