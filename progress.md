@@ -11,7 +11,6 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   otherwise clean.
 
 ## Done (merged, green)
-
 - `lynth` tactic + 6-procedure dispatcher
   (`witness → euf → ring → sat → arith → nlin`), per-procedure failure
   notes in the final error.
@@ -30,6 +29,19 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
 - `BV` (Q4): Tseitin bit-blast (ripple-carry) + CDCL validity oracles,
   bidirectional fuzz vs brute force; `bv_decide` closes.
 - `Arith/Farkas` (Q5): Simplex row lineage + validated `DdMExplanation`s.
+- `FinSearch` (Q6 core): finite-function synthesis (`Lynth/FinSearch/`).
+  Detector + router (`Detect.lean`: cardinality estimate, named
+  cell/CNF/fuel thresholds, kernel-checked routing tests); constraint
+  recognizer (`Eq`/`Ne`/`LT`/`LE`/`And`/`Or`/`Not`/`Iff`/bounded-`∀`
+  unrolling/`List.Pairwise`/`Fintype.card`-subtype counting over
+  `Fin n`/`Bool`); one-hot + Tseitin CNF encoder with differential
+  fuzz vs brute force (`Test/FinFuzz.lean`, 0 mismatches incl. `exactK`
+  edge counts); CDCL SAT child decoding closed `fun` + `List.getD`
+  value terms, verified by `decide` (user predicates unfolded,
+  current-module only). Pilots `Test/FinSearch.lean`: 4×4 Sudoku
+  (`[propext]`), 4×4 Towers with order + counting clues
+  (`[propext, Classical.choice, Quot.sound]`), scalar routing to
+  `Witness`. Runs first in `Frontend.dispatch`, yields gracefully.
 - `Ring` (`ring`), `Nlin` (`nlinarith`) kernel-checked normalizers.
 - `Sat`: CDCL (first-UIP learning + resolution traces + checker,
   VSIDS, geometric restarts), Tseitin oracle over goal + hypotheses,
@@ -47,14 +59,18 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
 
 ## Next (lowest unfinished first)
 
-- `TASKS.md#Q6` — Finite-domain parent procedure + SAT-based finite
-  solver (Sudoku/Star Battle/Towers pilots). HIGHEST PRIORITY.
-- Then Q7 DRAT, Q8 watched literals, Q9 combination feedback,
-  Q10 chained instantiation, Q11 BV operators, Q12 nested arrays,
-  Q13 datatype selectors; Q14 is the recurring regression watch.
+- `TASKS.md#Q7` — DRAT emission for the SAT core.
+- Then Q8 watched literals (will also unblock Q6-remainder 9×9 scale),
+  Q9 combination feedback, Q10 chained instantiation, Q11 BV operators,
+  Q12 nested arrays, Q13 datatype selectors; Q14 is the recurring
+  regression watch.
 
 ## Open gaps / risks (honest list)
 
+- Q6 remainder: 9×9 Sudoku + Star Battle pilots. A 9×9 probe
+  translates but exceeds the SAT child's scale (CNF caps correctly
+  yield; raised caps hung the naive CDCL — needs Q8 watched literals
+  first). Encoder `emit` is now linear (was quadratic).
 - Lean-term denotes link for certificates (translation trusted +
   fuzz-tested; kernel re-check is the safety net).
 - Full MBQI blocked (open-term evaluation over infinite domains);

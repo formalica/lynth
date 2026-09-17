@@ -1,5 +1,10 @@
 import Lynth.Certificates
 import Lynth.Procedure
+import Lynth.FinSearch.Syntax
+import Lynth.FinSearch.Encode
+import Lynth.FinSearch.Detect
+import Lynth.FinSearch.Recognize
+import Lynth.FinSearch.Procedure
 import Lynth.Sat.Syntax
 import Lynth.Sat.Solver
 import Lynth.Sat.Cdcl

@@ -45,4 +45,6 @@ jobs:
           lake env lean Test/Datatypes.lean
           lake env lean Test/BV.lean
           lake env lean Test/BVBlast.lean
+          lake env lean Test/FinFuzz.lean
+          lake env lean Test/FinSearch.lean
       - uses: leanprover-community/docgen-action@v1
