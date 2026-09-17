@@ -1,4 +1,4 @@
-import Lynth.Axioms
+import Lynth.Certificates
 import Lynth.Procedure
 import Lynth.Sat.Syntax
 import Lynth.Sat.Solver

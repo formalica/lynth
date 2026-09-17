@@ -19,7 +19,7 @@ separate theory layer). Combination stays sequential explanation-passing.
 | `Witness` (`Lynth/Witness`) | `Subtype` + `Exists` goals | `Nat`/`Int` enumeration (256) + `Bool` + diagonal `Prod` pairs + complete `Fin n` | explicit `Subtype.mk`/`Exists.intro` terms + `decide/rfl/omega/simp_all` side close | done for scalars, pairs, finite types; other domains TODO |
 | Combination model | sequential explanation-passing (no SMT loop, per SPEC) | EUF shares proven equalities; all procedures read the enriched context | — | done (this IS the combination mechanism) |
 
-Reconstruction theorems live in `Lynth/Axioms.lean` as sound,
+Reconstruction theorems live in `Lynth/Certificates.lean` as sound,
 checker-conditioned statements (`lynth_sat_resolve`, `lynth_farkas`;
 no `axiom`s, no `sorry`s anywhere). Witness reconstruction is direct
 (`Subtype.mk`). `sorry` is banned.

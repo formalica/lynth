@@ -43,7 +43,7 @@ mechanism by explicit, generically typed, provably-valid facts.
 Decision procedures compute certificates (untrusted). A **reconstruction
 theorem** proves the certified answer is sound; the final proof of the user's
 goal is built by applying the reconstruction theorem to the computed
-certificate. The statements live in `Lynth/Axioms.lean` as sound,
+certificate. The statements live in `Lynth/Certificates.lean` as sound,
 checker-conditioned theorems (`ResTrace`/`FarkasTrace` with stub checkers);
 as real checkers land the same statements become load-bearing. There are
 no `sorry`s and no internal axioms anywhere: CI enforces that user-facing

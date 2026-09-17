@@ -32,7 +32,7 @@ Variable sharing *is* explanation sharing.
 | `Sat` | propositional skeleton of goal + hypotheses | CDCL: first-UIP learning with resolution traces, VSIDS, geometric restarts, Tseitin encoding |
 | `Arith` | linear `Int`/`Nat` | Fourier–Motzkin with Farkas lineage + validation, tableau Simplex (Dutertre–de Moura), branch-and-bound; exact integer translation |
 
-Reconstruction theorems live in `Lynth/Axioms.lean` as sound,
+Reconstruction theorems live in `Lynth/Certificates.lean` as sound,
 checker-conditioned statements. There are no `sorry`s and no `axiom`s:
 every test is `#print axioms`-checked to depend only on Lean's native
 axioms (`propext`, `Classical.choice`, `Quot.sound`).

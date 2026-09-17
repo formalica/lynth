@@ -1,5 +1,5 @@
 import Lynth.Sat.Solver
-import Lynth.Axioms
+import Lynth.Certificates
 
 /-!
 Proof reconstruction for `Lynth.Sat`: checking certificates.
