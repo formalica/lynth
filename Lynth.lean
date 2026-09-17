@@ -16,6 +16,8 @@ import Lynth.Arith.Recognize
 import Lynth.Arith.Procedure
 import Lynth.Euf.Closure
 import Lynth.Euf.Procedure
+import Lynth.Quant.Trigger
+import Lynth.Quant.Procedure
 import Lynth.Ring.Procedure
 import Lynth.Nlin.Procedure
 import Lynth.Witness

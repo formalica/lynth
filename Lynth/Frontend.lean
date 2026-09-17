@@ -1,6 +1,7 @@
 import Lean
 import Lynth.Procedure
 import Lynth.Euf.Procedure
+import Lynth.Quant.Procedure
 import Lynth.Ring.Procedure
 import Lynth.Nlin.Procedure
 import Lynth.Witness
@@ -29,6 +30,7 @@ def dispatch : TacticM Unit := do
   let procs : List (String × TacticM ProcedureOutcome) := [
     ("witness", Lynth.Witness.run),
     ("euf", Lynth.Euf.Procedure.run),
+    ("quant", Lynth.Quant.Procedure.run),
     ("ring", Lynth.Ring.Procedure.run),
     ("sat", Lynth.Sat.Procedure.run),
     ("arith", Lynth.Arith.Procedure.run),
