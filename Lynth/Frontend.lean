@@ -3,6 +3,7 @@ import Lynth.Procedure
 import Lynth.Euf.Procedure
 import Lynth.Quant.Procedure
 import Lynth.Array.Procedure
+import Lynth.Datatypes.Procedure
 import Lynth.Ring.Procedure
 import Lynth.Nlin.Procedure
 import Lynth.Witness
@@ -33,6 +34,7 @@ def dispatch : TacticM Unit := do
     ("euf", Lynth.Euf.Procedure.run),
     ("quant", Lynth.Quant.Procedure.run),
     ("array", Lynth.Array.Procedure.run),
+    ("datatypes", Lynth.Datatypes.Procedure.run),
     ("ring", Lynth.Ring.Procedure.run),
     ("sat", Lynth.Sat.Procedure.run),
     ("arith", Lynth.Arith.Procedure.run),

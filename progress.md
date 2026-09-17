@@ -25,6 +25,8 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   asserted, procedure always yields.
 - `Arrays` (Q2): read-over-write R1/R2 with core-lemma proofs
   (`Array.getElem_set_self/ne`), bound/`≠` premises by scan + decide.
+- `Datatypes` (Q3): injectivity splintering + discrimination via core
+  bounded `injections`; enrich-and-yield, zero axioms.
 - `Ring` (`ring`), `Nlin` (`nlinarith`) kernel-checked normalizers.
 - `Sat`: CDCL (first-UIP learning + resolution traces + checker,
   VSIDS, geometric restarts), Tseitin oracle over goal + hypotheses,
@@ -42,9 +44,9 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
 
 ## Next (lowest unfinished first)
 
-- `TASKS.md#Q3` — `Datatypes`: injectivity + discrimination as EUF
-  sub-procedure (`Test/Datatypes.lean` + CI).
-- Then Q4 `BV`, Q5 Farkas-from-Simplex, Q6 DRAT, Q7 watched literals;
+- `TASKS.md#Q4` — `BV`: bit-blasting over the `Sat` core
+  (`Test/BV.lean` + CI).
+- Then Q5 Farkas-from-Simplex, Q6 DRAT, Q7 watched literals;
   Q8 is the recurring regression watch.
 
 ## Open gaps / risks (honest list)
