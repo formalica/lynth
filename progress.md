@@ -79,9 +79,15 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
 
 ## Open gaps / risks (honest list)
 
-- Q6 remainder: Star Battle is now a committed pilot (`Test/StarBattle.lean`,
-  5s); 9×9 Sudoku committed (`Test/Sudoku9.lean`, ~8s after the qsort
-  tie-break fix). Larger boards await EMA restarts / clause-DB reduction.
+- Q6 scale pilots: `Test/StarBattle.lean` now uses a 9×9 board with one
+  star per row/column/3×3 region and no touching, including diagonals.
+  Three clean end-to-end runs: 5.314s, 5.109s, 5.301s; axioms
+  `[propext, Classical.choice, Quot.sound]`. Counting recognition now
+  permits width 9; balanced conjunctions and a local instance-synthesis
+  size budget keep reconstruction within limits. This is a regular-region,
+  one-star pilot, not an irregular-region/two-star benchmark.
+  9×9 Sudoku (`Test/Sudoku9.lean`) remains ~8s after the qsort tie-break fix.
+  All 29 suites pass; CDCL and finite-encoder fuzz report zero mismatches.
 - Lean-term denotes link for certificates (translation trusted +
   fuzz-tested; kernel re-check is the safety net).
 - Full MBQI blocked (open-term evaluation over infinite domains);

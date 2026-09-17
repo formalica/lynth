@@ -327,7 +327,8 @@ partial def cardSide (cells : IO.Ref (Array (Expr × Option (List Nat)))) (grid 
                 match ← finWidth dom with
                 | none => pure none
                 | some nn =>
-                  if 8 < nn then pure none
+                  -- Width nine permits 9x9 counts; retain a small bound on subset expansion.
+                  if 9 < nn then pure none
                   else
                     let isBool ← whnfR dom >>= fun t =>
                       pure (t.isConstOf ``Bool)
