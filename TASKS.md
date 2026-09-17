@@ -12,10 +12,11 @@ Each tick implements exactly one task, unattended:
    `#print axioms` checks; update `docs/PROCEDURES.md` registry and the
    CI suite list when adding tests).
 5. Verify: `lake build` clean and every `Test/*.lean` suite exits 0.
-6. Commit when green (`git add -A`, short message); report what was
-   done, test results, and what remains open. Then stop — one task
-   per tick. The next tick repeats from step 1, so the backlog drains
-   automatically.
+6. Update `progress.md` (move the item to Done, point Next at the
+   following item), commit when green (`git add -A`, short message);
+   report what was done, test results, and what remains open. Then
+   stop — one task per tick. The next tick repeats from step 1, so the
+   backlog drains automatically.
 
 Each task is one scheduler tick: bounded scope, verifiable done-condition.
 Conventions for every task: no `sorry`/`axiom`, `#print axioms`-checked
