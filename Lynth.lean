@@ -7,6 +7,7 @@ import Lynth.FinSearch.Recognize
 import Lynth.FinSearch.Procedure
 import Lynth.Sat.Syntax
 import Lynth.Sat.Solver
+import Lynth.Sat.Watch
 import Lynth.Sat.Cdcl
 import Lynth.Sat.Encode
 import Lynth.Sat.Abstract

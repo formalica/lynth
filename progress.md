@@ -43,9 +43,14 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   (`[propext, Classical.choice, Quot.sound]`), scalar routing to
   `Witness`. Runs first in `Frontend.dispatch`, yields gracefully.
 - `Ring` (`ring`), `Nlin` (`nlinarith`) kernel-checked normalizers.
-- `Sat`: CDCL (first-UIP learning + resolution traces + checker,
-  VSIDS, geometric restarts), Tseitin oracle over goal + hypotheses,
-  DPLL reference; fuzz-validated (CDCL vs DPLL, Tseitin vs truth tables).
+- `Sat`: watched-literal CDCL core (`Watch.lean`, native CreuSAT port:
+  2WL + blockers + circular search, VMTF, phase saving, array state,
+  `checkSat` gate) with first-UIP traces + backjump + geometric
+  restarts; differential fuzz vs DPLL at 0 mismatches (small + larger
+  mixed shapes with units) + trace validation + watch-scan regression
+  test; full Star Battle now 5s (was 300s+ timeout), 9×9 Sudoku 2.5min.
+  Soundness bug caught by pilots during the port (inverted circular
+  scan args → spurious level-0 conflicts) fixed + regression-locked.
 - `Arith`: FM elimination (Farkas lineage + validation), tableau
   Simplex (DdM, models), branch-and-bound; exact `Int`/`Nat`
   translation; FM-vs-Simplex differential clean.
@@ -59,18 +64,19 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
 
 ## Next (lowest unfinished first)
 
-- `TASKS.md#Q7` — DRAT emission for the SAT core.
-- Then Q8 watched literals (will also unblock Q6-remainder 9×9 scale),
-  Q9 combination feedback, Q10 chained instantiation, Q11 BV operators,
-  Q12 nested arrays, Q13 datatype selectors; Q14 is the recurring
-  regression watch.
+- `TASKS.md#Q7` — DRAT emission for the SAT core (traces already
+  recorded + validated; needs standard clause-ID/deletion emission).
+- Then Q9 combination feedback, Q10 chained instantiation,
+  Q11 BV operators, Q12 nested arrays, Q13 datatype selectors;
+  Q14 is the recurring regression watch. (Q8 watched literals done
+  this tick via the CreuSAT-ported engine; EMA restarts + clause-DB
+  reduction remain as optional follow-ups.)
 
 ## Open gaps / risks (honest list)
 
-- Q6 remainder: 9×9 Sudoku + Star Battle pilots. A 9×9 probe
-  translates but exceeds the SAT child's scale (CNF caps correctly
-  yield; raised caps hung the naive CDCL — needs Q8 watched literals
-  first). Encoder `emit` is now linear (was quadratic).
+- Q6 remainder: Star Battle is now a committed pilot (`Test/StarBattle.lean`,
+  5s); 9×9 Sudoku committed (`Test/Sudoku9.lean`, ~2.5min + raised
+  heartbeats). Larger boards await EMA restarts / clause-DB reduction.
 - Lean-term denotes link for certificates (translation trusted +
   fuzz-tested; kernel re-check is the safety net).
 - Full MBQI blocked (open-term evaluation over infinite domains);

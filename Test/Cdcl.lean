@@ -63,3 +63,11 @@ match o.result, decide (0 < o.restarts) with
   | some .unsat, true => true
   | _, _ => false
 -- expect true
+
+-- watch-scan regression: clause satisfied via the unscanned third
+-- literal while units falsify the watched pair. A broken circular
+-- search reports UNSAT here (the bug this guards caught exactly that).
+#eval match (Cdcl.cdclSolve [[-1], [-2], [1, 2, 3], [3]] 1000).result with
+  | some (.sat a) => checkSat [[-1], [-2], [1, 2, 3], [3]] a
+  | _ => false
+-- expect true

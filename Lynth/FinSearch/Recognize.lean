@@ -57,6 +57,16 @@ def finVal? (e : Expr) : Option Nat :=
       else asNumeral args[args.size - 2]!
     else none
 
+/-- Head names of boolean connectives (refused as opaque cells;
+they belong to `boolProp`). -/
+def boolConnHead : Name → Bool
+  | ``HAnd.hAnd => true
+  | ``Bool.and => true
+  | ``HOr.hOr => true
+  | ``Bool.or => true
+  | ``Complement.complement => true
+  | ``Bool.not => true
+  | _ => false
 /-- Allocate (or look up) the cell id for a key expression, with
 optional grid argument values (for grid-applied-to-literals).
 Grid applications are canonicalized BY ARGUMENT VALUES: ∀-unrolling
@@ -108,9 +118,22 @@ partial def recognizeTerm (cells : IO.Ref (Array (Expr × Option (List Nat)))) (
       match ← finWidth ty with
       | some w =>
         if w != c then pure none
-        else
-          let i ← cellId cells e none
-          pure (some (.var w i))
+        -- boolean connectives are never opaque cells (they belong to
+        -- `boolProp`; celling them would disconnect shared atoms)
+        else match e.getAppFn with
+          | .const n _ =>
+            match ← whnfR ty with
+            | .const ``Bool _ =>
+              if boolConnHead n then pure none
+              else
+                let i ← cellId cells e none
+                pure (some (.var w i))
+            | _ =>
+              let i ← cellId cells e none
+              pure (some (.var w i))
+          | _ =>
+            let i ← cellId cells e none
+            pure (some (.var w i))
       | none => pure none
 
 /-- Cardinality of an equation side (must be a finite type). -/
@@ -164,6 +187,24 @@ def cmpSide (cells : IO.Ref (Array (Expr × Option (List Nat)))) (grid : Expr)
     else cmpBin cells grid a b c1 mk fold
   | _, _ => pure none
 
+/-- Boolean equivalence (`a = b` over `Bool`). -/
+def boolIff (pa pb : FProp) : FProp :=
+  .and [.or [.not pa, pb], .or [.not pb, pa]]
+/-- Boolean xor (`a ≠ b` over `Bool`). -/
+def boolXor (pa pb : FProp) : FProp :=
+  .or [.and [pa, .not pb], .and [.not pa, pb]]
+/-- Boolean strict order (`a < b` over `Bool` ⟺ `¬a ∧ b`). -/
+def boolLt (pa pb : FProp) : FProp :=
+  .and [.not pa, pb]
+/-- Boolean order (`a ≤ b` over `Bool` ⟺ `¬a ∨ b`). -/
+def boolLe (pa pb : FProp) : FProp :=
+  .or [.not pa, pb]
+/-- Is this expression `Bool`-typed? -/
+def isBoolTy (e : Expr) : MetaM Bool := do
+  match ← whnfR (← inferType e) with
+  | .const ``Bool _ => pure true
+  | _ => pure false
+
 mutual
 /-- Boolean formula over `Bool`-typed terms to `FProp`
 (`b` means `b = true`). -/
@@ -209,6 +250,7 @@ partial def boolProp (cells : IO.Ref (Array (Expr × Option (List Nat)))) (grid 
       if eU == e then pure none
       else boolProp cells grid eU (depth - 1)
 
+
 /-- A proposition or a `Bool`-typed formula to `FProp`. -/
 partial def propOrBool (cells : IO.Ref (Array (Expr × Option (List Nat)))) (grid : Expr)
     (e : Expr) (depth : Nat) : MetaM (Option FProp) := do
@@ -218,6 +260,38 @@ partial def propOrBool (cells : IO.Ref (Array (Expr × Option (List Nat)))) (gri
   | .sort _ => recognizeProp cells grid e depth
   | .const ``Bool _ => boolProp cells grid e depth
   | _ => pure none
+
+
+
+
+
+
+
+
+
+
+
+
+
+/-- Boolean combinations via `boolProp` (`a = b` ⟺ `a ↔ b`,
+`a ≠ b` ⟺ xor, `a < b` ⟺ `¬a ∧ b`, `a ≤ b` ⟺ `¬a ∨ b`). -/
+partial def boolCmp (cells : IO.Ref (Array (Expr × Option (List Nat)))) (grid : Expr)
+    (a b : Expr) (mk : FProp → FProp → FProp) (depth : Nat) :
+    MetaM (Option FProp) := do
+  match (← boolProp cells grid a (depth - 1)),
+      (← boolProp cells grid b (depth - 1)) with
+  | some pa, some pb => pure (some (mk pa pb))
+  | _, _ => pure none
+
+/-- Dispatch a comparison: `Bool`-typed sides go through `boolProp`
+(structural); anything else through cell equations. -/
+partial def cmpDispatch (cells : IO.Ref (Array (Expr × Option (List Nat)))) (grid : Expr)
+    (a b : Expr) (mk : FTerm → FTerm → FProp) (fold : Nat → Nat → Bool)
+    (bmk : FProp → FProp → FProp) (depth : Nat) : MetaM (Option FProp) := do
+  if (← isBoolTy a) || (← isBoolTy b) then
+    boolCmp cells grid a b bmk depth
+  else
+    cmpSide cells grid a b mk fold
 
 /-- One orientation of the counting constraint: `cardE` must be a
 `Fintype.card` over a subtype, `litE` a numeral. -/
@@ -311,8 +385,8 @@ partial def recognizeProp (cells : IO.Ref (Array (Expr × Option (List Nat)))) (
   | .const n _ =>
     let args := e.getAppArgs
     if n == ``Ne && 2 ≤ args.size then
-      return ← cmpSide cells grid args[args.size - 2]! args[args.size - 1]!
-        .ne (· != ·)
+      return ← cmpDispatch cells grid args[args.size - 2]! args[args.size - 1]!
+        .ne (· != ·) boolXor depth
     else pure ()
   | _ => pure ()
   let eR ← whnfR e
@@ -393,19 +467,19 @@ partial def recognizeProp (cells : IO.Ref (Array (Expr × Option (List Nat)))) (
         -- plain finite equations after
         match ← countCard cells grid a b depth with
         | some p => pure (some p)
-        | none => cmpSide cells grid a b .eq (· == ·)
+        | none => cmpDispatch cells grid a b .eq (· == ·) boolIff depth
       | none => pure none
     else if n == ``Ne then
       match last2 with
-      | some (a, b) => cmpSide cells grid a b .ne (· != ·)
+      | some (a, b) => cmpDispatch cells grid a b .ne (· != ·) boolXor depth
       | none => pure none
     else if n == ``LT.lt then
       match last2 with
-      | some (a, b) => cmpSide cells grid a b .lt (· < ·)
+      | some (a, b) => cmpDispatch cells grid a b .lt (· < ·) boolLt depth
       | none => pure none
     else if n == ``LE.le then
       match last2 with
-      | some (a, b) => cmpSide cells grid a b .le (· ≤ ·)
+      | some (a, b) => cmpDispatch cells grid a b .le (· ≤ ·) boolLe depth
       | none => pure none
     else if n == ``Iff then
       match last2 with

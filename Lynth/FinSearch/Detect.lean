@@ -13,11 +13,12 @@ namespace Lynth.FinSearch.Detect
 /-- Max distinct cells the SAT child will encode (one-hot blowup guard). -/
 def maxCells : Nat := 512
 
-/-- Max CNF variables the encoder may allocate (`none` = yield). -/
-def maxSatVars : Nat := 8192
+/-- Max CNF variables the encoder may allocate (`none` = yield).
+Sized for 9x9 Sudoku (~40k vars with pairwise-distinct Tseitin gates). -/
+def maxSatVars : Nat := 131072
 
-/-- CDCL fuel for the SAT child. -/
-def solveFuel : Nat := 100000
+/-- CDCL fuel for the SAT child (9x9 needs ~1M decisions). -/
+def solveFuel : Nat := 2000000
 
 /-- Search-space estimate: number of board positions. -/
 def estimate (dims : List Nat) : Nat :=

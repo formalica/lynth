@@ -34,7 +34,7 @@ cuts on top; equalities shared through congruence-closure adapters.
 
 | Z3 piece | lynth status |
 |---|---|
-| CDCL core (`sat_solver.cpp`) | CDCL with first-UIP learning + backjump + VSIDS + geometric restarts (`Lynth/Sat/Cdcl.lean`); DPLL reference (`Solver.lean`); watched literals TODO |
+| CDCL core (`sat_solver.cpp`) | Watched-literal engine (`Lynth/Sat/Watch.lean`, native CreuSAT port: 2WL + blockers + circular search, VMTF, phase saving, backjumping) with first-UIP learning + geometric restarts (`Lynth/Sat/Cdcl.lean`); DPLL reference (`Solver.lean`); EMA restarts + clause-DB reduction TODO |
 | DRAT proofs (`sat_drat.*`) | resolution traces recorded per learnt clause + independent checker (`Cdcl.checkTrace`), fuzz-validated; full DRAT emission TODO |
 | Simplex/LP (`math/simplex`, `math/lp`) | FM elimination with Farkas lineage (`Lynth/Arith/Fourier.lean`); tableau Simplex à la Dutertre–de Moura with models (`Lynth/Arith/Simplex.lean`), differential-tested vs FM |
 | Theory combination (`smt/*`, eq adapters) | Explanation facts with proofs (`Lynth/Procedure.lean`); no Nelson-Oppen, sharing is explicit equality facts |
