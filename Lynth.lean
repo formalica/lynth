@@ -11,6 +11,7 @@ import Lynth.Arith.Linear
 import Lynth.Arith.Fourier
 import Lynth.Arith.FarkasSound
 import Lynth.Arith.Simplex
+import Lynth.Arith.Explain
 import Lynth.Arith.BranchBound
 import Lynth.Arith.Recognize
 import Lynth.Arith.Procedure

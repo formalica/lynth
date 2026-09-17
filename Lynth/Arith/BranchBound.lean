@@ -50,9 +50,9 @@ def bb (sys : List (List Rat × Rat)) (intVars : List Nat) :
   | _, 0 => .unknown
   | depth + 1, fuel + 1 =>
     match solve sys (fuel + 1) with
-    | none => .unknown -- Simplex out of fuel: inconclusive
-    | some none => .unsat
-    | some (some model) =>
+    | .unknown => .unknown -- Simplex out of fuel: inconclusive
+    | .unsat _ => .unsat
+    | .sat model =>
       match findFractional model intVars with
       | none => .sat model
       | some (j, f) =>

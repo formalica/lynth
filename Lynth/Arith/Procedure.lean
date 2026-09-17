@@ -4,6 +4,7 @@ import Lynth.Arith.Linear
 import Lynth.Arith.Fourier
 import Lynth.Arith.FarkasSound
 import Lynth.Arith.Simplex
+import Lynth.Arith.Explain
 import Lynth.Arith.BranchBound
 import Lynth.Arith.Recognize
 
@@ -39,10 +40,14 @@ def run : TacticM ProcedureOutcome := do
       let bbv := BranchBound.bb (sys.map fun c => (c.coeffs, c.const))
         (List.range nVars) 4 1024
       match fm, sx with
-      | some cert, some none =>
+      | some cert, .unsat expl =>
         if FarkasSound.checkCert sys cert then
-          logInfo m!"[lynth:arith] FM+Simplex agree \
-            (verified Farkas size {cert.length})"
+          if Lynth.Arith.Explain.checkExplanation
+              (sys.map fun c => (c.coeffs, c.const)) expl then
+            logInfo m!"[lynth:arith] FM+Simplex agree \
+              (verified Farkas size {cert.length}, explanation checked)"
+          else
+            logInfo "[lynth:arith] WARNING: Simplex explanation FAILED validation"
         else
           logInfo "[lynth:arith] WARNING: FM cert FAILED validation"
       | some cert, _ =>
@@ -51,8 +56,12 @@ def run : TacticM ProcedureOutcome := do
             (Farkas size {cert.length}); Simplex inconclusive"
         else
           logInfo "[lynth:arith] WARNING: FM certificate FAILED validation (solver bug)"
-      | none, some none =>
-        logInfo "[lynth:arith] WARNING: Simplex refutes but FM does not (oracle mismatch)"
+      | none, .unsat expl =>
+        if Lynth.Arith.Explain.checkExplanation
+            (sys.map fun c => (c.coeffs, c.const)) expl then
+          logInfo "[lynth:arith] Simplex refutation (explanation checked); FM inconclusive"
+        else
+          logInfo "[lynth:arith] WARNING: Simplex refutes but FM does not (oracle mismatch)"
       | _, _ =>
         match bbv with
         | .unsat =>

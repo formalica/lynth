@@ -23,10 +23,14 @@ structure Bounds where
   deriving Repr, DecidableEq, Inhabited
 
 /-- Tableau row for a basic var: `x = Σ coeffs[j]·xⱼ + const`
-(coeffs indexed by var id, dense). -/
+(coeffs indexed by var id, dense). `combo` is the lineage over the
+`m` initial equations (for UNSAT explanations); pivot algebra mirrors
+coefficient algebra exactly (`new = (-1/a)·old`,
+`other += f·new`). -/
 structure Row where
   coeffs : Array Rat
   const : Rat
+  combo : List Rat
   deriving Repr, DecidableEq, Inhabited
 
 /-- Coefficient lookup with zero default. -/
@@ -92,6 +96,16 @@ def canLower (s : State) (v : Var) : Bool :=
   | some l => l < value s v
   | none => true
 
+/-- Scale a lineage combo. -/
+def scaleCombo (c : List Rat) (k : Rat) : List Rat :=
+  c.map (· * k)
+
+/-- Add two lineage combos (padded). -/
+def addCombo (c d : List Rat) : List Rat :=
+  let n := Nat.max c.length d.length
+  let pad (l : List Rat) : List Rat := l ++ List.replicate (n - l.length) 0
+  List.zipWith (· + ·) (pad c) (pad d)
+
 /-- Pivot row `i` (basic `xi`) with nonbasic `xj`: rewrite so `xj`
 becomes basic. `a = row.coeffs[xj]` must be nonzero. `w` is the full
 tableau width (originals + slacks); rows must never be narrowed. -/
@@ -104,18 +118,22 @@ def pivot (s : State) (i : Nat) (xj : Var) (w : Nat) : State :=
         if k == xj then 0
         else if k == s.basic[i]! then 1 / a
         else -(coeff r k) / a,
-      const := -(r.const) / a }
+      const := -(r.const) / a,
+      combo := scaleCombo r.combo (-1 / a) }
   -- substitute xj in the other rows
   let rows' := s.rows.mapIdx fun k srow =>
     if k == i then newRow
     else
       let f := coeff srow xj
+      let nc := addCombo srow.combo
+        (scaleCombo newRow.combo f)
       { coeffs := (List.range w).toArray.map fun m =>
           if m == xj then 0
           else coeff srow m + f * (if m == s.basic[i]! then 1 / a
             else if m == xj then 0
             else -(coeff r m) / a),
-        const := srow.const + f * (-(r.const) / a) }
+        const := srow.const + f * (-(r.const) / a),
+        combo := nc }
   let xi := s.basic[i]!
   { s with
     rows := rows',
@@ -167,39 +185,80 @@ def findRepair (s : State) : Option (Nat × Var × Var × Bool) :=
     | none => some (i, xi, 0, true)
     | some xj => some (i, xi, xj, false)
 
-/-- Check loop: `some (some β)` (model) on SAT, `some none` on UNSAT,
-`none` on fuel exhaustion (never conflated). -/
-def check : State → Nat → Nat → Nat → Option (Option (List Rat))
-  | _, _, _, 0 => none
+/-- UNSAT explanation: lineage over the initial equations plus the
+conflicting bound situation. The checker (`Explain.checkExplanation`)
+re-derives everything; see there for the soundness argument. -/
+structure DdMExplanation where
+  combo : List Rat
+  xi : Nat
+  below : Bool
+  bound : Rat
+  beta : List Rat
+  basic : List Nat
+  nonbasic : List Nat
+  deriving Repr, DecidableEq
+
+/-- Check outcome: model, refutation with explanation, or unknown. -/
+inductive CheckOut where
+  | sat : List Rat → CheckOut
+  | unsat : DdMExplanation → CheckOut
+  | unknown : CheckOut
+  deriving Repr, DecidableEq
+
+/-- Full assignment (nonbasic as-is, basic evaluated). -/
+def fullAssign (s : State) (total : Nat) : List Rat :=
+  (List.range total).map fun v => value s v
+
+/-- Check loop: model on SAT, explanation on UNSAT, unknown on fuel
+exhaustion (never conflated). -/
+def check : State → Nat → Nat → Nat → CheckOut
+  | _, _, _, 0 => .unknown
   | s, n, w, fuel + 1 =>
     match findRepair s with
     | none =>
       -- all basic vars within bounds: read off the model
-      some (some ((List.range n).map fun v => value s v))
-    | some (_, _, _, true) => some none
+      .sat ((List.range n).map fun v => value s v)
+    | some (i, xi, _, true) =>
+      let total := n + s.rows.size
+      let r := s.rows[i]!
+      let dir := violDir s xi
+      let bnd := match dir with
+        | some .below =>
+          match (s.bounds.getD xi { lo := none, hi := none }).lo with
+          | some l => l
+          | none => 0
+        | _ =>
+          match (s.bounds.getD xi { lo := none, hi := none }).hi with
+          | some u => u
+          | none => 0
+      let expl : DdMExplanation :=
+        { combo := r.combo, xi := xi,
+          below := dir != some .above, bound := bnd,
+          beta := fullAssign s total,
+          basic := s.basic.toList, nonbasic := s.nonbasic.toList }
+      CheckOut.unsat expl
     | some (i, xi, xj, false) => check (repair s i xi xj w) n w fuel
 
 /-- Build the initial state from `∑ coeffs·x + const ≤ 0` constraints
-over `n` original variables. -/
+over `n` original variables. Slack rows start with unit lineage. -/
 def init (sys : List (List Rat × Rat)) (n : Nat) : State :=
   let m := sys.length
   let total := n + m
   let bounds : Array Bounds :=
     (List.range total).toArray.map fun v =>
       if n ≤ v then { lo := some 0, hi := none } else { lo := none, hi := none }
-  let rows : Array Row := (sys.map fun (cs, c0) =>
+  let rows : Array Row := (sys.zipIdx.map fun ((cs, c0), k) =>
     { coeffs := (List.range total).toArray.map fun j =>
         if j < n then -(cs.getD j 0) else 0,
-      const := -c0 }).toArray
+      const := -c0,
+      combo := (List.range m).map fun t => if t == k then 1 else 0 }).toArray
   { basic := (List.range m).toArray.map (· + n),
     nonbasic := (List.range n).toArray,
     rows, bounds,
     assign := Array.replicate total 0 }
 
-/-- Top-level: `some (some β)` on SAT, `some none` on UNSAT,
-`none` on fuel exhaustion. -/
-def solve (sys : List (List Rat × Rat)) (fuel : Nat := 1024) :
-    Option (Option (List Rat)) :=
+/-- Top-level: model on SAT, explanation on UNSAT, unknown on fuel. -/
+def solve (sys : List (List Rat × Rat)) (fuel : Nat := 1024) : CheckOut :=
   let n := sys.foldl (fun m (cs, _) => Nat.max m cs.length) 0
   check (init sys n) n (n + sys.length) fuel
 

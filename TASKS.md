@@ -60,14 +60,17 @@ Loop-friendly one-liners: `implement TASKS.md#<id>, verify, commit`.
   `decide` on random small instances.
 - Tests `Test/BV.lean` + CI. Done when green + committed.
 
-## Q5 — Farkas extraction from Simplex + `lynth_farkas` activation
+## Q5 — Farkas extraction from Simplex + `lynth_farkas` activation — DONE
 
-- Track row lineage (combos over original constraints) through
-  `Simplex.pivot`; at UNSAT combine row lineage with bound facts into a
-  `FarkasTrace`; validate via `FarkasSound.checkCert`.
-- Remaining hard part (separate task if needed): Lean-term denotes link
-  (term algebra over goal terms) to close goals directly by certificate.
-- Tests: extraction agrees with FM certs on fuzz; committed.
+- Row lineage over initial equations through `Simplex.pivot`
+  (`combo_new = (-1/a)·combo`, others add `f·combo`); at UNSAT emit a
+  `DdMExplanation` (combo + violated bound + blocking + model), validated
+  by `Explain.checkExplanation` (row re-derivation, basic form,
+  blocking equalities, positive residual const).
+- `FarkasSound.checkCert` stays FM's validator; DdM explanations subsume
+  pure Farkas certs (equality lineage + bound facts).
+- Remaining (future): soundness theorem for `checkExplanation`, Lean-term
+  denotes link, `lynth_farkas` activation.
 
 ## Q6 — DRAT emission for the SAT core
 

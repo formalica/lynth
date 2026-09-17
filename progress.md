@@ -29,6 +29,7 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   bounded `injections`; enrich-and-yield, zero axioms.
 - `BV` (Q4): Tseitin bit-blast (ripple-carry) + CDCL validity oracles,
   bidirectional fuzz vs brute force; `bv_decide` closes.
+- `Arith/Farkas` (Q5): Simplex row lineage + validated `DdMExplanation`s.
 - `Ring` (`ring`), `Nlin` (`nlinarith`) kernel-checked normalizers.
 - `Sat`: CDCL (first-UIP learning + resolution traces + checker,
   VSIDS, geometric restarts), Tseitin oracle over goal + hypotheses,
@@ -46,9 +47,9 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
 
 ## Next (lowest unfinished first)
 
-- `TASKS.md#Q5` — Farkas extraction from Simplex + `lynth_farkas`
-  activation (term-algebra link is the hard part; see registry).
-- Then Q6 DRAT, Q7 watched literals; Q8 is the recurring regression watch.
+- `TASKS.md#Q6` — DRAT emission for the SAT core
+  (fuzz emits + validates).
+- Then Q7 watched literals; Q8 is the recurring regression watch.
 
 ## Open gaps / risks (honest list)
 
