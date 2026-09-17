@@ -72,18 +72,60 @@ Loop-friendly one-liners: `implement TASKS.md#<id>, verify, commit`.
 - Remaining (future): soundness theorem for `checkExplanation`, Lean-term
   denotes link, `lynth_farkas` activation.
 
-## Q6 — DRAT emission for the SAT core
+## Q6 — Finite-domain parent procedure + SAT-based finite solver
+## (HIGHEST PRIORITY — first unfinished item)
+
+Problem class: constraint puzzles over finite domains whose answer is
+a subtype: Sudoku (+ variants), Star Battle, Towers/skyscrapers, and
+generally `{ x // P x }` / `∃ x, P x` over finite types.
+Example: `def sol : { g : SudokuGrid // Valid g ∧ extends g clues }
+:= by lynth` with `SudokuGrid := Fin 9 → Fin 9 → Fin 9`.
+Why we fail, in three layers: (1) `Witness` cannot even *form*
+candidates for function-typed domains (no enumeration procedure for
+them) and caps blind guessing at hundreds of scalars; (2) the search
+space is 9^81 ≈ 2×10^77 — enumeration without propagation/backtracking
+cannot touch it at any bound; (3) `decide` needs exhaustive kernel
+evaluation (tiny analogues like `Fin 2 → Fin 2` already pass — only
+scale is missing). Z3 maps this whole class to SAT.
+- **Detector** (`Lynth/FinSearch/Detect.lean`): recognize synthesis
+  goals over finite domains — `Fin n` (literal `n`), `Bool`, bounded
+  `Nat` (`{ n // n < k }` via the existing `Witness` bound analysis),
+  products/tuples thereof, and *functions* over these
+  (`Fin n → Fin m`, nested). Compute a cardinality estimate (product
+  of domain sizes); unknown/infinite → yield gracefully.
+- **Router** (the parent procedure): if the estimate fits cheap
+  enumeration, delegate to the existing `Witness` machinery; otherwise
+  translate to the SAT child. Threshold as a named constant, with a
+  test landing on each side.
+- **SAT child** (`Lynth/FinSearch/Solve.lean`): encode decidable
+  constraints to CNF — one-hot booleans per finite variable, problem
+  constraints (`AllDifferent` → pairwise mutex + at-least-one, clues →
+  units, more shapes per puzzle) — solve with `Cdcl.cdclSolve`
+  (fuel-bounded; models + traces free), decode model booleans to a
+  closed value term, verify by kernel-checked `decide`/`rfl` (fail
+  loudly if the side is not closed-decidable). Soundness split:
+  search untrusted, verdict proved.
+- **Pilot ladder** (each an end-to-end test): 4×4 mini-Sudoku, then 9×9
+  Sudoku, then Star Battle (regions + row/col counts + no-touching rule
+  — tests expressiveness beyond `AllDifferent`), Towers/skyscrapers as
+  stretch (visibility needs counting/comparison encoding).
+- Tests `Test/FinSearch.lean` (pilots + `#print axioms` native-only +
+  model-decode checks: decoded models always satisfy the encoded
+  constraints); full suite green, commit.
+- Note: absorbs the old Sudoku-pilot item (same project, smaller scope).
+
+## Q7 — DRAT emission for the SAT core
 
 - Emit standard DRAT (clause IDs + deletion) alongside internal
   `ResTrace`s; validate emitted proofs with the internal checker on fuzz.
 - Done when: fuzz emits + validates, committed.
 
-## Q7 — Watched literals for CDCL propagation
+## Q8 — Watched literals for CDCL propagation
 
 - Perf-only; semantics must not change: full fuzz agreement before/after
   (`Test/CdclFuzz.lean` must stay 0 mismatches), committed.
 
-## Q8 — Cross-theory feedback (combination gap)
+## Q9 — Cross-theory feedback (combination gap)
 
 Problem class Z3 solves, we don't: goals needing facts to flow
 *backward* through the pipeline. Example shape: arithmetic hyps pin
@@ -99,7 +141,7 @@ this must terminate by construction, not by fixpoint detection.
 - Start test-driven: write 2–3 concrete failing goals first, make them
   pass. Full suite green, commit.
 
-## Q9 — Chained quantifier instantiation
+## Q10 — Chained quantifier instantiation
 
 Problem class: instances that enable further instances. Example shape:
 transitive chains (`R x y`, `R y z`, `∀ a b c, R a b → R b c → R a c`
@@ -111,7 +153,7 @@ E-matching inside its loop, so derived instances become new triggers.
   dup-suppressed; terminates by construction).
 - Tests incl. a transitive-closure chain; full suite green, commit.
 
-## Q10 — BV operator coverage
+## Q11 — BV operator coverage
 
 Problem class: shifts (`≪`, `≫`), comparisons (`ult`, `ule`, `slt`),
 concat/extract, multiply/divide. Example: `(x ≪ 2) = x * 4`.
@@ -123,7 +165,7 @@ the full operator set (plus simplifications).
 - Extend the bidirectional differential fuzz + e2e `Test/BV.lean`
   goals; full suite green, commit.
 
-## Q11 — Arrays: nested stores + extensionality
+## Q12 — Arrays: nested stores + extensionality
 
 Problem class: `select` over `store (store …)`, array equalities,
 `select a i ≠ select b i → a ≠ b`.
@@ -134,7 +176,7 @@ no extensionality rule; Z3's array solver saturates both.
   yields array disequality) through the existing `Ne`-close path.
 - Tests + full suite green, commit.
 
-## Q12 — Datatype selectors and testers
+## Q13 — Datatype selectors and testers
 
 Problem class: `head`/`tail`/`get?`/`isSome` goals, e.g.
 `(h : l ≠ []) : l.head?.isSome = true`.
@@ -145,23 +187,6 @@ datatype solver also eliminates selectors and splits testers.
   `getElem_set_self`); tester splitting via the `Ne`-close path.
 - Wire as EUF sub-procedure; `Test/Datatypes.lean` additions; full
   suite green, commit.
-
-## Q13 — Finite-domain search pilot (Sudoku)
-
-Problem class: constraint problems over finite domains whose answer is
-a subtype, e.g. `{ g : SudokuGrid // Valid g ∧ extends g clues }`
-with `SudokuGrid := Fin 9 → Fin 9 → Fin 9`.
-Why we fail: `Witness` cannot form candidates (function-typed domain,
-no enumeration procedure for it) and blind enumeration caps at 256
-against a 9^81 ≈ 2×10^77 search space; `decide` needs to evaluate all
-of it (hangs/OOMs); Z3 maps this to SAT. Tiny analogues (`Fin 2 →
-Fin 2`) already close via `decide` — only scale is missing.
-- New procedure: translate decidable finite-domain constraints to CNF,
-  solve with `Cdcl.cdclSolve`, decode the model to a concrete grid,
-  verify by kernel-checked `decide`/`rfl` (search untrusted, verdict
-  proved — the standard split).
-- Pilot target: 4×4 mini-Sudoku end to end, then 9×9; tests with
-  `#print axioms` (native only); full suite green, commit.
 
 ## Q14 — Scheduled regression watch (recurring tick)
 

@@ -47,9 +47,11 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
 
 ## Next (lowest unfinished first)
 
-- `TASKS.md#Q6` — DRAT emission for the SAT core
-  (fuzz emits + validates).
-- Then Q7 watched literals; Q8 is the recurring regression watch.
+- `TASKS.md#Q6` — Finite-domain parent procedure + SAT-based finite
+  solver (Sudoku/Star Battle/Towers pilots). HIGHEST PRIORITY.
+- Then Q7 DRAT, Q8 watched literals, Q9 combination feedback,
+  Q10 chained instantiation, Q11 BV operators, Q12 nested arrays,
+  Q13 datatype selectors; Q14 is the recurring regression watch.
 
 ## Open gaps / risks (honest list)
 
