@@ -23,6 +23,8 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
 - `Quant` (Q1): E-matching ground instantiation over EUF classes
   (`Trigger.matchMod` syntactic + canon-validated); proven instances
   asserted, procedure always yields.
+- `Arrays` (Q2): read-over-write R1/R2 with core-lemma proofs
+  (`Array.getElem_set_self/ne`), bound/`≠` premises by scan + decide.
 - `Ring` (`ring`), `Nlin` (`nlinarith`) kernel-checked normalizers.
 - `Sat`: CDCL (first-UIP learning + resolution traces + checker,
   VSIDS, geometric restarts), Tseitin oracle over goal + hypotheses,
@@ -40,10 +42,10 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
 
 ## Next (lowest unfinished first)
 
-- `TASKS.md#Q2` — `Arrays`: read-over-write + extensionality as EUF
-  sub-procedure (`Test/Arrays.lean` + CI).
-- Then Q3 `Datatypes`, Q4 `BV`, Q5 Farkas-from-Simplex,
-  Q6 DRAT, Q7 watched literals; Q8 is the recurring regression watch.
+- `TASKS.md#Q3` — `Datatypes`: injectivity + discrimination as EUF
+  sub-procedure (`Test/Datatypes.lean` + CI).
+- Then Q4 `BV`, Q5 Farkas-from-Simplex, Q6 DRAT, Q7 watched literals;
+  Q8 is the recurring regression watch.
 
 ## Open gaps / risks (honest list)
 

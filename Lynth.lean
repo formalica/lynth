@@ -18,6 +18,8 @@ import Lynth.Euf.Closure
 import Lynth.Euf.Procedure
 import Lynth.Quant.Trigger
 import Lynth.Quant.Procedure
+import Lynth.Array.Rules
+import Lynth.Array.Procedure
 import Lynth.Ring.Procedure
 import Lynth.Nlin.Procedure
 import Lynth.Witness
