@@ -1,5 +1,22 @@
 # lynth task backlog
 
+## Loop driver (read this first, every tick)
+
+Each tick implements exactly one task, unattended:
+
+1. Read `SPEC.md` — it sets the direction; do not lose it.
+2. Run `git log --oneline` — committed items are done.
+3. Pick the lowest-numbered task below with no corresponding commit.
+4. Implement it following its instructions and the repo conventions
+   (no `sorry`, no `axiom`; tested proofs; native-axioms-only
+   `#print axioms` checks; update `docs/PROCEDURES.md` registry and the
+   CI suite list when adding tests).
+5. Verify: `lake build` clean and every `Test/*.lean` suite exits 0.
+6. Commit when green (`git add -A`, short message); report what was
+   done, test results, and what remains open. Then stop — one task
+   per tick. The next tick repeats from step 1, so the backlog drains
+   automatically.
+
 Each task is one scheduler tick: bounded scope, verifiable done-condition.
 Conventions for every task: no `sorry`/`axiom`, `#print axioms`-checked
 tests (native axioms only), `lake build` clean, commit when green.
