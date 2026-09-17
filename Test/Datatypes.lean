@@ -21,9 +21,29 @@ theorem dt_discr_false (a : Nat) (h : some a = none) : False := by lynth
 /-- No-op: plain variable equality is EUF's job, untouched. -/
 theorem dt_noop (a b : Nat) (h : a = b) : b = a := by lynth
 
+-- user-defined inductives: nothing is hardcoded (recognition via
+-- `isConstructorApp?`, proofs via core `injections`)
+inductive DtColor where
+  | red | green | blue
+
+inductive DtTree (α : Type) where
+  | leaf : DtTree α
+  | node : α → DtTree α → DtTree α → DtTree α
+
+theorem dt_custom_inj (a b : Nat) (l1 l2 r1 r2 : DtTree Nat)
+    (h : DtTree.node a l1 r1 = DtTree.node b l2 r2) : a = b := by lynth
+
+theorem dt_custom_discr : DtColor.red ≠ DtColor.green := by lynth
+
+theorem dt_custom_discr2 (t : DtTree Nat) :
+    DtTree.leaf ≠ DtTree.node 1 t t := by lynth
+
 #print axioms dt_inj_option
 #print axioms dt_inj_list
 #print axioms dt_inj_nested
 #print axioms dt_discr_goal
 #print axioms dt_discr_false
 #print axioms dt_noop
+#print axioms dt_custom_inj
+#print axioms dt_custom_discr
+#print axioms dt_custom_discr2
