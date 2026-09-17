@@ -21,6 +21,9 @@ import Lynth.Quant.Procedure
 import Lynth.Array.Rules
 import Lynth.Array.Procedure
 import Lynth.Datatypes.Procedure
+import Lynth.BV.Blast
+import Lynth.BV.Recognize
+import Lynth.BV.Procedure
 import Lynth.Ring.Procedure
 import Lynth.Nlin.Procedure
 import Lynth.Witness

@@ -27,6 +27,8 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   (`Array.getElem_set_self/ne`), bound/`≠` premises by scan + decide.
 - `Datatypes` (Q3): injectivity splintering + discrimination via core
   bounded `injections`; enrich-and-yield, zero axioms.
+- `BV` (Q4): Tseitin bit-blast (ripple-carry) + CDCL validity oracles,
+  bidirectional fuzz vs brute force; `bv_decide` closes.
 - `Ring` (`ring`), `Nlin` (`nlinarith`) kernel-checked normalizers.
 - `Sat`: CDCL (first-UIP learning + resolution traces + checker,
   VSIDS, geometric restarts), Tseitin oracle over goal + hypotheses,
@@ -44,10 +46,9 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
 
 ## Next (lowest unfinished first)
 
-- `TASKS.md#Q4` — `BV`: bit-blasting over the `Sat` core
-  (`Test/BV.lean` + CI).
-- Then Q5 Farkas-from-Simplex, Q6 DRAT, Q7 watched literals;
-  Q8 is the recurring regression watch.
+- `TASKS.md#Q5` — Farkas extraction from Simplex + `lynth_farkas`
+  activation (term-algebra link is the hard part; see registry).
+- Then Q6 DRAT, Q7 watched literals; Q8 is the recurring regression watch.
 
 ## Open gaps / risks (honest list)
 

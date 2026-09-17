@@ -43,4 +43,6 @@ jobs:
           lake env lean Test/Quant.lean
           lake env lean Test/Arrays.lean
           lake env lean Test/Datatypes.lean
+          lake env lean Test/BV.lean
+          lake env lean Test/BVBlast.lean
       - uses: leanprover-community/docgen-action@v1

@@ -286,7 +286,10 @@ def cdcl : CNF → Trail → Order → Nat → Nat → Nat → Activities → Na
         let ord' := ord1.filter fun v =>
           match tlookup t' v with | some _ => true | none => false
         let act' :=
-          if useful then decayAct (bumpAct act learntCl) confTotal else act
+          if useful then decayAct (bumpAct act learntCl) confTotal
+          -- useless learnt: still bump conflict activity so future
+          -- decisions diversify instead of re-deriving the same conflict
+          else bumpAct act c
         cdcl cnf' t' ord' blvl learnt' fuel
           act' (confTotal + 1) maxV rIdx (sinceR + 1) rBase acc'
     | (.ok, t', ord') =>
@@ -302,9 +305,12 @@ def cdcl : CNF → Trail → Order → Nat → Nat → Nat → Activities → Na
           rIdx sinceR rBase acc
 
 /-- Top-level CDCL solver: result, learned-clause count, restart count,
-and resolution traces for every learnt clause. -/
+and resolution traces for every learnt clause. Duplicate literals are
+stripped up front: they defeat unit detection (e.g. `xor(v,v)` would
+otherwise emit `[-o,-v,-v]` and stall learning). -/
 def cdclSolve (cnf : CNF) (fuel : Nat := 10000) (restartBase : Nat := 100) :
     CdclOut :=
+  let cnf := cnf.map (·.eraseDups)
   cdcl cnf [] [] 0 0 fuel #[] 0 (numVars cnf) 0 0 restartBase []
 
 end Lynth.Sat.Cdcl
