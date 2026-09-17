@@ -72,18 +72,75 @@ Loop-friendly one-liners: `implement TASKS.md#<id>, verify, commit`.
 - Remaining (future): soundness theorem for `checkExplanation`, Lean-term
   denotes link, `lynth_farkas` activation.
 
-## Q6 — DRAT emission for the SAT core
+## Q6 — Cross-theory feedback (combination gap)
 
-- Emit standard DRAT (clause IDs + deletion) alongside internal
-  `ResTrace`s; validate emitted proofs with the internal checker on fuzz.
-- Done when: fuzz emits + validates, committed.
+Problem class Z3 solves, we don't: goals needing facts to flow
+*backward* through the pipeline. Example shape: arithmetic hyps pin
+down `x = y`, but a congruence step over `f` needed that equality
+*before* `arith` ran (`euf` already passed and never sees it).
+Why we fail: fixed single-order pass; Z3 iterates theory solvers to a
+fixpoint (CDCL(T)). Our constraint: SPEC forbids staged SMT loops, so
+this must terminate by construction, not by fixpoint detection.
+- Design bounded feedback: at most one second dispatch pass and/or
+  forward sharing from `arith` (proven equalities in the style of
+  EUF `shareDerived`), with an explicit SPEC-compliance argument
+  (termination by construction, no theory staging).
+- Start test-driven: write 2–3 concrete failing goals first, make them
+  pass. Full suite green, commit.
 
-## Q7 — Watched literals for CDCL propagation
+## Q7 — Chained quantifier instantiation
 
-- Perf-only; semantics must not change: full fuzz agreement before/after
-  (`Test/CdclFuzz.lean` must stay 0 mismatches), committed.
+Problem class: instances that enable further instances. Example shape:
+transitive chains (`R x y`, `R y z`, `∀ a b c, R a b → R b c → R a c`
+needing two rounds), congruence towers.
+Why we fail: single pass over the entry context; Z3 saturates
+E-matching inside its loop, so derived instances become new triggers.
+- Bounded multi-round `instantiate` (round N matches against round
+  N−1's instances too; cap rounds ≤ 3, total instances small,
+  dup-suppressed; terminates by construction).
+- Tests incl. a transitive-closure chain; full suite green, commit.
 
-## Q8 — Scheduled regression watch (recurring tick)
+## Q8 — BV operator coverage
+
+Problem class: shifts (`≪`, `≫`), comparisons (`ult`, `ule`, `slt`),
+concat/extract, multiply/divide. Example: `(x ≪ 2) = x * 4`.
+Why missing: our blast covers only and/or/xor/not/add/eq; Z3 blasts
+the full operator set (plus simplifications).
+- Add: shifts (barrel shifter or repeated concat), comparisons
+  (subtractor + borrow/sign check), concat/extract (rewiring, gateless),
+  mul (array multiplier, capped widths).
+- Extend the bidirectional differential fuzz + e2e `Test/BV.lean`
+  goals; full suite green, commit.
+
+## Q9 — Arrays: nested stores + extensionality
+
+Problem class: `select` over `store (store …)`, array equalities,
+`select a i ≠ select b i → a ≠ b`.
+Why missing: R1/R2 fire only on direct select-over-store; no fixpoint,
+no extensionality rule; Z3's array solver saturates both.
+- Iterate R1/R2 to a bounded fixpoint for nested stores.
+- Contrapositive extensionality edge (Ne over equal-index selects
+  yields array disequality) through the existing `Ne`-close path.
+- Tests + full suite green, commit.
+
+## Q10 — Datatype selectors and testers
+
+Problem class: `head`/`tail`/`get?`/`isSome` goals, e.g.
+`(h : l ≠ []) : l.head?.isSome = true`.
+Why missing: only injectivity/discrimination implemented; Z3's
+datatype solver also eliminates selectors and splits testers.
+- Selector rules (`head (cons a as) = a`, `Option.getD (some a) d = a`,
+  …) with core-lemma proofs found empirically (as `Arrays` did with
+  `getElem_set_self`); tester splitting via the `Ne`-close path.
+- Wire as EUF sub-procedure; `Test/Datatypes.lean` additions; full
+  suite green, commit.
+
+## Q11 — Scheduled regression watch (recurring tick)
 
 - `lake build` + every `Test/*.lean` suite; report failures only.
-- One-liner: `run the Q8 regression watch in /root/lynth`.
+- One-liner: `run the Q11 regression watch in /root/lynth`.
+
+## Deprioritized (no new capability — speed/format only)
+
+- DRAT emission, watched literals: correct ideas, but they change no
+  answers. Revisit after the capability gaps above are closed.
