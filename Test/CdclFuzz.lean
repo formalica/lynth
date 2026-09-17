@@ -84,3 +84,17 @@ def checkTracesBig (s : Nat) : Bool :=
 
 #eval (List.range 60).foldl (fun n s => if checkTracesBig s then n else n + 1) 0
 -- expect 0
+
+-- Regression (perf, not correctness): the VMTF init order sorts
+-- occurrence-count pairs, and this Sudoku-scale encoder output
+-- (25k vars, 85k clauses, ~20k literal occurrences) has thousands of
+-- tied keys. A comparator without a tie-breaker drives Lean's
+-- `Array.qsort` into pathological partitioning (38s to sort; the whole
+-- 9x9 pilot was 49s with 39s spent in `mkWS`). With tie-breaking the
+-- same sort is ~0.8s and the pilot is ~8s.
+def benchOrder (s : Nat) : Bool :=
+  let (cnf, _) := genMixed (s + 1) 30 10
+  let _ := Lynth.Sat.Watch.initOrder (cnf.toArray.map (·.toArray)) 10
+  true
+#eval (List.range 30).foldl (fun n s => if benchOrder s then n else n + 1) 0
+-- expect 0

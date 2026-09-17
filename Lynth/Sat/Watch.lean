@@ -113,12 +113,11 @@ def swapLits (a : Array Int) (i j : Nat) : Array Int :=
     (a.setIfInBounds i y).setIfInBounds j x
   else a
 
-/-- Insertion sort by key (init + tiny per-conflict sorts; dependency-free
-and deterministic). -/
+/-- Sort by key, breaking ties by variable id. The tie-breaker matters:
+occurrence counts have many equal keys, which otherwise make the quicksort
+partition badly. This also makes initialization order deterministic. -/
 def isortBy (a : Array (Nat × Nat)) : Array (Nat × Nat) :=
-  a.foldl (fun acc x =>
-    let (pre, post) := acc.partition fun y => y.1 < x.1
-    pre ++ #[x] ++ post) #[]
+  Array.qsort a (fun x y => decide (x.1 < y.1 ∨ (x.1 = y.1 ∧ x.2 < y.2)))
 
 /-- Last-assigned variable among `vars` (trail-position order). -/
 def lastAssignedW (s : WS) (vars : List Nat) : Option Nat :=
@@ -249,14 +248,12 @@ def visitWatch (s : WS) (p : Int) (j : Nat) : WS × VisitRes :=
     let c := s.clauses[w.cref]!
     let l0 := c.lits[0]!
     let l1 := c.lits[1]!
-    if litSat s l0 then
-      let wl := s.watches[wi]!
-      let s := { s with watches := s.watches.setIfInBounds wi (wl.setIfInBounds j { w with blocker := l0 }) }
-      (s, .adv)
-    else if litSat s l1 then
-      let wl := s.watches[wi]!
-      let s := { s with watches := s.watches.setIfInBounds wi (wl.setIfInBounds j { w with blocker := l1 }) }
-      (s, .adv)
+    -- NOTE: blockers are read-only cache here. Updating them (as
+    -- CreuSAT does in Rust) costs an `O(len)` persistent-array copy
+    -- per visit in Lean and pessimize the hot path; stale blockers
+    -- stay sound (a miss just falls through to the watched pair).
+    if litSat s l0 then (s, .adv)
+    else if litSat s l1 then (s, .adv)
     else match findNewWatch s w.cref p with
       | (s', some _) =>
         -- re-home the watcher under the new watched literal (at [0])

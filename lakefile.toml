@@ -16,3 +16,9 @@ rev = "v4.34.0"
 
 [[lean_lib]]
 name = "Lynth"
+# Native precompilation: tactic execution (notably the SAT solver hot
+# loop) runs ~100x faster natively than interpreted from oleans.
+# Without this, `lake env lean` elaboration of solver-heavy goals
+# (e.g. 9x9 Sudoku) is dominated by interpreter overhead, dwarfing
+# all algorithmic differences.
+precompileModules = true

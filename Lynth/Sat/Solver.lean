@@ -133,9 +133,17 @@ def solve (cnf : CNF) (fuel : Nat := 10000) : SatResult :=
     -- `none` conflates UNSAT and out-of-fuel; `check` below refines it.
     .unsat
 
-/-- Verify an assignment satisfies a CNF (certificate checker). -/
+/-- Verify an assignment satisfies a CNF (certificate checker).
+Array-backed single pass: the naive `lookup` per literal is `O(n)`
+linked-list indexing, which costs seconds on 85k-clause inputs. -/
 def checkSat (cnf : CNF) (a : Assignment) : Bool :=
-  cnf.all (fun cl => cl.any (fun l => evalLit a l == some true))
+  let arr := a.toArray
+  cnf.all fun cl => cl.any fun l =>
+    let v := varOf l
+    if v == 0 || arr.size ≤ v - 1 then false
+    else match arr[v - 1]! with
+      | none => false
+      | some b => if 0 < l then b else !b
 
 /-- Brute-force UNSAT check for small problems (used to validate
 `dpll` in tests and as a reference decision procedure). -/

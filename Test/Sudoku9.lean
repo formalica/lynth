@@ -1,6 +1,7 @@
 -- Scale pilot: full 9x9 Sudoku end-to-end (classic easy puzzle).
--- Needs the watched-literal engine plus raised heartbeat limits for the
--- large `decide` side proof (a few minutes).
+-- Needs the watched-literal engine; the large `decide` side proof uses
+-- raised heartbeat limits. ~8s end-to-end (see Test/CdclFuzz.lean for
+-- the qsort tie-break regression note).
 import Lynth
 
 def valid9 (g : Fin 9 → Fin 9 → Fin 9) : Prop :=

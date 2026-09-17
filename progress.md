@@ -48,7 +48,12 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   `checkSat` gate) with first-UIP traces + backjump + geometric
   restarts; differential fuzz vs DPLL at 0 mismatches (small + larger
   mixed shapes with units) + trace validation + watch-scan regression
-  test; full Star Battle now 5s (was 300s+ timeout), 9×9 Sudoku 2.5min.
+  test; full Star Battle now 5s (was 300s+ timeout), 9×9 Sudoku ~8s
+  (was 2.5min: VMTF init-order sort had thousands of tied keys →
+  pathological `Array.qsort` partitioning; fixed with a
+  `(count, var-id)` tie-break comparator + regression note in
+  `Test/CdclFuzz.lean`; `checkSat` model gate switched from per-literal
+  list `lookup` to one array pass).
   Soundness bug caught by pilots during the port (inverted circular
   scan args → spurious level-0 conflicts) fixed + regression-locked.
 - `Arith`: FM elimination (Farkas lineage + validation), tableau
@@ -75,8 +80,8 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
 ## Open gaps / risks (honest list)
 
 - Q6 remainder: Star Battle is now a committed pilot (`Test/StarBattle.lean`,
-  5s); 9×9 Sudoku committed (`Test/Sudoku9.lean`, ~2.5min + raised
-  heartbeats). Larger boards await EMA restarts / clause-DB reduction.
+  5s); 9×9 Sudoku committed (`Test/Sudoku9.lean`, ~8s after the qsort
+  tie-break fix). Larger boards await EMA restarts / clause-DB reduction.
 - Lean-term denotes link for certificates (translation trusted +
   fuzz-tested; kernel re-check is the safety net).
 - Full MBQI blocked (open-term evaluation over infinite domains);
