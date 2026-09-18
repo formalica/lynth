@@ -56,6 +56,22 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   list `lookup` to one array pass).
   Soundness bug caught by pilots during the port (inverted circular
   scan args → spurious level-0 conflicts) fixed + regression-locked.
+- `FinSearch` generic finite types (no `Option` hardcoding): `finCard`
+  by constructor inspection (non-recursive, non-indexed inductives
+  over finite fields — `Option`/`Sum`/`Prod`/enumerations; `isRec` +
+  sibling-occurrence + dependent-field rejection), `exprToIdx` /
+  `finValExpr` value layout shared by recognizer and reconstruction,
+  closed-term folding (user defs like `box_idx`, partial-board
+  `match`es evaluate to literals instead of opaque cells),
+  kernel-evaluation folding at default transparency (`withReducible`
+  left `decide` stuck on user defs), vacuous-implication
+  short-circuit (9⁴ box instances fit the CNF budget), generic
+  `domOf`/`valLit`/binder indexing (`BEq` cond-chains, computable).
+  Pilots: user-formalized Inkala 2012 9×9 (`Test/Sudoku9Inkala.lean`,
+  injective rows/cols + `box_idx` + `Option` partial board, ~48s,
+  `[propext]`), partial-board 9×9 (`Test/Sudoku9Partial.lean`,
+  `[propext]`), alternative 4×4 shapes (`Test/FinSearchAlt.lean`:
+  quantified implications, `Fintype.card` counts, `Iff` links).
 - `Arith`: FM elimination (Farkas lineage + validation), tableau
   Simplex (DdM, models), branch-and-bound; exact `Int`/`Nat`
   translation; FM-vs-Simplex differential clean.

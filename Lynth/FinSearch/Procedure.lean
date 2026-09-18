@@ -31,32 +31,44 @@ structure FDom where
   ty : Expr
   card : Nat
 
-/-- Classify a domain type (literal bounds only). -/
+/-- Classify a domain type: `Bool`/`Fin n` fast paths, otherwise any
+non-recursive inductive over finite fields (`Option`/`Sum`/`Prod`/…).
+Literal bounds only for `Fin`; nothing here is `Option`-specific. -/
 def domOf (ty : Expr) : MetaM (Option FDom) := do
-  let ty ← whnfR ty
-  match ty with
+  let tyR ← whnf ty
+  match tyR with
   | .const ``Bool _ => pure (some { ty, card := 2 })
-  | .app (.const ``Fin _) w =>
-    let w ← whnfR w
-    match w with
-    | .lit (.natVal n) =>
-      if n == 0 then pure none else pure (some { ty, card := n })
-    | .app (.app (.app (.const ``OfNat.ofNat _) _) (.lit (.natVal n))) _ =>
-      if n == 0 then pure none else pure (some { ty, card := n })
-    | _ => pure none
-  | _ => pure none
+  | _ =>
+    match tyR.getAppFn with
+    | .const ``Fin _ =>
+      let tyArgs := tyR.getAppArgs
+      if tyArgs.isEmpty then pure none
+      else
+        let w ← whnf tyArgs.back!
+        match w with
+        | .lit (.natVal n) =>
+          if n == 0 then pure none else pure (some { ty, card := n })
+        | .app (.app (.app (.const ``OfNat.ofNat _) _) (.lit (.natVal n))) _ =>
+          if n == 0 then pure none else pure (some { ty, card := n })
+        | _ => pure none
+    | _ =>
+      match ← finCard ty 8 with
+      | some n => if n == 0 then pure none else pure (some { ty, card := n })
+      | none => pure none
 
 /-- Peel Pi binders with finite literal domains; returns binder
 descriptors + codomain. `none` = scalar (yield to `Witness`) or
-unsupported (dependent binders, non-finite types). -/
+unsupported (dependent binders, non-finite types).
+Unfolds with default transparency so user type aliases
+(`def Board := Fin 9 → Fin 9 → Fin 9`) are seen through. -/
 def analyzeDomain (dom : Expr) : MetaM (Option (List FDom × FDom)) := do
-  let dom ← whnfR dom
+  let dom ← whnf dom
   go dom [] 8
 where
   go (cur : Expr) (dims : List FDom) : Nat → MetaM (Option (List FDom × FDom))
     | 0 => pure none
     | fuel + 1 => do
-      let curR ← whnfR cur
+      let curR ← whnf cur
       match curR with
       | .forallE _ d b _ =>
         if b.hasLooseBVars then pure none
@@ -87,17 +99,24 @@ def decodeModel (vmap : List ((Nat × Nat) × Nat))
     | some (w, _) => w
     | none => 0
 
-/-- Closed literal for a decoded value (`Fin` via `Fin.mk` + decided
-bound; `Bool` via constants). -/
+/-- Closed literal for a decoded value: `Bool` via constants,
+`Fin` via `Fin.mk` + decided bound, anything else finite via the
+generic constructor layout (inverse of `exprToIdx`). -/
 def valLit (cod : FDom) (v : Nat) : MetaM Expr := do
   let ct ← whnfR cod.ty
   match ct with
   | .const ``Bool _ =>
     pure (if v == 1 then mkConst ``Bool.true else mkConst ``Bool.false)
   | _ =>
-    let hlt ← mkAppM ``LT.lt #[mkNatLit v, mkNatLit cod.card]
-    let pf ← mkDecideProof hlt
-    mkAppM ``Fin.mk #[mkNatLit v, pf]
+    match ct.getAppFn with
+    | .const ``Fin _ =>
+      let hlt ← mkAppM ``LT.lt #[mkNatLit v, mkNatLit cod.card]
+      let pf ← mkDecideProof hlt
+      mkAppM ``Fin.mk #[mkNatLit v, pf]
+    | _ =>
+      match ← finValExpr cod.ty v with
+      | some e => pure e
+      | none => throwError "finsearch: value {v} out of range"
 
 /-- Build a closed value for a function domain from decoded cells.
 `dims`: binder descriptors; `cod`: codomain; `get`: decoded value
@@ -132,7 +151,23 @@ def buildFunVal (dims : List FDom) (cod : FDom)
       let idx ←
         match ← whnfR d.ty with
         | .const ``Bool _ => mkAppM ``Bool.toNat #[fv]
-        | _ => mkAppM ``Fin.val #[fv]
+        | .app (.const ``Fin _) _ => mkAppM ``Fin.val #[fv]
+        | _ =>
+          -- generic finite binder: linear `==`-search over the
+          -- enumerated values (computable, so the kernel-checked
+          -- side proof still evaluates; `mkAppM` synthesizes the
+          -- `BEq` instance and the procedure yields if absent)
+          let some n ← finCard d.ty 8
+            | throwError "finsearch: non-finite binder"
+          if n == 0 then throwError "finsearch: empty binder"
+          else
+            let mut e := mkNatLit (n - 1)
+            for j in (List.range (n - 1)).reverse do
+              let some vj ← finValExpr d.ty j
+                | throwError "finsearch: no literal"
+              let c ← mkAppM ``BEq.beq #[fv, vj]
+              e ← mkAppM ``cond #[c, mkNatLit j, e]
+            pure e
       acc ← mkAppM ``List.getD #[acc, idx, (← defaultFor acc)]
     -- abstract the locally-introduced binders into real `fun` binders
     -- (without this the value leaks fvars and side tactics fail)
@@ -252,6 +287,8 @@ def run : TacticM ProcedureOutcome := do
         match Lynth.Sat.Cdcl.cdclSolve cnf Detect.solveFuel with
         | { result := some .unsat, .. } =>
           return .failure []
+        | { result := none, .. } =>
+          return .failure []
         | { result := some (.sat model), .. } =>
           let vals := decodeModel vmap model nCells
           let get : List Nat → Nat := fun args =>
@@ -272,8 +309,6 @@ def run : TacticM ProcedureOutcome := do
           else
             restoreState snapshot
             return .failure []
-        | { result := none, .. } =>
-          return .failure []
     catch _ =>
       restoreState snapshot
       return .failure []

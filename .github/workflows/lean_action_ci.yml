@@ -47,6 +47,9 @@ jobs:
           lake env lean Test/BVBlast.lean
           lake env lean Test/FinFuzz.lean
           lake env lean Test/FinSearch.lean
+          lake env lean Test/FinSearchAlt.lean
           lake env lean Test/StarBattle.lean
           lake env lean Test/Sudoku9.lean
+          lake env lean Test/Sudoku9Partial.lean
+          lake env lean Test/Sudoku9Inkala.lean
       - uses: leanprover-community/docgen-action@v1

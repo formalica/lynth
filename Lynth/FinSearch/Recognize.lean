@@ -7,12 +7,19 @@ Translation from Lean synthesis goals to `FProp` constraints.
 
 Recognized shapes (the procedure's constraint language — anything else
 fails the translation and the procedure yields, never unsound):
-- `Eq`/`Ne` over `Fin n` (literal `n`) or `Bool`,
+- `Eq`/`Ne` over finite types (`Fin n`, `Bool`, or any non-recursive
+  inductive over finite fields — `Option`/`Sum`/`Prod`/enumerations),
 - `And`/`Or`/`Not`/`True`/`False`, `Iff`, ground `A → B` (classical
   step, consistent with the CDCL-oracle discipline),
-- bounded `∀ (i : Fin n)` (literal `n`, capped) unrolled,
+- bounded `∀` over finite types (literal `n`, capped) unrolled,
 - `List.Pairwise R [explicit elements]`,
 - `LT.lt`/`LE.le` over `Fin n`.
+
+Closed decidable subterms fold to truth values by kernel evaluation,
+so user-defined helpers (`box_idx`, partial-board `match` defs) and
+computed index terms never become disconnected opaque cells.
+Vacuous implication instances short-circuit instead of emitting
+dead gates.
 
 Terms: literals, free finite variables (own cells), and cell
 references `g c₁ … cₖ` (head applied to literals only). Cardinalities
@@ -23,19 +30,118 @@ namespace Lynth.FinSearch.Recognize
 open Lean Meta
 open Lynth.FinSearch
 
-/-- Cardinality of a finite type: `Fin n` → `n`, `Bool` → 2. -/
-def finWidth (ty : Expr) : MetaM (Option Nat) := do
-  let ty ← whnfR ty
-  match ty with
-  | .app (.const ``Fin _) w =>
-    let w ← whnfR w
-    match w with
-    | .lit (.natVal n) => pure (some n)
-    | .app (.app (.app (.const ``OfNat.ofNat _) _) (.lit (.natVal n))) _ =>
-      pure (some n)
-    | _ => pure none
+/-- Does `e` mention the constant `n` anywhere (used to reject
+recursive/nested inductive occurrences when measuring finiteness)? -/
+def containsConst : Expr → Name → Bool
+  | .const m _, t => m == t
+  | .app f a, t => containsConst f t || containsConst a t
+  | .lam _ d b _, t => containsConst d t || containsConst b t
+  | .forallE _ d b _, t => containsConst d t || containsConst b t
+  | .letE _ ty v b _, t => containsConst ty t || containsConst v t || containsConst b t
+  | .mdata _ e, t => containsConst e t
+  | .proj _ _ e, t => containsConst e t
+  | _, _ => false
+
+/-- One constructor's contribution to a finite type: substituted,
+closed field types with their cardinalities and the block size
+(product). Field order is constructor order (mixed-radix, first
+field most significant); `exprToIdx`/`finValExpr` below use the
+same layout so indices agree. -/
+structure CtorShape where
+  name : Name
+  fields : Array Expr
+  cards : Array Nat
+  block : Nat
+
+/-- Field types of `ctorName` with the inductive parameters replaced
+by the actual type arguments. `none` = dependent fields, open types,
+or arity mismatch (conservative: caller treats the type as
+non-finite). -/
+def ctorFieldTypes (ctorName : Name) (us : List Level) (numParams : Nat)
+    (tyArgs : Array Expr) : MetaM (Option (Array Expr)) := do
+  let some info := (← getEnv).find? ctorName | return none
+  match info with
+  | .ctorInfo cval =>
+    if cval.numParams != numParams then return none
+    let ctorTy := info.instantiateTypeLevelParams us
+    forallTelescope ctorTy fun xs _ => do
+      if xs.size != cval.numParams + cval.numFields then return none
+      let mut out : Array Expr := #[]
+      for i in List.range cval.numFields do
+        let mut fty ← inferType xs[cval.numParams + i]!
+        for j in List.range cval.numParams do
+          if j < tyArgs.size then
+            fty := fty.replaceFVar xs[j]! tyArgs[j]!
+        -- remaining fvars mean dependent/open fields: unsupported
+        if fty.hasFVar then return none
+        out := out.push fty
+      return some out
+  | _ => return none
+
+mutual
+/-- Constructor layout of a non-indexed, non-recursive inductive
+type application. `none` = not a supported finite shape. -/
+partial def inductiveShapes (tyR : Expr) (fuel : Nat) :
+    MetaM (Option (Array CtorShape)) := do
+  if fuel == 0 then return none
+  match tyR.getAppFn with
+  | .const head us =>
+    match (← getEnv).find? head with
+    | some (.inductInfo indVal) =>
+      if indVal.isRec then return none
+      if indVal.numIndices != 0 then return none
+      let tyArgs := tyR.getAppArgs
+      if tyArgs.size != indVal.numParams then return none
+      let mut shapes : Array CtorShape := #[]
+      for ctorName in indVal.ctors do
+        let some fields ← ctorFieldTypes ctorName us indVal.numParams tyArgs
+          | return none
+        let mut cards : Array Nat := #[]
+        let mut block := 1
+        for fty in fields do
+          if indVal.all.any fun m => containsConst fty m then return none
+          let some c ← finCard fty (fuel - 1) | return none
+          cards := cards.push c
+          block := block * c
+        shapes := shapes.push { name := ctorName, fields, cards, block }
+      return some shapes
+    | _ => return none
+  | _ => return none
+
+/-- Cardinality of a finite type, by constructor inspection: a type
+is finite when it unfolds to `Fin n`/`Bool` or to a non-recursive,
+non-indexed inductive whose constructor fields are all finite
+(`Option T` has `1 + |T|` values when `T` is finite; `Sum` adds,
+`Prod` multiplies). Anything else (recursive types, open terms,
+fuel exhaustion) is `none`. -/
+partial def finCard (ty : Expr) (fuel : Nat := 8) : MetaM (Option Nat) := do
+  let tyR ← whnf ty
+  match tyR with
   | .const ``Bool _ => pure (some 2)
-  | _ => pure none
+  | _ =>
+    match tyR.getAppFn with
+    | .const ``Fin _ =>
+      let tyArgs := tyR.getAppArgs
+      if tyArgs.isEmpty then pure none
+      else
+        let w ← whnf tyArgs.back!
+        match w with
+        | .lit (.natVal n) => pure (some n)
+        | .app (.app (.app (.const ``OfNat.ofNat _) _) (.lit (.natVal n))) _ =>
+          pure (some n)
+        | _ => pure none
+    | _ =>
+      match ← inductiveShapes tyR fuel with
+      | none => pure none
+      | some shapes =>
+        pure (some (shapes.foldl (fun acc s => acc + s.block) 0))
+end
+
+/-- Cardinality of a finite type: `Fin n` → `n`, `Bool` → 2,
+plus any non-recursive inductive over finite fields
+(`Option`/`Sum`/`Prod`/enumerations, …). -/
+def finWidth (ty : Expr) : MetaM (Option Nat) :=
+  finCard ty 8
 
 /-- Numeric literal value. -/
 def asNumeral (e : Expr) : Option Nat :=
@@ -56,6 +162,105 @@ def finVal? (e : Expr) : Option Nat :=
       if args.size < 2 then none
       else asNumeral args[args.size - 2]!
     else none
+
+/-- `Fin` literal `(i : Fin n)` with kernel-checked bound proof. -/
+def finLit (n i : Nat) : MetaM Expr := do
+  let hlt ← mkAppM ``LT.lt #[mkNatLit i, mkNatLit n]
+  let pf ← mkDecideProof hlt
+  mkAppM ``Fin.mk #[mkNatLit i, pf]
+
+/-- Index of a closed value of a finite type (`0 .. card-1`,
+`CtorShape` layout: constructors in declaration order, fields
+mixed-radix). Computes user definitions (`box_idx` on literals),
+`Option` values, `Fin`/`Bool` literals uniformly. `none` = open
+term (mentions fvars) or unsupported shape. -/
+partial def exprToIdx (ty : Expr) (e : Expr) (fuel : Nat := 8) :
+    MetaM (Option Nat) := do
+  if e.hasFVar then return none
+  let tyR ← whnf ty
+  match tyR with
+  | .const ``Bool _ =>
+    let eR ← whnf e
+    if eR.isConstOf ``Bool.true then return some 1
+    else if eR.isConstOf ``Bool.false then return some 0
+    else return none
+  | _ =>
+    match tyR.getAppFn with
+    | .const ``Fin _ =>
+      let eR ← whnf e
+      match finVal? eR with
+      | some v =>
+        let some c ← finCard ty 8 | return none
+        if c == 0 then return none else return some (v % c)
+      | none => return none
+    | _ =>
+      let eR ← whnf e
+      -- numerals landing here (e.g. `OfNat` at an inductive type)
+      if let some k := asNumeral eR then
+        let some c ← finCard ty 8 | return none
+        if c == 0 then return none else return some (k % c)
+      else
+        match ← inductiveShapes tyR fuel with
+        | none => return none
+        | some shapes =>
+          let f := eR.getAppFn
+          let args := eR.getAppArgs
+          let mut base := 0
+          for s in shapes do
+            if f.isConstOf s.name then
+              if args.size < s.fields.size then return none
+              let fargs := args.toSubarray (args.size - s.fields.size) args.size
+              let mut idx := 0
+              for j in List.range s.fields.size do
+                let stride := (s.cards.toSubarray (j + 1) s.cards.size).foldl (· * ·) 1
+                let some fv ← exprToIdx s.fields[j]! fargs[j]! (fuel - 1)
+                  | return none
+                idx := idx + fv * stride
+              return some (base + idx)
+            else
+              base := base + s.block
+          return none
+
+/-- Closed literal of a finite type at index `idx` (`CtorShape`
+layout, inverse of `exprToIdx`). `none` = out of range or
+unsupported shape. -/
+partial def finValExpr (ty : Expr) (idx : Nat) (fuel : Nat := 8) :
+    MetaM (Option Expr) := do
+  let tyR ← whnf ty
+  match tyR with
+  | .const ``Bool _ =>
+    match idx with
+    | 0 => pure (some (mkConst ``Bool.false))
+    | 1 => pure (some (mkConst ``Bool.true))
+    | _ => pure none
+  | _ =>
+    match tyR.getAppFn with
+    | .const ``Fin _ =>
+      let some c ← finCard ty 8 | return none
+      if c == 0 || c ≤ idx then return none
+      else return some (← finLit c idx)
+    | .const _head us =>
+      match ← inductiveShapes tyR fuel with
+      | none => return none
+      | some shapes =>
+        let tyArgs := tyR.getAppArgs
+        let mut base := 0
+        for s in shapes do
+          if idx < base + s.block then
+            let mut rest := idx - base
+            let mut fvals : Array Expr := #[]
+            for j in List.range s.fields.size do
+              let stride := (s.cards.toSubarray (j + 1) s.cards.size).foldl (· * ·) 1
+              let fv := if stride == 0 then 0 else rest / stride
+              rest := if stride == 0 then 0 else rest % stride
+              let some fe ← finValExpr s.fields[j]! fv (fuel - 1)
+                | return none
+              fvals := fvals.push fe
+            return some (mkAppN (mkConst s.name us) (tyArgs ++ fvals))
+          else
+            base := base + s.block
+        return none
+    | _ => return none
 
 /-- Head names of boolean connectives (refused as opaque cells;
 they belong to `boolProp`). -/
@@ -108,19 +313,31 @@ partial def recognizeTerm (cells : IO.Ref (Array (Expr × Option (List Nat)))) (
     let f := e.getAppFn
     let args := e.getAppArgs
     if f == grid then
-      let argVals := args.toList.map finVal?
-      if argVals.all (·.isSome) then
-        let i ← cellId cells e (some (argVals.filterMap id))
-        return some (.var c i)
-      else return none
+      -- binder arguments: `Fin`/`Bool` literals fold directly;
+      -- anything else decodes against its own type (generic finite
+      -- index types share the same `exprToIdx` layout)
+      let mut vals : Array Nat := #[]
+      for a in args do
+        match finVal? a with
+        | some v => vals := vals.push v
+        | none =>
+          let some v ← exprToIdx (← inferType a) a | return none
+          vals := vals.push v
+      let i ← cellId cells e (some vals.toList)
+      return some (.var c i)
     else
       let ty ← inferType e
       match ← finWidth ty with
       | some w =>
         if w != c then pure none
+        -- closed computable terms (`box_idx` on literals, `some v`,
+        -- user helpers) fold to value literals instead of becoming
+        -- disconnected opaque cells
+        else match ← exprToIdx ty e with
+        | some v => pure (some (.lit c (v % c)))
         -- boolean connectives are never opaque cells (they belong to
         -- `boolProp`; celling them would disconnect shared atoms)
-        else match e.getAppFn with
+        | none => match e.getAppFn with
           | .const n _ =>
             match ← whnfR ty with
             | .const ``Bool _ =>
@@ -136,6 +353,25 @@ partial def recognizeTerm (cells : IO.Ref (Array (Expr × Option (List Nat)))) (
             pure (some (.var w i))
       | none => pure none
 
+/-- Ground decidable `Prop` → `.tru`/`.fls` by kernel evaluation.
+Folds user-defined partial boards (`match`/`if` defs), `Option`
+equations, and computed index terms uniformly: any *closed* (grid-free)
+decidable proposition is decided now, once, in the recognizer. -/
+def foldClosed (_cells : IO.Ref (Array (Expr × Option (List Nat)))) (e : Expr) :
+    MetaM (Option FProp) := do
+  if e.hasFVar then return none
+  try
+    let d ← mkDecide e
+    unless (← inferType d).isConstOf ``Bool do return none
+    -- force evaluation to a literal via kernel reduction (default
+    -- transparency: user definitions such as `box_idx` or partial
+    -- boards must unfold; `withReducible` leaves them stuck)
+    let dL ← whnf d
+    if dL.isConstOf ``Bool.true then return some .tru
+    else if dL.isConstOf ``Bool.false then return some .fls
+    else return none
+  catch _ => return none
+
 /-- Cardinality of an equation side (must be a finite type). -/
 def sideCard (e : Expr) : MetaM (Option Nat) := do
   let ty ← inferType e
@@ -150,19 +386,20 @@ def asListLit : Expr → Option (List Expr)
     | none => none
   | _ => none
 
-/-- `Fin` literal `(i : Fin n)` with kernel-checked bound proof. -/
-def finLit (n i : Nat) : MetaM Expr := do
-  let hlt ← mkAppM ``LT.lt #[mkNatLit i, mkNatLit n]
-  let pf ← mkDecideProof hlt
-  mkAppM ``Fin.mk #[mkNatLit i, pf]
-
-/-- Closed-literal folding for comparisons (modular values). -/
+/-- Closed-literal folding for comparisons (modular values).
+`Fin`/`Bool` literals fold structurally; any other closed finite
+values (`box_idx` on literals, `Option` constructors, …) decode
+through the generic `exprToIdx` layout. -/
 def foldLitCmp (a b : Expr) (c : Nat) (f : Nat → Nat → Bool) :
     MetaM (Option FProp) := do
   match finVal? a, finVal? b with
   | some x, some y =>
     pure (some (if f (x % c) (y % c) then .tru else .fls))
-  | _, _ => pure none
+  | _, _ =>
+    match ← exprToIdx (← inferType a) a, ← exprToIdx (← inferType b) b with
+    | some x, some y =>
+      pure (some (if f (x % c) (y % c) then .tru else .fls))
+    | _, _ => pure none
 
 /-- Binary comparison over finite sides: fold closed literals, else
 translate both sides (cardinalities must agree; mismatch fails). -/
@@ -330,25 +567,13 @@ partial def cardSide (cells : IO.Ref (Array (Expr × Option (List Nat)))) (grid 
                   -- Width nine permits 9x9 counts; retain a small bound on subset expansion.
                   if 9 < nn then pure none
                   else
-                    let isBool ← whnfR dom >>= fun t =>
-                      pure (t.isConstOf ``Bool)
                     let mut props : List FProp := []
-                    if isBool then
-                      for v in [true, false] do
-                        let arg : Expr := match v with
-                          | true => mkConst ``Bool.true
-                          | false => mkConst ``Bool.false
-                        match ← propOrBool cells grid (mkApp pred arg)
-                            (depth - 1) with
-                        | some p => props := props ++ [p]
-                        | none => return none
-                    else
-                      for i in List.range nn do
-                        let arg ← finLit nn i
-                        match ← propOrBool cells grid (mkApp pred arg)
-                            (depth - 1) with
-                        | some p => props := props ++ [p]
-                        | none => return none
+                    for i in List.range nn do
+                      let some arg ← finValExpr dom i | return none
+                      match ← propOrBool cells grid (mkApp pred arg)
+                          (depth - 1) with
+                      | some p => props := props ++ [p]
+                      | none => return none
                     pure (some (.exactK props k))
     | _ => pure none
 
@@ -394,39 +619,39 @@ partial def recognizeProp (cells : IO.Ref (Array (Expr × Option (List Nat)))) (
   -- binders (not an application head)
   match eR with
   | .forallE _ d b _ =>
-    -- bounded universal: unroll to a conjunction (`Fin n` with `Fin`
-    -- literals, `Bool` with both values)
+    -- bounded universal: unroll to a conjunction over the domain's
+    -- enumerated values (generic finite types share the `finValExpr`
+    -- layout; capped: unrolling blowup guard)
     match ← finWidth d with
     | some n =>
       if 16 < n then return none
       else
-        let isBool ← whnfR d >>= fun t => pure (t.isConstOf ``Bool)
         let mut conj : List FProp := []
-        if isBool then
-          for v in [true, false] do
-            let arg : Expr := match v with
-              | true => mkConst ``Bool.true
-              | false => mkConst ``Bool.false
-            let inst ← instantiateForall eR #[arg]
-            match ← propOrBool cells grid inst (depth - 1) with
-            | some p => conj := conj ++ [p]
-            | none => return none
-        else
-          for i in List.range n do
-            let arg ← finLit n i
-            let inst ← instantiateForall eR #[arg]
-            match ← propOrBool cells grid inst (depth - 1) with
-            | some p => conj := conj ++ [p]
-            | none => return none
+        for i in List.range n do
+          let some arg ← finValExpr d i | return none
+          let inst ← instantiateForall eR #[arg]
+          match ← propOrBool cells grid inst (depth - 1) with
+          | some p => conj := conj ++ [p]
+          | none => return none
         return some (.and conj)
     | none =>
-      -- nondependent implication over closed body: `¬A ∨ B`
+      -- nondependent implication over closed body: `¬A ∨ B`, with
+      -- short-circuit on folded hypotheses (vacuous instances vanish
+      -- instead of emitting dead Tseitin gates: at 9⁴ box instances
+      -- this is the difference between fitting the CNF budget or not)
       if b.hasLooseBVars then return none
       else
-        match (← propOrBool cells grid d (depth - 1)),
-            (← propOrBool cells grid b (depth - 1)) with
-        | some pa, some pb => return some (.or [.not pa, pb])
-        | _, _ => return none
+        match ← foldClosed cells d with
+        | some .fls => return some .tru
+        | some .tru =>
+          match ← propOrBool cells grid b (depth - 1) with
+          | some pb => return some pb
+          | none => return none
+        | _ =>
+          match (← propOrBool cells grid d (depth - 1)),
+              (← propOrBool cells grid b (depth - 1)) with
+          | some pa, some pb => return some (.or [.not pa, pb])
+          | _, _ => return none
   | _ => pure ()
   -- head dispatch on the reducible form (trailing args: robust to
   -- instance-implicit arities)
