@@ -44,4 +44,6 @@ def sudoku9inkala : { b : Board //
       matches_partial example_partial b } := by
   lynth
 
+/-- info: 'sudoku9inkala' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms sudoku9inkala

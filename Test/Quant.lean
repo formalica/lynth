@@ -51,7 +51,15 @@ theorem quant_congr (R : Nat → Nat → Prop) (f : Nat → Nat) (g c : Nat)
 theorem quant_nomatch (P Q : Nat → Prop) (_h : ∀ n, P n) (x : Nat)
     (hq : Q x) : Q x := by lynth
 
+/-- info: 'quant_single' does not depend on any axioms -/
+#guard_msgs in
 #print axioms quant_single
+/-- info: 'quant_multi' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms quant_multi
+/-- info: 'quant_congr' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms quant_congr
+/-- info: 'quant_nomatch' does not depend on any axioms -/
+#guard_msgs in
 #print axioms quant_nomatch

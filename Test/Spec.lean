@@ -15,5 +15,9 @@ def f : { n : Nat // 0 < n } := by lynth
 
 #eval (f : Nat) -- expect 1
 
+/-- info: 'thm' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms thm
+/-- info: 'f' does not depend on any axioms -/
+#guard_msgs in
 #print axioms f

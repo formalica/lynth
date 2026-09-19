@@ -53,26 +53,72 @@ theorem k13 (n : Nat) : 2 ^ n ≥ 1 := by lynth
 
 #eval (c7 : Nat) -- expect 4
 
+/-- info: 'c1' does not depend on any axioms -/
+#guard_msgs in
 #print axioms c1
+/-- info: 'c2' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms c2
+/-- info: 'c3' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms c3
+/-- info: 'c4' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms c4
+/-- info: 'c5' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms c5
+/-- info: 'c6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms c6
+/-- info: 'c7' does not depend on any axioms -/
+#guard_msgs in
 #print axioms c7
+/-- info: 'c8' does not depend on any axioms -/
+#guard_msgs in
 #print axioms c8
+/-- info: 'c9' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms c9
+/-- info: 'c10' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms c10
+/-- info: 'k1' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms k1
+/-- info: 'k2' does not depend on any axioms -/
+#guard_msgs in
 #print axioms k2
+/-- info: 'k3' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms k3
+/-- info: 'k4' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms k4
+/-- info: 'k5' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms k5
+/-- info: 'k6' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms k6
+/-- info: 'k7' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms k7
+/-- info: 'k8' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
 #print axioms k8
+/-- info: 'k9' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms k9
+/-- info: 'k10' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
 #print axioms k10
+/-- info: 'k11' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms k11
+/-- info: 'k12' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms k12
+/-- info: 'k13' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms k13

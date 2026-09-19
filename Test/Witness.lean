@@ -19,10 +19,20 @@ def btrue : { b : Bool // b = true } := by lynth
 #eval (hpos : Int) -- expect 42
 #eval btrue -- expect true
 
+/-- info: 'f' does not depend on any axioms -/
+#guard_msgs in
 #print axioms f
+/-- info: 'g' does not depend on any axioms -/
+#guard_msgs in
 #print axioms g
+/-- info: 'hneg' does not depend on any axioms -/
+#guard_msgs in
 #print axioms hneg
+/-- info: 'hpos' does not depend on any axioms -/
+#guard_msgs in
 #print axioms hpos
+/-- info: 'btrue' does not depend on any axioms -/
+#guard_msgs in
 #print axioms btrue
 
 -- existential goals use the same enumeration machinery
@@ -40,10 +50,20 @@ def pp : { p : Nat × Nat // p.1 + p.2 = 3 } := by lynth
 
 #eval (pp : Nat × Nat) -- expect (0, 3)
 
+/-- info: 'ex_nat' does not depend on any axioms -/
+#guard_msgs in
 #print axioms ex_nat
+/-- info: 'ex_int' does not depend on any axioms -/
+#guard_msgs in
 #print axioms ex_int
+/-- info: 'ex_conj' does not depend on any axioms -/
+#guard_msgs in
 #print axioms ex_conj
+/-- info: 'ex_big' does not depend on any axioms -/
+#guard_msgs in
 #print axioms ex_big
+/-- info: 'pp' does not depend on any axioms -/
+#guard_msgs in
 #print axioms pp
 
 -- finite domains enumerate completely
@@ -52,6 +72,8 @@ def ff : { i : Fin 5 // i.val > 2 } := by lynth
 #eval (ff : Fin 5) -- expect 3
 #eval (ff : Nat) -- expect 3
 
+/-- info: 'ff' does not depend on any axioms -/
+#guard_msgs in
 #print axioms ff
 
 -- inductive predicates as side conditions go through the same probes
@@ -74,11 +96,27 @@ theorem thr3 : ∃ n : Int, n < -100 := by lynth
 -- beyond enumeration range: needs bound direction, not luck
 theorem far1 : ∃ n : Nat, n > 1000 := by lynth
 
+/-- info: 'even_ex' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms even_ex
+/-- info: 'nest1' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
 #print axioms nest1
+/-- info: 'sq_ex' does not depend on any axioms -/
+#guard_msgs in
 #print axioms sq_ex
+/-- info: 'mix1' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms mix1
+/-- info: 'thr1' does not depend on any axioms -/
+#guard_msgs in
 #print axioms thr1
+/-- info: 'thr2' does not depend on any axioms -/
+#guard_msgs in
 #print axioms thr2
+/-- info: 'thr3' does not depend on any axioms -/
+#guard_msgs in
 #print axioms thr3
+/-- info: 'far1' does not depend on any axioms -/
+#guard_msgs in
 #print axioms far1

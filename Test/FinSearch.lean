@@ -24,6 +24,8 @@ def miniClues (g : Fin 4 → Fin 4 → Fin 4) : Prop :=
 def miniSudoku : { g : Fin 4 → Fin 4 → Fin 4 // miniValid g ∧ miniClues g } := by
   lynth
 
+/-- info: 'miniSudoku' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms miniSudoku
 
 /-- 4x4 Towers board: Latin rows/cols (heights 0..3, all different). -/
@@ -47,12 +49,16 @@ def towersClues (g : Fin 4 → Fin 4 → Fin 4) : Prop :=
 def towersSol : { g : Fin 4 → Fin 4 → Fin 4 // towersLatin g ∧ towersClues g } := by
   lynth
 
+/-- info: 'towersSol' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms towersSol
 
 /-- Scalars still route to `Witness` (`finsearch` yields them). -/
 def scalarRoute : { n : Nat // n = 42 } := by
   lynth
 
+/-- info: 'scalarRoute' does not depend on any axioms -/
+#guard_msgs in
 #print axioms scalarRoute
 
 -- Router lands on each side of the threshold.

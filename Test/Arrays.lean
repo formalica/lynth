@@ -23,7 +23,15 @@ theorem arr_congr_fallthrough (a b : Array Nat)
     (ha : 0 < a.size) (hb : 0 < b.size) (h : a = b) :
     a[0]'ha = b[0]'hb := by lynth
 
+/-- info: 'arr_row_same' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms arr_row_same
+/-- info: 'arr_row_diff_lit' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms arr_row_diff_lit
+/-- info: 'arr_row_diff_hyp' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms arr_row_diff_hyp
+/-- info: 'arr_congr_fallthrough' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms arr_congr_fallthrough

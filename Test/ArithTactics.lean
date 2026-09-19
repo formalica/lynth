@@ -34,6 +34,8 @@ example (x : Int) (h : 2 * x = 3) : x ≤ 0 := by
 
 theorem bb_demo (x : Int) (h : 2 * x = 3) : x ≤ 0 := by lynth
 
+/-- info: 'bb_demo' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms bb_demo
 
 theorem arith_fm1 (x : Int) (h1 : x ≤ 1) (h2 : 2 ≤ x) : x ≤ 0 := by lynth
@@ -43,6 +45,12 @@ theorem arith_fm2 (x y : Int) (h : x + 2 * y = 10) : 2 * x + 4 * y = 20 := by ly
 theorem arith_fm3 (x y : Int) (h1 : x + y ≤ 1) (h2 : 0 ≤ x) (h3 : 0 ≤ y) :
     x + y ≤ 5 := by lynth
 
+/-- info: 'arith_fm1' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms arith_fm1
+/-- info: 'arith_fm2' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms arith_fm2
+/-- info: 'arith_fm3' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms arith_fm3

@@ -70,4 +70,6 @@ def sudoku9partial : { b : Board //
       valid_boxes b = true ∧ matches_partial example_partial b = true } := by
   lynth
 
+/-- info: 'sudoku9partial' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms sudoku9partial

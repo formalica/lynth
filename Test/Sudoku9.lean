@@ -34,4 +34,6 @@ set_option maxHeartbeats 2000000 in
 def sudoku9 : { g : Fin 9 → Fin 9 → Fin 9 // valid9 g ∧ clues9 g } := by
   lynth
 
+/-- info: 'sudoku9' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms sudoku9

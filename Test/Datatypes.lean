@@ -38,12 +38,30 @@ theorem dt_custom_discr : DtColor.red ≠ DtColor.green := by lynth
 theorem dt_custom_discr2 (t : DtTree Nat) :
     DtTree.leaf ≠ DtTree.node 1 t t := by lynth
 
+/-- info: 'dt_inj_option' does not depend on any axioms -/
+#guard_msgs in
 #print axioms dt_inj_option
+/-- info: 'dt_inj_list' does not depend on any axioms -/
+#guard_msgs in
 #print axioms dt_inj_list
+/-- info: 'dt_inj_nested' does not depend on any axioms -/
+#guard_msgs in
 #print axioms dt_inj_nested
+/-- info: 'dt_discr_goal' does not depend on any axioms -/
+#guard_msgs in
 #print axioms dt_discr_goal
+/-- info: 'dt_discr_false' does not depend on any axioms -/
+#guard_msgs in
 #print axioms dt_discr_false
+/-- info: 'dt_noop' does not depend on any axioms -/
+#guard_msgs in
 #print axioms dt_noop
+/-- info: 'dt_custom_inj' does not depend on any axioms -/
+#guard_msgs in
 #print axioms dt_custom_inj
+/-- info: 'dt_custom_discr' does not depend on any axioms -/
+#guard_msgs in
 #print axioms dt_custom_discr
+/-- info: 'dt_custom_discr2' does not depend on any axioms -/
+#guard_msgs in
 #print axioms dt_custom_discr2

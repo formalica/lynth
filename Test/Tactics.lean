@@ -23,12 +23,30 @@ theorem thm_hyp_mp (p q : Prop) (h1 : p → q) (h2 : p) : q := by lynth
 
 theorem thm_hyp_conj (p q r : Prop) (h : p ∧ q) : q ∧ p ∧ (p ∨ r) := by lynth
 
+/-- info: 'thm_add_comm' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms thm_add_comm
+/-- info: 'thm_triv' does not depend on any axioms -/
+#guard_msgs in
 #print axioms thm_triv
+/-- info: 'thm_and' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms thm_and
+/-- info: 'thm_arith' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms thm_arith
+/-- info: 'thm_mp' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms thm_mp
+/-- info: 'thm_conj_elim' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms thm_conj_elim
+/-- info: 'thm_disj_comm' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms thm_disj_comm
+/-- info: 'thm_hyp_mp' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms thm_hyp_mp
+/-- info: 'thm_hyp_conj' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms thm_hyp_conj

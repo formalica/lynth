@@ -44,14 +44,36 @@ theorem euf_ne_direct (f : Nat → Nat) (a b : Nat) (h : f a ≠ f b) :
 theorem euf_ne_goal (a b c : Nat) (h1 : a = b) (h2 : b = c) :
     a ≠ c → False := by lynth
 
+/-- info: 'euf_trans' does not depend on any axioms -/
+#guard_msgs in
 #print axioms euf_trans
+/-- info: 'euf_symm' does not depend on any axioms -/
+#guard_msgs in
 #print axioms euf_symm
+/-- info: 'euf_chain' does not depend on any axioms -/
+#guard_msgs in
 #print axioms euf_chain
+/-- info: 'euf_refl_goal' does not depend on any axioms -/
+#guard_msgs in
 #print axioms euf_refl_goal
+/-- info: 'euf_congr' does not depend on any axioms -/
+#guard_msgs in
 #print axioms euf_congr
+/-- info: 'euf_congr2' does not depend on any axioms -/
+#guard_msgs in
 #print axioms euf_congr2
+/-- info: 'euf_congr_chain' does not depend on any axioms -/
+#guard_msgs in
 #print axioms euf_congr_chain
+/-- info: 'euf_ne' does not depend on any axioms -/
+#guard_msgs in
 #print axioms euf_ne
+/-- info: 'euf_ne_direct' does not depend on any axioms -/
+#guard_msgs in
 #print axioms euf_ne_direct
+/-- info: 'euf_ne_goal' depends on axioms: [propext] -/
+#guard_msgs in
 #print axioms euf_ne_goal
+/-- info: 'euf_share' does not depend on any axioms -/
+#guard_msgs in
 #print axioms euf_share

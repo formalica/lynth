@@ -40,4 +40,6 @@ def altSudoku : { g : Fin 4 → Fin 4 → Fin 4 //
     altRows g ∧ altCols g ∧ altTwos g ∧ altLinks g ∧ altClues g } := by
   lynth
 
+/-- info: 'altSudoku' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms altSudoku
