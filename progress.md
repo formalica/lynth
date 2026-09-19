@@ -118,6 +118,14 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   fallback). Soundness split unchanged: search untrusted, kernel
   `decide` re-verifies every model; learned clauses can only rule out
   non-solutions. `Test/Sudoku9.lean` stays ~6s eager; Inkala ~41s.
+- StarBattle `sorryAx` diagnosis (this tick): the `sorryAx` was a
+  symptom, not a tactic bug — when `lynth` failed to close the goal,
+  Lean stubbed the declaration with `sorry`. The underlying failure
+  (top-level `and[4029,569]` fused into one counting-meaning atom,
+  then unsound pair-learning deriving UNSAT) was already fixed by the
+  zero-yield eager rule. Test now passes stably (~5s, 4 consecutive
+  runs) with axioms `[propext, Classical.choice, Quot.sound]` and
+  carries the same `guard_msgs` pin as the other suites.
 - Lean-term denotes link for certificates (translation trusted +
   fuzz-tested; kernel re-check is the safety net).
 - Full MBQI blocked (open-term evaluation over infinite domains);

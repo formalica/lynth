@@ -289,4 +289,6 @@ def starBattle : { s : Fin 9 → Fin 9 → Bool //
     ((s 7 8 && s 8 8) = false))))))))) } := by
   lynth
 
+/-- info: 'starBattle' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms starBattle
