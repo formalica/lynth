@@ -6,9 +6,10 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
 
 ## HEAD
 
-- Commit `1879090` — TASKS.md loop driver protocol.
-- Tree status: `SPEC.md` has uncommitted reformatting (not yet reviewed);
-  otherwise clean.
+- Commit `7e39061` — SPEC: iterative solving, procedure=theory renaming,
+  goal enrichment.
+- Tree status: CDCL(T) lazy expansion implemented, all 32 suites green
+  (staged below, uncommitted).
 
 ## Done (merged, green)
 - `lynth` tactic + 6-procedure dispatcher
@@ -90,8 +91,10 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
 - Then Q9 combination feedback, Q10 chained instantiation,
   Q11 BV operators, Q12 nested arrays, Q13 datatype selectors;
   Q14 is the recurring regression watch. (Q8 watched literals done
-  this tick via the CreuSAT-ported engine; EMA restarts + clause-DB
-  reduction remain as optional follow-ups.)
+  via the CreuSAT-ported engine; EMA restarts + clause-DB reduction
+  remain as optional follow-ups.)
+- Q6 scale pilots DONE this tick: 9×9 SudokuPartial closes end to end
+  (~38s, axioms `[propext]`); see Done entry below.
 
 ## Open gaps / risks (honest list)
 
@@ -102,8 +105,19 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   permits width 9; balanced conjunctions and a local instance-synthesis
   size budget keep reconstruction within limits. This is a regular-region,
   one-star pilot, not an irregular-region/two-star benchmark.
-  9×9 Sudoku (`Test/Sudoku9.lean`) remains ~8s after the qsort tie-break fix.
+  9×9 Sudoku (`Test/Sudoku9.lean`) remains ~6s after the qsort tie-break fix.
   All 29 suites pass; CDCL and finite-encoder fuzz report zero mismatches.
+- Q6 9×9 direttissima (this tick): `Test/Sudoku9Partial.lean` (user's
+  `Idx`/`Val` formalization, `eraseDups`-based no-dups) closes end to
+  end in ~38s with axioms `[propext]`, via lazy CDCL(T) expansion
+  (`Lynth/FinSearch/Theory.lean`): big pieces stay out of the CNF as
+  opaque atoms (split by node count + cell-disjointness + atom-yield
+  lookahead, single bottom-up pass); the SAT solver proposes
+  candidates over the small base and each failure teaches blocking
+  clauses (certified duplicate pairs generalized over values, greedy
+  fallback). Soundness split unchanged: search untrusted, kernel
+  `decide` re-verifies every model; learned clauses can only rule out
+  non-solutions. `Test/Sudoku9.lean` stays ~6s eager; Inkala ~41s.
 - Lean-term denotes link for certificates (translation trusted +
   fuzz-tested; kernel re-check is the safety net).
 - Full MBQI blocked (open-term evaluation over infinite domains);

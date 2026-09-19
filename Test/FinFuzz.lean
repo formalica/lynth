@@ -61,7 +61,7 @@ def allAssigns : Nat → Nat → List (List Nat)
 /-- Brute-force validity. -/
 def bruteValid (p : FProp) (na c : Nat) : Bool :=
   (allAssigns na c).all fun vals =>
-    evalProp p (fun a => vals.getD a 0)
+    evalProp p (fun a => vals.getD a 0) (fun _ => false)
 
 /-- SAT-model bit lookup. -/
 def lookupAssign (m : Assignment) (v : Nat) : Bool :=
@@ -86,11 +86,11 @@ def checkProp (p : FProp) (na c : Nat) : Bool :=
   let brute := bruteValid p na c
   match runEncode (.not p) with
   | none => false
-  | some (cnf, vmap) =>
+  | some (cnf, vmap, _) =>
     match Cdcl.cdclSolve cnf 10000 with
     | { result := some .unsat, .. } => brute
     | { result := some (.sat m), .. } =>
-      (!brute) && decide (evalProp p (decode vmap m) == false)
+      (!brute) && decide (evalProp p (decode vmap m) (fun _ => false) == false)
     | { result := none, .. } => false
 
 -- mismatch count over 60 random props (2 atoms, card 3); expect 0

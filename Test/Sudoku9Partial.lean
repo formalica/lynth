@@ -1,49 +1,73 @@
--- 9x9 Sudoku from a PARTIAL board: `start9` gives the filled cells
--- (as `some v`) and `none` for empties; `extends9` says the solution
--- agrees with every filled cell. `lynth` must construct the completed
--- board and prove validity + extension.
+-- 9x9 Sudoku over custom finite inductives, Bool-valued rules built
+-- from generic (non-hardcoded) list computation: `List.all`/`map`/
+-- `bind`, `eraseDups`-based no-dups, `==`, `if`. No `∀`, no
+-- `List.Pairwise`, no `Fin`.
 import Lynth
-import Mathlib.Data.Fintype.Card
 
-/-- Validity: rows, columns, and 3x3 boxes pairwise distinct. -/
-def valid9 (g : Fin 9 → Fin 9 → Fin 9) : Prop :=
-  (∀ (r i j : Fin 9), i < j → g r i ≠ g r j) ∧
-  (∀ (c i j : Fin 9), i < j → g i c ≠ g j c) ∧
-  List.Pairwise (· ≠ ·) [g 0 0, g 0 1, g 0 2, g 1 0, g 1 1, g 1 2, g 2 0, g 2 1, g 2 2] ∧
-  List.Pairwise (· ≠ ·) [g 0 3, g 0 4, g 0 5, g 1 3, g 1 4, g 1 5, g 2 3, g 2 4, g 2 5] ∧
-  List.Pairwise (· ≠ ·) [g 0 6, g 0 7, g 0 8, g 1 6, g 1 7, g 1 8, g 2 6, g 2 7, g 2 8] ∧
-  List.Pairwise (· ≠ ·) [g 3 0, g 3 1, g 3 2, g 4 0, g 4 1, g 4 2, g 5 0, g 5 1, g 5 2] ∧
-  List.Pairwise (· ≠ ·) [g 3 3, g 3 4, g 3 5, g 4 3, g 4 4, g 4 5, g 5 3, g 5 4, g 5 5] ∧
-  List.Pairwise (· ≠ ·) [g 3 6, g 3 7, g 3 8, g 4 6, g 4 7, g 4 8, g 5 6, g 5 7, g 5 8] ∧
-  List.Pairwise (· ≠ ·) [g 6 0, g 6 1, g 6 2, g 7 0, g 7 1, g 7 2, g 8 0, g 8 1, g 8 2] ∧
-  List.Pairwise (· ≠ ·) [g 6 3, g 6 4, g 6 5, g 7 3, g 7 4, g 7 5, g 8 3, g 8 4, g 8 5] ∧
-  List.Pairwise (· ≠ ·) [g 6 6, g 6 7, g 6 8, g 7 6, g 7 7, g 7 8, g 8 6, g 8 7, g 8 8]
+inductive Idx | i1 | i2 | i3 | i4 | i5 | i6 | i7 | i8 | i9
+deriving DecidableEq, Repr
 
-/-- The given (partial) board: 30 filled cells, rest empty. -/
-def start9 : Fin 9 → Fin 9 → Option (Fin 9) := fun r c =>
-  if r = 0 ∧ c = 0 then some 5 else if r = 0 ∧ c = 1 then some 3 else
-  if r = 0 ∧ c = 4 then some 7 else if r = 1 ∧ c = 0 then some 6 else
-  if r = 1 ∧ c = 3 then some 1 else if r = 1 ∧ c = 4 then some 9 else
-  if r = 1 ∧ c = 5 then some 5 else if r = 2 ∧ c = 1 then some 9 else
-  if r = 2 ∧ c = 2 then some 8 else if r = 2 ∧ c = 7 then some 6 else
-  if r = 3 ∧ c = 0 then some 8 else if r = 3 ∧ c = 4 then some 6 else
-  if r = 3 ∧ c = 8 then some 3 else if r = 4 ∧ c = 0 then some 4 else
-  if r = 4 ∧ c = 3 then some 8 else if r = 4 ∧ c = 5 then some 3 else
-  if r = 4 ∧ c = 8 then some 1 else if r = 5 ∧ c = 0 then some 7 else
-  if r = 5 ∧ c = 4 then some 2 else if r = 5 ∧ c = 8 then some 6 else
-  if r = 6 ∧ c = 1 then some 6 else if r = 6 ∧ c = 6 then some 2 else
-  if r = 6 ∧ c = 7 then some 8 else if r = 7 ∧ c = 3 then some 4 else
-  if r = 7 ∧ c = 4 then some 1 else if r = 7 ∧ c = 5 then some 9 else
-  if r = 7 ∧ c = 8 then some 5 else if r = 8 ∧ c = 4 then some 8 else
-  if r = 8 ∧ c = 7 then some 7 else if r = 8 ∧ c = 8 then some 9 else
-  none
+inductive Val | v0 | v1 | v2 | v3 | v4 | v5 | v6 | v7 | v8 | v9
+deriving DecidableEq, Repr
 
-/-- The solution extends the partial board. -/
-def extends9 (g : Fin 9 → Fin 9 → Fin 9) : Prop :=
-  ∀ (r c : Fin 9) (x : Fin 9), start9 r c = some x → g r c = x
+def Board := Idx → Idx → Val
 
-set_option maxHeartbeats 2000000 in
-def sudoku9 : { g : Fin 9 → Fin 9 → Fin 9 // valid9 g ∧ extends9 g } := by
+def allIdx : List Idx := [.i1, .i2, .i3, .i4, .i5, .i6, .i7, .i8, .i9]
+
+def triplets : List (List Idx) :=
+  [[.i1, .i2, .i3], [.i4, .i5, .i6], [.i7, .i8, .i9]]
+
+def has_no_dups (l : List Val) : Bool :=
+  l.eraseDups.length == l.length
+
+def valid_cells (b : Board) : Bool :=
+  allIdx.all fun r => allIdx.all fun c => b r c != .v0
+
+def valid_rows (b : Board) : Bool :=
+  allIdx.all fun r => has_no_dups (allIdx.map fun c => b r c)
+
+def valid_cols (b : Board) : Bool :=
+  allIdx.all fun c => has_no_dups (allIdx.map fun r => b r c)
+
+def valid_boxes (b : Board) : Bool :=
+  triplets.all fun rs =>
+    triplets.all fun cs =>
+      has_no_dups (rs.flatMap fun r => cs.map fun c => b r c)
+
+def matches_partial (p b : Board) : Bool :=
+  allIdx.all fun r =>
+    allIdx.all fun c =>
+      if p r c == .v0 then true else b r c == p r c
+
+-- A standard medium difficulty Sudoku grid
+def example_partial (r c : Idx) : Val :=
+  match r, c with
+  -- Row 1
+  | .i1, .i1 => .v1 | .i1, .i2 => .v2 | .i1, .i5 => .v7 | .i1, .i7 => .v5 | .i1, .i8 => .v6
+  -- Row 2
+  | .i2, .i1 => .v5 | .i2, .i3 => .v7 | .i2, .i4 => .v9 | .i2, .i5 => .v3 | .i2, .i6 => .v2 | .i2, .i8 => .v8
+  -- Row 3
+  | .i3, .i6 => .v1
+  -- Row 4
+  | .i4, .i2 => .v1 | .i4, .i4 => .v2 | .i4, .i5 => .v4 | .i4, .i8 => .v5
+  -- Row 5
+  | .i5, .i1 => .v3 | .i5, .i3 => .v8 | .i5, .i7 => .v4 | .i5, .i9 => .v2
+  -- Row 6
+  | .i6, .i2 => .v7 | .i6, .i5 => .v8 | .i6, .i6 => .v5 | .i6, .i8 => .v1
+  -- Row 7
+  | .i7, .i4 => .v7
+  -- Row 8
+  | .i8, .i2 => .v8 | .i8, .i4 => .v4 | .i8, .i5 => .v2 | .i8, .i6 => .v3 | .i8, .i7 => .v7 | .i8, .i9 => .v1
+  -- Row 9
+  | .i9, .i2 => .v3 | .i9, .i3 => .v4 | .i9, .i5 => .v1 | .i9, .i8 => .v2 | .i9, .i9 => .v8
+  | _, _ => .v0
+
+-- The generic `solve (p : Board)` is ill-posed (contradictory `p`
+-- admits no board); the well-posed goal is the concrete instance.
+set_option maxHeartbeats 10000000 in
+def sudoku9partial : { b : Board //
+    valid_cells b = true ∧ valid_rows b = true ∧ valid_cols b = true ∧
+      valid_boxes b = true ∧ matches_partial example_partial b = true } := by
   lynth
 
-#print axioms sudoku9
+#print axioms sudoku9partial

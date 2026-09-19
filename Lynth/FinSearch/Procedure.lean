@@ -1,8 +1,11 @@
 import Lean
 import Std.Tactic.BVDecide
+import Batteries.Data.HashMap
+import Batteries.Lean.HashSet
 import Lynth.Procedure
 import Lynth.Witness
 import Lynth.FinSearch.Syntax
+import Lynth.FinSearch.Theory
 import Lynth.FinSearch.Encode
 import Lynth.FinSearch.Detect
 import Lynth.FinSearch.Recognize
@@ -263,8 +266,10 @@ def run : TacticM ProcedureOutcome := do
           then pure (none : Option (FProp × Array (Option (List Nat))))
           else
             let cells ← IO.mkRef (α := Array (Expr × Option (List Nat))) #[]
+            let memo ← IO.mkRef (α := Memo) ∅
+            let dedup ← IO.mkRef (α := Dedup) ∅
             let grid := fvars[0]!
-            match ← recognizeProp cells grid body 64 with
+            match ← recognizeProp memo dedup cells grid body 64 with
             | none => pure none
             | some prop =>
               let cellArr ← cells.get
@@ -276,39 +281,130 @@ def run : TacticM ProcedureOutcome := do
   match outcome with
   | none =>
     return .failure []
-  | some (prop, argTable) =>
+  | some (prop0, argTable) =>
     let nCells := argTable.size
+    -- fold Boolean debris first (`x = true` arrives as an
+    -- iff-gate pair around the real conjunction; without this the
+    -- split below would cut two giant wrappers instead of the
+    -- per-row pieces). Identities only, so eager behavior is
+    -- unchanged (the encoder folds again anyway).
+    let prop := simpProp prop0
+    -- shared closing step: decoded per-cell values become a closed
+    -- board value, the goal is assigned, and kernel-checked tactics
+    -- verify it (soundness backstop for both eager and lazy paths)
+    let finish : List Nat → TacticM ProcedureOutcome := fun vals => do
+      let get : List Nat → Nat := fun args =>
+        match (List.range nCells).find? fun a =>
+          match argTable[a]! with
+          | some as => as == args
+          | none => false with
+        | some a => vals.getD a 0
+        | none => 0
+      let val ← buildFunVal dims cod get
+      let mvar ← getMainGoal
+      let sideTy := mkApp shape.pred val
+      let sidePrf ← mkFreshExprSyntheticOpaqueMVar sideTy
+      let v ← shape.mkVal val sidePrf
+      mvar.assign v
+      replaceMainGoal [sidePrf.mvarId!]
+      if ← closeSide then return .success
+      else
+        restoreState snapshot
+        return .failure []
+    -- branch only on grid cells' one-hot bits (aux/gate vars are
+    -- implied; see `WS.branch`): collect vars whose cell has
+    -- argument values in the table
+    let branchOf : List ((Nat × Nat) × Nat) → Std.HashSet Nat := fun vmap =>
+      let gridCells : Std.HashSet Nat :=
+        (List.range nCells).foldl (fun s a =>
+          match argTable[a]! with
+          | some _ => s.insert a
+          | none => s) ∅
+      vmap.foldl (fun s ((a, _), v) =>
+        if gridCells.contains a then s.insert v else s) ∅
     -- solve, decode, rebuild, verify
     try
-      match runEncode prop Detect.maxSatVars with
-      | none =>
-        return .failure []
-      | some (cnf, vmap) =>
-        match Lynth.Sat.Cdcl.cdclSolve cnf Detect.solveFuel with
-        | { result := some .unsat, .. } =>
+      let (base, atoms) := Theory.splitLazy prop
+      if atoms.isEmpty then
+        match runEncode prop Detect.maxSatVars with
+        | none =>
           return .failure []
-        | { result := none, .. } =>
-          return .failure []
-        | { result := some (.sat model), .. } =>
-          let vals := decodeModel vmap model nCells
-          let get : List Nat → Nat := fun args =>
-            match (List.range nCells).find? fun a =>
-              match argTable[a]! with
-              | some as => as == args
-              | none => false with
-            | some a => vals.getD a 0
-            | none => 0
-          let val ← buildFunVal dims cod get
-          let mvar ← getMainGoal
-          let sideTy := mkApp shape.pred val
-          let sidePrf ← mkFreshExprSyntheticOpaqueMVar sideTy
-          let v ← shape.mkVal val sidePrf
-          mvar.assign v
-          replaceMainGoal [sidePrf.mvarId!]
-          if ← closeSide then return .success
-          else
-            restoreState snapshot
+        | some (cnf, vmap, _) =>
+          match Lynth.Sat.Cdcl.cdclSolve cnf Detect.solveFuel 100 (branchOf vmap) with
+          | { result := some .unsat, .. } =>
             return .failure []
+          | { result := none, .. } =>
+            return .failure []
+          | { result := some (.sat model), .. } =>
+            finish (decodeModel vmap model nCells)
+      else
+        -- lazy loop: big pieces stay out of the CNF; the solver
+        -- proposes candidates over the small base, and each failure
+        -- teaches blocking clauses over the cells that caused it
+        -- (certified duplicate pairs, generalized over values).
+        -- Every learned clause rules out the current candidate, so
+        -- the loop always makes progress; anything learned is
+        -- implied by the corresponding piece (same fixed-context
+        -- evidence as greedy), and the kernel re-verifies the end.
+        let atomCells : List (Nat × Nat) :=
+          (atoms.toList.flatMap collectCells).eraseDups
+        match runEncode base Detect.maxSatVars atomCells with
+        | none =>
+          return .failure []
+        | some (cnf0, vmap, _) =>
+          let branch := branchOf vmap
+          let cardOf : Nat → Nat := fun a =>
+            (vmap.filter fun ((x, _), _) => x == a).length
+          let findVar : (Nat × Nat) → Option Nat := fun (a, w) =>
+            (vmap.find? fun ((x, y), _) => x == a && y == w).map (·.2)
+          let rec loop (fuel : Nat) (learned : List Lynth.Sat.Clause) :
+              TacticM ProcedureOutcome := do
+            match fuel with
+            | 0 => return .failure []
+            | fuel + 1 =>
+              match Lynth.Sat.Cdcl.cdclSolve (cnf0 ++ learned) Detect.solveFuel 100 branch with
+              | { result := some .unsat, .. } =>
+                return .failure []
+              | { result := none, .. } =>
+                return .failure []
+              | { result := some (.sat model), .. } =>
+                let vals := decodeModel vmap model nCells
+                let assign : Nat → Nat := fun a => vals.getD a 0
+                let failed := atoms.toList.filter fun atm =>
+                  evalProp atm assign (fun _ => false) == false
+                match failed with
+                | [] => finish vals
+                | _ =>
+                  let mut next := learned
+                  for atm in failed do
+                    let cells := ((collectCells atm).map (·.1)).eraseDups
+                    match Theory.certifyPair atm cells assign cardOf with
+                    | some (i, j) =>
+                      let gen := Theory.generalizePair atm i j assign cardOf
+                      if gen.isEmpty then
+                        match findVar (i, assign i), findVar (j, assign j) with
+                        | some a, some b =>
+                          next := [-Int.ofNat a, -Int.ofNat b] :: next
+                        | _, _ => return .failure []
+                      else
+                        let mut bad := false
+                        for v' in gen do
+                          match findVar (i, v'), findVar (j, v') with
+                          | some a, some b =>
+                            next := [-Int.ofNat a, -Int.ofNat b] :: next
+                          | _, _ => bad := true
+                        if bad then return .failure []
+                    | none =>
+                      let core0 := Theory.minimizeCore atm cells assign cardOf
+                      let core :=
+                        if core0.isEmpty then cells.map fun a => (a, assign a)
+                        else core0
+                      match core.mapM findVar with
+                      | none => return .failure []
+                      | some lits =>
+                        next := (lits.map fun x => -Int.ofNat x) :: next
+                  loop fuel next
+          loop Theory.maxIters []
     catch _ =>
       restoreState snapshot
       return .failure []

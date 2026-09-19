@@ -1,6 +1,8 @@
 import Lynth.FinSearch.Syntax
 import Lynth.Sat.Solver
 import Lynth.Sat.Cdcl
+import Batteries.Data.HashMap
+import Batteries.Lean.HashSet
 
 /-!
 CNF encoding of `FProp`: one-hot booleans per finite variable plus
@@ -17,12 +19,20 @@ namespace Lynth.FinSearch.Encode
 open Lynth.FinSearch
 open Lynth.Sat
 
-/-- Encoder state: fresh vars, clauses, one-hot table, sealed rows. -/
+/-- Encoder state: fresh vars, clauses, one-hot table, sealed rows,
+literal cache. -/
 structure EState where
   next : Nat
   clauses : CNF
-  onehot : List ((Nat × Nat) × Nat)
-  sealed : List (Nat × Nat)
+  onehot : Std.HashMap (Nat × Nat) Nat
+  sealed : Std.HashSet (Nat × Nat)
+  /-- Canonical Tseitin vars per `(card, value)` literal (literals
+  denote constants, so all occurrences share one vector instead of
+  allocating fresh vars + units per occurrence). -/
+  litcache : Std.HashMap (Nat × Nat) (List Lit)
+  /-- One SAT var per opaque theory `atom` id (shared across
+  occurrences, like `litcache`). -/
+  atomvars : Std.HashMap Nat Lit := {}
 
 abbrev EncodeM := StateM EState
 
@@ -41,11 +51,11 @@ def emit (cl : Clause) : EncodeM Unit := do
 /-- SAT var for one-hot bit `(a, w)`, allocating on first use. -/
 def hotVar (a w : Nat) : EncodeM Nat := do
   let s ← get
-  match s.onehot.find? fun ((x, y), _) => x == a && y == w with
-  | some (_, v) => pure v
+  match s.onehot[(a, w)]? with
+  | some v => pure v
   | none =>
     let v := s.next
-    set { s with next := v + 1, onehot := ((a, w), v) :: s.onehot }
+    set { s with next := v + 1, onehot := s.onehot.insert (a, w) v }
     pure v
 
 /-- Ensure the one-hot row for variable `a` of cardinality `c`;
@@ -53,24 +63,31 @@ assert exactly-one the first time the row completes. -/
 def ensureRow (a c : Nat) : EncodeM (List Nat) := do
   let vars ← List.range c |>.mapM fun w => hotVar a w
   let s ← get
-  if s.sealed.any fun (x, y) => x == a && y == c then pure vars
+  if s.sealed.contains (a, c) then pure vars
   else
-    set { s with sealed := (a, c) :: s.sealed }
+    set { s with sealed := s.sealed.insert (a, c) }
     emit (vars.map Int.ofNat)
     for x in vars do
       for y in vars do
         if x < y then emit [-Int.ofNat x, -Int.ofNat y] else pure ()
     pure vars
 
-/-- Term to one-hot bit literals (index = value). -/
+/-- Term to one-hot bit literals (index = value). Literals share
+one canonical vector per `(card, value)` (see `litcache`). -/
 def termBits (t : FTerm) : EncodeM (List Lit) := do
   match t with
   | .lit c v =>
     let v := v % c
-    List.range c |>.mapM fun w => do
-      let t ← freshLit
-      if w == v then emit [t] else emit [-t]
-      pure t
+    let s ← get
+    match s.litcache[(c, v)]? with
+    | some bs => pure bs
+    | none =>
+      let bs ← List.range c |>.mapM fun w => do
+        let t ← freshLit
+        if w == v then emit [t] else emit [-t]
+        pure t
+      modify fun s => { s with litcache := s.litcache.insert (c, v) bs }
+      pure bs
   | .var c a => do
     let vars ← ensureRow a c
     pure (vars.map Int.ofNat)
@@ -200,21 +217,85 @@ def propBit : FProp → EncodeM Lit
   | .exactK ps k => do
     let bs ← ps.mapM propBit
     exactKNaive bs k
+  | .atom i => do
+    let s ← get
+    match s.atomvars[i]? with
+    | some l => pure l
+    | none =>
+      let l ← freshLit
+      modify fun s => { s with atomvars := s.atomvars.insert i l }
+      pure l
+
+/-- Boolean simplifier: constant folding (`and`/`or` with `tru`/`fls`,
+double negation, singleton collapse). ite-distribution produces many
+constant leaves; without this each becomes a Tseitin gate + unit
+clauses that bloat the CNF and confuse branching. Semantics
+preserved by Boolean identities; the kernel re-verifies anyway. -/
+def simpProp : FProp → FProp
+  | .and ps =>
+    let qs := (ps.map simpProp).filter fun | .tru => false | _ => true
+    if qs.any fun | .fls => true | _ => false then .fls
+    else match qs with
+      | [] => .tru
+      | [q] => q
+      | _ => .and qs
+  | .or ps =>
+    let qs := (ps.map simpProp).filter fun | .fls => false | _ => true
+    if qs.any fun | .tru => true | _ => false then .tru
+    else match qs with
+      | [] => .fls
+      | [q] => q
+      | _ => .or qs
+  | .not p =>
+    match simpProp p with
+    | .tru => .fls
+    | .fls => .tru
+    | .not q => q
+    | q => .not q
+  | p => p
 
 /-- Run the encoder on a top-level proposition (asserted true).
-Returns clauses + var map, or `none` over limits. -/
-def runEncode (p : FProp) (maxVars : Nat := 8192) :
-    Option (CNF × List ((Nat × Nat) × Nat)) :=
-  let (_, s) := StateT.run (do let t ← propBit p; emit [t])
-    { next := 1, clauses := [], onehot := [], sealed := [] }
-  if s.next > maxVars then none else some (s.clauses.reverse, s.onehot)
+Returns clauses + var map + symbolic-var count, or `none` over
+limits. One-hot variables are pre-allocated contiguously as
+`1..K` (so the solver can restrict branching to them and never
+waste decisions on Tseitin gates); gate variables come after.
+`extraCells` pre-allocates one-hot rows for cells hidden inside
+opaque theory atoms (their rows would otherwise be missing from
+the map the lazy loop uses to build blocking clauses). -/
+def runEncode (p : FProp) (maxVars : Nat := 8192)
+    (extraCells : List (Nat × Nat) := []) :
+    Option (CNF × List ((Nat × Nat) × Nat) × Nat) :=
+  -- simplify first (constant folding over ite-distribution debris;
+  -- can only shrink: every rewrite is a Boolean identity)
+  let p := simpProp p
+  -- dedupe via hash set (`List.eraseDups` is quadratic and chokes
+  -- past ~100k pairs from symbolic list computation); sorted for a
+  -- deterministic variable numbering
+  let seen : Std.HashSet (Nat × Nat) :=
+    ((collectCells p) ++ extraCells).foldl (fun s x => s.insert x) ∅
+  let pairs := (seen.toList.toArray.qsort fun x y =>
+    decide (x.1 < y.1 ∨ (x.1 = y.1 ∧ x.2 < y.2))).toList
+  let (onehot, next) := pairs.foldl (fun (oh, n) (a, c) =>
+    ((List.range c).foldl (fun oh w => oh.insert (a, w) (n + w)) oh, n + c))
+    (∅, 1)
+  let (_, s) := StateT.run (do
+    -- seal the theory-atom rows up front: nothing in the base
+    -- proposition may mention them, so without this their
+    -- exactly-one constraints would never be emitted and decoded
+    -- values for those cells would be garbage
+    for (a, c) in extraCells do
+      let _ ← ensureRow a c
+    let t ← propBit p; emit [t])
+    { next := next, clauses := [], onehot := onehot, sealed := ∅, litcache := ∅ }
+  if s.next > maxVars then none
+  else some (s.clauses.reverse, s.onehot.toList, next - 1)
 
 /-- Validity oracle: `true` iff `p` holds under all assignments. -/
 def checkValid (p : FProp) (fuel : Nat := 20000) : Bool :=
   -- validity of p ⟺ UNSAT of ¬p
   match runEncode (.not p) with
   | none => false
-  | some (cnf, _) =>
+  | some (cnf, _, _) =>
     match Cdcl.cdclSolve cnf fuel with
     | { result := some .unsat, .. } => true
     | _ => false

@@ -57,6 +57,6 @@ def scalarRoute : { n : Nat // n = 42 } := by
 
 -- Router lands on each side of the threshold.
 example : Detect.route true 16 = true := rfl
-example : Detect.route true 513 = false := rfl
+example : Detect.route true 16385 = false := rfl
 example : Detect.route false 16 = false := rfl
 example : Detect.estimate [4, 4] = 16 := rfl

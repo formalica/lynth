@@ -60,11 +60,14 @@ and resolution traces for every learnt clause. Duplicate literals are
 stripped up front: they defeat unit detection (e.g. `xor(v,v)` would
 otherwise emit `[-o,-v,-v]` and stall learning).
 SAT answers pass a final `checkSat` gate (defense in depth: a model
-that fails the gate is reported as unknown, never as SAT). -/
-def cdclSolve (cnf : CNF) (fuel : Nat := 10000) (restartBase : Nat := 100) :
-    CdclOut :=
+that fails the gate is reported as unknown, never as SAT).
+`branch` (default empty = all vars) restricts branching to the
+given SAT variables (the grid cells' one-hot bits); other callers
+keep the default. -/
+def cdclSolve (cnf : CNF) (fuel : Nat := 10000) (restartBase : Nat := 100)
+    (branch : Std.HashSet Nat := ∅) : CdclOut :=
   let cnf := cnf.map (·.eraseDups)
-  match Watch.mkWS cnf with
+  match Watch.mkWS cnf branch with
   | none =>
     { result := some .unsat, learnt := 0, restarts := 0, traces := [] }
   | some s =>

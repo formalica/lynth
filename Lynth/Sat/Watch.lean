@@ -1,5 +1,6 @@
 import Lynth.Sat.Syntax
 import Lynth.Sat.Solver
+import Batteries.Lean.HashSet
 
 /-!
 Watched-literal CDCL core: a native Lean 4 port of CreuSAT's propagation
@@ -59,6 +60,12 @@ structure WS where
   vsearch : Nat
   vtick : Nat
   nvars : Nat
+  /-- Branch only on these SAT variables when non-empty (grid-cell
+  one-hot bits; aux/gate variables are implied and deciding them
+  thrashes: 9/10 most-decided vars on gate-heavy CNFs). Empty =
+  branch all (default, preserves current behavior for other
+  callers). A fallback unrestricted pass keeps models complete. -/
+  branch : Std.HashSet Nat := ∅
   deriving Inhabited
 
 /-- Watch-list index of a literal (`2*(v-1)` positive, `+1` negative). -/
@@ -204,23 +211,41 @@ def bumpVmtf (s : WS) (vars : List Nat) : WS :=
   sorted.foldl (fun s (v, _) => if v == 0 then s else moveToFront s (v - 1)) s
 
 /-- VMTF decision: first unset variable from the search cursor
-(CreuSAT `get_next`), with full rescan fallback. -/
+(CreuSAT `get_next`), with full rescan fallback. When `branch` is
+set, those variables come first; if none is unsettled, an
+unrestricted pass picks up stragglers so models stay complete
+(gates are implied in practice; the fallback only fires for
+leftovers). -/
 def getNext (s : WS) : WS × Option Nat :=
-  go s s.vsearch (s.nvars + 1)
+  match go s s.vsearch (s.nvars + 1) true with
+  | (s', none) =>
+    go s' s'.vsearch (s'.nvars + 1) false
+  | r => r
 where
-  go (s : WS) (cur fuel : Nat) : WS × Option Nat :=
+  branched (s : WS) (v : Nat) (onlyBranch : Bool) : Bool :=
+    v < s.assign.size && !(isSet s (v + 1)) &&
+      (!onlyBranch || s.branch.isEmpty || s.branch.contains (v + 1))
+  go (s : WS) (cur fuel : Nat) (onlyBranch : Bool) : WS × Option Nat :=
     match fuel with
-    | 0 => (s, fullScan s)
+    | 0 => (s, fullScan s onlyBranch)
     | f + 1 =>
-      if cur == s.nvars then (s, fullScan s)
-      else if cur < s.assign.size && !(isSet s (cur + 1)) then
+      if cur == s.nvars then (s, fullScan s onlyBranch)
+      else if branched s cur onlyBranch then
         let nxt := if cur < s.vnext.size then s.vnext[cur]! else s.nvars
         ({ s with vsearch := nxt }, some cur)
       else
         let nxt := if cur < s.vnext.size then s.vnext[cur]! else s.nvars
-        go s nxt f
-  fullScan (s : WS) : Option Nat :=
-    (List.range s.nvars).find? fun i => !(isSet s (i + 1))
+        go s nxt f onlyBranch
+  fullScan (s : WS) (onlyBranch : Bool) : Option Nat :=
+    -- allocation-free linear rescan (`List.range` here cost ~1ms
+    -- per decision at 37k vars)
+    goAsc s 0 (s.nvars + 1) onlyBranch
+  goAsc (s : WS) : Nat → Nat → Bool → Option Nat
+    | _, 0, _ => none
+    | i, f + 1, onlyBranch =>
+      if s.nvars ≤ i then none
+      else if branched s i onlyBranch then some i
+      else goAsc s (i + 1) f onlyBranch
 
 /-- Scan clause positions `[k, upto)` for the first non-false literal. -/
 def scanGo (s : WS) (c : WClause) (k upto : Nat) : Option Nat :=
@@ -353,8 +378,10 @@ def initOrder (cls : Array (Array Int)) (nvars : Nat) : Array Nat :=
   (isortBy pairs |>.reverse).map (·.2)
 
 /-- Build the initial state; `none` = immediate UNSAT (empty clause or
-opposing units). Unit clauses are enqueued at level 0. -/
-def mkWS (cnf : CNF) : Option WS := do
+opposing units). Unit clauses are enqueued at level 0.
+`branch` (default empty = all) restricts branching to the given
+SAT variables; see `WS.branch`. -/
+def mkWS (cnf : CNF) (branch : Std.HashSet Nat := ∅) : Option WS := do
   -- sanitize: drop `0` literals (parity with the old engine, where a
   -- lone `0` forced conflict and elsewhere it stayed unset forever)
   let cls : Array (Array Int) :=
@@ -389,7 +416,7 @@ def mkWS (cnf : CNF) : Option WS := do
         (if rank + 1 < order.size then order[rank + 1]! else nvars)
     let vstart := if order.isEmpty then nvars else order[0]!
     let mut s : WS :=
-      { clauses := clauses, watches := watches, assign := Array.replicate nvars 2, alevel := Array.replicate nvars 0, reason := Array.replicate nvars none, tpos := Array.replicate nvars nvars, trail := #[], tlevel := #[], qhead := 0, clevel := 0, vnext := vnext, vprev := vprev, vts := vts, vstart := vstart, vsearch := vstart, vtick := nvars + 1, nvars := nvars }
+      { clauses := clauses, watches := watches, assign := Array.replicate nvars 2, alevel := Array.replicate nvars 0, reason := Array.replicate nvars none, tpos := Array.replicate nvars nvars, trail := #[], tlevel := #[], qhead := 0, clevel := 0, vnext := vnext, vprev := vprev, vts := vts, vstart := vstart, vsearch := vstart, vtick := nvars + 1, nvars := nvars, branch := branch }
     -- enqueue unit clauses at level 0
     match enqUnits s (List.range clauses.size) with
     | none => none
@@ -404,11 +431,19 @@ where
         | (s', true) => enqUnits s' rest
         | (_, false) => none
 
-/-- Resolve `c` (∋ `l`) with reason `r` (∋ `¬l`) on `l`. -/
+/-- Resolve `c` (∋ `l`) with reason `r` (∋ `¬l`) on `l`.
+Membership tests go through a hash set (the naive `contains` made
+each resolution step quadratic in clause length — minutes per
+conflict on learnt clauses hundreds of literals long). Output order
+is identical to the naive version (matters: `checkTrace`
+re-validates resolution derivations). -/
 def wresolve (c r : Clause) (l : Lit) : Clause :=
   let c' := c.filter (· != l)
   let r' := r.filter (· != -l)
-  c' ++ r'.filter fun m => !(c'.contains m)
+  if c'.length ≤ 8 then c' ++ r'.filter fun m => !(c'.contains m)
+  else
+    let seen : Std.HashSet Lit := c'.foldl (fun s m => s.insert m) ∅
+    c' ++ r'.filter fun m => !seen.contains m
 
 /-- First-UIP conflict analysis over array state (same algorithm as the
 old `analyzeT`, same trace format). -/
@@ -437,9 +472,13 @@ def backjumpLevelW (s : WS) (learnt : Clause) (level : Nat) : Nat :=
   let rest := learnt.filter fun l => levelOf s (varOf l) != level
   rest.foldl (fun m l => Nat.max m (levelOf s (varOf l))) 0
 
-/-- A clause is useless if tautological. -/
+/-- A clause is useless if tautological (hash-set membership:
+linear instead of quadratic). -/
 def isTautW (cl : Clause) : Bool :=
-  cl.any fun l => cl.contains (-l)
+  if cl.length ≤ 8 then cl.any fun l => cl.contains (-l)
+  else
+    let seen : Std.HashSet Lit := cl.foldl (fun s m => s.insert m) ∅
+    cl.any fun l => seen.contains (-l)
 
 /-- Geometric restart limit (kept from the previous engine). -/
 def restartLimitW (base idx : Nat) : Nat :=
@@ -507,7 +546,10 @@ def wcdcl (s : WS) (fuel learnt confTotal rIdx sinceR rBase : Nat)
                 else s3
               | none => s3
             wcdcl s3 f (learnt + 1) (confTotal + 1)
-              rIdx (sinceR + 1) rBase (acc ++ [(conflict, steps, learntCl)])
+              -- prepend (constant time): `wsolve` reverses once, so the
+              -- visible order stays chronological without the
+              -- quadratic `acc ++ [x]` per conflict
+              rIdx (sinceR + 1) rBase ((conflict, steps, learntCl) :: acc)
       | (s', .ok, _) =>
         match getNext s' with
         | (s'', none) =>
@@ -528,6 +570,7 @@ def wcdcl (s : WS) (fuel learnt confTotal rIdx sinceR rBase : Nat)
 
 /-- Top-level watched-literal solver over array state. -/
 def wsolve (s : WS) (fuel restartBase : Nat) : WOut :=
-  wcdcl s fuel 0 0 0 0 restartBase []
+  let o := wcdcl s fuel 0 0 0 0 restartBase []
+  { o with traces := o.traces.reverse }
 
 end Lynth.Sat.Watch
