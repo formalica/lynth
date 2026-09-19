@@ -15,7 +15,14 @@ since lean is very expressive language we should
 include variable sharing as part of procedure 
 explanation(return new information in generic way, 
 maybe by returning new inferred `var_name=x` 
-predicate(along with proof of predicate). everything 
+predicate(along with proof of predicate). and since lean 
+is more expressive we can express variable sharing 
+between theories by adding new constraints to 
+goal(enriching it) and not only variable sharing but 
+theories can add any new inferenced knowlege in generic 
+way by adding new constraints new inferend information
+(and its proof) directly to the goal by native terms 
+of lean everything 
 should be proved so decision procedures should also 
 reconstruct proof. no need to create separate theories 
 because i do not like that hierarchy , try to create 
@@ -26,10 +33,14 @@ its own internal theory/language/representation of
 problem and translate it from/to lean like in z3(but z3 
 have pure base languages and type system and pure 
 general language, lean lang is more expressive and is 
-more canonical). we will have no iterative or staged 
-smt solving, user will just express what he want to 
+more canonical). user will just express what he want to 
 solve via types and we should fill data and proof 
-necessary propositions over data.
+necessary propositions over data, and procedure can 
+solve it how it wants, it can translate/expand 
+everything at the beggining or work iteratively 
+(propose candidate, check it, learn from failure and 
+repeat) like z3 does internally, this is up to 
+implementer.
 
 download z3 and explore it, start to implement some 
 basic thinks like sat solver procedure and then linear 
@@ -53,5 +64,5 @@ from yet not proved our internal theorems/axioms.
 
 it is recomended to rebuild z3 with DZ3_ENABLE_TRACING_FOR_NON_DEBUG=ON flag to see its runtime traces and it can help to better and faster understand how z3 works
 
-we should implement z3 theories but wrap them under procedures with same high level interface, and theory explaination and information sharing and type information enrichment will happen through that interface 
+procedure is renaming of theory word of z3 and it is preferable to have procedure corresponding to each z3 theory, we should implement z3 theories but wrap them under procedures with same high level interface, and theory explaination and information sharing and type information enrichment will happen through that interface, also we allow to create subprocedures(subtheories) in order to make everything more composable 
 
