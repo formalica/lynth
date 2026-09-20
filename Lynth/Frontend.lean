@@ -1,6 +1,7 @@
 import Lean
 import Lynth.Procedure
 import Lynth.FinSearch.Procedure
+import Lynth.FinSearch.ListInfer
 import Lynth.Euf.Procedure
 import Lynth.Quant.Procedure
 import Lynth.Array.Procedure
@@ -19,6 +20,8 @@ Pipeline (no staged SMT loop; the user states the goal via types and
 lynth fills data + proofs):
 0. `FinSearch` — finite-function synthesis goals (SAT-backed search);
    scalars yield to `Witness`.
+   `ListInfer` — unbounded `List Nat` goals whose length and value
+   bounds infer exactly, enumerated and kernel-checked.
 1. `Witness` — subtype/refinement goals (`{n // P n}`), computable search.
 2. `Sat` — propositional skeleton + closing tactics.
 3. `Arith` — linear arithmetic (`omega`-checked).
@@ -35,6 +38,7 @@ outcome so users can see how far the pipeline got. -/
 def dispatch : TacticM Unit := do
   let procs : List (String × TacticM ProcedureOutcome) := [
     ("finsearch", Lynth.FinSearch.Procedure.run),
+    ("listsynth", Lynth.FinSearch.ListInfer.run),
     ("witness", Lynth.Witness.run),
     ("euf", Lynth.Euf.Procedure.run),
     ("quant", Lynth.Quant.Procedure.run),

@@ -61,6 +61,10 @@ def exactKCostOk (n k : Nat) : Bool :=
 def estimate (dims : List Nat) : Nat :=
   dims.foldl (· * ·) 1
 
+/-- Max candidates enumerated by list synthesis (`pool ^ length`);
+over-budget shapes yield gracefully instead of hanging the build. -/
+def maxListCand : Nat := 200000
+
 /-- Route decision: attempt SAT iff function-typed (`isFun`) and within
 the cell budget. Scalars yield to `Witness`. -/
 def route (isFun : Bool) (nCells : Nat) : Bool :=

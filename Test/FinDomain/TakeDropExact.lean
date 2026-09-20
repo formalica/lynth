@@ -32,6 +32,6 @@ def etalon : List Nat := [7, 1, 1, 7]
 -- Runtime check: witness satisfies the window + count properties.
 #guard tdCheck (tdSol : List Nat)
 
-/-- info: 'tdSol' depends on axioms: [propext] -/
+/-- info: 'tdSol' does not depend on any axioms -/
 #guard_msgs in
 #print axioms tdSol
