@@ -95,6 +95,19 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   remain as optional follow-ups.)
 - Q6 scale pilots DONE this tick: 9×9 SudokuPartial closes end to end
   (~38s, axioms `[propext]`); see Done entry below.
+- `listsynth` batch (this tick): `Test/FinDomain` pilots
+  ReverseMapChain, EraseReplacePreimage, SubsetSum, SortPerm close
+  end to end (3–4s each; TakeDropExact still green) via shared
+  `ListInfer` extensions only — relation questions for non-`Eq`
+  props (`Sublist`/`Perm` reference domains), peel questions for
+  nested calls, definition-unfolding closed readers, new
+  erase/replace/sublist/perm dispatch rows, sublist enumeration,
+  sorted-first plus bounded pool products over length windows,
+  widened-pool retry. SubsetSum/SortPerm pin
+  `[propext, Classical.choice, Quot.sound]` (Perm/Sublist
+  decidability, same precedent as StarBattle10x10). Remaining
+  FinDomain pilots still yield gracefully (SafetyInvariant breaks
+  in its own `omega`, pre-existing).
 
 ## Open gaps / risks (honest list)
 

@@ -36,6 +36,6 @@ def etalon : List Nat := input.mergeSort
 -- Runtime check: `lynth`'s witness equals the etalon.
 #guard (sortedInput : List Nat) = etalon
 
-/-- info: 'sortedInput' depends on axioms: [propext] -/
+/-- info: 'sortedInput' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms sortedInput

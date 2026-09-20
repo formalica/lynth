@@ -38,6 +38,6 @@ def etalon : List Nat := [4, 5]
 -- against a known-good reference solution).
 #guard (ssSol : List Nat).Sublist ssInput ∧ (ssSol : List Nat).sum = ssTarget
 
-/-- info: 'ssSol' depends on axioms: [propext] -/
+/-- info: 'ssSol' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms ssSol

@@ -14,13 +14,19 @@ list goal needs its length and element values inferred first. Every
 inference below is asked of every recognized call through one
 dispatcher (`inferenceRow`): length lower/upper bounds for
 `List`-valued calls, element lower/upper bounds and value pools for
-`Nat`-element lists, and target exact/lower/upper bounds answering
+`Nat`-element lists, target exact/lower/upper bounds answering
 what a call equated to a closed value forces upon a mentioned
-target list. Each Lean function the pipeline handles owns exactly
+target list, relation lower/upper/pool/domain answers for non-`Eq`
+propositions (`Sublist`/`Perm` reference domains), and peel lengths
+letting equations recurse through one nesting layer at a time.
+Each Lean function the pipeline handles owns exactly
 one table row; unknown heads answer `none` everywhere, so shared
 code never names a single function and supporting a new function
 means adding a row. Recursive questions go through the `Queries`
-bundle (fuel-guarded, always on strict subterms). A wrong inference
+bundle (fuel-guarded, always on strict subterms). Closed sides see
+through definitions. Enumeration follows the inferred shape
+(sublists of a reference, sorted-first plus bounded pool products
+over a length window, widened-pool retry). A wrong inference
 can only make the search miss (yield), never prove a falsehood:
 every candidate is kernel-checked by `decide` before it closes
 anything.
@@ -40,8 +46,23 @@ structure Queries where
   elemHi : Expr → Nat → MetaM (Option Nat)
   pool : Expr → Nat → MetaM (Option (List Nat))
 
+/-- Reference domain governing the target: either the subsequence
+domain of a closed list (`Sublist`-style: enumerate sublists) or the
+permutation domain (`Perm`-style: same multiset, sorted arrangement
+tried first). Named by shape, never by Lean function. -/
+inductive RelDom where
+  | sub : List Nat → RelDom
+  | perm : List Nat → RelDom
+
 /-- One row of the inference dispatch: how a single Lean call node
-answers the uniform bound questions. -/
+answers the uniform bound questions. The length/elem questions
+recurse over structure; the target questions answer what an equation
+`call = closed` forces upon a mentioned target list; the relation
+questions answer what a non-`Eq` proposition mentioning the target
+forces (subsequence/permutation domains and the like); the peel
+question answers what length a same-shape stand-in for the call's
+list operand must have, so equations peel through one nesting layer
+at a time. -/
 structure InferRow where
   inferLengthLower : Queries → Array Expr → Nat → MetaM (Option Nat)
   inferLengthUpper : Queries → Array Expr → Nat → MetaM (Option Nat)
@@ -51,6 +72,11 @@ structure InferRow where
   inferTargetExact : FVarId → Array Expr → Expr → MetaM (Option Nat)
   inferTargetLower : FVarId → Array Expr → Expr → MetaM (Option Nat)
   inferTargetUpper : FVarId → Array Expr → Expr → MetaM (Option Nat)
+  inferRelLower : FVarId → Queries → Array Expr → Nat → MetaM (Option Nat)
+  inferRelUpper : FVarId → Queries → Array Expr → Nat → MetaM (Option Nat)
+  inferRelPool : FVarId → Queries → Array Expr → Nat → MetaM (Option (List Nat))
+  inferRelDom : FVarId → Array Expr → MetaM (Option RelDom)
+  inferPeelLength : Array Expr → Expr → MetaM (Option (Nat × Bool))
 
 /-- Numeric literal (elaborated `OfNat` included). -/
 private def natLitOf : Expr → Option Nat :=
@@ -89,6 +115,79 @@ private def uniqNatLit (args : Array Expr) : Option Nat :=
   | [k] => some k
   | _ => none
 
+/-- Numeric literal, seeing through definitions (`ssTarget`-style
+closed constants reduce first). Purely syntactic matching would leave
+them stuck and the caller would misread a closed value as symbolic. -/
+private def natLitW (e : Expr) : MetaM (Option Nat) := do
+  let eR ← whnf e
+  pure (natLitOf eR)
+
+/-- Closed `List Nat` value, seeing through definitions
+(`ssInput`-style constants reduce first) and requiring every element
+to be a numeric literal. -/
+private def closedNatListW (e : Expr) : MetaM (Option (List Nat)) := do
+  let eR ← whnf e
+  match listLitOf eR with
+  | none => pure none
+  | some elts =>
+    let vs := elts.filterMap natLitOf
+    pure (if vs.length == elts.length then some vs else none)
+
+/-- Closed list length (definitions unfolded). -/
+private def closedListLenW (e : Expr) : MetaM (Option Nat) := do
+  let eR ← whnf e
+  match listLitOf eR with
+  | some elts => pure (some elts.length)
+  | none => pure none
+
+/-- All Nat literals in an expression subtree (definition-free
+syntactic scan: numeric leaves such as erased elements, replacement
+values, or index pins). Used only to widen the value pool; every
+candidate is still kernel-checked, so over-collection costs search,
+never soundness. -/
+private def collectNatLits : Expr → List Nat
+  | .lit (.natVal n) => [n]
+  | .app (.app (.app (.const ``OfNat.ofNat _) _) (.lit (.natVal n))) _ => [n]
+  | .app f a => collectNatLits f ++ collectNatLits a
+  | .lam _ _ b _ => collectNatLits b
+  | .forallE _ _ b _ => collectNatLits b
+  | .letE _ _ v b _ => collectNatLits v ++ collectNatLits b
+  | .mdata _ b => collectNatLits b
+  | .proj _ _ b => collectNatLits b
+  | _ => []
+
+/-- Closed reference lists among a call's arguments: list-typed
+operands that do not mention the target and reduce to closed `List
+Nat` values (`Sublist`/`Perm` reference sides, possibly behind
+definitions). Shared by every relation row. -/
+private def closedRefLists (tgt : FVarId) (args : Array Expr) :
+    MetaM (List (List Nat)) := do
+  let mut out : List (List Nat) := []
+  for a in args do
+    if mentionsTgt a tgt then continue
+    let ty ← try pure (← whnf (← inferType a)) catch _ => continue
+    match ty.getAppFn with
+    | .const ``List _ =>
+      match ← closedNatListW a with
+      | some vs => out := vs :: out
+      | none => pure ()
+    | _ => pure ()
+  pure out
+
+/-- No-op relation/peel answers, shared by rows that only contribute
+length/element/target inference. -/
+private def noRelLo : FVarId → Queries → Array Expr → Nat → MetaM (Option Nat) :=
+  fun _ _ _ _ => pure none
+private def noRelHi : FVarId → Queries → Array Expr → Nat → MetaM (Option Nat) :=
+  fun _ _ _ _ => pure none
+private def noRelPool : FVarId → Queries → Array Expr → Nat →
+    MetaM (Option (List Nat)) :=
+  fun _ _ _ _ => pure none
+private def noRelDom : FVarId → Array Expr → MetaM (Option RelDom) :=
+  fun _ _ => pure none
+private def noPeel : Array Expr → Expr → MetaM (Option (Nat × Bool)) :=
+  fun _ _ => pure none
+
 /-- The unknown row: every question unanswered. Default for
 unhandled heads, so the dispatch stays total. -/
 def unknownRow : InferRow :=
@@ -99,7 +198,12 @@ def unknownRow : InferRow :=
     inferElemPool := fun _ _ _ => pure none,
     inferTargetExact := fun _ _ _ => pure none,
     inferTargetLower := fun _ _ _ => pure none,
-    inferTargetUpper := fun _ _ _ => pure none }
+    inferTargetUpper := fun _ _ _ => pure none,
+    inferRelLower := noRelLo,
+    inferRelUpper := noRelHi,
+    inferRelPool := noRelPool,
+    inferRelDom := noRelDom,
+    inferPeelLength := noPeel }
 
 def nilRow : InferRow :=
   { inferLengthLower := fun _ _ _ => pure (some 0),
@@ -109,7 +213,12 @@ def nilRow : InferRow :=
     inferElemPool := fun _ _ _ => pure (some []),
     inferTargetExact := fun _ _ _ => pure none,
     inferTargetLower := fun _ _ _ => pure none,
-    inferTargetUpper := fun _ _ _ => pure none }
+    inferTargetUpper := fun _ _ _ => pure none,
+    inferRelLower := noRelLo,
+    inferRelUpper := noRelHi,
+    inferRelPool := noRelPool,
+    inferRelDom := noRelDom,
+    inferPeelLength := noPeel }
 
 def consRow : InferRow :=
   { inferLengthLower := fun _ _ _ => pure (some 1),
@@ -132,7 +241,12 @@ def consRow : InferRow :=
         | _, _ => pure none,
     inferTargetExact := fun _ _ _ => pure none,
     inferTargetLower := fun _ _ _ => pure none,
-    inferTargetUpper := fun _ _ _ => pure none }
+    inferTargetUpper := fun _ _ _ => pure none,
+    inferRelLower := noRelLo,
+    inferRelUpper := noRelHi,
+    inferRelPool := noRelPool,
+    inferRelDom := noRelDom,
+    inferPeelLength := noPeel }
 
 def appendRow : InferRow :=
   { inferLengthLower := fun q args fuel => do
@@ -171,7 +285,12 @@ def appendRow : InferRow :=
         | _, _ => pure none,
     inferTargetExact := fun _ _ _ => pure none,
     inferTargetLower := fun _ _ _ => pure none,
-    inferTargetUpper := fun _ _ _ => pure none }
+    inferTargetUpper := fun _ _ _ => pure none,
+    inferRelLower := noRelLo,
+    inferRelUpper := noRelHi,
+    inferRelPool := noRelPool,
+    inferRelDom := noRelDom,
+    inferPeelLength := noPeel }
 
 def reverseRow : InferRow :=
   { inferLengthLower := fun q args fuel => do
@@ -189,9 +308,35 @@ def reverseRow : InferRow :=
     inferElemPool := fun q args fuel => do
       if fuel == 0 || args.isEmpty then pure none
       else q.pool args.back! (fuel - 1),
-    inferTargetExact := fun _ _ _ => pure none,
-    inferTargetLower := fun _ _ _ => pure none,
-    inferTargetUpper := fun _ _ _ => pure none }
+    inferTargetExact := fun tgt args closed => do
+      match ← closedListLenW closed with
+      | some m =>
+        match ← listArgOf args with
+        | some l => pure (if isBareTgt tgt l then some m else none)
+        | none => pure none
+      | none => pure none,
+    inferTargetLower := fun tgt args closed => do
+      match ← closedListLenW closed with
+      | some m =>
+        match ← listArgOf args with
+        | some l => pure (if isBareTgt tgt l then some m else none)
+        | none => pure none
+      | none => pure none,
+    inferTargetUpper := fun tgt args closed => do
+      match ← closedListLenW closed with
+      | some m =>
+        match ← listArgOf args with
+        | some l => pure (if isBareTgt tgt l then some m else none)
+        | none => pure none
+      | none => pure none,
+    inferRelLower := noRelLo,
+    inferRelUpper := noRelHi,
+    inferRelPool := noRelPool,
+    inferRelDom := noRelDom,
+    inferPeelLength := fun _ closed => do
+      match ← closedListLenW closed with
+      | some m => pure (some (m, true))
+      | none => pure none }
 
 def rangeRow : InferRow :=
   { inferLengthLower := fun _ args _ => pure (uniqNatLit args),
@@ -203,7 +348,12 @@ def rangeRow : InferRow :=
       pure (uniqNatLit args |>.map List.range),
     inferTargetExact := fun _ _ _ => pure none,
     inferTargetLower := fun _ _ _ => pure none,
-    inferTargetUpper := fun _ _ _ => pure none }
+    inferTargetUpper := fun _ _ _ => pure none,
+    inferRelLower := noRelLo,
+    inferRelUpper := noRelHi,
+    inferRelPool := noRelPool,
+    inferRelDom := noRelDom,
+    inferPeelLength := noPeel }
 
 def replicateRow : InferRow :=
   { inferLengthLower := fun _ args _ => pure (uniqNatLit args),
@@ -217,7 +367,12 @@ def replicateRow : InferRow :=
         else (natLitOf args.back!).map fun v => [v]),
     inferTargetExact := fun _ _ _ => pure none,
     inferTargetLower := fun _ _ _ => pure none,
-    inferTargetUpper := fun _ _ _ => pure none }
+    inferTargetUpper := fun _ _ _ => pure none,
+    inferRelLower := noRelLo,
+    inferRelUpper := noRelHi,
+    inferRelPool := noRelPool,
+    inferRelDom := noRelDom,
+    inferPeelLength := noPeel }
 
 def takeRow : InferRow :=
   { inferLengthLower := fun _ _ _ => pure none,
@@ -231,13 +386,21 @@ def takeRow : InferRow :=
         | some l => q.pool l (fuel - 1),
     inferTargetExact := fun _ _ _ => pure none,
     inferTargetLower := fun tgt args closed => do
-      match listLitOf closed with
-      | some elts =>
+      match ← closedListLenW closed with
+      | some m =>
         match ← listArgOf args with
-        | some l => pure (if isBareTgt tgt l then some elts.length else none)
+        | some l => pure (if isBareTgt tgt l then some m else none)
         | none => pure none
       | none => pure none,
-    inferTargetUpper := fun _ _ _ => pure none }
+    inferTargetUpper := fun _ _ _ => pure none,
+    inferRelLower := noRelLo,
+    inferRelUpper := noRelHi,
+    inferRelPool := noRelPool,
+    inferRelDom := noRelDom,
+    inferPeelLength := fun _ closed => do
+      match ← closedListLenW closed with
+      | some m => pure (some (m, false))
+      | none => pure none }
 
 def dropRow : InferRow :=
   { inferLengthLower := fun _ _ _ => pure none,
@@ -257,22 +420,43 @@ def dropRow : InferRow :=
         | none => pure none
         | some l => q.pool l (fuel - 1),
     inferTargetExact := fun tgt args closed => do
-      match listLitOf closed, uniqNatLit args with
-      | some elts, some n =>
+      match ← closedListLenW closed, uniqNatLit args with
+      | some m, some n =>
         match ← listArgOf args with
         | some l =>
-          if isBareTgt tgt l && elts.length > 0 then
-            pure (some (n + elts.length))
+          if isBareTgt tgt l && m > 0 then
+            pure (some (n + m))
           else pure none
         | none => pure none
       | _, _ => pure none,
-    inferTargetLower := fun _ _ _ => pure none,
-    inferTargetUpper := fun tgt args closed => do
-      match listLitOf closed, uniqNatLit args with
-      | some [], some n =>
+    inferTargetLower := fun tgt args closed => do
+      match ← closedListLenW closed, uniqNatLit args with
+      | some m, some n =>
         match ← listArgOf args with
-        | some l => pure (if isBareTgt tgt l then some n else none)
+        | some l =>
+          if isBareTgt tgt l && m > 0 then
+            pure (some (n + m))
+          else pure none
         | none => pure none
+      | _, _ => pure none,
+    inferTargetUpper := fun tgt args closed => do
+      match ← closedListLenW closed, uniqNatLit args with
+      | some m, some n =>
+        match ← listArgOf args with
+        | some l =>
+          if isBareTgt tgt l then
+            pure (some (n + m))
+          else pure none
+        | none => pure none
+      | _, _ => pure none,
+    inferRelLower := noRelLo,
+    inferRelUpper := noRelHi,
+    inferRelPool := noRelPool,
+    inferRelDom := noRelDom,
+    inferPeelLength := fun args closed => do
+      match ← closedListLenW closed, uniqNatLit args with
+      | some m, some n =>
+        if m > 0 then pure (some (n + m, true)) else pure none
       | _, _ => pure none }
 
 def mapRow : InferRow :=
@@ -290,14 +474,34 @@ def mapRow : InferRow :=
     inferElemUpper := fun _ _ _ => pure none,
     inferElemPool := fun _ _ _ => pure none,
     inferTargetExact := fun tgt args closed => do
-      match listLitOf closed with
-      | some elts =>
+      match ← closedListLenW closed with
+      | some m =>
         match ← listArgOf args with
-        | some l => pure (if isBareTgt tgt l then some elts.length else none)
+        | some l => pure (if isBareTgt tgt l then some m else none)
         | none => pure none
       | none => pure none,
-    inferTargetLower := fun _ _ _ => pure none,
-    inferTargetUpper := fun _ _ _ => pure none }
+    inferTargetLower := fun tgt args closed => do
+      match ← closedListLenW closed with
+      | some m =>
+        match ← listArgOf args with
+        | some l => pure (if isBareTgt tgt l then some m else none)
+        | none => pure none
+      | none => pure none,
+    inferTargetUpper := fun tgt args closed => do
+      match ← closedListLenW closed with
+      | some m =>
+        match ← listArgOf args with
+        | some l => pure (if isBareTgt tgt l then some m else none)
+        | none => pure none
+      | none => pure none,
+    inferRelLower := noRelLo,
+    inferRelUpper := noRelHi,
+    inferRelPool := noRelPool,
+    inferRelDom := noRelDom,
+    inferPeelLength := fun _ closed => do
+      match ← closedListLenW closed with
+      | some m => pure (some (m, true))
+      | none => pure none }
 
 def filterRow : InferRow :=
   { inferLengthLower := fun _ _ _ => pure none,
@@ -315,13 +519,21 @@ def filterRow : InferRow :=
         | some l => q.pool l (fuel - 1),
     inferTargetExact := fun _ _ _ => pure none,
     inferTargetLower := fun tgt args closed => do
-      match listLitOf closed with
-      | some elts =>
+      match ← closedListLenW closed with
+      | some m =>
         match ← listArgOf args with
-        | some l => pure (if isBareTgt tgt l then some elts.length else none)
+        | some l => pure (if isBareTgt tgt l then some m else none)
         | none => pure none
       | none => pure none,
-    inferTargetUpper := fun _ _ _ => pure none }
+    inferTargetUpper := fun _ _ _ => pure none,
+    inferRelLower := noRelLo,
+    inferRelUpper := noRelHi,
+    inferRelPool := noRelPool,
+    inferRelDom := noRelDom,
+    inferPeelLength := fun _ closed => do
+      match ← closedListLenW closed with
+      | some m => pure (some (m, false))
+      | none => pure none }
 
 def lengthRow : InferRow :=
   { inferLengthLower := fun _ _ _ => pure none,
@@ -330,14 +542,22 @@ def lengthRow : InferRow :=
     inferElemUpper := fun _ _ _ => pure none,
     inferElemPool := fun _ _ _ => pure none,
     inferTargetExact := fun tgt args closed => do
-      match natLitOf closed with
+      match ← natLitW closed with
       | some k =>
         match ← listArgOf args with
         | some l => pure (if isBareTgt tgt l then some k else none)
         | none => pure none
       | none => pure none,
     inferTargetLower := fun _ _ _ => pure none,
-    inferTargetUpper := fun _ _ _ => pure none }
+    inferTargetUpper := fun _ _ _ => pure none,
+    inferRelLower := noRelLo,
+    inferRelUpper := noRelHi,
+    inferRelPool := noRelPool,
+    inferRelDom := noRelDom,
+    inferPeelLength := fun _ closed => do
+      match ← natLitW closed with
+      | some k => pure (some (k, true))
+      | none => pure none }
 
 def sumRow : InferRow := unknownRow
 
@@ -349,13 +569,186 @@ def countRow : InferRow :=
     inferElemPool := fun _ _ _ => pure none,
     inferTargetExact := fun _ _ _ => pure none,
     inferTargetLower := fun tgt args closed => do
-      match natLitOf closed with
+      match ← natLitW closed with
       | some k =>
         match ← listArgOf args with
         | some l => pure (if isBareTgt tgt l then some k else none)
         | none => pure none
       | none => pure none,
-    inferTargetUpper := fun _ _ _ => pure none }
+    inferTargetUpper := fun _ _ _ => pure none,
+    inferRelLower := noRelLo,
+    inferRelUpper := noRelHi,
+    inferRelPool := noRelPool,
+    inferRelDom := noRelDom,
+    inferPeelLength := fun _ closed => do
+      match ← natLitW closed with
+      | some k => pure (some (k, false))
+      | none => pure none }
+
+/-- Erase removes at most the first matching element: length drops by
+at most one, elements come from the source. -/
+def eraseRow : InferRow :=
+  { inferLengthLower := fun q args fuel => do
+      if fuel == 0 then pure none
+      else match ← listArgOf args with
+        | none => pure none
+        | some l => match ← q.lenLo l (fuel - 1) with
+          | some lo => pure (some (lo - 1))
+          | none => pure none,
+    inferLengthUpper := fun q args fuel => do
+      if fuel == 0 then pure none
+      else match ← listArgOf args with
+        | none => pure none
+        | some l => q.lenHi l (fuel - 1),
+    inferElemLower := fun q args fuel => do
+      if fuel == 0 then pure none
+      else match ← listArgOf args with
+        | none => pure none
+        | some l => q.elemLo l (fuel - 1),
+    inferElemUpper := fun q args fuel => do
+      if fuel == 0 then pure none
+      else match ← listArgOf args with
+        | none => pure none
+        | some l => q.elemHi l (fuel - 1),
+    inferElemPool := fun q args fuel => do
+      if fuel == 0 then pure none
+      else match ← listArgOf args with
+        | none => pure none
+        | some l => q.pool l (fuel - 1),
+    inferTargetExact := fun _ _ _ => pure none,
+    inferTargetLower := fun tgt args closed => do
+      match ← closedListLenW closed with
+      | some m =>
+        match ← listArgOf args with
+        | some l => pure (if isBareTgt tgt l then some m else none)
+        | none => pure none
+      | none => pure none,
+    inferTargetUpper := fun tgt args closed => do
+      match ← closedListLenW closed with
+      | some m =>
+        match ← listArgOf args with
+        | some l => pure (if isBareTgt tgt l then some (m + 1) else none)
+        | none => pure none
+      | none => pure none,
+    inferRelLower := noRelLo,
+    inferRelUpper := noRelHi,
+    inferRelPool := noRelPool,
+    inferRelDom := noRelDom,
+    inferPeelLength := noPeel }
+
+/-- Replace preserves length and draws elements from the source
+(the two replacement values arrive through pool harvesting). -/
+def replaceRow : InferRow :=
+  { inferLengthLower := fun q args fuel => do
+      if fuel == 0 then pure none
+      else match ← listArgOf args with
+        | none => pure none
+        | some l => q.lenLo l (fuel - 1),
+    inferLengthUpper := fun q args fuel => do
+      if fuel == 0 then pure none
+      else match ← listArgOf args with
+        | none => pure none
+        | some l => q.lenHi l (fuel - 1),
+    inferElemLower := fun q args fuel => do
+      if fuel == 0 then pure none
+      else match ← listArgOf args with
+        | none => pure none
+        | some l => q.elemLo l (fuel - 1),
+    inferElemUpper := fun q args fuel => do
+      if fuel == 0 then pure none
+      else match ← listArgOf args with
+        | none => pure none
+        | some l => q.elemHi l (fuel - 1),
+    inferElemPool := fun q args fuel => do
+      if fuel == 0 then pure none
+      else match ← listArgOf args with
+        | none => pure none
+        | some l => q.pool l (fuel - 1),
+    inferTargetExact := fun tgt args closed => do
+      match ← closedListLenW closed with
+      | some m =>
+        match ← listArgOf args with
+        | some l => pure (if isBareTgt tgt l then some m else none)
+        | none => pure none
+      | none => pure none,
+    inferTargetLower := fun tgt args closed => do
+      match ← closedListLenW closed with
+      | some m =>
+        match ← listArgOf args with
+        | some l => pure (if isBareTgt tgt l then some m else none)
+        | none => pure none
+      | none => pure none,
+    inferTargetUpper := fun tgt args closed => do
+      match ← closedListLenW closed with
+      | some m =>
+        match ← listArgOf args with
+        | some l => pure (if isBareTgt tgt l then some m else none)
+        | none => pure none
+      | none => pure none,
+    inferRelLower := noRelLo,
+    inferRelUpper := noRelHi,
+    inferRelPool := noRelPool,
+    inferRelDom := noRelDom,
+    inferPeelLength := fun _ closed => do
+      match ← closedListLenW closed with
+      | some m => pure (some (m, true))
+      | none => pure none }
+
+/-- Subsequence relation: the target is no longer than any closed
+reference it sits inside, and draws values from it. -/
+def sublistRow : InferRow :=
+  { inferLengthLower := fun _ _ _ => pure none,
+    inferLengthUpper := fun _ _ _ => pure none,
+    inferElemLower := fun _ _ _ => pure none,
+    inferElemUpper := fun _ _ _ => pure none,
+    inferElemPool := fun _ _ _ => pure none,
+    inferTargetExact := fun _ _ _ => pure none,
+    inferTargetLower := fun _ _ _ => pure none,
+    inferTargetUpper := fun _ _ _ => pure none,
+    inferRelLower := noRelLo,
+    inferRelUpper := fun tgt _ args _ => do
+      let mut best : Option Nat := none
+      for r in ← closedRefLists tgt args do
+        best := some (min (best.getD r.length) r.length)
+      pure best,
+    inferRelPool := fun tgt _ args _ => do
+      let refs ← closedRefLists tgt args
+      pure (if refs.isEmpty then none else some refs.flatten),
+    inferRelDom := fun tgt args => do
+      match ← closedRefLists tgt args with
+      | [] => pure none
+      | r :: _ => pure (some (.sub r)),
+    inferPeelLength := noPeel }
+
+/-- Permutation relation: the target has exactly the reference
+length and draws values from it. -/
+def permRow : InferRow :=
+  { inferLengthLower := fun _ _ _ => pure none,
+    inferLengthUpper := fun _ _ _ => pure none,
+    inferElemLower := fun _ _ _ => pure none,
+    inferElemUpper := fun _ _ _ => pure none,
+    inferElemPool := fun _ _ _ => pure none,
+    inferTargetExact := fun _ _ _ => pure none,
+    inferTargetLower := fun _ _ _ => pure none,
+    inferTargetUpper := fun _ _ _ => pure none,
+    inferRelLower := fun tgt _ args _ => do
+      let mut best : Option Nat := none
+      for r in ← closedRefLists tgt args do
+        best := some (max (best.getD 0) r.length)
+      pure best,
+    inferRelUpper := fun tgt _ args _ => do
+      let mut best : Option Nat := none
+      for r in ← closedRefLists tgt args do
+        best := some (min (best.getD r.length) r.length)
+      pure best,
+    inferRelPool := fun tgt _ args _ => do
+      let refs ← closedRefLists tgt args
+      pure (if refs.isEmpty then none else some refs.flatten),
+    inferRelDom := fun tgt args => do
+      match ← closedRefLists tgt args with
+      | [] => pure none
+      | r :: _ => pure (some (.perm r)),
+    inferPeelLength := noPeel }
 
 /-- The single dispatcher: every handled Lean function maps to its
 inference row. Unknown heads get `unknownRow`. -/
@@ -375,6 +768,10 @@ def inferenceRow : Name → InferRow
     else if n == ``List.length then lengthRow
     else if n == ``List.sum then sumRow
     else if n == ``List.count then countRow
+    else if n == ``List.erase then eraseRow
+    else if n == ``List.replace then replaceRow
+    else if n == ``List.Sublist then sublistRow
+    else if n == ``List.Perm then permRow
     else unknownRow
 
 /-- Empty bundle (all unknown): `Inhabited` witness so the
@@ -426,16 +823,57 @@ partial def queriesFrom (rowOf : Name → InferRow) : Queries :=
 `inferenceRow`. -/
 def queries : Queries := queriesFrom inferenceRow
 
-/-- Collected bounds on the target list. -/
+/-- Collected bounds on the target list. Reference domains record
+closed lists governing the target (`Sublist`/`Perm` sides). -/
 structure Bounds where
   lenLo : Nat := 0
   lenHi : Option Nat := none
   pool : List Nat := []
+  subRef : Option (List Nat) := none
+  permRef : Option (List Nat) := none
 
 /-- Flatten top-level `And` conjunctions. -/
 def splitConj : Expr → List Expr
   | .app (.app (.const ``And _) a) b => splitConj a ++ splitConj b
   | e => [e]
+
+/-- Dummy closed list of length `m` (zeros): a same-length stand-in
+so an inner call's target methods can fire on nested occurrences.
+Elements are meaningless and never harvested for pools. -/
+private def dummyLit (m : Nat) : MetaM Expr :=
+  mkListLit (mkConst ``Nat []) ((List.range m).map fun _ => mkNatLit 0)
+
+/-- Peel one nesting layer: when `tSide = closed` forces the operand
+to a known length `m` (exact shape or lower bound, per the outer
+row's own `inferPeelLength`), re-ask the inner heads' target methods
+on a same-length dummy. Only the channels the outer shape justifies
+run (exact shapes propagate lower and upper; lower-bound shapes
+propagate lower only), so each step is sound by the rows' own
+meanings. Strict subterms plus fuel guarantee termination. -/
+private partial def peelTargets (tgt : FVarId) (tSide : Expr) (m : Nat)
+    (exact : Bool) (st : Bounds) (fuel : Nat) : MetaM Bounds := do
+  if fuel == 0 then pure st
+  else
+    let dummy ← dummyLit m
+    let mut st := st
+    for a in tSide.getAppArgs do
+      if mentionsTgt a tgt && !isBareTgt tgt a then
+        match a.getAppFn with
+        | .const fn _ =>
+          let row := inferenceRow fn
+          let iargs := a.getAppArgs
+          match ← row.inferTargetLower tgt iargs dummy with
+          | some n => st := { st with lenLo := max st.lenLo n }
+          | none => pure ()
+          if exact then
+            match ← row.inferTargetUpper tgt iargs dummy with
+            | some n =>
+              st := { st with lenHi := some (min (st.lenHi.getD n) n) }
+            | none => pure ()
+          -- deeper layers keep the weaker channel
+          st ← peelTargets tgt a m false st (fuel - 1)
+        | _ => pure ()
+    pure st
 
 /-- Process one `Eq` conjunct: orient target side vs closed side,
 ask the target relation methods, harvest literal pools. Anything
@@ -451,23 +889,23 @@ def processEq (tgt : FVarId) (a b : Expr) (st : Bounds) : MetaM Bounds := do
   | some (tSide, cSide) =>
     if cSide.hasFVar then pure st
     else
+      let cSideR ← whnf cSide
       let mut st := st
-      -- pool harvesting: closed list literals contribute elements
-      match listLitOf cSide with
-      | some elts =>
-        let vs := elts.filterMap natLitOf
-        if vs.length == elts.length then
-          st := { st with pool := st.pool ++ vs }
-        else pure ()
+      -- pool harvesting: closed list literals contribute elements;
+      -- every Nat literal in either side is a candidate value
+      -- (erased elements, replacements, indices)
+      match ← closedNatListW cSideR with
+      | some vs => st := { st with pool := st.pool ++ vs }
       | none => pure ()
+      st := { st with pool := st.pool ++ collectNatLits tSide ++ collectNatLits cSideR }
       -- length reasoning by target-side shape
       match tSide with
       | .fvar id =>
         if id == tgt then
-          match listLitOf cSide with
-          | some elts =>
-            let lo := max st.lenLo elts.length
-            let hi := min (st.lenHi.getD elts.length) elts.length
+          match ← closedNatListW cSideR with
+          | some vs =>
+            let lo := max st.lenLo vs.length
+            let hi := min (st.lenHi.getD vs.length) vs.length
             st := { st with lenLo := lo, lenHi := some hi, pool := st.pool }
           | none => pure ()
         else pure ()
@@ -476,16 +914,16 @@ def processEq (tgt : FVarId) (a b : Expr) (st : Bounds) : MetaM Bounds := do
         | .const fn _ =>
           let row := inferenceRow fn
           let args := tSide.getAppArgs
-          match ← row.inferTargetExact tgt args cSide with
+          match ← row.inferTargetExact tgt args cSideR with
           | some n =>
             let lo := max st.lenLo n
             let hi := min (st.lenHi.getD n) n
             st := { st with lenLo := lo, lenHi := some hi }
           | none => pure ()
-          match ← row.inferTargetLower tgt args cSide with
+          match ← row.inferTargetLower tgt args cSideR with
           | some n => st := { st with lenLo := max st.lenLo n }
           | none => pure ()
-          match ← row.inferTargetUpper tgt args cSide with
+          match ← row.inferTargetUpper tgt args cSideR with
           | some n =>
             let hi := min (st.lenHi.getD n) n
             st := { st with lenHi := some hi }
@@ -494,11 +932,53 @@ def processEq (tgt : FVarId) (a b : Expr) (st : Bounds) : MetaM Bounds := do
           match ← row.inferElemPool queries args 8 with
           | some vs => st := { st with pool := st.pool ++ vs }
           | none => pure ()
+          -- nested occurrences: peel one layer per the outer row's
+          -- own length story (exact shapes propagate both bounds,
+          -- lower-bound shapes propagate lower only)
+          match ← row.inferPeelLength args cSideR with
+          | some (m, exact) => st ← peelTargets tgt tSide m exact st 8
+          | none => pure ()
         | _ => pure ()
       pure st
 
+/-- Process one non-`Eq` conjunct mentioning the target
+(`Sublist`/`Perm` domains and the like) through the relation
+methods. Unknown heads contribute nothing. -/
+def processRel (tgt : FVarId) (c : Expr) (st : Bounds) : MetaM Bounds := do
+  if !mentionsTgt c tgt then pure st
+  else
+    match c.getAppFn with
+    | .const fn _ =>
+      if fn == ``Eq || fn == ``And then pure st
+      else
+        let row := inferenceRow fn
+        let args := c.getAppArgs
+        let mut st := st
+        match ← row.inferRelLower tgt queries args 8 with
+        | some n => st := { st with lenLo := max st.lenLo n }
+        | none => pure ()
+        match ← row.inferRelUpper tgt queries args 8 with
+        | some n =>
+          st := { st with lenHi := some (min (st.lenHi.getD n) n) }
+        | none => pure ()
+        match ← row.inferRelPool tgt queries args 8 with
+        | some vs => st := { st with pool := st.pool ++ vs }
+        | none => pure ()
+        match ← row.inferRelDom tgt args with
+        | some (.sub r) =>
+          st := { st with pool := st.pool ++ r }
+          if st.subRef.isNone then st := { st with subRef := some r }
+        | some (.perm r) =>
+          st := { st with pool := st.pool ++ r }
+          if st.permRef.isNone then st := { st with permRef := some r }
+        | none => pure ()
+        pure st
+    | _ => pure st
+
 /-- Intersect bounds across all conjunctions to a fixpoint
-(bounds only tighten, pools only grow; fuel caps the rounds). -/
+(bounds only tighten, pools only grow; fuel caps the rounds).
+`Eq` conjuncts go through target inference, every other shape
+through relation inference. -/
 def inferBounds (tgt : FVarId) (conjs : List Expr) : MetaM Bounds := do
   let mut st : Bounds := {}
   for _ in List.range 12 do
@@ -510,7 +990,7 @@ def inferBounds (tgt : FVarId) (conjs : List Expr) : MetaM Bounds := do
         let args := cr.getAppArgs
         if args.size != 3 then pure ()
         else st' ← processEq tgt args[args.size - 2]! args[args.size - 1]! st'
-      | _ => pure ()
+      | _ => st' ← processRel tgt cr st'
     st := st'
   pure st
 
@@ -519,6 +999,36 @@ def allLists : List Nat → Nat → List (List Nat)
   | _, 0 => [[]]
   | [], _ + 1 => []
   | p, n + 1 => (allLists p n).flatMap fun rest => p.map fun v => v :: rest
+
+/-- All sublists (order-preserving subsets) of `xs`. -/
+def sublistsOf : List Nat → List (List Nat)
+  | [] => [[]]
+  | x :: xs => let r := sublistsOf xs; r ++ r.map (x :: ·)
+
+/-- Kernel-check each candidate in turn: build the witness value,
+assign it, and run the shared kernel-checked closer. Yields when
+none closes (wrong inferences only ever miss, never mis-prove). -/
+private def tryCands (shape : Lynth.Witness.WitShape)
+    (cands : List (List Nat)) : TacticM ProcedureOutcome := do
+  let others ← getUnsolvedGoals
+  for w in cands do
+    let snapshot ← saveState
+    try
+      let wv ← mkListLit (mkConst ``Nat []) (w.map mkNatLit)
+      let mvar ← getMainGoal
+      let sideTy := mkApp shape.pred wv
+      let sidePrf ← mkFreshExprSyntheticOpaqueMVar sideTy
+      let val ← shape.mkVal wv sidePrf
+      mvar.assign val
+      replaceMainGoal (sidePrf.mvarId! :: others.filter (· != mvar))
+      -- shared kernel-checked closer: unfolds the
+      -- goal's own predicates, then decides
+      if ← Lynth.FinSearch.Procedure.closeSide then
+        return .success
+      restoreState snapshot
+    catch _ =>
+      restoreState snapshot
+  return .failure []
 
 /-- List synthesis over `List Nat`: infer exact length plus a finite
 value pool, enumerate, and kernel-check each candidate. Yields on
@@ -552,40 +1062,81 @@ def run : TacticM ProcedureOutcome := do
                 match fty.getAppFn with
                 | .const ``List _ =>
                   let st ← inferBounds tgt (splitConj body)
-                  match st.lenHi with
-                  | none => return .failure []
-                  | some n =>
-                    if st.lenLo != n then return .failure []
+                  let pool := st.pool.eraseDups
+                  match st.subRef with
+                  | some r =>
+                    -- subsequence domain: enumerate sublists of the
+                    -- closed reference, filtered to the length window
+                    if 20 < r.length then return .failure []
                     else
-                      let pool := st.pool.eraseDups
-                      if pool.isEmpty then return .failure []
-                      else if 12 < pool.length then return .failure []
-                      else if 8 < n then return .failure []
-                      else
-                        let total := pool.length ^ n
-                        if total == 0 || Detect.maxListCand < total then
-                          return .failure []
+                      let hi := st.lenHi.getD r.length
+                      let cands := (sublistsOf r).filter fun w =>
+                        st.lenLo ≤ w.length ∧ w.length ≤ hi
+                      if Detect.maxListCand < cands.length then
+                        return .failure []
+                      else return ← tryCands shape cands
+                  | none =>
+                    match st.permRef with
+                    | some _ =>
+                      -- permutation domain: the sorted arrangement
+                      -- first (covers sortedness-coupled goals in one
+                      -- kernel check), then bounded enumeration
+                      match st.lenHi with
+                      | none => return .failure []
+                      | some n =>
+                        if st.lenLo != n then return .failure []
+                        else if pool.isEmpty then return .failure []
                         else
-                          let cands := allLists pool n
-                          let others ← getUnsolvedGoals
-                          for w in cands do
-                            let snapshot ← saveState
-                            try
-                              let wv ← mkListLit (mkConst ``Nat []) (w.map mkNatLit)
-                              let mvar ← getMainGoal
-                              let sideTy := mkApp shape.pred wv
-                              let sidePrf ← mkFreshExprSyntheticOpaqueMVar sideTy
-                              let val ← shape.mkVal wv sidePrf
-                              mvar.assign val
-                              replaceMainGoal (sidePrf.mvarId! :: others.filter (· != mvar))
-                              -- shared kernel-checked closer: unfolds the
-                              -- goal's own predicates, then decides
-                              if ← Lynth.FinSearch.Procedure.closeSide then
-                                return .success
-                              restoreState snapshot
-                            catch _ =>
-                              restoreState snapshot
-                          return .failure []
+                          if pool.length == n then
+                            match ← tryCands shape [pool.mergeSort] with
+                            | .success => return .success
+                            | .failure _ => pure ()
+                          if 12 < pool.length then return .failure []
+                          else if 8 < n then return .failure []
+                          else
+                            let total := pool.length ^ n
+                            if total == 0 || Detect.maxListCand < total then
+                              return .failure []
+                            else return ← tryCands shape (allLists pool n)
+                    | none =>
+                      match st.lenHi with
+                      | none => return .failure []
+                      | some hi =>
+                        if st.lenLo > hi then return .failure []
+                        else if pool.isEmpty then return .failure []
+                        else if 12 < pool.length then return .failure []
+                        else if 8 < hi then return .failure []
+                        else
+                          let total := (List.range (hi - st.lenLo + 1)).foldl
+                            (fun acc n => acc + pool.length ^ (st.lenLo + n)) 0
+                          if total == 0 || Detect.maxListCand < total then
+                            return .failure []
+                          else
+                            let cands := (List.range (hi - st.lenLo + 1)).flatMap
+                              fun n => allLists pool (st.lenLo + n)
+                            match ← tryCands shape cands with
+                            | .success => return .success
+                            | .failure _ => pure ()
+                            -- retry over the widened 0..max pool:
+                            -- preimages (map images, erased elements)
+                            -- live below the largest seen literal
+                            match pool.max? with
+                            | none => return .failure []
+                            | some m =>
+                              if 11 < m then return .failure []
+                              else
+                                let wide := List.range (m + 1)
+                                if wide.eraseDups == pool then
+                                  return .failure []
+                                else
+                                  let totalW := (List.range (hi - st.lenLo + 1)).foldl
+                                    (fun acc n => acc + wide.length ^ (st.lenLo + n)) 0
+                                  if totalW == 0 || Detect.maxListCand < totalW then
+                                    return .failure []
+                                  else
+                                    let candsW := (List.range (hi - st.lenLo + 1)).flatMap
+                                      fun n => allLists wide (st.lenLo + n)
+                                    return ← tryCands shape candsW
                 | _ => return .failure []
               | _ => return .failure []
         | _ => pure (.failure [])
