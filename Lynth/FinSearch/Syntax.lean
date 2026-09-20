@@ -126,6 +126,53 @@ def propSize : FProp → Nat
   | .exactK ps _ => 1 + (ps.foldl (fun n p => n + propSize p) 0)
   | .atom _ => 1
 
+/-- Normalize an exact-count node: fold constant members (`tru`
+contributes one each, `fls` contributes none) and decide vacuous
+cases. Pure Boolean/counting identities; the kernel re-verifies
+end-to-end anyway. Callers pass simplified children. -/
+def normExactK : List FProp → Nat → FProp
+  | ps, k =>
+    let t := (ps.filter (· == .tru)).length
+    let rest := ps.filter fun | .fls => false | .tru => false | _ => true
+    if t > k then .fls
+    else
+      let k' := k - t
+      if k' > rest.length then .fls
+      else match rest with
+        | [] => .tru
+        | [q] => if k' == 0 then .not q else q
+        | _ => .exactK rest k'
+
+/-- Boolean simplifier: constant folding (`and`/`or` with `tru`/`fls`,
+double negation, singleton collapse, exact-count constants via
+`normExactK`). ite-distribution produces many constant leaves;
+without this each becomes a Tseitin gate + unit clauses that bloat
+the CNF and confuse branching. Semantics preserved by Boolean
+identities; the kernel re-verifies anyway. -/
+def simpProp : FProp → FProp
+  | .and ps =>
+    let qs := (ps.map simpProp).filter fun | .tru => false | _ => true
+    if qs.any fun | .fls => true | _ => false then .fls
+    else match qs with
+      | [] => .tru
+      | [q] => q
+      | _ => .and qs
+  | .or ps =>
+    let qs := (ps.map simpProp).filter fun | .fls => false | _ => true
+    if qs.any fun | .tru => true | _ => false then .tru
+    else match qs with
+      | [] => .fls
+      | [q] => q
+      | _ => .or qs
+  | .not p =>
+    match simpProp p with
+    | .tru => .fls
+    | .fls => .tru
+    | .not q => q
+    | q => .not q
+  | .exactK ps k => normExactK (ps.map simpProp) k
+  | p => p
+
 /-- All `(cell, cardinality)` pairs occurring in a proposition
 (for one-hot pre-allocation, and for the lazy split's
 cell-disjointness test). -/

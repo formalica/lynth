@@ -1,4 +1,5 @@
 import Lynth.FinSearch.Syntax
+import Lynth.FinSearch.Detect
 import Lynth.Sat.Solver
 import Lynth.Sat.Cdcl
 import Batteries.Data.HashMap
@@ -226,33 +227,17 @@ def propBit : FProp → EncodeM Lit
       modify fun s => { s with atomvars := s.atomvars.insert i l }
       pure l
 
-/-- Boolean simplifier: constant folding (`and`/`or` with `tru`/`fls`,
-double negation, singleton collapse). ite-distribution produces many
-constant leaves; without this each becomes a Tseitin gate + unit
-clauses that bloat the CNF and confuse branching. Semantics
-preserved by Boolean identities; the kernel re-verifies anyway. -/
-def simpProp : FProp → FProp
-  | .and ps =>
-    let qs := (ps.map simpProp).filter fun | .tru => false | _ => true
-    if qs.any fun | .fls => true | _ => false then .fls
-    else match qs with
-      | [] => .tru
-      | [q] => q
-      | _ => .and qs
-  | .or ps =>
-    let qs := (ps.map simpProp).filter fun | .fls => false | _ => true
-    if qs.any fun | .tru => true | _ => false then .tru
-    else match qs with
-      | [] => .fls
-      | [q] => q
-      | _ => .or qs
-  | .not p =>
-    match simpProp p with
-    | .tru => .fls
-    | .fls => .tru
-    | .not q => q
-    | q => .not q
-  | p => p
+/-- Estimated subset-expansion cost of `exactK` nodes (on simplified
+props, so constant members are already pruned by `normExactK`).
+`false` = some node exceeds the per-node combination budget; the
+caller yields gracefully instead of building millions of clauses. -/
+partial def checkExactKCosts : FProp → Bool
+  | .exactK ps k =>
+    Detect.exactKCostOk ps.length k && ps.all checkExactKCosts
+  | .and ps => ps.all checkExactKCosts
+  | .or ps => ps.all checkExactKCosts
+  | .not p => checkExactKCosts p
+  | _ => true
 
 /-- Run the encoder on a top-level proposition (asserted true).
 Returns clauses + var map + symbolic-var count, or `none` over
@@ -268,6 +253,11 @@ def runEncode (p : FProp) (maxVars : Nat := 8192)
   -- simplify first (constant folding over ite-distribution debris;
   -- can only shrink: every rewrite is a Boolean identity)
   let p := simpProp p
+  -- refuse up front when an exact-count node would explode the
+  -- subset expansion (combinatorial guard; the variable cap below
+  -- only fires after a wasteful build)
+  if !checkExactKCosts p then none
+  else
   -- dedupe via hash set (`List.eraseDups` is quadratic and chokes
   -- past ~100k pairs from symbolic list computation); sorted for a
   -- deterministic variable numbering

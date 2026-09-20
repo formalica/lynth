@@ -24,6 +24,39 @@ def maxSatVars : Nat := 4194304
 /-- CDCL fuel for the SAT child (9x9 needs ~1M decisions). -/
 def solveFuel : Nat := 2000000
 
+/-- Max domain width unrolled by the counting recognizer (`cardSide`).
+Unrolling is linear tactic work (one predicate evaluation per value);
+subset blowup is guarded separately by `maxExactKCombos`, so this can
+be generous (covers through 32×32 boards). -/
+def maxCountUnroll : Nat := 1024
+
+/-- Cap on `exactK` subset expansion, in combinations (per node).
+`exactKNaive` builds C(n,k+1)+C(n-k+1,n) gates; hundreds are routine
+(10-wide k=2 counts need ~130), while unpruned wide counts need
+hundreds of thousands. Counted pre-encode with early exit, so
+over-budget shapes yield gracefully instead of hanging the build. -/
+def maxExactKCombos : Nat := 20000
+
+/-- min(C(n,k), cap): binomial coefficient with early exit (exact
+division at every step, so no fractions ever appear). -/
+def chooseCap.go (n : Nat) (cap : Nat) : Nat → Nat → Nat → Nat
+  | 0, _, r => r
+  | f + 1, j, r =>
+    if r >= cap then cap
+    else chooseCap.go n cap f (j + 1) ((r * (n - j)) / (j + 1))
+def chooseCap (n k : Nat) (cap : Nat) : Nat :=
+  if cap == 0 then 0
+  else if k > n then 0
+  else chooseCap.go n cap (min k (n - k)) 0 1
+
+/-- Combinatorial cost guard for one `exactK` node over `n` live
+members targeting `k`: mirrors `exactKNaive` (skips the side it
+would skip), refused when the families exceed the budget. -/
+def exactKCostOk (n k : Nat) : Bool :=
+  let atMost := if k < n then chooseCap n (k + 1) maxExactKCombos else 0
+  let atLeast := if 0 < k then chooseCap n (n - k + 1) maxExactKCombos else 0
+  atMost + atLeast < maxExactKCombos
+
 /-- Search-space estimate: number of board positions. -/
 def estimate (dims : List Nat) : Nat :=
   dims.foldl (· * ·) 1

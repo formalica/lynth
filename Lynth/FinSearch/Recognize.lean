@@ -1,6 +1,7 @@
 import Lean
 import Mathlib.Data.Fintype.Card
 import Lynth.FinSearch.Syntax
+import Lynth.FinSearch.Detect
 
 /-!
 Translation from Lean synthesis goals to `FProp` constraints.
@@ -219,16 +220,23 @@ def asNumeral (e : Expr) : Option Nat :=
   | _ => none
 
 /-- Numeric literal value, seeing through `Fin.mk` wrappers
-(our own ∀-unrolling produces those). -/
-def finVal? (e : Expr) : Option Nat :=
-  match asNumeral e with
-  | some k => some k
+(our own ∀-unrolling produces those), with kernel reduction
+(`whnf`): numeric arguments that are closed computations (`OfNat`
+unfolding to `Fin.mk` over `HMod`, etc.) reduce to literals first.
+Purely syntactic matching would leave them stuck and the caller
+would misread a closed value as a symbolic cell. -/
+def finValW (e : Expr) : MetaM (Option Nat) := do
+  let eR ← whnf e
+  match asNumeral eR with
+  | some k => pure (some k)
   | none =>
-    if e.getAppFn.isConstOf ``Fin.mk then
-      let args := e.getAppArgs
-      if args.size < 2 then none
-      else asNumeral args[args.size - 2]!
-    else none
+    if eR.getAppFn.isConstOf ``Fin.mk then
+      let args := eR.getAppArgs
+      if args.size < 2 then pure none
+      else
+        let v ← whnf args[args.size - 2]!
+        pure (asNumeral v)
+    else pure none
 
 /-- `Fin` literal `(i : Fin n)` with kernel-checked bound proof. -/
 def finLit (n i : Nat) : MetaM Expr := do
@@ -255,7 +263,7 @@ partial def exprToIdx (ty : Expr) (e : Expr) (fuel : Nat := 8) :
     match tyR.getAppFn with
     | .const ``Fin _ =>
       let eR ← whnf e
-      match finVal? eR with
+      match ← finValW eR with
       | some v =>
         let some c ← finCard ty 8 | return none
         if c == 0 then return none else return some (v % c)
@@ -385,7 +393,7 @@ partial def recognizeTerm (cells : IO.Ref (Array (Expr × Option (List Nat)))) (
       -- index types share the same `exprToIdx` layout)
       let mut vals : Array Nat := #[]
       for a in args do
-        match finVal? a with
+        match ← finValW a with
         | some v => vals := vals.push v
         | none =>
           let some v ← exprToIdx (← inferType a) a | return none
@@ -459,7 +467,9 @@ values (`box_idx` on literals, `Option` constructors, …) decode
 through the generic `exprToIdx` layout. -/
 def foldLitCmp (a b : Expr) (c : Nat) (f : Nat → Nat → Bool) :
     MetaM (Option FProp) := do
-  match finVal? a, finVal? b with
+  let fa ← finValW a
+  let fb ← finValW b
+  match fa, fb with
   | some x, some y =>
     pure (some (if f (x % c) (y % c) then .tru else .fls))
   | _, _ =>
@@ -659,8 +669,11 @@ partial def cardSide (memo : IO.Ref Memo) (dedup : IO.Ref Dedup)
                 match ← finWidth dom with
                 | none => pure none
                 | some nn =>
-                  -- Width nine permits 9x9 counts; retain a small bound on subset expansion.
-                  if 9 < nn then pure none
+                  -- Unroll bound is linear tactic work (one predicate
+                  -- evaluation per value); subset blowup is guarded
+                  -- separately by the combination budget below, after
+                  -- constant members are pruned.
+                  if Detect.maxCountUnroll < nn then pure none
                   else
                     let mut props : List FProp := []
                     for i in List.range nn do
@@ -669,7 +682,18 @@ partial def cardSide (memo : IO.Ref Memo) (dedup : IO.Ref Dedup)
                           (depth - 1) with
                       | some p => props := props ++ [p]
                       | none => return none
-                    pure (some (.exactK props k))
+                    -- fold constants per instance, then normalize the
+                    -- count: closed members (`tru`) decrement the
+                    -- target, impossible members (`fls`) drop out
+                    -- (this is what keeps wide-but-sparse counts like
+                    -- per-region membership small).
+                    let simped := props.map simpProp
+                    match normExactK simped k with
+                    | .exactK rest k' =>
+                      if Detect.exactKCostOk rest.length k' then
+                        pure (some (.exactK rest k'))
+                      else pure none
+                    | p => pure (some p)
     | _ => pure none
 
 /-- Counting constraint `Fintype.card { j // P j } = k` (either side)
@@ -1160,7 +1184,7 @@ partial def symValBody (memo : IO.Ref Memo) (dedup : IO.Ref Dedup)
     let args := e.getAppArgs
     let mut vals : Array Nat := #[]
     for a in args do
-      match finVal? a with
+      match ← finValW a with
       | some v => vals := vals.push v
       | none =>
         let v ← exprToIdx (← inferType a) a
