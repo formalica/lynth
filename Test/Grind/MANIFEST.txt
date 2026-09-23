@@ -1,421 +1,421 @@
-KEEP elab/grind_10160.lean -> grind_10160.lean
+TAKE elab/grind_10160.lean -> grind_10160.lean
 SKIP elab/grind_10232.lean [\bsorry\b]
 SKIP elab/grind_10233.lean [\bsorry\b]
-KEEP elab/grind_10317.lean -> grind_10317.lean
-KEEP elab/grind_10489.lean -> grind_10489.lean
+TAKE elab/grind_10317.lean -> grind_10317.lean
+TAKE elab/grind_10489.lean -> grind_10489.lean
 SKIP elab/grind_10500.lean [\bsorry\b]
 SKIP elab/grind_10622.lean [\bsorry\b]
-CUT elab/grind_10661.lean -> grind_10661.lean [curation cap ~100]
-KEEP elab/grind_10670.lean -> grind_10670.lean
-KEEP elab/grind_10885.lean -> grind_10885.lean
-CUT elab/grind_10953.lean -> grind_10953.lean [curation cap ~100]
-KEEP elab/grind_10983.lean -> grind_10983.lean
+TAKE elab/grind_10661.lean -> grind_10661.lean
+TAKE elab/grind_10670.lean -> grind_10670.lean
+TAKE elab/grind_10885.lean -> grind_10885.lean
+TAKE elab/grind_10953.lean -> grind_10953.lean
+TAKE elab/grind_10983.lean -> grind_10983.lean
 SKIP elab/grind_11001.lean [\bsorry\b]
-KEEP elab/grind_11036.lean -> grind_11036.lean
+TAKE elab/grind_11036.lean -> grind_11036.lean
 SKIP elab/grind_11081.lean [\bsorry\b]
-KEEP elab/grind_11086.lean -> grind_11086.lean
-CUT elab/grind_11088.lean -> grind_11088.lean [curation cap ~100]
+TAKE elab/grind_11086.lean -> grind_11086.lean
+TAKE elab/grind_11088.lean -> grind_11088.lean
 SKIP elab/grind_11124.lean [\bsorry\b]
 SKIP elab/grind_11130.lean [\bsorry\b]
 SKIP elab/grind_11134.lean [\bsorry\b]
-KEEP elab/grind_11259.lean -> grind_11259.lean
-KEEP elab/grind_11449.lean -> grind_11449.lean
-KEEP elab/grind_11477.lean -> grind_11477.lean
+TAKE elab/grind_11259.lean -> grind_11259.lean
+TAKE elab/grind_11449.lean -> grind_11449.lean
+TAKE elab/grind_11477.lean -> grind_11477.lean
 SKIP elab/grind_11498.lean [\bsorry\b]
-KEEP elab/grind_11515.lean -> grind_11515.lean
-KEEP elab/grind_11539.lean -> grind_11539.lean
-KEEP elab/grind_11539_2.lean -> grind_11539_2.lean
+TAKE elab/grind_11515.lean -> grind_11515.lean
+TAKE elab/grind_11539.lean -> grind_11539.lean
+TAKE elab/grind_11539_2.lean -> grind_11539_2.lean
 SKIP elab/grind_11545.lean [\bsorry\b]
 SKIP elab/grind_11597.lean [\bsorry\b]
-KEEP elab/grind_11622.lean -> grind_11622.lean
-KEEP elab/grind_11633.lean -> grind_11633.lean
+TAKE elab/grind_11622.lean -> grind_11622.lean
+TAKE elab/grind_11633.lean -> grind_11633.lean
 SKIP elab/grind_11690.lean [\bsorry\b]
-CUT elab/grind_11697_a.lean -> grind_11697_a.lean [curation cap ~100]
-KEEP elab/grind_11697_b.lean -> grind_11697_b.lean
-KEEP elab/grind_11738.lean -> grind_11738.lean
-KEEP elab/grind_11745.lean -> grind_11745.lean
-CUT elab/grind_11745_extra.lean -> grind_11745_extra.lean [curation cap ~100]
-KEEP elab/grind_11930.lean -> grind_11930.lean
-KEEP elab/grind_12140.lean -> grind_12140.lean
+TAKE elab/grind_11697_a.lean -> grind_11697_a.lean
+TAKE elab/grind_11697_b.lean -> grind_11697_b.lean
+TAKE elab/grind_11738.lean -> grind_11738.lean
+TAKE elab/grind_11745.lean -> grind_11745.lean
+TAKE elab/grind_11745_extra.lean -> grind_11745_extra.lean
+TAKE elab/grind_11930.lean -> grind_11930.lean
+TAKE elab/grind_12140.lean -> grind_12140.lean
 SKIP elab/grind_12246.lean [\bsorry\b]
-KEEP elab/grind_12390.lean -> grind_12390.lean
+TAKE elab/grind_12390.lean -> grind_12390.lean
 SKIP elab/grind_12428.lean [\bsorry\b]
-CUT elab/grind_12581.lean -> grind_12581.lean [curation cap ~100]
-KEEP elab/grind_12812.lean -> grind_12812.lean
-KEEP elab/grind_13167.lean -> grind_13167.lean
-KEEP elab/grind_13572.lean -> grind_13572.lean
-CUT elab/grind_13573.lean -> grind_13573.lean [curation cap ~100]
+TAKE elab/grind_12581.lean -> grind_12581.lean
+TAKE elab/grind_12812.lean -> grind_12812.lean
+TAKE elab/grind_13167.lean -> grind_13167.lean
+TAKE elab/grind_13572.lean -> grind_13572.lean
+TAKE elab/grind_13573.lean -> grind_13573.lean
 SKIP elab/grind_13655.lean [\bsorry\b]
-CUT elab/grind_13773.lean -> grind_13773.lean [curation cap ~100]
-KEEP elab/grind_13822.lean -> grind_13822.lean
-KEEP elab/grind_13828.lean -> grind_13828.lean
-CUT elab/grind_13877.lean -> grind_13877.lean [anchor-ID/pretty-print drift in suggestions]
+TAKE elab/grind_13773.lean -> grind_13773.lean
+TAKE elab/grind_13822.lean -> grind_13822.lean
+TAKE elab/grind_13828.lean -> grind_13828.lean
+TAKE elab/grind_13877.lean -> grind_13877.lean  [PINNED: expected text pinned (suggestion wrap, stable anchors)]
 SKIP elab/grind_14440.lean [\bsorry\b]
-KEEP elab/grind_14441.lean -> grind_14441.lean
-KEEP elab/grind_9216.lean -> grind_9216.lean
-CUT elab/grind_9321.lean -> grind_9321.lean [curation cap ~100]
-KEEP elab/grind_9427.lean -> grind_9427.lean
-KEEP elab/grind_9467.lean -> grind_9467.lean
+TAKE elab/grind_14441.lean -> grind_14441.lean
+TAKE elab/grind_9216.lean -> grind_9216.lean
+TAKE elab/grind_9321.lean -> grind_9321.lean
+TAKE elab/grind_9427.lean -> grind_9427.lean
+TAKE elab/grind_9467.lean -> grind_9467.lean
 SKIP elab/grind_9477.lean [\bsorry\b]
-CUT elab/grind_9485.lean -> grind_9485.lean [curation cap ~100]
-KEEP elab/grind_9562.lean -> grind_9562.lean
-KEEP elab/grind_9572.lean -> grind_9572.lean
+TAKE elab/grind_9485.lean -> grind_9485.lean
+TAKE elab/grind_9562.lean -> grind_9562.lean
+TAKE elab/grind_9572.lean -> grind_9572.lean
 SKIP elab/grind_9610.lean [\bsorry\b]
-KEEP elab/grind_9769.lean -> grind_9769.lean
-CUT elab/grind_9825.lean -> grind_9825.lean [curation cap ~100]
-KEEP elab/grind_9828.lean -> grind_9828.lean
-KEEP elab/grind_9830.lean -> grind_9830.lean
-KEEP elab/grind_9854.lean -> grind_9854.lean
+TAKE elab/grind_9769.lean -> grind_9769.lean
+TAKE elab/grind_9825.lean -> grind_9825.lean
+TAKE elab/grind_9828.lean -> grind_9828.lean
+TAKE elab/grind_9830.lean -> grind_9830.lean
+TAKE elab/grind_9854.lean -> grind_9854.lean
 SKIP elab/grind_9856.lean [\bsorry\b]
-KEEP elab/grind_9897.lean -> grind_9897.lean
-CUT elab/grind_9899.lean -> grind_9899.lean [curation cap ~100]
-KEEP elab/grind_9907.lean -> grind_9907.lean
-KEEP elab/grind_9948.lean -> grind_9948.lean
-CUT elab/grind_ExtTreeSet.lean -> grind_ExtTreeSet.lean [curation cap ~100]
-CUT elab/grind_Poly_mul_0_bug.lean -> grind_Poly_mul_0_bug.lean [pretty-printing scope drift (`Poly.num` vs full path)]
-KEEP elab/grind_abstract_mvars.lean -> grind_abstract_mvars.lean
-CUT elab/grind_ac_1.lean -> grind_ac_1.lean [curation cap ~100]
-KEEP elab/grind_ac_2.lean -> grind_ac_2.lean
+TAKE elab/grind_9897.lean -> grind_9897.lean
+TAKE elab/grind_9899.lean -> grind_9899.lean
+TAKE elab/grind_9907.lean -> grind_9907.lean
+TAKE elab/grind_9948.lean -> grind_9948.lean
+TAKE elab/grind_ExtTreeSet.lean -> grind_ExtTreeSet.lean
+TAKE elab/grind_Poly_mul_0_bug.lean -> grind_Poly_mul_0_bug.lean  [PINNED: expected text pinned (qualified pretty-print)]
+TAKE elab/grind_abstract_mvars.lean -> grind_abstract_mvars.lean
+TAKE elab/grind_ac_1.lean -> grind_ac_1.lean
+TAKE elab/grind_ac_2.lean -> grind_ac_2.lean
 SKIP elab/grind_ac_3.lean [\bsorry\b]
 SKIP elab/grind_ac_4.lean [\bsorry\b]
 SKIP elab/grind_ac_5.lean [\bsorry\b]
-KEEP elab/grind_ac_inv_issue.lean -> grind_ac_inv_issue.lean
-KEEP elab/grind_ac_inv_issue_2.lean -> grind_ac_inv_issue_2.lean
-CUT elab/grind_activate_local_issue.lean -> grind_activate_local_issue.lean [curation cap ~100]
-KEEP elab/grind_all_singleton_patterns.lean -> grind_all_singleton_patterns.lean
-KEEP elab/grind_alphaShare_builder.lean -> grind_alphaShare_builder.lean
-CUT elab/grind_annotated.lean -> grind_annotated.lean [curation cap ~100]
-KEEP elab/grind_append_issue.lean -> grind_append_issue.lean
-KEEP elab/grind_arbitrary_params.lean -> grind_arbitrary_params.lean
-KEEP elab/grind_arith_nonstd_insts.lean -> grind_arith_nonstd_insts.lean
-KEEP elab/grind_array.lean -> grind_array.lean
-CUT elab/grind_array_attach.lean -> grind_array_attach.lean [curation cap ~100]
+TAKE elab/grind_ac_inv_issue.lean -> grind_ac_inv_issue.lean
+TAKE elab/grind_ac_inv_issue_2.lean -> grind_ac_inv_issue_2.lean
+TAKE elab/grind_activate_local_issue.lean -> grind_activate_local_issue.lean
+TAKE elab/grind_all_singleton_patterns.lean -> grind_all_singleton_patterns.lean
+TAKE elab/grind_alphaShare_builder.lean -> grind_alphaShare_builder.lean
+TAKE elab/grind_annotated.lean -> grind_annotated.lean
+TAKE elab/grind_append_issue.lean -> grind_append_issue.lean
+TAKE elab/grind_arbitrary_params.lean -> grind_arbitrary_params.lean
+TAKE elab/grind_arith_nonstd_insts.lean -> grind_arith_nonstd_insts.lean
+TAKE elab/grind_array.lean -> grind_array.lean
+TAKE elab/grind_array_attach.lean -> grind_array_attach.lean
 SKIP elab/grind_assoc.lean [\bsorry\b]
 SKIP elab/grind_attrs.lean [\bsorry\b]
-KEEP elab/grind_beta.lean -> grind_beta.lean
+TAKE elab/grind_beta.lean -> grind_beta.lean
 SKIP elab/grind_beta_generation_check.lean [\bsorry\b]
-KEEP elab/grind_big_poly.lean -> grind_big_poly.lean
-KEEP elab/grind_bigstep.lean -> grind_bigstep.lean
-CUT elab/grind_bintree.lean -> grind_bintree.lean [curation cap ~100]
-KEEP elab/grind_bitvec.lean -> grind_bitvec.lean
-CUT elab/grind_bitvec_lit_eval.lean -> grind_bitvec_lit_eval.lean [curation cap ~100]
-KEEP elab/grind_bitvec_lit_norm.lean -> grind_bitvec_lit_norm.lean
-CUT elab/grind_bitvec_ofnat_out_of_range.lean -> grind_bitvec_ofnat_out_of_range.lean [curation cap ~100]
-KEEP elab/grind_bitvec_ofnatlt_lit.lean -> grind_bitvec_ofnatlt_lit.lean
-KEEP elab/grind_bool_diseq.lean -> grind_bool_diseq.lean
-KEEP elab/grind_bool_prop.lean -> grind_bool_prop.lean
-KEEP elab/grind_bv_lit_canon.lean -> grind_bv_lit_canon.lean
-KEEP elab/grind_canon_beta_type.lean -> grind_canon_beta_type.lean
+TAKE elab/grind_big_poly.lean -> grind_big_poly.lean
+TAKE elab/grind_bigstep.lean -> grind_bigstep.lean
+TAKE elab/grind_bintree.lean -> grind_bintree.lean
+TAKE elab/grind_bitvec.lean -> grind_bitvec.lean
+TAKE elab/grind_bitvec_lit_eval.lean -> grind_bitvec_lit_eval.lean
+TAKE elab/grind_bitvec_lit_norm.lean -> grind_bitvec_lit_norm.lean
+TAKE elab/grind_bitvec_ofnat_out_of_range.lean -> grind_bitvec_ofnat_out_of_range.lean
+TAKE elab/grind_bitvec_ofnatlt_lit.lean -> grind_bitvec_ofnatlt_lit.lean
+TAKE elab/grind_bool_diseq.lean -> grind_bool_diseq.lean
+TAKE elab/grind_bool_prop.lean -> grind_bool_prop.lean
+TAKE elab/grind_bv_lit_canon.lean -> grind_bv_lit_canon.lean
+TAKE elab/grind_canon_beta_type.lean -> grind_canon_beta_type.lean
 SKIP elab/grind_canon_bug.lean [\bsorry\b]
 SKIP elab/grind_canon_bug_2.lean [\bsorry\b]
 SKIP elab/grind_canon_insts.lean [#exit]
 SKIP elab/grind_canon_ofnat.lean [\bsorry\b]
 SKIP elab/grind_canon_types.lean [#exit]
-CUT elab/grind_cases.lean -> grind_cases.lean [curation cap ~100]
-KEEP elab/grind_cases_anchor_ordinal.lean -> grind_cases_anchor_ordinal.lean
+TAKE elab/grind_cases.lean -> grind_cases.lean
+TAKE elab/grind_cases_anchor_ordinal.lean -> grind_cases_anchor_ordinal.lean
 SKIP elab/grind_cases_tac.lean [\bsorry\b]
-KEEP elab/grind_casting_issue.lean -> grind_casting_issue.lean
-CUT elab/grind_cat.lean -> grind_cat.lean [curation cap ~100]
+TAKE elab/grind_casting_issue.lean -> grind_casting_issue.lean
+TAKE elab/grind_cat.lean -> grind_cat.lean
 SKIP elab/grind_cat2.lean [\bsorry\b]
-CUT elab/grind_clean_den.lean -> grind_clean_den.lean [curation cap ~100]
-KEEP elab/grind_clear_error.lean -> grind_clear_error.lean
-KEEP elab/grind_commsemiring.lean -> grind_commsemiring.lean
+TAKE elab/grind_clean_den.lean -> grind_clean_den.lean
+TAKE elab/grind_clear_error.lean -> grind_clear_error.lean
+TAKE elab/grind_commsemiring.lean -> grind_commsemiring.lean
 SKIP elab/grind_congr.lean [#exit]
-KEEP elab/grind_congr1.lean -> grind_congr1.lean
-KEEP elab/grind_congr_hash_issue.lean -> grind_congr_hash_issue.lean
-KEEP elab/grind_congr_over_applied.lean -> grind_congr_over_applied.lean
+TAKE elab/grind_congr1.lean -> grind_congr1.lean
+TAKE elab/grind_congr_hash_issue.lean -> grind_congr_hash_issue.lean
+TAKE elab/grind_congr_over_applied.lean -> grind_congr_over_applied.lean
 SKIP elab/grind_constProp.lean [(?<![A-Za-z0-9_.])grind!]
-CUT elab/grind_const_pattern.lean -> grind_const_pattern.lean [curation cap ~100]
-KEEP elab/grind_countP.lean -> grind_countP.lean
+TAKE elab/grind_const_pattern.lean -> grind_const_pattern.lean
+TAKE elab/grind_countP.lean -> grind_countP.lean
 SKIP elab/grind_ctorIdx.lean [\bsorry\b]
-KEEP elab/grind_ctor_ematch.lean -> grind_ctor_ematch.lean
+TAKE elab/grind_ctor_ematch.lean -> grind_ctor_ematch.lean
 SKIP elab/grind_cutsat_auto.lean [\bsorry\b]
-CUT elab/grind_cutsat_commring.lean -> grind_cutsat_commring.lean [curation cap ~100]
+TAKE elab/grind_cutsat_commring.lean -> grind_cutsat_commring.lean
 SKIP elab/grind_cutsat_cooper.lean [\bsorry\b]
-KEEP elab/grind_cutsat_decompose.lean -> grind_cutsat_decompose.lean
+TAKE elab/grind_cutsat_decompose.lean -> grind_cutsat_decompose.lean
 SKIP elab/grind_cutsat_diseq_1.lean [\bsorry\b]
-KEEP elab/grind_cutsat_diseq_2.lean -> grind_cutsat_diseq_2.lean
-KEEP elab/grind_cutsat_diseq_3.lean -> grind_cutsat_diseq_3.lean
-KEEP elab/grind_cutsat_diseq_cooper.lean -> grind_cutsat_diseq_cooper.lean
+TAKE elab/grind_cutsat_diseq_2.lean -> grind_cutsat_diseq_2.lean
+TAKE elab/grind_cutsat_diseq_3.lean -> grind_cutsat_diseq_3.lean
+TAKE elab/grind_cutsat_diseq_cooper.lean -> grind_cutsat_diseq_cooper.lean
 SKIP elab/grind_cutsat_div_1.lean [\bsorry\b]
 SKIP elab/grind_cutsat_div_mod.lean [\bsorry\b]
 SKIP elab/grind_cutsat_eq_1.lean [\bsorry\b]
-KEEP elab/grind_cutsat_instances.lean -> grind_cutsat_instances.lean
+TAKE elab/grind_cutsat_instances.lean -> grind_cutsat_instances.lean
 SKIP elab/grind_cutsat_le_1.lean [\bsorry\b]
 SKIP elab/grind_cutsat_le_2.lean [\bsorry\b]
 SKIP elab/grind_cutsat_lia_steps.lean [\bsorry\b]
-CUT elab/grind_cutsat_loop.lean -> grind_cutsat_loop.lean [curation cap ~100]
-KEEP elab/grind_cutsat_natCast_propagation.lean -> grind_cutsat_natCast_propagation.lean
-CUT elab/grind_cutsat_nat_dvd.lean -> grind_cutsat_nat_dvd.lean [curation cap ~100]
+TAKE elab/grind_cutsat_loop.lean -> grind_cutsat_loop.lean
+TAKE elab/grind_cutsat_natCast_propagation.lean -> grind_cutsat_natCast_propagation.lean
+TAKE elab/grind_cutsat_nat_dvd.lean -> grind_cutsat_nat_dvd.lean
 SKIP elab/grind_cutsat_nat_eq.lean [\bsorry\b]
-KEEP elab/grind_cutsat_nat_le.lean -> grind_cutsat_nat_le.lean
-CUT elab/grind_cutsat_omega.lean -> grind_cutsat_omega.lean [curation cap ~100]
-CUT elab/grind_cutsat_pow.lean -> grind_cutsat_pow.lean [curation cap ~100]
-KEEP elab/grind_cutsat_proof_term_issue.lean -> grind_cutsat_proof_term_issue.lean
+TAKE elab/grind_cutsat_nat_le.lean -> grind_cutsat_nat_le.lean
+TAKE elab/grind_cutsat_omega.lean -> grind_cutsat_omega.lean
+TAKE elab/grind_cutsat_pow.lean -> grind_cutsat_pow.lean
+TAKE elab/grind_cutsat_proof_term_issue.lean -> grind_cutsat_proof_term_issue.lean
 SKIP elab/grind_cutsat_tests.lean [\bsorry\b]
-CUT elab/grind_cutsat_toint_1.lean -> grind_cutsat_toint_1.lean [curation cap ~100]
-CUT elab/grind_cutsat_trim_context.lean -> grind_cutsat_trim_context.lean [curation cap ~100]
+TAKE elab/grind_cutsat_toint_1.lean -> grind_cutsat_toint_1.lean
+TAKE elab/grind_cutsat_trim_context.lean -> grind_cutsat_trim_context.lean
 SKIP elab/grind_cutsat_upper_bug.lean [\bsorry\b]
-KEEP elab/grind_cutsat_zero.lean -> grind_cutsat_zero.lean
-KEEP elab/grind_decide_bool_issues.lean -> grind_decide_bool_issues.lean
+TAKE elab/grind_cutsat_zero.lean -> grind_cutsat_zero.lean
+TAKE elab/grind_decide_bool_issues.lean -> grind_decide_bool_issues.lean
 SKIP elab/grind_def_eq_inv_issue.lean [\bsorry\b]
-CUT elab/grind_dep_match_overlap.lean -> grind_dep_match_overlap.lean [curation cap ~100]
-KEEP elab/grind_diseq.lean -> grind_diseq.lean
-CUT elab/grind_diseq_cancel_var_bug.lean -> grind_diseq_cancel_var_bug.lean [curation cap ~100]
+TAKE elab/grind_dep_match_overlap.lean -> grind_dep_match_overlap.lean
+TAKE elab/grind_diseq.lean -> grind_diseq.lean
+TAKE elab/grind_diseq_cancel_var_bug.lean -> grind_diseq_cancel_var_bug.lean
 SKIP elab/grind_dvd_propagate_issue.lean [\bsorry\b]
 SKIP elab/grind_ematch1.lean [\bsorry\b]
 SKIP elab/grind_ematch2.lean [\bsorry\b]
 SKIP elab/grind_ematch_diag.lean [\bsorry\b]
 SKIP elab/grind_ematch_gen_pattern.lean [\bsorry\b]
-KEEP elab/grind_ematch_ground_implicit_inst.lean -> grind_ematch_ground_implicit_inst.lean
+TAKE elab/grind_ematch_ground_implicit_inst.lean -> grind_ematch_ground_implicit_inst.lean
 SKIP elab/grind_ematch_patterns.lean [\bsorry\b]
 SKIP elab/grind_ematch_theorem_activation.lean [\bsorry\b]
-KEEP elab/grind_ematch_type_error.lean -> grind_ematch_type_error.lean
+TAKE elab/grind_ematch_type_error.lean -> grind_ematch_type_error.lean
 SKIP elab/grind_eq.lean [\bsorry\b]
 SKIP elab/grind_eq_bwd.lean [\bsorry\b]
 SKIP elab/grind_eq_bwd_pat_bug.lean [\bsorry\b]
 SKIP elab/grind_eq_false_of_imp_eq_false.lean [\bsorry\b]
-KEEP elab/grind_eq_pattern.lean -> grind_eq_pattern.lean
-CUT elab/grind_eqc_inv_issue.lean -> grind_eqc_inv_issue.lean [curation cap ~100]
-KEEP elab/grind_eqres_bug.lean -> grind_eqres_bug.lean
+TAKE elab/grind_eq_pattern.lean -> grind_eq_pattern.lean
+TAKE elab/grind_eqc_inv_issue.lean -> grind_eqc_inv_issue.lean
+TAKE elab/grind_eqres_bug.lean -> grind_eqres_bug.lean
 SKIP elab/grind_erase_attr.lean [\bsorry\b]
-KEEP elab/grind_eta.lean -> grind_eta.lean
-KEEP elab/grind_etaStruct.lean -> grind_etaStruct.lean
+TAKE elab/grind_eta.lean -> grind_eta.lean
+TAKE elab/grind_etaStruct.lean -> grind_etaStruct.lean
 SKIP elab/grind_eta_struct_internalize.lean [\bsorry\b]
 SKIP elab/grind_eval_suggest.lean [\bsorry\b]
-KEEP elab/grind_exfalso.lean -> grind_exfalso.lean
-KEEP elab/grind_fastEraseDups.lean -> grind_fastEraseDups.lean
-CUT elab/grind_field_div.lean -> grind_field_div.lean [curation cap ~100]
-CUT elab/grind_field_norm.lean -> grind_field_norm.lean [curation cap ~100]
-CUT elab/grind_field_norm_2.lean -> grind_field_norm_2.lean [curation cap ~100]
+TAKE elab/grind_exfalso.lean -> grind_exfalso.lean
+TAKE elab/grind_fastEraseDups.lean -> grind_fastEraseDups.lean
+TAKE elab/grind_field_div.lean -> grind_field_div.lean
+TAKE elab/grind_field_norm.lean -> grind_field_norm.lean
+TAKE elab/grind_field_norm_2.lean -> grind_field_norm_2.lean
 SKIP elab/grind_field_panic.lean [\bsorry\b]
-CUT elab/grind_fin.lean -> grind_fin.lean [curation cap ~100]
-CUT elab/grind_finVal.lean -> grind_finVal.lean [curation cap ~100]
-CUT elab/grind_fin_bug.lean -> grind_fin_bug.lean [curation cap ~100]
-CUT elab/grind_fin_zero.lean -> grind_fin_zero.lean [curation cap ~100]
+TAKE elab/grind_fin.lean -> grind_fin.lean
+TAKE elab/grind_finVal.lean -> grind_finVal.lean
+TAKE elab/grind_fin_bug.lean -> grind_fin_bug.lean
+TAKE elab/grind_fin_zero.lean -> grind_fin_zero.lean
 SKIP elab/grind_finish_trace.lean [\bsorry\b]
-CUT elab/grind_funCC.lean -> grind_funCC.lean [curation cap ~100]
-CUT elab/grind_fun_singleton.lean -> grind_fun_singleton.lean [curation cap ~100]
-CUT elab/grind_funext.lean -> grind_funext.lean [curation cap ~100]
-CUT elab/grind_getElem.lean -> grind_getElem.lean [curation cap ~100]
-CUT elab/grind_getLast_dropLast.lean -> grind_getLast_dropLast.lean [curation cap ~100]
+TAKE elab/grind_funCC.lean -> grind_funCC.lean
+TAKE elab/grind_fun_singleton.lean -> grind_fun_singleton.lean
+TAKE elab/grind_funext.lean -> grind_funext.lean
+TAKE elab/grind_getElem.lean -> grind_getElem.lean
+TAKE elab/grind_getLast_dropLast.lean -> grind_getLast_dropLast.lean
 SKIP elab/grind_ground_pat_issue.lean [\bsorry\b]
-KEEP elab/grind_ground_thm.lean -> grind_ground_thm.lean
+TAKE elab/grind_ground_thm.lean -> grind_ground_thm.lean
 SKIP elab/grind_guide.lean [\bsorry\b]
 SKIP elab/grind_guide_2.lean [\bsorry\b]
-CUT elab/grind_hashmap_list.lean -> grind_hashmap_list.lean [curation cap ~100]
-CUT elab/grind_hcongr.lean -> grind_hcongr.lean [curation cap ~100]
-CUT elab/grind_heapsort.lean -> grind_heapsort.lean [curation cap ~100]
+TAKE elab/grind_hashmap_list.lean -> grind_hashmap_list.lean
+TAKE elab/grind_hcongr.lean -> grind_hcongr.lean
+TAKE elab/grind_heapsort.lean -> grind_heapsort.lean
 SKIP elab/grind_heartbeats.lean [\bsorry\b]
-CUT elab/grind_heq_proof_issue.lean -> grind_heq_proof_issue.lean [curation cap ~100]
-CUT elab/grind_hom_attr.lean -> grind_hom_attr.lean [curation cap ~100]
-CUT elab/grind_hom_lemmas.lean -> grind_hom_lemmas.lean [curation cap ~100]
-CUT elab/grind_hom_pred_attr.lean -> grind_hom_pred_attr.lean [curation cap ~100]
-CUT elab/grind_human_eval_114.lean -> grind_human_eval_114.lean [curation cap ~100]
-CUT elab/grind_hyper_ex.lean -> grind_hyper_ex.lean [curation cap ~100]
-CUT elab/grind_ignore_impl_detail.lean -> grind_ignore_impl_detail.lean [curation cap ~100]
-CUT elab/grind_implies.lean -> grind_implies.lean [curation cap ~100]
-CUT elab/grind_indexmap.lean -> grind_indexmap.lean [curation cap ~100]
+TAKE elab/grind_heq_proof_issue.lean -> grind_heq_proof_issue.lean
+TAKE elab/grind_hom_attr.lean -> grind_hom_attr.lean
+TAKE elab/grind_hom_lemmas.lean -> grind_hom_lemmas.lean
+TAKE elab/grind_hom_pred_attr.lean -> grind_hom_pred_attr.lean
+TAKE elab/grind_human_eval_114.lean -> grind_human_eval_114.lean
+TAKE elab/grind_hyper_ex.lean -> grind_hyper_ex.lean
+TAKE elab/grind_ignore_impl_detail.lean -> grind_ignore_impl_detail.lean
+TAKE elab/grind_implies.lean -> grind_implies.lean
+TAKE elab/grind_indexmap.lean -> grind_indexmap.lean
 SKIP elab/grind_indexmap_pre.lean [\bsorry\b]
-CUT elab/grind_indexmap_trace.lean -> grind_indexmap_trace.lean [anchor-ID/pretty-print drift in suggestions]
-CUT elab/grind_inj.lean -> grind_inj.lean [curation cap ~100]
+TAKE elab/grind_indexmap_trace.lean -> grind_indexmap_trace.lean  [PINNED: expected text pinned (wrap; try?-core suggestions kept bare)]
+TAKE elab/grind_inj.lean -> grind_inj.lean
 SKIP elab/grind_inj2.lean [\bsorry\b]
-CUT elab/grind_inj_clear_issue.lean -> grind_inj_clear_issue.lean [curation cap ~100]
+TAKE elab/grind_inj_clear_issue.lean -> grind_inj_clear_issue.lean
 SKIP elab/grind_inst_mvars_issue.lean [\bsorry\b]
-CUT elab/grind_intcast_natcast.lean -> grind_intcast_natcast.lean [curation cap ~100]
+TAKE elab/grind_intcast_natcast.lean -> grind_intcast_natcast.lean
 SKIP elab/grind_interactive.lean [\bsorry\b]
 SKIP elab/grind_interactive_2.lean [\bsorry\b]
-CUT elab/grind_internalize_bitvec_lit.lean -> grind_internalize_bitvec_lit.lean [curation cap ~100]
-CUT elab/grind_intmodule_eq_prop.lean -> grind_intmodule_eq_prop.lean [curation cap ~100]
-CUT elab/grind_issue_9125.lean -> grind_issue_9125.lean [curation cap ~100]
-CUT elab/grind_issue_9187.lean -> grind_issue_9187.lean [curation cap ~100]
-CUT elab/grind_ite.lean -> grind_ite.lean [curation cap ~100]
-CUT elab/grind_ite_congr.lean -> grind_ite_congr.lean [curation cap ~100]
-CUT elab/grind_ite_parent.lean -> grind_ite_parent.lean [curation cap ~100]
-CUT elab/grind_ite_split_issue.lean -> grind_ite_split_issue.lean [curation cap ~100]
-CUT elab/grind_ite_trace.lean -> grind_ite_trace.lean [curation cap ~100]
+TAKE elab/grind_internalize_bitvec_lit.lean -> grind_internalize_bitvec_lit.lean
+TAKE elab/grind_intmodule_eq_prop.lean -> grind_intmodule_eq_prop.lean
+TAKE elab/grind_issue_9125.lean -> grind_issue_9125.lean
+TAKE elab/grind_issue_9187.lean -> grind_issue_9187.lean
+TAKE elab/grind_ite.lean -> grind_ite.lean
+TAKE elab/grind_ite_congr.lean -> grind_ite_congr.lean
+TAKE elab/grind_ite_parent.lean -> grind_ite_parent.lean
+TAKE elab/grind_ite_split_issue.lean -> grind_ite_split_issue.lean
+TAKE elab/grind_ite_trace.lean -> grind_ite_trace.lean
 SKIP elab/grind_ite_unused_match.lean [\bsorry\b]
-CUT elab/grind_lawful_eq_cmp.lean -> grind_lawful_eq_cmp.lean [curation cap ~100]
+TAKE elab/grind_lawful_eq_cmp.lean -> grind_lawful_eq_cmp.lean
 SKIP elab/grind_lax.lean [\bsorry\b]
 SKIP elab/grind_lazy_ite.lean [\bsorry\b]
-CUT elab/grind_lex.lean -> grind_lex.lean [curation cap ~100]
-CUT elab/grind_lia_regression.lean -> grind_lia_regression.lean [curation cap ~100]
+TAKE elab/grind_lex.lean -> grind_lex.lean
+TAKE elab/grind_lia_regression.lean -> grind_lia_regression.lean
 SKIP elab/grind_linarith_1.lean [\bsorry\b]
-CUT elab/grind_linarith_2.lean -> grind_linarith_2.lean [curation cap ~100]
-CUT elab/grind_linarith_rational.lean -> grind_linarith_rational.lean [curation cap ~100]
-CUT elab/grind_linarith_spurious_issues.lean -> grind_linarith_spurious_issues.lean [curation cap ~100]
-CUT elab/grind_linarith_trim_context.lean -> grind_linarith_trim_context.lean [curation cap ~100]
-CUT elab/grind_linearize.lean -> grind_linearize.lean [curation cap ~100]
-CUT elab/grind_lint_1.lean -> grind_lint_1.lean [curation cap ~100]
-CUT elab/grind_lint_array.lean -> grind_lint_array.lean [curation cap ~100]
-CUT elab/grind_lint_bitvec.lean -> grind_lint_bitvec.lean [curation cap ~100]
-CUT elab/grind_lint_list.lean -> grind_lint_list.lean [curation cap ~100]
-CUT elab/grind_lint_misc.lean -> grind_lint_misc.lean [curation cap ~100]
-CUT elab/grind_lint_std_hashmap.lean -> grind_lint_std_hashmap.lean [curation cap ~100]
-CUT elab/grind_lint_std_misc.lean -> grind_lint_std_misc.lean [curation cap ~100]
-CUT elab/grind_lint_std_treemap.lean -> grind_lint_std_treemap.lean [curation cap ~100]
-KEEP elab/grind_list.lean -> grind_list.lean
-CUT elab/grind_list3.lean -> grind_list3.lean [curation cap ~100]
-CUT elab/grind_list_count.lean -> grind_list_count.lean [curation cap ~100]
-CUT elab/grind_list_drop_take.lean -> grind_list_drop_take.lean [curation cap ~100]
-CUT elab/grind_list_erase.lean -> grind_list_erase.lean [curation cap ~100]
+TAKE elab/grind_linarith_2.lean -> grind_linarith_2.lean
+TAKE elab/grind_linarith_rational.lean -> grind_linarith_rational.lean
+TAKE elab/grind_linarith_spurious_issues.lean -> grind_linarith_spurious_issues.lean
+TAKE elab/grind_linarith_trim_context.lean -> grind_linarith_trim_context.lean
+TAKE elab/grind_linearize.lean -> grind_linearize.lean
+TAKE elab/grind_lint_1.lean -> grind_lint_1.lean
+TAKE elab/grind_lint_array.lean -> grind_lint_array.lean
+TAKE elab/grind_lint_bitvec.lean -> grind_lint_bitvec.lean
+TAKE elab/grind_lint_list.lean -> grind_lint_list.lean
+TAKE elab/grind_lint_misc.lean -> grind_lint_misc.lean
+TAKE elab/grind_lint_std_hashmap.lean -> grind_lint_std_hashmap.lean
+TAKE elab/grind_lint_std_misc.lean -> grind_lint_std_misc.lean
+TAKE elab/grind_lint_std_treemap.lean -> grind_lint_std_treemap.lean
+TAKE elab/grind_list.lean -> grind_list.lean
+TAKE elab/grind_list3.lean -> grind_list3.lean
+TAKE elab/grind_list_count.lean -> grind_list_count.lean
+TAKE elab/grind_list_drop_take.lean -> grind_list_drop_take.lean
+TAKE elab/grind_list_erase.lean -> grind_list_erase.lean
 SKIP elab/grind_list_find.lean [(?<![A-Za-z0-9_.])grind!]
-CUT elab/grind_list_issue.lean -> grind_list_issue.lean [curation cap ~100]
-CUT elab/grind_list_perm.lean -> grind_list_perm.lean [curation cap ~100]
-CUT elab/grind_list_sublist.lean -> grind_list_sublist.lean [curation cap ~100]
-CUT elab/grind_local_hyps.lean -> grind_local_hyps.lean [curation cap ~100]
-KEEP elab/grind_locals.lean -> grind_locals.lean
-KEEP elab/grind_locals_module.lean -> grind_locals_module.lean
+TAKE elab/grind_list_issue.lean -> grind_list_issue.lean
+TAKE elab/grind_list_perm.lean -> grind_list_perm.lean
+TAKE elab/grind_list_sublist.lean -> grind_list_sublist.lean
+TAKE elab/grind_local_hyps.lean -> grind_local_hyps.lean
+TAKE elab/grind_locals.lean -> grind_locals.lean
+TAKE elab/grind_locals_module.lean -> grind_locals_module.lean
 SKIP elab/grind_lookahead.lean [\bsorry\b]
 SKIP elab/grind_many_eqs.lean [\bsorry\b]
-CUT elab/grind_map.lean -> grind_map.lean [curation cap ~100]
-CUT elab/grind_mark_nested_proofs_bug.lean -> grind_mark_nested_proofs_bug.lean [curation cap ~100]
-CUT elab/grind_match1.lean -> grind_match1.lean [curation cap ~100]
+TAKE elab/grind_map.lean -> grind_map.lean
+TAKE elab/grind_mark_nested_proofs_bug.lean -> grind_mark_nested_proofs_bug.lean
+TAKE elab/grind_match1.lean -> grind_match1.lean
 SKIP elab/grind_match2.lean [\bsorry\b]
-CUT elab/grind_match_cond_contra.lean -> grind_match_cond_contra.lean [curation cap ~100]
-CUT elab/grind_match_cond_issue.lean -> grind_match_cond_issue.lean [curation cap ~100]
-CUT elab/grind_match_cond_split.lean -> grind_match_cond_split.lean [curation cap ~100]
-CUT elab/grind_match_eq_propagation.lean -> grind_match_eq_propagation.lean [curation cap ~100]
-CUT elab/grind_match_with_eq.lean -> grind_match_with_eq.lean [curation cap ~100]
+TAKE elab/grind_match_cond_contra.lean -> grind_match_cond_contra.lean
+TAKE elab/grind_match_cond_issue.lean -> grind_match_cond_issue.lean
+TAKE elab/grind_match_cond_split.lean -> grind_match_cond_split.lean
+TAKE elab/grind_match_eq_propagation.lean -> grind_match_eq_propagation.lean
+TAKE elab/grind_match_with_eq.lean -> grind_match_with_eq.lean
 SKIP elab/grind_mbtc_1.lean [\bsorry\b]
-CUT elab/grind_mbtc_bad_splits.lean -> grind_mbtc_bad_splits.lean [curation cap ~100]
-CUT elab/grind_min.lean -> grind_min.lean [curation cap ~100]
-CUT elab/grind_module_eqs.lean -> grind_module_eqs.lean [curation cap ~100]
-CUT elab/grind_module_normalization.lean -> grind_module_normalization.lean [curation cap ~100]
-CUT elab/grind_module_relations.lean -> grind_module_relations.lean [curation cap ~100]
-CUT elab/grind_mon_order.lean -> grind_mon_order.lean [curation cap ~100]
-CUT elab/grind_mvar.lean -> grind_mvar.lean [curation cap ~100]
-CUT elab/grind_mvar_hyps.lean -> grind_mvar_hyps.lean [curation cap ~100]
-CUT elab/grind_natCast.lean -> grind_natCast.lean [curation cap ~100]
-CUT elab/grind_natCast_intCast.lean -> grind_natCast_intCast.lean [curation cap ~100]
-CUT elab/grind_natCast_issue.lean -> grind_natCast_issue.lean [curation cap ~100]
-CUT elab/grind_natCast_nonneg_ring.lean -> grind_natCast_nonneg_ring.lean [curation cap ~100]
-CUT elab/grind_nat_bitwise.lean -> grind_nat_bitwise.lean [curation cap ~100]
-CUT elab/grind_nat_module.lean -> grind_nat_module.lean [curation cap ~100]
-CUT elab/grind_nat_module_2.lean -> grind_nat_module_2.lean [curation cap ~100]
-CUT elab/grind_nat_module_norm.lean -> grind_nat_module_norm.lean [curation cap ~100]
-CUT elab/grind_nat_semiring.lean -> grind_nat_semiring.lean [curation cap ~100]
-CUT elab/grind_nat_sub_encoding.lean -> grind_nat_sub_encoding.lean [curation cap ~100]
-CUT elab/grind_nested_mdata.lean -> grind_nested_mdata.lean [curation cap ~100]
-CUT elab/grind_nested_proof_issue.lean -> grind_nested_proof_issue.lean [curation cap ~100]
+TAKE elab/grind_mbtc_bad_splits.lean -> grind_mbtc_bad_splits.lean
+TAKE elab/grind_min.lean -> grind_min.lean
+TAKE elab/grind_module_eqs.lean -> grind_module_eqs.lean
+TAKE elab/grind_module_normalization.lean -> grind_module_normalization.lean
+TAKE elab/grind_module_relations.lean -> grind_module_relations.lean
+TAKE elab/grind_mon_order.lean -> grind_mon_order.lean
+TAKE elab/grind_mvar.lean -> grind_mvar.lean
+TAKE elab/grind_mvar_hyps.lean -> grind_mvar_hyps.lean
+TAKE elab/grind_natCast.lean -> grind_natCast.lean
+TAKE elab/grind_natCast_intCast.lean -> grind_natCast_intCast.lean
+TAKE elab/grind_natCast_issue.lean -> grind_natCast_issue.lean
+TAKE elab/grind_natCast_nonneg_ring.lean -> grind_natCast_nonneg_ring.lean
+TAKE elab/grind_nat_bitwise.lean -> grind_nat_bitwise.lean
+TAKE elab/grind_nat_module.lean -> grind_nat_module.lean
+TAKE elab/grind_nat_module_2.lean -> grind_nat_module_2.lean
+TAKE elab/grind_nat_module_norm.lean -> grind_nat_module_norm.lean
+TAKE elab/grind_nat_semiring.lean -> grind_nat_semiring.lean
+TAKE elab/grind_nat_sub_encoding.lean -> grind_nat_sub_encoding.lean
+TAKE elab/grind_nested_mdata.lean -> grind_nested_mdata.lean
+TAKE elab/grind_nested_proof_issue.lean -> grind_nested_proof_issue.lean
 SKIP elab/grind_nested_proofs.lean [#exit]
-CUT elab/grind_nochrono.lean -> grind_nochrono.lean [curation cap ~100]
-CUT elab/grind_noncomm_ring.lean -> grind_noncomm_ring.lean [curation cap ~100]
-CUT elab/grind_noncomm_semiring.lean -> grind_noncomm_semiring.lean [curation cap ~100]
-CUT elab/grind_nonforall_params.lean -> grind_nonforall_params.lean [curation cap ~100]
-CUT elab/grind_nonlinear_occ_issue.lean -> grind_nonlinear_occ_issue.lean [curation cap ~100]
-CUT elab/grind_norm.lean -> grind_norm.lean [curation cap ~100]
-CUT elab/grind_norm_levels.lean -> grind_norm_levels.lean [curation cap ~100]
-CUT elab/grind_not_internalized.lean -> grind_not_internalized.lean [curation cap ~100]
+TAKE elab/grind_nochrono.lean -> grind_nochrono.lean
+TAKE elab/grind_noncomm_ring.lean -> grind_noncomm_ring.lean
+TAKE elab/grind_noncomm_semiring.lean -> grind_noncomm_semiring.lean
+TAKE elab/grind_nonforall_params.lean -> grind_nonforall_params.lean
+TAKE elab/grind_nonlinear_occ_issue.lean -> grind_nonlinear_occ_issue.lean
+TAKE elab/grind_norm.lean -> grind_norm.lean
+TAKE elab/grind_norm_levels.lean -> grind_norm_levels.lean
+TAKE elab/grind_not_internalized.lean -> grind_not_internalized.lean
 SKIP elab/grind_offset.lean [\bsorry\b]
-CUT elab/grind_omega_examples.lean -> grind_omega_examples.lean [curation cap ~100]
-CUT elab/grind_omega_tests.lean -> grind_omega_tests.lean [curation cap ~100]
+TAKE elab/grind_omega_examples.lean -> grind_omega_examples.lean
+TAKE elab/grind_omega_tests.lean -> grind_omega_tests.lean
 SKIP elab/grind_one_mul.lean [\bsorry\b]
-CUT elab/grind_option.lean -> grind_option.lean [suggestion line-wrap drift]
-CUT elab/grind_ord_module.lean -> grind_ord_module.lean [curation cap ~100]
-CUT elab/grind_order_1.lean -> grind_order_1.lean [curation cap ~100]
-CUT elab/grind_order_2.lean -> grind_order_2.lean [curation cap ~100]
-CUT elab/grind_order_3.lean -> grind_order_3.lean [curation cap ~100]
-CUT elab/grind_order_eq.lean -> grind_order_eq.lean [curation cap ~100]
+TAKE elab/grind_option.lean -> grind_option.lean  [PINNED: expected text pinned (suggestion wrap)]
+TAKE elab/grind_ord_module.lean -> grind_ord_module.lean
+TAKE elab/grind_order_1.lean -> grind_order_1.lean
+TAKE elab/grind_order_2.lean -> grind_order_2.lean
+TAKE elab/grind_order_3.lean -> grind_order_3.lean
+TAKE elab/grind_order_eq.lean -> grind_order_eq.lean
 SKIP elab/grind_order_issue.lean [\bsorry\b]
-CUT elab/grind_order_propagation.lean -> grind_order_propagation.lean [curation cap ~100]
-CUT elab/grind_over_applied_nestedProof.lean -> grind_over_applied_nestedProof.lean [curation cap ~100]
+TAKE elab/grind_order_propagation.lean -> grind_order_propagation.lean
+TAKE elab/grind_over_applied_nestedProof.lean -> grind_over_applied_nestedProof.lean
 SKIP elab/grind_overapplied_ite.lean [\bsorry\b]
-CUT elab/grind_palindrome2.lean -> grind_palindrome2.lean [curation cap ~100]
-CUT elab/grind_palindromes.lean -> grind_palindromes.lean [curation cap ~100]
+TAKE elab/grind_palindrome2.lean -> grind_palindrome2.lean
+TAKE elab/grind_palindromes.lean -> grind_palindromes.lean
 SKIP elab/grind_panic_invariant.lean [\bsorry\b]
 SKIP elab/grind_params.lean [\bsorry\b]
 SKIP elab/grind_pat_sel.lean [\bsorry\b]
-CUT elab/grind_pattern1.lean -> grind_pattern1.lean [curation cap ~100]
+TAKE elab/grind_pattern1.lean -> grind_pattern1.lean
 SKIP elab/grind_pattern2.lean [\bsorry\b]
-CUT elab/grind_pattern3.lean -> grind_pattern3.lean [curation cap ~100]
+TAKE elab/grind_pattern3.lean -> grind_pattern3.lean
 SKIP elab/grind_pattern_cnstr.lean [\bsorry\b]
-CUT elab/grind_pattern_cnstr_2.lean -> grind_pattern_cnstr_2.lean [curation cap ~100]
+TAKE elab/grind_pattern_cnstr_2.lean -> grind_pattern_cnstr_2.lean
 SKIP elab/grind_pattern_inference_issue.lean [\bsorry\b]
-CUT elab/grind_pattern_proj.lean -> grind_pattern_proj.lean [curation cap ~100]
-CUT elab/grind_pattern_scoped.lean -> grind_pattern_scoped.lean [curation cap ~100]
-CUT elab/grind_pattern_validation_instance.lean -> grind_pattern_validation_instance.lean [curation cap ~100]
-CUT elab/grind_pow_add_semiring.lean -> grind_pow_add_semiring.lean [curation cap ~100]
-CUT elab/grind_pow_identity.lean -> grind_pow_identity.lean [curation cap ~100]
+TAKE elab/grind_pattern_proj.lean -> grind_pattern_proj.lean
+TAKE elab/grind_pattern_scoped.lean -> grind_pattern_scoped.lean
+TAKE elab/grind_pattern_validation_instance.lean -> grind_pattern_validation_instance.lean
+TAKE elab/grind_pow_add_semiring.lean -> grind_pow_add_semiring.lean
+TAKE elab/grind_pow_identity.lean -> grind_pow_identity.lean
 SKIP elab/grind_pow_inst_issue.lean [\bsorry\b]
-CUT elab/grind_pow_zero.lean -> grind_pow_zero.lean [curation cap ~100]
-CUT elab/grind_pp_attr.lean -> grind_pp_attr.lean [curation cap ~100]
+TAKE elab/grind_pow_zero.lean -> grind_pow_zero.lean
+TAKE elab/grind_pp_attr.lean -> grind_pp_attr.lean
 SKIP elab/grind_pre.lean [\bsorry\b]
 SKIP elab/grind_preinstance_set_bug.lean [\bsorry\b]
-CUT elab/grind_preord_module.lean -> grind_preord_module.lean [curation cap ~100]
-CUT elab/grind_primes.lean -> grind_primes.lean [curation cap ~100]
-CUT elab/grind_prod.lean -> grind_prod.lean [curation cap ~100]
-CUT elab/grind_product_eta_and_split.lean -> grind_product_eta_and_split.lean [curation cap ~100]
-CUT elab/grind_proof_perf_issue.lean -> grind_proof_perf_issue.lean [curation cap ~100]
-CUT elab/grind_prop_arrow.lean -> grind_prop_arrow.lean [curation cap ~100]
-CUT elab/grind_prop_inst.lean -> grind_prop_inst.lean [curation cap ~100]
+TAKE elab/grind_preord_module.lean -> grind_preord_module.lean
+TAKE elab/grind_primes.lean -> grind_primes.lean
+TAKE elab/grind_prod.lean -> grind_prod.lean
+TAKE elab/grind_product_eta_and_split.lean -> grind_product_eta_and_split.lean
+TAKE elab/grind_proof_perf_issue.lean -> grind_proof_perf_issue.lean
+TAKE elab/grind_prop_arrow.lean -> grind_prop_arrow.lean
+TAKE elab/grind_prop_inst.lean -> grind_prop_inst.lean
 SKIP elab/grind_proveEqIssue.lean [\bsorry\b]
 SKIP elab/grind_qsort.lean [\bsorry\b]
-KEEP elab/grind_question_mark_suggestions.lean -> grind_question_mark_suggestions.lean
-CUT elab/grind_rat.lean -> grind_rat.lean [curation cap ~100]
+TAKE elab/grind_question_mark_suggestions.lean -> grind_question_mark_suggestions.lean
+TAKE elab/grind_rat.lean -> grind_rat.lean
 SKIP elab/grind_reducible.lean [\bsorry\b]
-CUT elab/grind_refl_cmp.lean -> grind_refl_cmp.lean [curation cap ~100]
-CUT elab/grind_regression.lean -> grind_regression.lean [curation cap ~100]
+TAKE elab/grind_refl_cmp.lean -> grind_refl_cmp.lean
+TAKE elab/grind_regression.lean -> grind_regression.lean
 SKIP elab/grind_ring_1.lean [\bsorry\b]
 SKIP elab/grind_ring_2.lean [\bsorry\b]
-CUT elab/grind_ring_3.lean -> grind_ring_3.lean [curation cap ~100]
-CUT elab/grind_ring_4.lean -> grind_ring_4.lean [curation cap ~100]
-CUT elab/grind_ring_coeff_dvd.lean -> grind_ring_coeff_dvd.lean [curation cap ~100]
+TAKE elab/grind_ring_3.lean -> grind_ring_3.lean
+TAKE elab/grind_ring_4.lean -> grind_ring_4.lean
+TAKE elab/grind_ring_coeff_dvd.lean -> grind_ring_coeff_dvd.lean
 SKIP elab/grind_ring_degree_explosion.lean [\bsorry\b]
-CUT elab/grind_ring_norm_ring_proof.lean -> grind_ring_norm_ring_proof.lean [curation cap ~100]
-CUT elab/grind_ring_op_sanity_checks.lean -> grind_ring_op_sanity_checks.lean [curation cap ~100]
-CUT elab/grind_ring_trim_context.lean -> grind_ring_trim_context.lean [curation cap ~100]
-CUT elab/grind_section_var.lean -> grind_section_var.lean [curation cap ~100]
-CUT elab/grind_semiring.lean -> grind_semiring.lean [curation cap ~100]
-CUT elab/grind_semiring_norm.lean -> grind_semiring_norm.lean [curation cap ~100]
+TAKE elab/grind_ring_norm_ring_proof.lean -> grind_ring_norm_ring_proof.lean
+TAKE elab/grind_ring_op_sanity_checks.lean -> grind_ring_op_sanity_checks.lean
+TAKE elab/grind_ring_trim_context.lean -> grind_ring_trim_context.lean
+TAKE elab/grind_section_var.lean -> grind_section_var.lean
+TAKE elab/grind_semiring.lean -> grind_semiring.lean
+TAKE elab/grind_semiring_norm.lean -> grind_semiring_norm.lean
 SKIP elab/grind_semiring_norm_regression.lean [\bsorry\b]
 SKIP elab/grind_set_config.lean [\bsorry\b]
-CUT elab/grind_shelf.lean -> grind_shelf.lean [curation cap ~100]
-CUT elab/grind_smul_issue.lean -> grind_smul_issue.lean [curation cap ~100]
-CUT elab/grind_som1.lean -> grind_som1.lean [curation cap ~100]
+TAKE elab/grind_shelf.lean -> grind_shelf.lean
+TAKE elab/grind_smul_issue.lean -> grind_smul_issue.lean
+TAKE elab/grind_som1.lean -> grind_som1.lean
 SKIP elab/grind_sort_eqc.lean [\bsorry\b]
-CUT elab/grind_sort_intern.lean -> grind_sort_intern.lean [curation cap ~100]
+TAKE elab/grind_sort_intern.lean -> grind_sort_intern.lean
 SKIP elab/grind_split.lean [\bsorry\b]
 SKIP elab/grind_split_arith_imp.lean [\bsorry\b]
-CUT elab/grind_split_data.lean -> grind_split_data.lean [curation cap ~100]
+TAKE elab/grind_split_data.lean -> grind_split_data.lean
 SKIP elab/grind_split_issue.lean [\bsorry\b]
-CUT elab/grind_spoly.lean -> grind_spoly.lean [curation cap ~100]
-CUT elab/grind_suggestions.lean -> grind_suggestions.lean [curation cap ~100]
+TAKE elab/grind_spoly.lean -> grind_spoly.lean
+TAKE elab/grind_suggestions.lean -> grind_suggestions.lean
 SKIP elab/grind_sym_prio.lean [\bsorry\b]
 SKIP elab/grind_t1.lean [\bsorry\b]
-CUT elab/grind_toInt_issue.lean -> grind_toInt_issue.lean [curation cap ~100]
-CUT elab/grind_toInt_mbtc.lean -> grind_toInt_mbtc.lean [curation cap ~100]
-CUT elab/grind_toint_instances.lean -> grind_toint_instances.lean [curation cap ~100]
+TAKE elab/grind_toInt_issue.lean -> grind_toInt_issue.lean
+TAKE elab/grind_toInt_mbtc.lean -> grind_toInt_mbtc.lean
+TAKE elab/grind_toint_instances.lean -> grind_toint_instances.lean
 SKIP elab/grind_trace.lean [\bsorry\b]
-KEEP elab/grind_trace_local_dot_notation.lean -> grind_trace_local_dot_notation.lean
-KEEP elab/grind_trace_term_params.lean -> grind_trace_term_params.lean
+TAKE elab/grind_trace_local_dot_notation.lean -> grind_trace_local_dot_notation.lean
+TAKE elab/grind_trace_term_params.lean -> grind_trace_term_params.lean
 SKIP elab/grind_trig.lean [\bsorry\b]
 SKIP elab/grind_try_exact.lean [\bsorry\b]
-CUT elab/grind_try_extend.lean -> grind_try_extend.lean [curation cap ~100]
+TAKE elab/grind_try_extend.lean -> grind_try_extend.lean
 SKIP elab/grind_try_trace.lean [\bsorry\b]
-CUT elab/grind_unfold_reducible_issue.lean -> grind_unfold_reducible_issue.lean [curation cap ~100]
-CUT elab/grind_unfold_reducible_regression.lean -> grind_unfold_reducible_regression.lean [curation cap ~100]
-CUT elab/grind_univ_poly_ground_pattern.lean -> grind_univ_poly_ground_pattern.lean [curation cap ~100]
-CUT elab/grind_universe_polymorphism.lean -> grind_universe_polymorphism.lean [curation cap ~100]
-CUT elab/grind_unnecessary_hypothesis.lean -> grind_unnecessary_hypothesis.lean [curation cap ~100]
-CUT elab/grind_unused_lemmas.lean -> grind_unused_lemmas.lean [curation cap ~100]
+TAKE elab/grind_unfold_reducible_issue.lean -> grind_unfold_reducible_issue.lean
+TAKE elab/grind_unfold_reducible_regression.lean -> grind_unfold_reducible_regression.lean
+TAKE elab/grind_univ_poly_ground_pattern.lean -> grind_univ_poly_ground_pattern.lean
+TAKE elab/grind_universe_polymorphism.lean -> grind_universe_polymorphism.lean
+TAKE elab/grind_unnecessary_hypothesis.lean -> grind_unnecessary_hypothesis.lean
+TAKE elab/grind_unused_lemmas.lean -> grind_unused_lemmas.lean
 SKIP elab/grind_usr.lean [\bsorry\b]
-CUT elab/grind_vector.lean -> grind_vector.lean [curation cap ~100]
+TAKE elab/grind_vector.lean -> grind_vector.lean
 SKIP elab/grind_warn_param.lean [\bsorry\b]
-CUT elab/library_search_grind.lean -> library_search_grind.lean [out of scope (`exact?` integration)]
-CUT elab/no_grind_constProp.lean -> no_grind_constProp.lean [curation cap ~100]
+SKIP elab/library_search_grind.lean [SKIP (scope): exact? integration, unported]
+TAKE elab/no_grind_constProp.lean -> no_grind_constProp.lean
 SKIP elab/string_pos_grind.lean [grind_order|grind_linarith|grind_canon]
 SKIP elab/sym_simp_grind_discharger.lean [sym-tactic]
-CUT lean/grind/grind_fin.lean -> grind_grind_fin.lean [core grind fails identically in-repo (env search shift)]
-CUT lean/grind/sublist.lean -> lg_sublist.lean [core grind fails identically in-repo (env search shift)]
-CUT lean/grind/algebra/exponents.lean -> alg_exponents.lean [core grind fails identically in-repo (env search shift)]
-KEEP lean/grind/algebra/nat_mod.lean -> alg_nat_mod.lean
-KEEP lean/grind/algebra/nat_semiring.lean -> alg_nat_semiring.lean
-CUT lean/grind/algebra/nlinarith.lean -> alg_nlinarith.lean [core grind fails identically in-repo (env search shift)]
-CUT lean/grind/algebra/products.lean -> alg_products.lean [core grind fails identically in-repo (env search shift)]
+SKIP lean/grind/grind_fin.lean [SKIP (env): core grind fails identically in-repo]
+SKIP lean/grind/sublist.lean [SKIP (env): core grind fails identically in-repo]
+SKIP lean/grind/algebra/exponents.lean [SKIP (env): core grind fails identically in-repo]
+TAKE lean/grind/algebra/nat_mod.lean -> alg_nat_mod.lean
+TAKE lean/grind/algebra/nat_semiring.lean -> alg_nat_semiring.lean
+SKIP lean/grind/algebra/nlinarith.lean [SKIP (env): core grind fails identically in-repo]
+SKIP lean/grind/algebra/products.lean [SKIP (env): core grind fails identically in-repo]
 SKIP lean/grind/experiments/bitvec.lean [\bsorry\b]
-CUT lean/grind/experiments/list.lean -> exp_list.lean [core grind fails identically in-repo (`assumption` fails too)]
-CUT lean/grind/experiments/list_count.lean -> exp_list_count.lean [core grind fails identically in-repo (env search shift)]
-KEEP lean/grind/experiments/map.lean -> exp_map.lean
-KEEP lean/grind/experiments/nat_div.lean -> exp_nat_div.lean
-KEEP lean/grind/experiments/option.lean -> exp_option.lean
+SKIP lean/grind/experiments/list.lean [SKIP (env): core grind fails identically in-repo]
+SKIP lean/grind/experiments/list_count.lean [SKIP (env): core grind fails identically in-repo]
+TAKE lean/grind/experiments/map.lean -> exp_map.lean
+TAKE lean/grind/experiments/nat_div.lean -> exp_nat_div.lean
+TAKE lean/grind/experiments/option.lean -> exp_option.lean

@@ -1,0 +1,9 @@
+import Lynth.Grind.Tactic
+@[expose] public section -- TODO: remove after we fix congr_eq
+def f : List Nat → List Nat → Nat
+  | _, 1 :: _ :: _ => 1
+  | _, _ :: _ => 2
+  | _, _  => 0
+
+example : z = a :: as → y = z → f x y > 0 := by
+  lynth_grind [f.eq_def]
