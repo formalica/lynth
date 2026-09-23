@@ -42,8 +42,10 @@ open Lean.Lynth.Grind.Elab
     else
       `(tactic| grind? $config:optConfig $[only%$only]?)
   let coreTacs ← Lean.Elab.Tactic.evalGrindTraceCore coreStx
-  -- Rewrite `grind` suggestions to `lynth_grind` (shared `optConfig` /
-  -- `grindParam` / `grindSeq` pieces, so rebuild through our own quotation).
+  -- Rewrite top-level `grind` suggestions to `lynth_grind` by rebuilding
+  -- through our own quotation (well-formed nodes pretty-print reliably;
+  -- a bare kind-swap breaks the parenthesizer). Suggestions with `grind`
+  -- nested under combinators are kept as-is (core text still works).
   let mut tacs := #[]
   for tac in coreTacs do
     let tac' ← match tac.raw with

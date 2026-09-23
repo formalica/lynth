@@ -169,3 +169,19 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   jobs), all 33 `Test/*.lean` green, FinDomain 5/5 expected passes.
   TODO: feed `@[lynth_grind]` theorems as extra params, wire as a
   `lynth` procedure, adapt upstream grind tests.
+- Upstream grind tests (this tick): copied the lean4 grind corpus
+  (421 files: `tests/elab/grind_*`, `tests/lean/grind/`) into
+  `Test/Grind/`, adapted by script (`grind`→`lynth_grind`,
+  `grind?`→`lynth_grind?` outside strings/comments/docstrings;
+  `@[grind]` attrs, `trace[grind]`, `set_option grind.*`, message texts
+  stay core since the tactic delegates). Excluded: `sorry` files (repo
+  ban), `grind!`/`sym`/`grind_order` (not ported), Mathlib imports,
+  `#exit` stubs. Triage fixed three adaptation bugs (compound-attr
+  rename crashing on our attr, guard-docstring corruption, suggestion
+  naming incl. nested `<;>` kept as core text) and adopted the harness
+  flags (`-Dlinter.all=false -DElab.inServer=true`). 12 files dropped
+  as unadaptable (core `grind` fails identically in-repo on 7 heavy
+  algebra files — env search shift, not a delegation gap; anchor/wrap/
+  pretty-print drift on 4; `exact?` integration on 1). Final: 100/100
+  green, incl. 12 `lynth_grind?` suggestion files. Docs in
+  `Test/Grind/README.md` + `MANIFEST.txt`.
