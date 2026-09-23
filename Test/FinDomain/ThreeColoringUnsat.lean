@@ -18,6 +18,6 @@ def k4Coloring (g : Fin 4 → Fin 3) : Prop :=
 def k4No3Col : Answer (Fin 4 → Fin 3) k4Coloring := by
   lynth
 
-/-- info: 'k4No3Col' depends on axioms: [propext] -/
+/-- info: 'k4No3Col' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms k4No3Col

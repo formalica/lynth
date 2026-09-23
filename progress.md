@@ -208,3 +208,18 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   (egraph refutation supersedes the axiom-free datatypes path).
   Full suite green (33/33), FinDomain 5/29 unchanged; pilots need
   per-pilot diagnosis next.
+- Answer goals + first pilot flips (this tick): new `Lynth/Answer/Procedure`
+  splits `Sum`/`PSum` goals (the FinDomain `Answer` shape) — right branch
+  tries finite `decide` refutation under a domain-cardinality guard
+  (`Fintype.card` evaluated by `whnf`, max 100000; unfolds head defs via
+  euf's `collectSubterms`), else intros + egraph refutation; left branch
+  refines `inl` and runs the synthesis sub-pipeline. Debugging lessons:
+  `mkAppM` leaves `Fintype` instances unsynthesized (explicit levels +
+  explicit `synthInstance` needed, off-by-one: `Fintype.{u}` takes
+  `Type u`), `simp only [defs]` splice ill-typed for this use (plain
+  `unfold` instead). Full core `grind` provably cannot refute K4 (no
+  pigeonhole) — enumeration is the right engine. Flips both 3-coloring
+  pilots (Sat via synthesis, Unsat via decide; Unsat pin set to the
+  SubsetSum precedent `[propext, Classical.choice, Quot.sound]`).
+  Full suite green (33/33), FinDomain 7/29; remaining 22 need per-pilot
+  diagnosis next.

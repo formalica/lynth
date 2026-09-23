@@ -1,5 +1,6 @@
 import Lean
 import Lynth.Procedure
+import Lynth.Answer.Procedure
 import Lynth.FinSearch.Procedure
 import Lynth.FinSearch.ListInfer
 import Lynth.Euf.Procedure
@@ -38,6 +39,7 @@ Failures accumulate notes; the final error reports every procedure's
 outcome so users can see how far the pipeline got. -/
 def dispatch : TacticM Unit := do
   let procs : List (String × TacticM ProcedureOutcome) := [
+    ("answer", Lynth.Answer.Procedure.run),
     ("finsearch", Lynth.FinSearch.Procedure.run),
     ("listsynth", Lynth.FinSearch.ListInfer.run),
     ("witness", Lynth.Witness.run),
