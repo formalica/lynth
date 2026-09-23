@@ -3,6 +3,7 @@ import Lynth.Procedure
 import Lynth.FinSearch.Procedure
 import Lynth.FinSearch.ListInfer
 import Lynth.Euf.Procedure
+import Lynth.Egraph.Procedure
 import Lynth.Quant.Procedure
 import Lynth.Array.Procedure
 import Lynth.Datatypes.Procedure
@@ -41,6 +42,7 @@ def dispatch : TacticM Unit := do
     ("listsynth", Lynth.FinSearch.ListInfer.run),
     ("witness", Lynth.Witness.run),
     ("euf", Lynth.Euf.Procedure.run),
+    ("egraph", Lynth.Egraph.Procedure.run),
     ("quant", Lynth.Quant.Procedure.run),
     ("array", Lynth.Array.Procedure.run),
     ("datatypes", Lynth.Datatypes.Procedure.run),

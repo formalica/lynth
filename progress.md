@@ -194,3 +194,17 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   integration test). Final: 293/293 green, split `Test/Grind/Fast/`
   (285, ≤10s) + `Test/Grind/Slow/` (8, >10s) by measured wall-clock,
   run with the harness flags (`-Dlinter.all=false -DElab.inServer=true`).
+- E-graph procedure (this tick): new `Lynth/Egraph/Procedure.lean` drives
+  the core e-graph as a library (zero grind code copied — `GrindM.runAtGoal`
+  + `processHypotheses` + split-free `solvers <|> instantiate` saturation,
+  VCGen-precedented), wired after `euf` in dispatch. Exports `newFacts`
+  plus congruence-class equalities via core `mkEqProof`, oriented
+  big-to-small (equal-size atomic kept, compound skipped) so downstream
+  `simp` terminates; harvested `False` refutes; forwarder-mvar rollback
+  keeps it footprint-free. Two hazards found and fixed along the way:
+  `initCore`'s `transformTarget` forwarder faking empty goals (bogus
+  "refutation" + kernel holes), and unoriented exports looping `simp`
+  (5 suites). One deliberate pin change: `dt_discr_false` []→[propext]
+  (egraph refutation supersedes the axiom-free datatypes path).
+  Full suite green (33/33), FinDomain 5/29 unchanged; pilots need
+  per-pilot diagnosis next.

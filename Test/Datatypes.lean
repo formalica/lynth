@@ -50,7 +50,7 @@ theorem dt_custom_discr2 (t : DtTree Nat) :
 /-- info: 'dt_discr_goal' does not depend on any axioms -/
 #guard_msgs in
 #print axioms dt_discr_goal
-/-- info: 'dt_discr_false' does not depend on any axioms -/
+/-- info: 'dt_discr_false' depends on axioms: [propext] -/
 #guard_msgs in
 #print axioms dt_discr_false
 /-- info: 'dt_noop' does not depend on any axioms -/
