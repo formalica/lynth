@@ -1,6 +1,6 @@
 -- Synquid BST tests (demo/BST-Insert.sq, test/current/BST-Delete.sq,
--- test/current/BST-Member.sq), translated: synthesize `insert`,
--- `delete`, `member`.
+-- test/current/BST-Member.sq, test/current/BST-ExtractMin.sq),
+-- translated: synthesize `insert`, `delete`, `member`, `extractMin`.
 -- TODO: failing until function synthesis over inductive domains lands.
 import Lynth
 
@@ -42,6 +42,37 @@ def member
         ∀ x t, bst t = true → f x t = decide (x ∈ keys t) } := by
   lynth
 
+/-- Size (Synquid's termination measure `size`). -/
+def size : BST → Nat
+  | .empty => 0
+  | .node _ l r => size l + size r + 1
+
+/-- Result of `extractMin` (Synquid's `MinPair`): the minimum key
+and the remaining tree. -/
+inductive MinPair where
+  | mk : Nat → BST → MinPair
+
+/-- Synquid's `min` measure. -/
+def MinPair.min : MinPair → Nat
+  | .mk x _ => x
+
+/-- Synquid's `rest` measure. -/
+def MinPair.rest : MinPair → BST
+  | .mk _ t => t
+
+/-- Constructor refinement: every key of `rest` exceeds `min`. -/
+def minPairOK (p : MinPair) : Bool :=
+  (keys p.rest).all (p.min < ·)
+
+/-- Extract the minimum: nonempty tree in, min + rest out — the pair
+holds the same key multiset as the tree (no head-position requirement). -/
+def extractMin
+    : { f : { t : BST // 0 < size t } → MinPair //
+        ∀ t, bst t.val = true →
+          minPairOK (f t) ∧
+          (keys t.val).Perm ((f t).min :: keys (f t).rest) } := by
+  lynth
+
 end BST
 
 /-- info: 'BST.insert' depends on axioms: [propext] -/
@@ -53,3 +84,6 @@ end BST
 /-- info: 'BST.member' depends on axioms: [propext] -/
 #guard_msgs in
 #print axioms BST.member
+/-- info: 'BST.extractMin' depends on axioms: [propext] -/
+#guard_msgs in
+#print axioms BST.extractMin

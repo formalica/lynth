@@ -147,3 +147,25 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   explanation-passing instead).
 - `SPEC.md` working-tree reformatting uncommitted — review before
   committing.
+- `lynth_grind` wrapper-first (this tick): the 184-file grind port
+  (`Lynth/Grind`) compiles but could not run — every goal died in the
+  IR interpreter, first as an assertion violation (`ir_interpreter.cpp:928`),
+  finally diagnosed as missing native implementations of the C++-only
+  `@[extern]` kernels (`preprocess`, `internalize`, `mkEqProof`, cutsat
+  helpers, …): `lake env lean` never loads our native objects, while the
+  toolchain resolves the same symbols for core grind. Interpreted-safe
+  fixes applied to the port (`initialize` for `builtin_initialize`,
+  incl. the two `lynth_grind.*` options; plain `def`+`simproc_pattern%`
+  for `builtin_simproc_decl` (one `dsimproc [simp,seval]` global-attr
+  registration dropped — `lynth_grind` still picks it up via explicit
+  `addSimproc`); base simp set read from core `normExt`; a
+  `simproc_pattern%` line rescued from inside a `/-!` block). The tactic
+  entry (`Lynth/Grind/Tactic.lean`) now elaborates our syntax/config and
+  delegates to the core engine, so `lynth_grind` has full `grind` parity
+  (EUF/arith/prop goals, `only`/params) and `lynth_grind?` reports
+  `lynth_grind only …` suggestions (core `grind?` node rebuilt through
+  our quotation; its `throwUnsupportedSyntax`-on-foreign-kind was the
+  last "Unexpected syntax" red herring). `lake build` clean (18025
+  jobs), all 33 `Test/*.lean` green, FinDomain 5/5 expected passes.
+  TODO: feed `@[lynth_grind]` theorems as extra params, wire as a
+  `lynth` procedure, adapt upstream grind tests.
