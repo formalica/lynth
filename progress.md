@@ -223,3 +223,21 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   SubsetSum precedent `[propext, Classical.choice, Quot.sound]`).
   Full suite green (33/33), FinDomain 7/29; remaining 22 need per-pilot
   diagnosis next.
+- FinDomain campaign (ongoing, 17/29): `listsynth` gained comparison
+  length bounds (`≤`/`<`/`≥`/`>` over `length`, both `LE`/`LT` and
+  `Nat.le`/`Nat.lt` elaborations), `List (Fin n)` enumeration, `List.all`
+  bound pools, default length caps from small pools, and a kernel
+  `decide`-eval fast path (`DecidablePred` once); `witness` gained
+  finite-function tables, single-ctor structures, full-product pairing,
+  and `closeSide` moved here with fast-reject + unfold-hoisting +
+  `Sublist`-optimality fallback (`simp only [←mem_sublists]`+`decide`).
+  Flipped since last commit: TogglePlan, ExactCover, GraphIso,
+  NimStrategy (`[propext, Quot.sound]`), FilterPartitionCount,
+  SafetyInvariant (broken `omega` in spec repaired),
+  Nonogram (broken `runs` termination repaired), DfaLearn,
+  MinSubsetExceed (`[propext, Quot.sound]`). Debugging lessons:
+  `List.length` carries its implicit type arg (match on `getAppFn`);
+  `restoreState` erases post-snapshot logs (use return-value probes);
+  tactic quotations need their theorems imported (`Mathlib.Data.List.
+  Sublists`); `whnf` on `Fintype.card` builds huge `Finset.univ`.
+  Remaining 12 need bigger machinery each (see next ticks).

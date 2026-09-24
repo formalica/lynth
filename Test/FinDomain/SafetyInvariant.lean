@@ -10,7 +10,8 @@
 import Lynth
 
 /-- Step: increment, capped at 2 (state 3 stays unreachable). -/
-def step (s : Fin 4) : Fin 4 := ⟨Nat.min (s.val + 1) 2, by omega⟩
+def step (s : Fin 4) : Fin 4 :=
+  ⟨Nat.min (s.val + 1) 2, Nat.lt_of_le_of_lt (Nat.min_le_right _ _) (by decide)⟩
 
 /-- `inv` is a safety invariant: init, preservation, safety. -/
 def invValid (inv : Fin 4 → Bool) : Prop :=

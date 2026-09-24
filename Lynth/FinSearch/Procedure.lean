@@ -193,57 +193,6 @@ where
         | none => throwError "finsearch: no table default"
     | _ => throwError "finsearch: not a table"
 
-/-- Try to close the side goal with kernel-checked tactics.
-User predicates are usually named `Prop`-valued definitions
-(`miniValid`, …) which `Decidable` synthesis cannot see through, so
-first unfold those (bounded fixpoint, one name at a time). Computable
-constants (`Fintype.card`, `List.getD`, …) evaluate as-is under
-`decide` and are left alone. -/
-def closeSide : TacticM Bool := do
-  -- Unfold the puzzle's own predicates so `Decidable` synthesis sees
-  -- the structure. Bounded fixpoint over CURRENT-MODULE `Prop`-valued
-  -- definitions only: re-scanning must never unfold library defs
-  -- (e.g. `Ne`), which would damage TC-visible structure. Computable
-  -- constants (`Fintype.card`, `List.getD`, …) evaluate as-is under
-  -- `decide` and are left alone.
-  let mut seen : List Name := []
-  for _ in List.range 4 do
-    let tgt ← getMainTarget
-    let mut fresh : Array (TSyntax `ident) := #[]
-    for n in tgt.getUsedConstants do
-      if n ∈ seen then continue
-      -- current module only (`none` = defined in this file)
-      if (← getEnv).getModuleIdxFor? n |>.isSome then continue
-      match (← getEnv).find? n with
-      | some (.defnInfo di) =>
-        -- `Prop`-valued only (binders opened first: `whnfR` panics on
-        -- loose bvars)
-        let isProp ← forallTelescope di.type fun _ resTy => do
-          match ← whnfR resTy with
-          | .sort _ => pure true
-          | _ => pure false
-        if isProp then
-          seen := n :: seen
-          fresh := fresh.push (mkIdent n)
-      | _ => pure ()
-    if fresh.isEmpty then break
-    -- one name at a time: a single bad equation lemma must not block
-    -- the rest
-    for id in fresh do
-      try
-        evalTactic (← `(tactic| unfold $id))
-      catch _ => pure ()
-  let s1 ← `(tactic| decide)
-  let s2 ← `(tactic| rfl)
-  let s3 ← `(tactic| simp_all)
-  for stx in ([s1, s2, s3] : List (TSyntax `tactic)) do
-    let snap ← saveState
-    try
-      evalTactic stx
-      if (← getUnsolvedGoals).isEmpty then return true
-      else restoreState snap
-    catch _ => restoreState snap
-  pure false
 
 /-- Run: detect finite-function goals, solve by SAT + decode + verify.
 Yields on anything else (scalars belong to `Witness`). -/
@@ -307,7 +256,7 @@ def run : TacticM ProcedureOutcome := do
       let v ← shape.mkVal val sidePrf
       mvar.assign v
       replaceMainGoal [sidePrf.mvarId!]
-      if ← closeSide then return .success
+      if ← Lynth.Witness.closeSide then return .success
       else
         restoreState snapshot
         return .failure []

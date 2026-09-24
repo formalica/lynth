@@ -33,6 +33,6 @@ def etalon : List Nat := [12, 9]
 #guard (msSol : List Nat).Sublist msInput ∧ msTarget < (msSol : List Nat).sum
 #guard (msSol : List Nat).length = 2
 
-/-- info: 'msSol' depends on axioms: [propext] -/
+/-- info: 'msSol' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in
 #print axioms msSol

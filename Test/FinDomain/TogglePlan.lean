@@ -36,6 +36,6 @@ def etalon : List (Fin 2) := [0, 1]
 #guard planCheck (planSol : List (Fin 2))
 #guard (planSol : List (Fin 2)).length ≤ 2
 
-/-- info: 'planSol' depends on axioms: [propext] -/
+/-- info: 'planSol' does not depend on any axioms -/
 #guard_msgs in
 #print axioms planSol

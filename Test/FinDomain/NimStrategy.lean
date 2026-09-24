@@ -37,6 +37,6 @@ def etalon : Nat := 1
 #guard nimCheck (nimSol : Nat)
 #guard (nimSol : Nat) = etalon
 
-/-- info: 'nimSol' depends on axioms: [propext] -/
+/-- info: 'nimSol' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in
 #print axioms nimSol

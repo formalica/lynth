@@ -9,9 +9,13 @@ import Lynth
 def runs : List Bool → List Nat
   | [] => []
   | false :: rest => runs rest
-  | true :: rest =>
-    let n := (true :: rest).takeWhile id |>.length
-    n :: runs ((true :: rest).drop n)
+  | true :: rest => countRun rest 1
+where
+  /-- Count a `true`-run starting at length `n` (structurally shrinking). -/
+  countRun : List Bool → Nat → List Nat
+    | [], n => [n]
+    | false :: rest, n => n :: runs rest
+    | true :: rest, n => countRun rest (n + 1)
 
 /-- Row clues: rows must be [2], [1,1], [], [3]. -/
 def rowClues : List (List Nat) := [[2], [1, 1], [], [3]]

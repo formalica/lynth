@@ -32,25 +32,65 @@ def isSumGoal : TacticM (Option Bool) := do
   | .app (.app (.const ``Sum _) _) _ => pure (some false)
   | _ => pure none
 
-/-- Cardinality guard for finite refutation: whip `Fintype α` for the
-bound domain and evaluate its cardinal to a literal. `none` if not a
-small finite domain (then `decide` would hang or fail). -/
-def domainCard (α : Expr) : MetaM (Option Nat) := do
-  try
-    -- NOTE: `Fintype.{u}` takes `α : Type u`, i.e. one level below
-    -- `inferType α`; explicit levels throughout, since `mkAppM` leaves
-    -- the instance unsynthesized.
-    let αType ← inferType α
-    let .sort (.succ u) := αType | pure none
-    let inst ← synthInstance (mkApp (mkConst ``Fintype [u]) α)
-    let c := mkApp (mkApp (mkConst ``Fintype.card [u]) α) inst
-    match ← whnf c with
-    | .lit (.natVal n) => pure (some n)
-    | _ => pure none
-  catch _ => pure none
+/-- Bounded power: `none` as soon as the result exceeds `lim`
+(keeps estimation fast on huge exponents). -/
+def powLim (b : Nat) : Nat → Nat → Option Nat
+  | 0, _ => some 1
+  | e + 1, lim =>
+    if b == 0 then some 0
+    else if b == 1 then some 1
+    else match powLim b e lim with
+      | none => none
+      | some r =>
+        let r := r * b
+        if r > lim then none else some r
 
 /-- Max domain size for `decide` refutation (bigger spaces hang CI). -/
 def maxDecideCard : Nat := 100000
+
+/-- Structural core: direct subterms only, so structural recursion holds. -/
+def estCardCore (lim : Nat) : Expr → MetaM (Option Nat)
+  | .app (.app (.const ``Prod _) α) β => do
+    match ← estCardCore lim α with
+    | none => pure none
+    | some a => match ← estCardCore lim β with
+      | none => pure none
+      | some b => pure (if a * b > lim then none else some (a * b))
+  | .app (.app (.const ``Sum _) α) β => do
+    match ← estCardCore lim α with
+    | none => pure none
+    | some a => match ← estCardCore lim β with
+      | none => pure none
+      | some b => pure (if a + b > lim then none else some (a + b))
+  | .forallE _ d b _ =>
+    if b.hasLooseBVars then pure none
+    else do
+      match ← estCardCore lim d with
+      | none => pure none
+      | some dc => match ← estCardCore lim b with
+        | none => pure none
+        | some cc => pure (powLim cc dc lim)
+  | .app (.const ``Fin _) n => do
+    let n ← whnfR n
+    match n with
+    | .lit (.natVal k) => pure (some k)
+    | .app (.app (.app (.const ``OfNat.ofNat _) _) (.lit (.natVal k))) _ => pure (some k)
+    | _ => pure none
+  | .const ``Bool _ => pure (some 2)
+  | .app (.app (.const ``Subtype _) α) _ => estCardCore lim α
+  | _ => pure none
+
+/-- Structural cardinality estimate for finite domain types. Never
+evaluates kernel terms (evaluating `Finset.univ.card` constructively
+explodes); overestimates only in the safe direction (`Subtype` uses
+its base). `none` for infinite or unknown shapes. -/
+def estCard (lim : Nat) (e : Expr) : MetaM (Option Nat) := do
+  estCardCore lim (← whnfR e)
+
+/-- Cardinality guard for finite refutation: `some n` for small finite
+domains (then `decide` is feasible), `none` otherwise. -/
+def domainCard (α : Expr) : MetaM (Option Nat) :=
+  estCard maxDecideCard α
 
 /-- Finite refutation of a `∀`-goal: unfold head definitions, then
 `decide`. Only runs under the cardinality guard. -/

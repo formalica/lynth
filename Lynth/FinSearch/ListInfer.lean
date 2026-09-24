@@ -1,6 +1,7 @@
 import Lean
 import Lynth.Procedure
 import Lynth.Witness
+import Lynth.Euf.Procedure
 import Lynth.FinSearch.Detect
 import Lynth.FinSearch.Recognize
 import Lynth.FinSearch.Procedure
@@ -750,6 +751,133 @@ def permRow : InferRow :=
       | r :: _ => pure (some (.perm r)),
     inferPeelLength := noPeel }
 
+/-- Length-side detection for comparison conjuncts (`≤`, `<`, `≥`,
+`>`): returns the literal bound and whether the `List.length` term is
+on the left. Type/instance arguments are ignored; exactly one literal
+is required (so `len ≤ len` and two-literal shapes contribute nothing). -/
+private def lenSideOf (tgt : FVarId) (args : Array Expr) :
+    MetaM (Option (Nat × Bool)) := do
+  let mut lenIdx : Option Nat := none
+  let mut litIdx : Option Nat := none
+  let mut litVal : Nat := 0
+  let mut litCount := 0
+  for i in List.range args.size do
+    let aR ← whnfR args[i]!
+    -- NOTE: match on `getAppFn`, not a single `.app`, since `List.length`
+    -- carries its implicit type argument (`app (app const ty) as`).
+    match aR.getAppFn with
+    | .const ``List.length _ =>
+      if aR.getAppArgs.any (mentionsTgt · tgt) then lenIdx := some i
+    | _ =>
+      match ← natLitW args[i]! with
+      | some k => litCount := litCount + 1; litIdx := some i; litVal := k
+      | none => pure ()
+  match lenIdx, litIdx with
+  | some li, some gi => pure (if litCount == 1 then some (litVal, li < gi) else none)
+  | _, _ => pure none
+
+/-- `l.length ≤ k` / `k ≤ l.length` length bounds. -/
+def leRow : InferRow := { unknownRow with
+  inferRelUpper := fun tgt _ args _ => do
+    match ← lenSideOf tgt args with
+    | some (k, true) => pure (some k)
+    | _ => pure none,
+  inferRelLower := fun tgt _ args _ => do
+    match ← lenSideOf tgt args with
+    | some (k, false) => pure (some k)
+    | _ => pure none }
+
+/-- `l.length < k` / `k < l.length` length bounds (Nat saturation:
+`k - 1` at zero stays zero, giving an empty window that the
+kernel-checked closer rejects — sound). -/
+def ltRow : InferRow := { unknownRow with
+  inferRelUpper := fun tgt _ args _ => do
+    match ← lenSideOf tgt args with
+    | some (k, true) => pure (some (k - 1))
+    | _ => pure none,
+  inferRelLower := fun tgt _ args _ => do
+    match ← lenSideOf tgt args with
+    | some (k, false) => pure (some (k + 1))
+    | _ => pure none }
+
+/-- `l.length ≥ k` / `k ≥ l.length`: mirror of `≤`. -/
+def geRow : InferRow := { unknownRow with
+  inferRelUpper := fun tgt _ args _ => do
+    match ← lenSideOf tgt args with
+    | some (k, false) => pure (some k)
+    | _ => pure none,
+  inferRelLower := fun tgt _ args _ => do
+    match ← lenSideOf tgt args with
+    | some (k, true) => pure (some k)
+    | _ => pure none }
+
+/-- `l.length > k` / `k > l.length`: mirror of `<`. -/
+def gtRow : InferRow := { unknownRow with
+  inferRelUpper := fun tgt _ args _ => do
+    match ← lenSideOf tgt args with
+    | some (k, false) => pure (some (k - 1))
+    | _ => pure none,
+  inferRelLower := fun tgt _ args _ => do
+    match ← lenSideOf tgt args with
+    | some (k, true) => pure (some (k + 1))
+    | _ => pure none }
+
+/-- Pool from `l.all` with a literal upper-bound predicate: open the
+(single) lambda, scan subterms for `x < k` / `x ≤ k` against the bound
+variable with closed `k` (finds them under `decide` wrappers and
+conjunctions too), and bound elements below the tightest one. -/
+private def allBoundPool (tgt : FVarId) (args : Array Expr) :
+    MetaM (Option (List Nat)) := do
+  -- find the list arg mentioning tgt and a predicate arg
+  let mut listOk := false
+  let mut predArg : Option Expr := none
+  for a in args do
+    let aR ← whnfR a
+    match aR.getAppFn with
+    | .const ``List _ => pure ()
+    | _ =>
+      if mentionsTgt a tgt then listOk := true
+      else match ← natLitW a with
+        | some _ => pure ()
+        | none =>
+          let ty ← try pure (← whnf (← inferType a)) catch _ => pure (Expr.const ``Unit [])
+          match ty.getAppFn with
+          | .const ``List _ => pure ()
+          | _ => predArg := some a
+  if !listOk then return none
+  match predArg with
+  | none => pure none
+  | some p =>
+    lambdaTelescope p fun xs b => do
+      if xs.size != 1 then pure none
+      else
+        let x := xs[0]!
+        let mut best : Option Nat := none
+        for s in Lynth.Euf.Procedure.collectSubterms b do
+          -- NOTE: match by head name with last-two-args, never by exact
+          -- application spine: `<`/`≤` elaborate to `LT.lt`/`LE.le`
+          -- (typeclass, type+instance args) or directly to `Nat.lt`/
+          -- `Nat.le` (bare sides), depending on context.
+          match s.getAppFn with
+          | .const fn _ =>
+            if fn == ``LT.lt || fn == ``LE.le || fn == ``Nat.lt || fn == ``Nat.le then
+              let args := s.getAppArgs
+              if 2 ≤ args.size then
+                let a := args[args.size - 2]!
+                let k := args[args.size - 1]!
+                if a == x then match ← natLitW k with
+                  | some n =>
+                    let n := if fn == ``LT.lt || fn == ``Nat.lt then n else n + 1
+                    best := some (min (best.getD n) n)
+                  | none => pure ()
+          | _ => pure ()
+        match best with
+        | none => pure none
+        | some n => pure (some (List.range n))
+
+def allRow : InferRow := { unknownRow with
+  inferRelPool := fun tgt _ args _ => allBoundPool tgt args }
+
 /-- The single dispatcher: every handled Lean function maps to its
 inference row. Unknown heads get `unknownRow`. -/
 def inferenceRow : Name → InferRow
@@ -772,6 +900,13 @@ def inferenceRow : Name → InferRow
     else if n == ``List.replace then replaceRow
     else if n == ``List.Sublist then sublistRow
     else if n == ``List.Perm then permRow
+    else if n == ``List.all then allRow
+    else if n == ``LE.le then leRow
+    else if n == ``LT.lt then ltRow
+    else if n == ``GE.ge then geRow
+    else if n == ``GT.gt then gtRow
+    else if n == ``Nat.le then leRow
+    else if n == ``Nat.lt then ltRow
     else unknownRow
 
 /-- Empty bundle (all unknown): `Inhabited` witness so the
@@ -932,6 +1067,17 @@ def processEq (tgt : FVarId) (a b : Expr) (st : Bounds) : MetaM Bounds := do
           match ← row.inferElemPool queries args 8 with
           | some vs => st := { st with pool := st.pool ++ vs }
           | none => pure ()
+          -- `l.all p = true` sides never reach relation inference
+          -- (they route here as `Eq`), so ask the bound pool directly
+          match tSide.getAppFn with
+          | .const ``List.all _ =>
+            -- NOTE: `= true` here is Boolean `Bool.true`, not `Prop`'s `True`
+            if cSideR.isConstOf ``Bool.true then
+              match ← allBoundPool tgt tSide.getAppArgs with
+              | some vs => st := { st with pool := st.pool ++ vs }
+              | none => pure ()
+            else pure ()
+          | _ => pure ()
           -- nested occurrences: peel one layer per the outer row's
           -- own length story (exact shapes propagate both bounds,
           -- lower-bound shapes propagate lower only)
@@ -1005,30 +1151,113 @@ def sublistsOf : List Nat → List (List Nat)
   | [] => [[]]
   | x :: xs => let r := sublistsOf xs; r ++ r.map (x :: ·)
 
-/-- Kernel-check each candidate in turn: build the witness value,
-assign it, and run the shared kernel-checked closer. Yields when
-none closes (wrong inferences only ever miss, never mis-prove). -/
+/-- All length-`n` lists over an explicit element pool. -/
+def allListsE : List Expr → Nat → List (List Expr)
+  | _, 0 => [[]]
+  | [], _ + 1 => []
+  | p, n + 1 => (allListsE p n).flatMap fun rest => p.map fun v => v :: rest
+
+/-- Kernel-check each pre-built candidate value in turn: assign it,
+and run the shared kernel-checked closer. Yields when none closes
+(wrong inferences only ever miss, never mis-prove). -/
+private def tryVals (shape : Lynth.Witness.WitShape)
+    (cands : List Expr) : TacticM ProcedureOutcome := do
+  let others ← getUnsolvedGoals
+  let snap0 ← saveState
+  let uns ← Lynth.Witness.unfoldSideDefs
+  -- fast path: synthesize `DecidablePred` once for the unfolded
+  -- predicate; per candidate kernel-evaluate `decide` (no TC synthesis,
+  -- no snapshots for rejects). Falls back to full close per candidate
+  -- when the predicate shape is undecidable. NOTE: re-classify after
+  -- unfolding — `shape.pred` is the folded form, and bare `whnf` stops
+  -- at its outer lambda without exposing the body.
+  let predU ← do
+    let goal ← getMainTarget
+    match ← Lynth.Witness.classify goal with
+    | none => whnf shape.pred
+    | some shape' => whnf shape'.pred
+  let dpred? : Option Expr ← try
+      pure (← synthInstance (← mkAppM ``DecidablePred #[predU]))
+    catch _ => pure none
+  for wv in cands do
+    let hit ← match dpred? with
+      | none => pure true
+      | some dpred =>
+        let instWv := mkApp dpred wv
+        let d := mkApp (mkApp (mkConst ``Decidable.decide []) (mkApp predU wv)) instWv
+        match ← whnf d with
+        | .const ``Bool.true _ => pure true
+        | _ => pure false
+    if hit then
+      let snapshot ← saveState
+      try
+        let mvar ← getMainGoal
+        let sideTy := mkApp shape.pred wv
+        let sidePrf ← mkFreshExprSyntheticOpaqueMVar sideTy
+        let val ← shape.mkVal wv sidePrf
+        mvar.assign val
+        replaceMainGoal (sidePrf.mvarId! :: others.filter (· != mvar))
+        -- shared kernel-checked closer (unfolds re-applied, no discovery)
+        Lynth.Witness.applySideUnfolds uns
+        if ← Lynth.Witness.closeSideNoUnfold then
+          return .success
+        restoreState snapshot
+      catch _ =>
+        restoreState snapshot
+    else pure ()
+  restoreState snap0
+  return .failure []
+
 private def tryCands (shape : Lynth.Witness.WitShape)
     (cands : List (List Nat)) : TacticM ProcedureOutcome := do
-  let others ← getUnsolvedGoals
-  for w in cands do
-    let snapshot ← saveState
-    try
-      let wv ← mkListLit (mkConst ``Nat []) (w.map mkNatLit)
-      let mvar ← getMainGoal
-      let sideTy := mkApp shape.pred wv
-      let sidePrf ← mkFreshExprSyntheticOpaqueMVar sideTy
-      let val ← shape.mkVal wv sidePrf
-      mvar.assign val
-      replaceMainGoal (sidePrf.mvarId! :: others.filter (· != mvar))
-      -- shared kernel-checked closer: unfolds the
-      -- goal's own predicates, then decides
-      if ← Lynth.FinSearch.Procedure.closeSide then
-        return .success
-      restoreState snapshot
-    catch _ =>
-      restoreState snapshot
-  return .failure []
+  let vals ← cands.mapM fun w =>
+    mkListLit (mkConst ``Nat []) (w.map mkNatLit)
+  tryVals shape vals
+
+
+/-- `List (Fin n)` case: length-window enumeration over all Fin values.
+Mirrors the `List Nat` preamble (telescope + `List` check); no pool is
+needed since the element type itself is finite. -/
+private def runFin (shape : Lynth.Witness.WitShape) (finTy : Expr) (n : Nat) :
+    TacticM ProcedureOutcome := do
+  let pred ← whnf shape.pred
+  match pred with
+  | .lam _ _ _ _ =>
+    lambdaTelescope pred fun fvars body => do
+      if fvars.size != 1 then return .failure []
+      else
+        let body ← whnf body
+        match fvars[0]! with
+        | .fvar tgt =>
+          let fty ← whnfR (← inferType fvars[0]!)
+          match fty.getAppFn with
+          | .const ``List _ =>
+            let st ← inferBounds tgt (splitConj body)
+            match st.lenHi with
+            | none => return .failure []
+            | some hi =>
+              if st.lenLo > hi then return .failure []
+              else if 8 < hi then return .failure []
+              else
+                let vals ← (List.range n).toArray.filterMapM fun i => do
+                  try
+                    let iLit := mkNatLit i
+                    let hlt ← mkAppM ``LT.lt #[iLit, mkNatLit n]
+                    let pf ← mkDecideProof hlt
+                    some <$> mkAppM ``Fin.mk #[iLit, pf]
+                  catch _ => pure none
+                let total := (List.range (hi - st.lenLo + 1)).foldl
+                  (fun acc k => acc + vals.size ^ (st.lenLo + k)) 0
+                if total == 0 || Detect.maxListCand < total then
+                  return .failure []
+                else
+                  let cands := (List.range (hi - st.lenLo + 1)).flatMap
+                    fun k => allListsE vals.toList (st.lenLo + k)
+                  let candsVals ← cands.mapM fun w => mkListLit finTy w
+                  tryVals shape candsVals
+          | _ => return .failure []
+        | _ => return .failure []
+  | _ => return .failure []
 
 /-- List synthesis over `List Nat`: infer exact length plus a finite
 value pool, enumerate, and kernel-check each candidate. Yields on
@@ -1099,7 +1328,19 @@ def run : TacticM ProcedureOutcome := do
                               return .failure []
                             else return ← tryCands shape (allLists pool n)
                     | none =>
-                      match st.lenHi with
+                      -- length cap: inferred, else defaulted from pool size
+                      -- (small pools only; the shared body re-checks all
+                      -- gates, so this only ever enables new searches).
+                      let hiD : Option Nat :=
+                        if 8 < pool.length then none
+                        else
+                          let hs := (List.range 9).filter fun h =>
+                            st.lenLo ≤ h &&
+                            (List.range (h - st.lenLo + 1)).foldl
+                              (fun acc n => acc + pool.length ^ (st.lenLo + n)) 0
+                              ≤ Detect.maxListCand
+                          hs.getLast?
+                      match st.lenHi.or hiD with
                       | none => return .failure []
                       | some hi =>
                         if st.lenLo > hi then return .failure []
@@ -1140,6 +1381,13 @@ def run : TacticM ProcedureOutcome := do
                 | _ => return .failure []
               | _ => return .failure []
         | _ => pure (.failure [])
+      | .app (.const ``Fin _) _ =>
+        match et.getAppArgs[0]? with
+        | none => return .failure []
+        | some nExpr =>
+          match ← natLitW nExpr with
+          | none => return .failure []
+          | some n => return ← runFin shape dargs[0]! n
       | _ => return .failure []
   | _ => return .failure []
 
