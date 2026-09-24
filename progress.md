@@ -241,3 +241,28 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   tactic quotations need their theorems imported (`Mathlib.Data.List.
   Sublists`); `whnf` on `Fintype.card` builds huge `Finset.univ`.
   Remaining 12 need bigger machinery each (see next ticks).
+- Debugging lessons (MinSubsetExceed campaign, expensive): (1)
+  `restoreState` truncates the message log back to the snapshot, so
+  `logInfo` inside snapshot regions vanishes on restore — observe via
+  return values or logs placed outside snapshots, never inside.
+  (2) Tactic syntax quotations mentioning Mathlib theorems
+  (`simp only [←List.mem_sublists]`) need the home module imported
+  (`Mathlib.Data.List.Sublists`), else `simp` fails silently at
+  runtime while the definition still compiles. (3) When observed
+  behavior contradicts source, verify olean freshness (timestamps +
+  string grep) before theorizing — stale builds plus (1) compound.
+  (4) After scripted file surgeries (python/sed), always re-read the
+  edited region (`git diff`): this tick lost hours to a duplicated
+  def, a split docstring, and a diagnostic stub left in place.
+- More pilots (17/29): Nonogram (broken `runs` termination repaired +
+  raised Pi cap), DfaLearn (structure synthesis: field-order bug fixed),
+  MinSubsetExceed (optimality fallback `simp only [←mem_sublists]` +
+  `decide`, needs the `Mathlib.Data.List.Sublists` import for quotation
+  scope; pin `[propext, Quot.sound]`). Full verification each round:
+  33/33 Test, 293/293 Grind, 17/29 FinDomain. Remaining 12 need bigger
+  machinery each: FinGroup (constraint propagation/SAT binary),
+  Cryptarithm + queens (arithmetic in SAT encoding), ShortestPath
+  (length-bounded completeness), SplitRejoin/SortingNetwork (product
+  domains), IdxFind (positional), KnightsTour (binary SAT at scale),
+  TwoGuards (higher-order + Equivs), BalancedBST (custom inductive),
+  DistanceCode (nested lists).

@@ -200,9 +200,10 @@ def run : TacticM ProcedureOutcome := do
   let snapshot ← saveState
   let goal ← getMainTarget
   let some shape ← Lynth.Witness.classify goal
-    | return .failure []
+    | logInfo "[finsearch-dbg] no-shape"; return .failure []
+  logInfo "[finsearch-dbg] classified"
   let some (dims, cod) ← analyzeDomain shape.dom
-    | return .failure []
+    | logInfo "[finsearch-dbg] no-domain"; return .failure []
   -- translate the opened predicate to constraints; keep decoded
   -- argument structure (pure data: arg lists per cell, no fvars escape)
   let outcome ←
@@ -219,16 +220,21 @@ def run : TacticM ProcedureOutcome := do
             let dedup ← IO.mkRef (α := Dedup) ∅
             let grid := fvars[0]!
             match ← recognizeProp memo dedup cells grid body 64 with
-            | none => pure none
+            | none =>
+              logInfo "[finsearch-dbg] no-recognize"
+              pure none
             | some prop =>
               let cellArr ← cells.get
               -- router: over-budget estimates yield gracefully
-              if !Detect.route true cellArr.size then pure none
+              if !Detect.route true cellArr.size then
+                logInfo "[finsearch-dbg] no-route"
+                pure none
               else pure (some (prop, cellArr.map (·.2)))
       | _ => pure none
     catch _ => pure none
   match outcome with
   | none =>
+    logInfo "[finsearch-dbg] no-outcome"
     return .failure []
   | some (prop0, argTable) =>
     let nCells := argTable.size
