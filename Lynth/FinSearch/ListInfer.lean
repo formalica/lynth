@@ -1362,6 +1362,108 @@ private def pairBoundsOf (tgt : FVarId) (conjs : List Expr) :
     | some n => h2 := some (min (h2.getD n) n)
   pure (h1, h2)
 
+/-- Positional pins from `idxOf?` equations: `l.idxOf? v = some i`
+with `l` our bare target and closed `v`, `i` pins value `v` at index
+`i` (and forces length `≥ i+1`). Either orientation. -/
+private def idxPinsOf (tgt : FVarId) (conjs : List Expr) :
+    MetaM (List (Nat × Nat)) := do
+  let mut pins : List (Nat × Nat) := []
+  for c in conjs do
+    let cr ← whnfR c
+    match cr.getAppFn with
+    | .const ``Eq _ =>
+      let args := cr.getAppArgs
+      if args.size < 2 then pure ()
+      else
+        let a := args[args.size - 2]!
+        let b := args[args.size - 1]!
+        -- idxOf-side has head `List.idxOf?`, some-side head `Option.some`
+        let tryDir (x y : Expr) : MetaM (Option (Nat × Nat)) := do
+          match x.getAppFn with
+          | .const ``List.idxOf? _ =>
+            let xargs := x.getAppArgs
+            let mut foundL : Bool := false
+            let mut val : Option Nat := none
+            for xa in xargs do
+              match xa with
+              | .fvar id => if id == tgt then foundL := true else pure ()
+              | _ =>
+                match ← natLitW xa with
+                | some k => val := some k
+                | none => pure ()
+            match foundL, val with
+            | true, some v =>
+              let yr ← whnfR y
+              match yr.getAppFn with
+              | .const ``Option.some _ =>
+                match yr.getAppArgs.back? with
+                | some i =>
+                  match ← natLitW i with
+                  | some n => pure (some (n, v))
+                  | none => pure none
+                | none => pure none
+              | _ => pure none
+            | _, _ => pure none
+          | _ => pure none
+        let r1 ← tryDir a b
+        match r1 with
+        | some p => pins := if p ∈ pins then pins else p :: pins
+        | none =>
+          let r2 ← tryDir b a
+          match r2 with
+          | some p => pins := if p ∈ pins then pins else p :: pins
+          | none => pure ()
+    | _ => pure ()
+  pure pins
+
+/-- Positional enumeration: fix pinned indices, enumerate the rest
+over the (widened-superset) pool within the length window. Falls back
+to the flat paths when there are no pins. -/
+private def tryPositional (shape : Lynth.Witness.WitShape) (tgt : FVarId)
+    (conjs : List Expr) (st : Bounds) (pool : List Nat) :
+    TacticM ProcedureOutcome := do
+  let pins ← idxPinsOf tgt conjs
+  if pins.isEmpty then return .failure []
+  match st.lenHi with
+  | none => return .failure []
+  | some hi =>
+    -- widen to a superset pool (sound: superset can't miss)
+    let pool ← match pool.max? with
+      | none => pure pool
+      | some m => pure (if 64 < m then pool else (List.range (m + 1)).eraseDups)
+    -- lengths must accommodate the highest pin; cap loop like flat paths
+    let minLen := pins.foldl (fun acc p => max acc (p.1 + 1)) st.lenLo
+    if hi < minLen then return .failure []
+    else if 64 < hi then return .failure []
+    else
+      -- assignments to free positions per length; count completed
+      -- candidates against the cap, but still try whatever was built
+      -- (early exit on success covers the common case)
+      let mut cands : Array Expr := #[]
+      let mut total := 0
+      for len in List.range (hi - minLen + 1) do
+        let n := minLen + len
+        -- start from pinned assignments, extend over free positions
+        let mut assigns : Array (List (Nat × Nat)) := #[[]]
+        for i in List.range n do
+          match pins.find? fun p => p.1 == i with
+          | some (_, v) =>
+            assigns := assigns.map fun a => a ++ [(i, v)]
+          | none =>
+            let mut next : Array (List (Nat × Nat)) := #[]
+            for a in assigns do
+              for v in pool do
+                next := next.push (a ++ [(i, v)])
+            assigns := next
+        for a in assigns do
+          if 200000 < total then break
+          -- values in index order (assignments built ascending)
+          let vs := a.map Prod.snd
+          total := total + 1
+          cands := cands.push (← mkListLit (mkConst ``Nat []) (vs.map mkNatLit))
+      if cands.isEmpty then return .failure []
+      else tryVals shape cands.toList
+
 /-- Nested finite lists (`List (List Bool)`, `List (List (Fin n))`):
 inner length from universals, complete finite inner enumeration,
 outer by the length window. Inner values must be finite scalars
@@ -1463,6 +1565,61 @@ private def runPair (shape : Lynth.Witness.WitShape) (pairTy : Expr) :
         | _ => return .failure []
   | _ => return .failure []
 
+/-- Product of lists (`List Nat × List Nat`): total-length-ascending
+pair enumeration over the pool (widened like the scalar path).
+No component bounds needed: the total count cap + kernel-checked
+closer keep it sound and bounded. -/
+private def runProdPair (shape : Lynth.Witness.WitShape) : TacticM ProcedureOutcome := do
+  let pred ← whnf shape.pred
+  match pred with
+  | .lam _ _ _ _ =>
+    lambdaTelescope pred fun fvars body => do
+      if fvars.size != 1 then return .failure []
+      else
+        let body ← whnf body
+        match fvars[0]! with
+        | .fvar tgt =>
+          let fty ← whnfR (← inferType fvars[0]!)
+          match fty.getAppFn with
+          | .const ``Prod _ =>
+            let st ← inferBounds tgt (splitConj body)
+            let pool := st.pool.eraseDups
+            -- widen like the scalar path when literals suggest 0..max
+            let pool ← match pool.max? with
+              | none => pure pool
+              | some m =>
+                if 11 < m then pure pool
+                else
+                  let wide := List.range (m + 1)
+                  pure (if wide.eraseDups == pool then pool else wide)
+            if pool.isEmpty then return .failure []
+            else if 12 < pool.length then return .failure []
+            else
+              -- total-length-ascending pairs, capped count
+              let mut cands : Array Expr := #[]
+              let mut total := 0
+              let mut stop := false
+              for T in List.range 17 do
+                if stop then break
+                for l1 in List.range (T + 1) do
+                  if stop then break
+                  let l2 := T - l1
+                  for w1 in allLists pool l1 do
+                    if stop then break
+                    for w2 in allLists pool l2 do
+                      total := total + 1
+                      if 200000 < total then
+                        stop := true
+                        break
+                      else
+                        let v1 ← mkListLit (mkConst ``Nat []) (w1.map mkNatLit)
+                        let v2 ← mkListLit (mkConst ``Nat []) (w2.map mkNatLit)
+                        cands := cands.push (← Lynth.Witness.mkProdVal
+                          (mkConst ``Nat []) (mkConst ``Nat []) v1 v2)
+              tryVals shape cands.toList
+          | _ => return .failure []
+        | _ => return .failure []
+  | _ => return .failure []
 /-- `List (Fin n)` case: length-window enumeration over all Fin values.
 Mirrors the `List Nat` preamble (telescope + `List` check); no pool is
 needed since the element type itself is finite. -/
@@ -1517,6 +1674,25 @@ def run : TacticM ProcedureOutcome := do
   -- only `List Nat` domains reach the inference fixpoint
   let domR ← whnfR shape.dom
   match domR.getAppFn with
+  | .const ``Prod _ =>
+    -- product-of-lists domain (`List Nat × List Nat`): pair enumeration
+    let dargs := domR.getAppArgs
+    if dargs.size != 2 then return .failure []
+    else
+      let a ← whnfR dargs[0]!
+      let b ← whnfR dargs[1]!
+      match a.getAppFn, b.getAppFn with
+      | .const ``List _, .const ``List _ =>
+        let aa := a.getAppArgs
+        let ba := b.getAppArgs
+        if aa.size != 1 || ba.size != 1 then return .failure []
+        else
+          let ea ← whnfR aa[0]!
+          let eb ← whnfR ba[0]!
+          match ea, eb with
+          | .const ``Nat _, .const ``Nat _ => return ← runProdPair shape
+          | _, _ => return .failure []
+      | _, _ => return .failure []
   | .const ``List _ =>
     let dargs := domR.getAppArgs
     if dargs.size != 1 then return .failure []
@@ -1540,6 +1716,11 @@ def run : TacticM ProcedureOutcome := do
                 | .const ``List _ =>
                   let st ← inferBounds tgt (splitConj body)
                   let pool := st.pool.eraseDups
+                  -- positional pins first (idxOf?-style); falls through
+                  -- silently when there are none
+                  match ← tryPositional shape tgt (splitConj body) st pool with
+                  | .success => return .success
+                  | .failure _ => pure ()
                   match st.subRef with
                   | some r =>
                     -- subsequence domain: enumerate sublists of the

@@ -272,3 +272,12 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   verified green. Suite 29/29, Grind 293/293. Remaining 10:
   BalancedBST, Cryptarithm, EightQueens×2, FinGroup, IdxFind,
   KnightsTour, ShortestPath, SplitRejoin, TwoGuards.
+- Flips to 25/33 FinDomain: IdxFindFromValues (positional pins for
+  idxOf equations plus widened-superset enumeration), SplitRejoin
+  (product-of-lists pair enumeration over widened pool). lake build
+  clean, suite 29/29, Grind untouched. Remaining 8 non-meta:
+  BalancedBST, Cryptarithm, EightQueensSat/Unsat, FinGroup,
+  KnightsTour, ShortestPath, TwoGuards (ProgSynth x14 all fail on the
+  separate function-synthesis track, out of scope). Next:
+  ShortestPath (Nodup-card bounds plus decidable pre-filter plus
+  shape-case length-optimality).
