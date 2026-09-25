@@ -405,6 +405,330 @@ def applySideUnfolds (ns : Array Name) : TacticM Unit := do
       evalTactic (← `(tactic| unfold $(mkIdent n)))
     catch _ => pure ()
 
+/-- Run a tactic, never throwing (`true` ⟺ no goals remain). -/
+private def tryTac (tac : TSyntax `tactic) : TacticM Bool := do
+  try
+    evalTactic tac
+    pure (← getUnsolvedGoals).isEmpty
+  catch _ => pure false
+
+/-- `constructor`, never throwing. -/
+private def tryConstructor : TacticM Bool := do
+  try
+    evalTactic (← `(tactic| constructor))
+    pure true
+  catch _ => pure false
+
+/-- Split top-level `And`s (left spine) via `constructor`. -/
+private def splitAnds : TacticM Unit := do
+  let mut go := true
+  while go do
+    let t ← whnf (← getMainTarget)
+    match t.getAppFn with
+    | .const ``And _ => go ← tryConstructor
+    | _ => go := false
+
+/-- Closed Nat literal (elaborated `OfNat` included). -/
+private def closedNat (e : Expr) : MetaM (Option Nat) := do
+  match ← numLit e with
+  | some (Int.ofNat n) => pure (some n)
+  | _ => pure none
+
+/-- Length of an explicit `List.cons`/`List.nil` spine (element
+values ignored), stripping a leading `List.length` (specs state
+bounds on lengths). Bounds the loop by fuel — total. -/
+private def spineLen (e : Expr) : MetaM (Option Nat) := do
+  let e0 ← whnfR e
+  let e ← match e0.getAppFn with
+    | .const ``List.length _ =>
+      match e0.getAppArgs.back? with
+      | some l => pure l
+      | none => pure e0
+    | _ => pure e0
+  let mut e := e
+  let mut k := 0
+  for _ in List.range 1024 do
+    let er ← whnfR e
+    match er.getAppFn with
+    | .const ``List.nil _ => return some k
+    | .const ``List.cons _ =>
+      match er.getAppArgs.back? with
+      | some tl => e := tl; k := k + 1
+      | none => return none
+    | _ => return none
+  pure none
+
+/-- Closed length: a Nat literal, or the spine length of an explicit
+list literal (specs state bounds as `w.length ≤ q.length`, which
+substitutes to `List.length [lits] ≤ q.length`). -/
+private def closedLen (e : Expr) : MetaM (Option Nat) := do
+  match ← closedNat e with
+  | some n => pure (some n)
+  | none => spineLen e
+
+/-- Length-optimality conjunct `∀ q : List (Fin n), _ → L ≤ q.length`
+(`LE.le`/`Nat.le`, or `GE.ge` flipped): returns `(n, L)` with closed
+`L`. Anything else ⟹ `none`. -/
+private def matchOptConj (e : Expr) : MetaM (Option (Nat × Nat)) := do
+  let e ← whnf e
+  match e with
+  | .forallE _ _ _ _ =>
+    -- `∀ q, V q → CONCL`: the telescope opens the variable AND the
+    -- arrow premise, so exactly two binders are expected
+    forallTelescope e fun xs b => do
+      if xs.size != 2 then pure none
+      else
+        let qty ← whnf (← inferType xs[0]!)
+        match qty.getAppFn with
+        | .const ``List _ =>
+          let eargs := qty.getAppArgs
+          if eargs.size != 1 then pure none
+          else
+            let et ← whnf eargs[0]!
+            match et.getAppFn with
+            | .const ``Fin _ =>
+              match et.getAppArgs[0]? with
+              | some nExpr =>
+                match ← closedNat nExpr with
+                | none => pure none
+                | some n => matchOptConcl xs[0]! n b
+              | none => pure none
+            | _ => pure none
+        | _ => pure none
+  | _ => pure none
+where
+  /-- Conclusion half: `L ≤ q.length` (`LE.le`/`Nat.le`, or `GE.ge`
+  flipped) with closed `L`. -/
+  matchOptConcl (q : Expr) (n : Nat) (concl : Expr) :
+      MetaM (Option (Nat × Nat)) := do
+    let c ← whnf concl
+    match c.getAppFn with
+    | .const fn _ =>
+      let cargs := c.getAppArgs
+      if cargs.size < 2 then pure none
+      else
+        let lhs := cargs[cargs.size - 2]!
+        let rhs := cargs[cargs.size - 1]!
+        if fn == ``LE.le || fn == ``Nat.le then
+          match ← closedLen lhs with
+          | none => pure none
+          | some L => matchOptLen q n L rhs
+        else if fn == ``GE.ge then
+          match ← closedLen rhs with
+          | none => pure none
+          | some L => matchOptLen q n L lhs
+        else pure none
+    | _ => pure none
+  /-- Length side of the matcher: `List.length q`. -/
+  matchOptLen (q : Expr) (n L : Nat) (e : Expr) : MetaM (Option (Nat × Nat)) := do
+    let e ← whnf e
+    match e.getAppFn with
+    | .const ``List.length _ =>
+      match e.getAppArgs.back? with
+      | some qq => pure (if qq == q then some (n, L) else none)
+      | none => pure none
+    | _ => pure none
+
+/-- Shape proposition `k`: `∀ v_1..v_k : Fin n, BODY[[v]] → L ≤ [v].length`.
+`qv` is the live universal variable, `premBODY` is `BODY[qv]`. -/
+private def buildShapeProp (finTy qv premBODY : Expr) (k L : Nat) :
+    MetaM Expr := do
+  let rec go : Nat → (Array Expr → MetaM Expr) → MetaM Expr
+    | 0, kont => kont #[]
+    | d + 1, kont =>
+      withLocalDeclD (Name.mkSimple s!"w{d}") finTy fun v =>
+        go d fun vs => kont (vs.push v)
+  go k fun vs => do
+    let shape ← mkListLit finTy vs.toList
+    -- unfold through puzzle defs (`validPath [shape]`): the universal's
+    -- premise is never unfolded by side-unfolding (under-binder), so
+    -- `decide` needs the unfolded form for TC synthesis
+    let prem ← whnf (premBODY.replaceFVar qv shape)
+    -- NOTE: `mkAppM` (not manual levels: `getLevel` returns the sort
+    -- level, one too high for `List.length`'s universe)
+    let lenApp ← mkAppM ``List.length #[shape]
+    let concl ← mkAppM ``LE.le #[mkNatLit L, lenApp]
+    mkForallFVars vs (← mkArrow prem concl)
+
+/-- `decide`-proof for a closed decidable prop, never throwing. -/
+private def synthDecProof? (p : Expr) : TacticM (Option Expr) := do
+  try pure (← mkDecideProof p)
+  catch _ => pure none
+
+/-- Run a tactic, never throwing (`true` ⟺ it ran without error;
+remaining goals, if any, are kept). -/
+private def tryTacKeep (tac : TSyntax `tactic) : TacticM Bool := do
+  try
+    evalTactic tac
+    pure true
+  catch _ => pure false
+
+/-- `MVarId.cases` on `f`, never throwing. -/
+private def casesOn? (g : MVarId) (f : FVarId) :
+    TacticM (Option (Array CasesSubgoal)) := do
+  try pure (← g.cases f)
+  catch _ => pure none
+
+/-- A fresh fvar in `g`'s context (not in `oldIds`) whose type
+whnf-heads to `head`, if unique. Used for cons-head (`Fin`) and
+cons-tail (`List`) discovery. -/
+private def findNewTyped (g : MVarId) (oldIds : List FVarId) (head : Name) :
+    TacticM (Option FVarId) := do
+  g.withContext do
+    let mut out : Option FVarId := none
+    let mut count := 0
+    for decl in (← getLCtx) do
+      if oldIds.contains decl.fvarId then pure ()
+      else
+        let ty ← whnf decl.type
+        match ty.getAppFn with
+        | .const n _ =>
+          if n == head then out := some decl.fvarId; count := count + 1
+          else pure ()
+        | _ => pure ()
+    if count == 1 then pure out else pure none
+
+/-- Case-split `lynth_q` into shapes of length `0..L-1` plus a long
+tail, entirely through the `MVarId` API (no name resolution, no
+`tacticSeq`): one `cases` per level, discriminating nil/cons by
+constructor tag; the nil leaf closes by `exact lynth_h{k} lynth_hq`,
+splitting continues on the cons tail (found by type). The long tail
+closes by length normalization plus `omega`. Main goal on entry:
+`L ≤ length lynth_q` with `lynth_hq` and the `lynth_h{k}` in context. -/
+private def runCasesSplit (L : Nat) : TacticM Bool := do
+  let g ← getMainGoal
+  let qid? ← g.withContext do
+    pure ((← getLCtx).findFromUserName? `lynth_q |>.map (·.fvarId))
+  let qid ← match qid? with | some id => pure id | none => return false
+  let mut tail := qid
+  -- case-head fvars per level (arguments for shape-lemma application)
+  let mut heads : Array Expr := #[]
+  for k in List.range L do
+    let g ← getMainGoal
+    let oldIds ← g.withContext do
+      pure ((← getLCtx).foldl (fun acc d => d.fvarId :: acc) [])
+    match ← casesOn? g tail with
+    | none =>
+      return false
+    | some subs =>
+      if subs.size != 2 then return false
+      else
+        let mut nilG : Option MVarId := none
+        let mut consG : Option MVarId := none
+        for s in subs do
+          match s.ctorName with
+          | some ``List.nil => nilG := some s.mvarId
+          | some ``List.cons => consG := some s.mvarId
+          | _ => pure ()
+        match nilG, consG with
+        | some ng, some cg =>
+          -- close nil by `h_k heads hq` (term-level: no name
+          -- resolution, kernel-checked defeq via assign)
+          let closed ← ng.withContext do
+            let lctx ← getLCtx
+            match lctx.findFromUserName? (Name.mkSimple s!"lynth_h{k}"),
+                lctx.findFromUserName? `lynth_hq with
+            | some hd, some hqd =>
+              let app := mkAppN (.fvar hd.fvarId)
+                (heads.push (.fvar hqd.fvarId))
+              try
+                ng.assign app
+                pure true
+              catch _ => pure false
+            | _, _ => pure false
+          if !closed then return false
+          else
+            setGoals [cg]
+            match ← findNewTyped cg oldIds ``List with
+            | none => return false
+            | some t =>
+              tail := t
+              -- track the cons head for deeper shape applications
+              match ← findNewTyped cg oldIds ``Fin with
+              | some h => heads := heads.push (.fvar h)
+              | none => return false
+        | _, _ => return false
+  -- long tail: length normalizes to `L ≤ t.length + L`
+  let ok ← tryTac (← `(tactic| simp at $(mkIdent `lynth_hq):ident ⊢ <;> omega))
+  pure ok
+
+/-- Prove `∀ q : List (Fin n), BODY[q] → L ≤ q.length` (main goal) by
+per-length shape lemmas (`decide` over `(Fin n)^k`, `k < L`) plus
+case-split. Total shape cases are capped like candidate enumeration. -/
+private def proveOptLeaf (n L : Nat) : TacticM Bool := do
+  if 8 < L then return false
+  let mut total := 0
+  for k in List.range L do
+    total := total + n ^ k
+    if 200000 < total then return false
+  -- intro universal + premise with accessible names (identifiers
+  -- must be `mkIdent`-spliced: literals written in a quotation carry
+  -- macro hygiene and resolve to nothing usable)
+  let q : Ident := mkIdent `lynth_q
+  let hq : Ident := mkIdent `lynth_hq
+  let introOk ← tryTacKeep (← `(tactic| intro $q:ident $hq:ident))
+  if !introOk then return false
+  let g ← getMainGoal
+  -- build + assert the shape lemmas (`assert` leaves `prop → target`;
+  -- intros happen below, one tactic per lemma)
+  let gf? ← g.withContext do
+    let lctx ← getLCtx
+    match lctx.findFromUserName? `lynth_q, lctx.findFromUserName? `lynth_hq with
+    | some qd, some hqd =>
+      let premBODY ← inferType (.fvar hqd.fvarId)
+      let finTy := mkApp (mkConst ``Fin []) (mkNatLit n)
+      let mut gcur := g
+      let mut ok := true
+      for k in List.range L do
+        if ok then
+          let propK ← buildShapeProp finTy (.fvar qd.fvarId) premBODY k L
+          match ← synthDecProof? propK with
+          | none =>
+            ok := false
+          | some proofK =>
+            gcur ← gcur.assert (Name.mkSimple s!"lynth_h{k}") propK proofK
+      if ok then pure (some gcur) else pure none
+    | _, _ => pure none
+  match gf? with
+  | none =>
+    pure false
+  | some gf =>
+    replaceMainGoal [gf]
+    -- `assert` wraps LIFO (last asserted = outermost arrow), so intro
+    -- in reverse to associate `lynth_h{k}` with shape `k`
+    for j in List.range L do
+      let hk : Ident := mkIdent (Name.mkSimple s!"lynth_h{L - 1 - j}")
+      let introK ← tryTacKeep (← `(tactic| intro $hk:ident))
+      if !introK then
+        return false
+    runCasesSplit L
+
+/-- Finite-cardinality length-optimality: split `And`s, close validity
+leaves by `decide` and (the single) optimality leaf
+`∀ q : List (Fin n), _ → L ≤ q.length` by shape-case analysis.
+Bails on anything unfamiliar — never mis-proves. -/
+private def tryFinOptimality : TacticM Bool := do
+  if (← getUnsolvedGoals).length != 1 then
+    return false
+  splitAnds
+  let goals ← getUnsolvedGoals
+  if goals.isEmpty then return true
+  let mut optDone := false
+  for g in goals do
+    setGoals [g]
+    let t ← getMainTarget
+    let ts ← whnf t
+    match ← matchOptConj t with
+    | some (n, L) =>
+      if optDone then return false
+      optDone := true
+      if ← proveOptLeaf n L then pure ()
+      else return false
+    | none =>
+      if ← tryTac (← `(tactic| decide)) then pure ()
+      else return false
+  pure true
+
 def closeSideNoUnfold : TacticM Bool := do
   let s1 ← `(tactic| decide)
   let s2 ← `(tactic| rfl)
@@ -442,6 +766,18 @@ def closeSideNoUnfold : TacticM Bool := do
       evalTactic s1
       if (← getUnsolvedGoals).isEmpty then return true
       else restoreState snap
+    catch _ => restoreState snap
+  -- finite-cardinality length-optimality fallback (`∀ q : List (Fin n),
+  -- … → L ≤ q.length` with closed `L`, e.g. shortest paths): validity
+  -- leaves by `decide`, optimality by per-length shape-case analysis.
+  -- Bails (restores) on unfamiliar shapes — never mis-proves.
+  do
+    let snap ← saveState
+    try
+      if ← tryFinOptimality then
+        return true
+      else
+        restoreState snap
     catch _ => restoreState snap
   for stx in ([s2, s3] : List (TSyntax `tactic)) do
     let snap ← saveState

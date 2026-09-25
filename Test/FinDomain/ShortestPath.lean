@@ -58,6 +58,6 @@ def etalon : List (Fin 6) := [0, 2, 4, 5]
 #guard validPathCheck (spSol : List (Fin 6))
 #guard (spSol : List (Fin 6)).length == 4
 
-/-- info: 'spSol' depends on axioms: [propext] -/
+/-- info: 'spSol' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms spSol

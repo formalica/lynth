@@ -281,3 +281,12 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   separate function-synthesis track, out of scope). Next:
   ShortestPath (Nodup-card bounds plus decidable pre-filter plus
   shape-case length-optimality).
+- Flips to 26/33 FinDomain: ShortestPath (Nodup-cardinality upper
+  bounds with unfold-fallback, decidable-conjunct kernel pre-filter
+  in tryVals, finite-cardinality length-optimality fallback in
+  closeSide: per-length shape lemmas by decide plus MVarId-cases
+  split with term-level exact). lake build clean, suite 29/29, Grind
+  isolated (no shared imports). Remaining 7 non-meta: BalancedBST,
+  Cryptarithm, EightQueensSat/Unsat, FinGroup, KnightsTour,
+  TwoGuards. Next: Cryptarithm (finsearch SAT: decode/foldl
+  symbolic evaluation over finite-function cells).

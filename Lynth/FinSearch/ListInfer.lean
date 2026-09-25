@@ -878,6 +878,34 @@ private def allBoundPool (tgt : FVarId) (args : Array Expr) :
 def allRow : InferRow := { unknownRow with
   inferRelPool := fun tgt _ args _ => allBoundPool tgt args }
 
+/-- Nodup relation: a duplicate-free list over a finite element type
+(`Fin n`, `Bool`) has length at most the cardinality. Only the bare
+target counts (nested occurrences carry no direct bound). -/
+def nodupRow : InferRow := { unknownRow with
+  inferRelUpper := fun tgt _ args _ => do
+    for a in args do
+      if !isBareTgt tgt a then continue
+      else
+        let ty ← try pure (← whnfR (← inferType a)) catch _ => continue
+        match ty.getAppFn with
+        | .const ``List _ =>
+          let eargs := ty.getAppArgs
+          if eargs.size != 1 then continue
+          else
+            let et ← whnfR eargs[0]!
+            match et.getAppFn with
+            | .const ``Fin _ =>
+              match et.getAppArgs[0]? with
+              | some nExpr =>
+                match ← natLitW nExpr with
+                | some n => return some n
+                | none => continue
+              | none => continue
+            | .const ``Bool _ => return some 2
+            | _ => continue
+        | _ => continue
+    pure none }
+
 /-- The single dispatcher: every handled Lean function maps to its
 inference row. Unknown heads get `unknownRow`. -/
 def inferenceRow : Name → InferRow
@@ -901,6 +929,7 @@ def inferenceRow : Name → InferRow
     else if n == ``List.Sublist then sublistRow
     else if n == ``List.Perm then permRow
     else if n == ``List.all then allRow
+    else if n == ``List.Nodup then nodupRow
     else if n == ``LE.le then leRow
     else if n == ``LT.lt then ltRow
     else if n == ``GE.ge then geRow
@@ -1205,6 +1234,39 @@ private def innerLengthOf (tgt : FVarId) (conjs : List Expr) : MetaM (Option Nat
     | some k => best := some (min (best.getD k) k)
   pure best
 
+/-- Single-shot `DecidablePred` synthesis: `some` instance or `none`
+(never throws). Single-line `try` form — nested multiline `try`s
+confuse the parser here. -/
+private def synthDecPred? (lam : Expr) : TacticM (Option Expr) := do
+  try pure (← synthInstance (← mkAppM ``DecidablePred #[lam]))
+  catch _ => pure none
+
+/-- Decidable-conjunct filter for an undecidable predicate: synthesize
+`DecidablePred` per conjunct once, combine the decidable ones under a
+single lambda. `none` ⟹ no usable decidable part (pass everything
+through to full close). -/
+private def buildDecFilter (predU : Expr) : TacticM (Option (Expr × Expr)) := do
+  try
+    lambdaTelescope predU fun fvarsU bodyU => do
+      if fvarsU.size != 1 then pure (none : Option (Expr × Expr))
+      else
+        let mut lams : Array Expr := #[]
+        for c in splitConj (← whnf bodyU) do
+          let lam ← mkLambdaFVars #[fvarsU[0]!] c
+          match ← synthDecPred? lam with
+          | some _ => lams := lams.push lam
+          | none => pure ()
+        if lams.isEmpty then pure none
+        else
+          let mut acc := mkApp lams[0]! fvarsU[0]!
+          for lam in lams.toList.drop 1 do
+            acc ← mkAppM ``And #[acc, mkApp lam fvarsU[0]!]
+          let combined ← mkLambdaFVars #[fvarsU[0]!] acc
+          match ← synthDecPred? combined with
+          | some dinst => pure (some (combined, dinst))
+          | none => pure none
+  catch _ => pure none
+
 /-- Kernel-check each pre-built candidate value in turn: assign it,
 and run the shared kernel-checked closer. Yields when none closes
 (wrong inferences only ever miss, never mis-prove). -/
@@ -1227,15 +1289,30 @@ private def tryVals (shape : Lynth.Witness.WitShape)
   let dpred? : Option Expr ← try
       pure (← synthInstance (← mkAppM ``DecidablePred #[predU]))
     catch _ => pure none
+  -- When the whole predicate is undecidable (universals), still
+  -- kernel-filter by its decidable conjuncts (reject only on kernel
+  -- `false`; stuck evaluation never rejects — misses, never
+  -- mis-proves). Pure fast-reject: full close still decides.
+  let decFilter? : Option (Expr × Expr) ← match dpred? with
+    | some _ => pure none
+    | none => buildDecFilter predU
   for wv in cands do
     let hit ← match dpred? with
-      | none => pure true
       | some dpred =>
         let instWv := mkApp dpred wv
         let d := mkApp (mkApp (mkConst ``Decidable.decide []) (mkApp predU wv)) instWv
         match ← whnf d with
-        | .const ``Bool.true _ => pure true
-        | _ => pure false
+        | .const ``Bool.false _ => pure false
+        | _ => pure true
+      | none =>
+        match decFilter? with
+        | none => pure true
+        | some (combined, dinst) =>
+          let instWv := mkApp dinst wv
+          let d := mkApp (mkApp (mkConst ``Decidable.decide []) (mkApp combined wv)) instWv
+          match ← whnf d with
+          | .const ``Bool.false _ => pure false
+          | _ => pure true
     if hit then
       let snapshot ← saveState
       try
@@ -1638,8 +1715,32 @@ private def runFin (shape : Lynth.Witness.WitShape) (finTy : Expr) (n : Nat) :
           match fty.getAppFn with
           | .const ``List _ =>
             let st ← inferBounds tgt (splitConj body)
+            -- Cardinality bounds (`Nodup` over `Fin n`) can hide inside
+            -- folded puzzle defs (`validPath p`): when the folded pass
+            -- yields no upper bound, unfold once and re-infer.
+            -- Fallback only — folded behavior is unchanged.
+            let st ← match st.lenHi with
+              | some _ => pure st
+              | none => do
+                let _ ← Lynth.Witness.unfoldSideDefs
+                let goal ← getMainTarget
+                match ← Lynth.Witness.classify goal with
+                | none => pure st
+                | some shapeU =>
+                  let predU ← whnf shapeU.pred
+                  match predU with
+                  | .lam _ _ _ _ =>
+                    lambdaTelescope predU fun fvarsU bodyU => do
+                      if fvarsU.size != 1 then pure st
+                      else
+                        let bodyU ← whnf bodyU
+                        match fvarsU[0]! with
+                        | .fvar tgtU => inferBounds tgtU (splitConj bodyU)
+                        | _ => pure st
+                  | _ => pure st
             match st.lenHi with
-            | none => return .failure []
+            | none =>
+              return .failure []
             | some hi =>
               if st.lenLo > hi then return .failure []
               else if 8 < hi then return .failure []
