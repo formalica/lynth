@@ -1157,6 +1157,54 @@ def allListsE : List Expr → Nat → List (List Expr)
   | [], _ + 1 => []
   | p, n + 1 => (allListsE p n).flatMap fun rest => p.map fun v => v :: rest
 
+/-- Length equation on `w`: `w.length = k` (either orientation)
+with closed `k`. -/
+private def lenEqOf (w : Expr) (e : Expr) : MetaM (Option Nat) := do
+  let e ← whnfR e
+  match e.getAppFn with
+  | .const ``Eq _ =>
+    let args := e.getAppArgs
+    if args.size < 2 then pure none
+    else
+      let a := args[args.size - 2]!
+      let b := args[args.size - 1]!
+      if isLenW w a then
+        match ← natLitW b with | some k => pure (some k) | none => pure none
+      else if isLenW w b then
+        match ← natLitW a with | some k => pure (some k) | none => pure none
+      else pure none
+  | _ => pure none
+where
+  /-- `List.length` applied (transitively) to `w`. -/
+  isLenW (w side : Expr) : Bool :=
+    match side.getAppFn with
+    | .const ``List.length _ => side.getAppArgs.any (· == w)
+    | _ => false
+
+/-- Inner length from a single universal: `∀ w ∈ tgt, …` with a
+length equation on `w` in the body. Exact `Eq` only. -/
+private def innerLengthConj (tgt : FVarId) (c : Expr) : MetaM (Option Nat) := do
+  let cr ← whnfR c
+  match cr with
+  | .forallE _ _ _ _ =>
+    forallTelescope cr fun xs b => do
+      if xs.size != 2 then pure none
+      else
+        let w := xs[0]!
+        let hty ← inferType xs[1]!
+        if !((hty.find? (· == w)).isSome && mentionsTgt hty tgt) then pure none
+        else lenEqOf w b
+  | _ => pure none
+
+/-- Tightest inner length across universals (exact `Eq` only). -/
+private def innerLengthOf (tgt : FVarId) (conjs : List Expr) : MetaM (Option Nat) := do
+  let mut best : Option Nat := none
+  for c in conjs do
+    match ← innerLengthConj tgt c with
+    | none => pure ()
+    | some k => best := some (min (best.getD k) k)
+  pure best
+
 /-- Kernel-check each pre-built candidate value in turn: assign it,
 and run the shared kernel-checked closer. Yields when none closes
 (wrong inferences only ever miss, never mis-prove). -/
@@ -1214,6 +1262,206 @@ private def tryCands (shape : Lynth.Witness.WitShape)
     mkListLit (mkConst ``Nat []) (w.map mkNatLit)
   tryVals shape vals
 
+/-- Shared outer enumeration over pre-built element values:
+length window from existing rows, total cap, kernel-checked closer. -/
+private def outerEnum (shape : Lynth.Witness.WitShape) (elemTy : Expr)
+    (elemVals : List Expr) (tgt : FVarId) (conjs : List Expr) :
+    TacticM ProcedureOutcome := do
+  let st ← inferBounds tgt conjs
+  match st.lenHi with
+  | none => return .failure []
+  | some hi =>
+    if st.lenLo > hi then return .failure []
+    else if 8 < hi then return .failure []
+    else
+      let total := (List.range (hi - st.lenLo + 1)).foldl
+        (fun acc n => acc + elemVals.length ^ (st.lenLo + n)) 0
+      if total == 0 || 2000000 < total then
+        return .failure []
+      else
+        let cands := (List.range (hi - st.lenLo + 1)).flatMap
+          fun n => allListsE elemVals (st.lenLo + n)
+        let candsVals ← cands.mapM fun w => mkListLit elemTy w
+        tryVals shape candsVals
+
+/-- Which `Prod` component (`true` = first) `a` projects from `w`,
+if any (named or anonymous projections). -/
+private def projCompOf (w a : Expr) : Option Bool := do
+  match a.getAppFn with
+  | .const n _ =>
+    let args := a.getAppArgs
+    match args.back? with
+    | some x =>
+      if x != w then none
+      else if n == ``Prod.fst then some true
+      else if n == ``Prod.snd then some false
+      else none
+    | none => none
+  | _ =>
+    match a with
+    | .proj _ idx x =>
+      if x != w then none
+      else if idx == 0 then some true
+      else if idx == 1 then some false
+      else none
+    | _ => none
+
+/-- Component upper bounds (exclusive) from one universal over our
+list: `∀ w ∈ tgt, …w.1… ⋈ k…` with closed `k`. -/
+private def pairBoundsConj (tgt : FVarId) (c : Expr) :
+    MetaM (Option Nat × Option Nat) := do
+  let cr ← whnfR c
+  match cr with
+  | .forallE _ _ _ _ =>
+    forallTelescope cr fun xs b => do
+      if xs.size != 2 then pure (none, none)
+      else
+        let w := xs[0]!
+        let hty ← inferType xs[1]!
+        if !((hty.find? (· == w)).isSome && mentionsTgt hty tgt) then
+          pure (none, none)
+        else
+          let mut h1 : Option Nat := none
+          let mut h2 : Option Nat := none
+          for s in Lynth.Euf.Procedure.collectSubterms b do
+            match s.getAppFn with
+            | .const fn _ =>
+              if fn == ``LT.lt || fn == ``LE.le || fn == ``Nat.lt || fn == ``Nat.le then
+                let args := s.getAppArgs
+                if args.size < 2 then pure ()
+                else
+                  let a := args[args.size - 2]!
+                  let k := args[args.size - 1]!
+                  match projCompOf w a with
+                  | none => pure ()
+                  | some first =>
+                    match ← natLitW k with
+                    | none => pure ()
+                    | some n =>
+                      let n := if fn == ``LT.lt || fn == ``Nat.lt then n else n + 1
+                      if first then h1 := some (min (h1.getD n) n)
+                      else h2 := some (min (h2.getD n) n)
+            | _ => pure ()
+          pure (h1, h2)
+  | _ => pure (none, none)
+
+/-- Tightest component bounds across universals. -/
+private def pairBoundsOf (tgt : FVarId) (conjs : List Expr) :
+    MetaM (Option Nat × Option Nat) := do
+  let mut h1 : Option Nat := none
+  let mut h2 : Option Nat := none
+  for c in conjs do
+    let (a, b) ← pairBoundsConj tgt c
+    match a with
+    | none => pure ()
+    | some n => h1 := some (min (h1.getD n) n)
+  for c in conjs do
+    let (_, b) := ← pairBoundsConj tgt c
+    match b with
+    | none => pure ()
+    | some n => h2 := some (min (h2.getD n) n)
+  pure (h1, h2)
+
+/-- Nested finite lists (`List (List Bool)`, `List (List (Fin n))`):
+inner length from universals, complete finite inner enumeration,
+outer by the length window. Inner values must be finite scalars
+(`Bool`/`Fin`); anything else yields. -/
+private def runNested (shape : Lynth.Witness.WitShape) (outerElem : Expr) :
+    TacticM ProcedureOutcome := do
+  let et ← whnfR outerElem
+  let beta ← match et.getAppArgs[0]? with
+    | none => return .failure []
+    | some b => whnfR b
+  let betaVals : List Expr ← match beta.getAppFn with
+    | .const ``Bool _ => pure [mkConst ``Bool.false, mkConst ``Bool.true]
+    | .const ``Fin _ =>
+      match beta.getAppArgs[0]? with
+      | none => return .failure []
+      | some nExpr => match ← natLitW nExpr with
+        | none => return .failure []
+        | some n =>
+          if 64 < n then return .failure []
+          else do
+            let arr ← (List.range n).toArray.filterMapM fun i => do
+              try
+                let iLit := mkNatLit i
+                let hlt ← mkAppM ``LT.lt #[iLit, mkNatLit n]
+                let pf ← mkDecideProof hlt
+                some <$> mkAppM ``Fin.mk #[iLit, pf]
+              catch _ => pure none
+            pure arr.toList
+    | _ => return .failure []
+  if betaVals.isEmpty then return .failure []
+  let pred ← whnf shape.pred
+  match pred with
+  | .lam _ _ _ _ =>
+    lambdaTelescope pred fun fvars body => do
+      if fvars.size != 1 then return .failure []
+      else
+        let body ← whnf body
+        match fvars[0]! with
+        | .fvar tgt =>
+          let fty ← whnfR (← inferType fvars[0]!)
+          match fty.getAppFn with
+          | .const ``List _ =>
+            let conjs := splitConj body
+            let innerK? ← innerLengthOf tgt conjs
+            match innerK? with
+            | none => return .failure []
+            | some k =>
+              if 8 < k then return .failure []
+              else
+                let inners := allListsE betaVals k
+                let st ← inferBounds tgt conjs
+                match st.lenHi with
+                | none => return .failure []
+                | some hi =>
+                  if st.lenLo > hi then return .failure []
+                  else if 8 < hi then return .failure []
+                  else
+                    let total := (List.range (hi - st.lenLo + 1)).foldl
+                      (fun acc n => acc + inners.length ^ (st.lenLo + n)) 0
+                    if total == 0 || 2000000 < total then
+                      return .failure []
+                    else do
+                      let innerLits ← inners.mapM fun w => mkListLit beta w
+                      let cands := (List.range (hi - st.lenLo + 1)).flatMap
+                        fun n => allListsE innerLits (st.lenLo + n)
+                      let candsVals ← cands.mapM fun w => mkListLit outerElem w
+                      tryVals shape candsVals
+          | _ => return .failure []
+        | _ => return .failure []
+  | _ => return .failure []
+/-- `List (Nat × Nat)` with component bounds from universals:
+pair pool by ranges, outer by the length window. -/
+private def runPair (shape : Lynth.Witness.WitShape) (pairTy : Expr) :
+    TacticM ProcedureOutcome := do
+  let pred ← whnf shape.pred
+  match pred with
+  | .lam _ _ _ _ =>
+    lambdaTelescope pred fun fvars body => do
+      if fvars.size != 1 then return .failure []
+      else
+        let body ← whnf body
+        match fvars[0]! with
+        | .fvar tgt =>
+          let fty ← whnfR (← inferType fvars[0]!)
+          match fty.getAppFn with
+          | .const ``List _ =>
+            let conjs := splitConj body
+            let (h1?, h2?) ← pairBoundsOf tgt conjs
+            match h1?, h2? with
+            | some n1, some n2 =>
+              let mut pool : List Expr := []
+              for i in List.range n1 do
+                for j in List.range n2 do
+                  pool := pool ++ [← Lynth.Witness.mkProdVal
+                    (mkConst ``Nat []) (mkConst ``Nat []) (mkNatLit i) (mkNatLit j)]
+              outerEnum shape pairTy pool tgt conjs
+            | _, _ => return .failure []
+          | _ => return .failure []
+        | _ => return .failure []
+  | _ => return .failure []
 
 /-- `List (Fin n)` case: length-window enumeration over all Fin values.
 Mirrors the `List Nat` preamble (telescope + `List` check); no pool is
@@ -1388,6 +1636,19 @@ def run : TacticM ProcedureOutcome := do
           match ← natLitW nExpr with
           | none => return .failure []
           | some n => return ← runFin shape dargs[0]! n
+      | .app (.const ``List _) _ =>
+        -- nested finite lists (`List (List Bool)` etc.): inner length
+        -- from `∀ w ∈ tgt, w.length = k` universals, inner values by
+        -- complete finite enumeration, outer by the length window
+        return ← runNested shape dargs[0]!
+      | .app (.app (.const ``Prod _) α) β => do
+        -- pair elements over `Nat` with component bounds from
+        -- universals (`∀ w ∈ tgt, w.1 < k …`)
+        let α ← whnfR α
+        let β ← whnfR β
+        match α, β with
+        | .const ``Nat _, .const ``Nat _ => return ← runPair shape dargs[0]!
+        | _, _ => return .failure []
       | _ => return .failure []
   | _ => return .failure []
 

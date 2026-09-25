@@ -266,3 +266,9 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   domains), IdxFind (positional), KnightsTour (binary SAT at scale),
   TwoGuards (higher-order + Equivs), BalancedBST (custom inductive),
   DistanceCode (nested lists).
+- More flips (23/33 FinDomain): DistanceCode (nested finite lists),
+  SortingNetwork (pair pools), SafetyInvariant (broken spec proof),
+  DfaLearn/Nonogram/MinSubsetExceed/NimStrategy/FilterPartitionCount
+  verified green. Suite 29/29, Grind 293/293. Remaining 10:
+  BalancedBST, Cryptarithm, EightQueens×2, FinGroup, IdxFind,
+  KnightsTour, ShortestPath, SplitRejoin, TwoGuards.

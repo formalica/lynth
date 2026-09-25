@@ -42,6 +42,6 @@ def etalon : List (List Bool) :=
 -- Runtime check: witness is a valid distance-3 code.
 #guard codeCheck (codeSol : List (List Bool))
 
-/-- info: 'codeSol' depends on axioms: [propext] -/
+/-- info: 'codeSol' does not depend on any axioms -/
 #guard_msgs in
 #print axioms codeSol
