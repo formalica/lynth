@@ -147,6 +147,38 @@ Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 def range_exp_cos_mul_sin : { p : Rat × Rat // abs (rangeSup (fun r => Real.exp (Real.cos r) * Real.sin r) (0 : ℝ) (2 : ℝ) - p.1) < 1 / 1000 ∧
         abs (rangeInf (fun r => Real.exp (Real.cos r) * Real.sin r) (0 : ℝ) (2 : ℝ) - p.2) < 1 / 1000 } := by lynth
 
+-- Axiom footprint checks.
+/-- info: 'IntervalArith.rangeSup' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms rangeSup
+/-- info: 'IntervalArith.rangeInf' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms rangeInf
+/-- info: 'IntervalArith.range_sin_zero_one_tenth' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms range_sin_zero_one_tenth
+/-- info: 'IntervalArith.range_cos_zero_three_halves' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms range_cos_zero_three_halves
+/-- info: 'IntervalArith.range_exp_neg_one_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms range_exp_neg_one_one
+/-- info: 'IntervalArith.range_tan_zero_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms range_tan_zero_one
+/-- info: 'IntervalArith.range_exp_sin_cos_sq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms range_exp_sin_cos_sq
+/-- info: 'IntervalArith.range_exp_sin_add_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms range_exp_sin_add_cos
+/-- info: 'IntervalArith.range_arctan_sin_add_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms range_arctan_sin_add_cos
+/-- info: 'IntervalArith.range_exp_cos_mul_sin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms range_exp_cos_mul_sin
+
 end IntervalArith
 
 -- The repository convention (`Test/*.lean`, `Test/Grind/README.md`) pins the

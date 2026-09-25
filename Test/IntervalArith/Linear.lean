@@ -32,6 +32,14 @@ arb_mat.solve gives v = ([0.19999999999999999999, 0.20000000000000000001],
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 def linear_system_witness : { v : Rat × Rat // abs ((2 * v.1 + v.2) - 1) < 1 / 1000 ∧ abs ((v.1 + 3 * v.2) - 2) < 1 / 1000 } := by lynth
 
+-- Axiom footprint checks.
+/-- info: 'IntervalArith.det_two_by_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms det_two_by_two
+/-- info: 'IntervalArith.linear_system_witness' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms linear_system_witness
+
 end IntervalArith
 
 -- The repository convention (`Test/*.lean`, `Test/Grind/README.md`) pins the

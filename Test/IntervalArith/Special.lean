@@ -58,6 +58,20 @@ interval Newton on [5/4, 13/10]: converged, box empty, existence certified = Tru
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 def root_cube_two : { x : Rat // abs ((x : ℝ) ^ 3 - 2) < (10 : ℝ) ^ (-7 : ℤ) } := by lynth
 
+-- Axiom footprint checks.
+/-- info: 'IntervalArith.gamma_quarter' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms gamma_quarter
+/-- info: 'IntervalArith.zeta_three' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms zeta_three
+/-- info: 'IntervalArith.pi_rational' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms pi_rational
+/-- info: 'IntervalArith.root_cube_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms root_cube_two
+
 end IntervalArith
 
 -- The repository convention (`Test/*.lean`, `Test/Grind/README.md`) pins the

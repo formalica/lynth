@@ -416,7 +416,7 @@ that such an `x` exists; the concrete witness Arb found -- `120697598611/1000000
 
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
-def sqrt_agm : { x : Rat // abs (Real.sqrt (((NNReal.agm 1 2 : ℝ≥0) : ℝ)) - x) < 1 / 1000000 } := by lynth
+def sqrt_agm : { x : Rat // abs (Real.sqrt (((NNReal.agm 1 2 : NNReal) : ℝ)) - x) < 1 / 1000000 } := by lynth
 
 /-- **MP27** — `sqrt_digamma_add_exp`: `sqrt, digamma, exp` composed in one expression, evaluated at
 `x = 3`.
@@ -477,7 +477,7 @@ the Gaussian 2F1 is now a mathlib declaration (`ordinaryHypergeometric`, notatio
 
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
-def log_mul_hypergeometric : { x : Rat // abs (Real.log 2 * ordinaryHypergeometric ℝ 1 1 2 (1 / 2) - x) < 1 / 1000000 } := by lynth
+def log_mul_hypergeometric : { x : Rat // abs (Real.log 2 * ordinaryHypergeometric (1 : ℝ) 1 1 ((1 / 2 : ℝ)) - x) < 1 / 1000000 } := by lynth
 
 /-- **MP31** — `regularized_gauss_hypergeometric_neg5`: `regularizedGaussHGFun` composed in one
 expression, evaluated at `a = 1, b = 2, c = 3, z = -5`.
@@ -558,6 +558,115 @@ a negative-integer numerator parameter terminates the series: the value is the e
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def regularized_pfq_terminating_3f2 : { x : Rat // abs ((Complex.regularizedHGFun {(-3 : ℂ), 1, 1} {2, 2} (1 / 2)).re - x) < 1 / 1000000 } := by lynth
+
+-- Axiom footprint checks.
+/-- info: 'IntervalArith.exp_sin_add_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms exp_sin_add_cos
+/-- info: 'IntervalArith.sin_exp_mul_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sin_exp_mul_cos
+/-- info: 'IntervalArith.gamma_sin_add_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms gamma_sin_add_two
+/-- info: 'IntervalArith.log_gamma_add_sqrt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms log_gamma_add_sqrt
+/-- info: 'IntervalArith.tan_sinh_mul_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms tan_sinh_mul_cos
+/-- info: 'IntervalArith.cosh_sin_add_arctan' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms cosh_sin_add_arctan
+/-- info: 'IntervalArith.zeta_cos_add_three' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms zeta_cos_add_three
+/-- info: 'IntervalArith.arcsin_tanh_mul_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms arcsin_tanh_mul_cos
+/-- info: 'IntervalArith.arccos_sinh_mul_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms arccos_sinh_mul_exp
+/-- info: 'IntervalArith.sinc_exp_mul_sin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sinc_exp_mul_sin
+/-- info: 'IntervalArith.cot_sinh_add_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms cot_sinh_add_two
+/-- info: 'IntervalArith.arsinh_cos_mul_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms arsinh_cos_mul_exp
+/-- info: 'IntervalArith.arcosh_exp_add_sin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms arcosh_exp_add_sin
+/-- info: 'IntervalArith.artanh_sin_mul_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms artanh_sin_mul_exp
+/-- info: 'IntervalArith.logb_exp_sin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms logb_exp_sin
+/-- info: 'IntervalArith.exp_chebyshev_t_add_sin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms exp_chebyshev_t_add_sin
+/-- info: 'IntervalArith.log_chebyshev_u_add_three' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms log_chebyshev_u_add_three
+/-- info: 'IntervalArith.cos_euler_add_sqrt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms cos_euler_add_sqrt
+/-- info: 'IntervalArith.sinh_bell_over_hundred' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sinh_bell_over_hundred
+/-- info: 'IntervalArith.exp_bernoulli_poly' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms exp_bernoulli_poly
+/-- info: 'IntervalArith.cos_bernoulli_four_add_sqrt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms cos_bernoulli_four_add_sqrt
+/-- info: 'IntervalArith.arctan_log_ten_mul_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms arctan_log_ten_mul_exp
+/-- info: 'IntervalArith.log_two_gamma_div_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms log_two_gamma_div_exp
+/-- info: 'IntervalArith.sqrt_pi_mul_tanh' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sqrt_pi_mul_tanh
+/-- info: 'IntervalArith.choose_div_factorial_mul_sqrt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms choose_div_factorial_mul_sqrt
+/-- info: 'IntervalArith.sqrt_agm' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sqrt_agm
+/-- info: 'IntervalArith.sqrt_digamma_add_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sqrt_digamma_add_exp
+/-- info: 'IntervalArith.pochhammer_four_third_mul_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms pochhammer_four_third_mul_exp
+/-- info: 'IntervalArith.rpow_sin_exponent' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms rpow_sin_exponent
+/-- info: 'IntervalArith.log_mul_hypergeometric' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms log_mul_hypergeometric
+/-- info: 'IntervalArith.regularized_gauss_hypergeometric_neg5' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms regularized_gauss_hypergeometric_neg5
+/-- info: 'IntervalArith.regularized_pfq_3f2' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms regularized_pfq_3f2
+/-- info: 'IntervalArith.regularized_pfq_2f3' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms regularized_pfq_2f3
+/-- info: 'IntervalArith.regularized_pfq_4f3' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms regularized_pfq_4f3
+/-- info: 'IntervalArith.regularized_pfq_terminating_3f2' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms regularized_pfq_terminating_3f2
 
 end IntervalArith
 

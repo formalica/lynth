@@ -46,6 +46,17 @@ exact value pi = 3.141592653589793238462643383279502884197; quadrature =
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 def integral_x_sin : { x : Rat // abs ((∫ y in (0 : ℝ)..Real.pi, y * Real.sin y) - x) < 1 / 100 } := by lynth
 
+-- Axiom footprint checks.
+/-- info: 'IntervalArith.integral_exp_neg_sq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms integral_exp_neg_sq
+/-- info: 'IntervalArith.integral_sin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms integral_sin
+/-- info: 'IntervalArith.integral_x_sin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms integral_x_sin
+
 end IntervalArith
 
 -- The repository convention (`Test/*.lean`, `Test/Grind/README.md`) pins the

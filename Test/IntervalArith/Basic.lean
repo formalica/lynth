@@ -82,6 +82,26 @@ enclosure `1.414213562373095145474622; 1.414213562373095145474622`, witness
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 def sqrt_two : { x : Rat // abs (Real.sqrt 2 - x) < (10 : ℝ) ^ (-10 : ℤ) } := by lynth
 
+-- Axiom footprint checks.
+/-- info: 'IntervalArith.cos_eight_pi_over_seventeen' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms cos_eight_pi_over_seventeen
+/-- info: 'IntervalArith.sin_eight_pi_over_seventeen' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sin_eight_pi_over_seventeen
+/-- info: 'IntervalArith.exp_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms exp_two
+/-- info: 'IntervalArith.log_pi_over_hundred' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms log_pi_over_hundred
+/-- info: 'IntervalArith.rpow_two_one_third' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms rpow_two_one_third
+/-- info: 'IntervalArith.sqrt_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sqrt_two
+
 end IntervalArith
 
 -- The repository convention (`Test/*.lean`, `Test/Grind/README.md`) pins the

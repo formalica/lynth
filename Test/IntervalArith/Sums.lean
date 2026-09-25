@@ -46,6 +46,15 @@ exact pi-reduction sin_pi_fmpq(k,7) per term; mpmath reference
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 def sum_sin_pi_over_seven : { x : Rat // abs ((∑ k ∈ Finset.range 5, Real.sin (Real.pi * (k + 1) / 7)) - x) < 1 / 1000000 } := by lynth
 
+noncomputable def prod_inv_sq (k : ℕ) : ℝ := (1 : ℝ) + 1 / ((k + 1 : ℝ) ^ 2)
+
+/-- **T15** — `∏_{k=1}^∞ (1 + 1/k²) = sinh(π)/π` — infinite product via `tprod`.
+
+enclosure `3.6760779103749777; 3.6760779103749777`, witness `3.6760779103749777`.
+
+The infinite product converges absolutely since ∑ 1/k² converges. -/
+def infinite_product_one_plus_inv_sq : { x : Rat // Multipliable prod_inv_sq ∧ abs (∏' k : ℕ, prod_inv_sq k) - x < 1 / 200 } := by lynth
+
 /-- **B01** — **Bonus / theorem form.** `|sum_{j=1..1000} 1/j^2 - pi^2/6| < 1/500`: an infinite
 series handled by an exact partial sum plus an integral tail bound (the tail is `~1/1000`).
 
@@ -83,6 +92,32 @@ alternating series + exact pi/4 enclosure.
 
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 theorem alternating_series_pi_over_four : abs ((∑ k ∈ Finset.range 100, (-1 : ℝ) ^ k / (2 * (k : ℝ) + 1)) - Real.pi / 4) < 1 / 100 := by lynth
+
+-- Axiom footprint checks.
+/-- info: 'IntervalArith.sum_exp_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sum_exp_cos
+/-- info: 'IntervalArith.sum_geometric_half_powers' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sum_geometric_half_powers
+/-- info: 'IntervalArith.sum_sin_pi_over_seven' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sum_sin_pi_over_seven
+/-- info: 'IntervalArith.prod_inv_sq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms prod_inv_sq
+/-- info: 'IntervalArith.infinite_product_one_plus_inv_sq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms infinite_product_one_plus_inv_sq
+/-- info: 'IntervalArith.series_inv_sq_tail' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms series_inv_sq_tail
+/-- info: 'IntervalArith.sum_telescoping' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sum_telescoping
+/-- info: 'IntervalArith.alternating_series_pi_over_four' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms alternating_series_pi_over_four
 
 end IntervalArith
 

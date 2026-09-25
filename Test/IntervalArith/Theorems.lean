@@ -135,6 +135,38 @@ exact rational identity + Arb accumulation.
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 theorem geometric_partial_lt_one : ∀ n : ℕ, (∑ i ∈ Finset.range n, (1 / 2 : ℝ) ^ (i + 1)) < 1 := by lynth
 
+-- Axiom footprint checks.
+/-- info: 'IntervalArith.exp_mul_cos_le_three' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms exp_mul_cos_le_three
+/-- info: 'IntervalArith.exp_mul_cos_ge_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms exp_mul_cos_ge_one
+/-- info: 'IntervalArith.abs_exp_mul_sin_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms abs_exp_mul_sin_le
+/-- info: 'IntervalArith.cos_ge_half_on_unit' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms cos_ge_half_on_unit
+/-- info: 'IntervalArith.log_le_sub_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms log_le_sub_one
+/-- info: 'IntervalArith.le_sqrt_on_unit' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms le_sqrt_on_unit
+/-- info: 'IntervalArith.bilinear_box_le_three' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms bilinear_box_le_three
+/-- info: 'IntervalArith.gamma_bounds' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms gamma_bounds
+/-- info: 'IntervalArith.tanh_ge_on_one_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms tanh_ge_on_one_two
+/-- info: 'IntervalArith.geometric_partial_lt_one' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms geometric_partial_lt_one
+
 end IntervalArith
 
 -- The repository convention (`Test/*.lean`, `Test/Grind/README.md`) pins the

@@ -109,6 +109,29 @@ Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def ceil_ten_exp_cos : { n : Nat // n = ⌈10 * Real.exp (Real.cos 1)⌉₊ } := by lynth
 
+-- Axiom footprint checks.
+/-- info: 'IntervalArith.floor_exp_two_add_sin_div_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms floor_exp_two_add_sin_div_cos
+/-- info: 'IntervalArith.floor_gamma_quarter_add_gamma_third' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms floor_gamma_quarter_add_gamma_third
+/-- info: 'IntervalArith.floor_hundred_tanh_sqrt_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms floor_hundred_tanh_sqrt_two
+/-- info: 'IntervalArith.floor_ten_sqrt_sum' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms floor_ten_sqrt_sum
+/-- info: 'IntervalArith.gcd_of_fib' does not depend on any axioms -/
+#guard_msgs in
+#print axioms gcd_of_fib
+/-- info: 'IntervalArith.sign_exp_sub_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sign_exp_sub_cos
+/-- info: 'IntervalArith.ceil_ten_exp_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms ceil_ten_exp_cos
+
 end IntervalArith
 
 -- The repository convention (`Test/*.lean`, `Test/Grind/README.md`) pins the
