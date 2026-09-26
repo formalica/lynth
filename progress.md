@@ -301,3 +301,15 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   cdcl_correct, <native ax>]`, never `sorryAx`). lake build clean,
   suite 30/30, FinDomain still 26/33. Next: meta FinDomain solver
   functions on top of the bridge.
+- Final-only turn (no intermediate): dropped the cert bridge
+  (`native_decide` gone from the tree), axiom restated directly over
+  `cdclSolve`; added the doubling loop (`cdclLoop`, one exact run per
+  level), temporary axiom #2 `cdcl_fuel_suffices` (uniform fuel
+  sufficiency, discharged later with #1), total solver `solveTotal`
+  (first deciding level via `Nat.find`, no unknown branch) plus
+  `cdclLoop_sound/complete` and `solveTotal_sound/complete`
+  corollaries. `Test/Sat/SolveLoop.lean` (in CI): native `#eval`
+  decisions plus corollary uses pinned to `[propext,
+  Classical.choice, Quot.sound, cdcl_correct, cdcl_fuel_suffices]`.
+  lake build clean, suite 30/30, FinDomain still 26/33. Next:
+  verified gate library (generic, proven, core-axioms-only).
