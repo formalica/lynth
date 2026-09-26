@@ -290,3 +290,14 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   Cryptarithm, EightQueensSat/Unsat, FinGroup, KnightsTour,
   TwoGuards. Next: Cryptarithm (finsearch SAT: decode/foldl
   symbolic evaluation over finite-function cells).
+- Verified-solver foundation (no behavior change to `lynth`):
+  `Lynth/Sat/Verified.lean` (single temporary axiom `cdcl_correct`
+  over the exact `cdclSolve` semantics plus derived `cdcl_sound` /
+  `cdcl_complete`, the axiom's only code consumers),
+  `Lynth/Sat/Cert.lean` (`unsatCertGoal` / `satCert` bridges:
+  solver run plus `native_decide` equation plus theorem application,
+  built term-level), `Test/Sat/CertBridge.lean` (in CI; UNSAT/SAT
+  proofs pinned to `[propext, Classical.choice, Quot.sound,
+  cdcl_correct, <native ax>]`, never `sorryAx`). lake build clean,
+  suite 30/30, FinDomain still 26/33. Next: meta FinDomain solver
+  functions on top of the bridge.
