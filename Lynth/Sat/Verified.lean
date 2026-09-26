@@ -39,42 +39,37 @@ Why the axiom as stated is the right (true) statement:
   unsatisfiable inputs. Branch restriction (`branch`) only *orders*
   decisions: `getNext` falls back to an unrestricted pass
   (`Lynth.Sat.Watch.getNext`, "so models stay complete"), so no
-  satisfying assignment is ever cut off. Fuel/restarts only bound the
-  search: the axiom claims nothing about `none` (unknown) results,
-  only that a *reported* UNSAT is genuine.
+  satisfying assignment is ever cut off, whatever `branch` holds.
+  Fuel/restarts only bound the search: the axiom claims nothing about
+  `none` (unknown) results, only that a *reported* UNSAT is genuine.
 -/
 namespace Lynth.Sat
-
-/-- Certified entry point: branch restriction as a plain reflectable
-list (hash sets cannot be reflected to syntax), converted once to the
-solver's hash set. Tactics and synthesized functions go through this
-wrapper so that native-evaluation evidence (`native_decide`) and the
-correctness theorems below speak about the same call. -/
-def cdclSolveB (cnf : CNF) (fuel restartBase : Nat) (branch : List Nat) :
-    Cdcl.CdclOut :=
-  Cdcl.cdclSolve cnf fuel restartBase (Std.HashSet.ofList branch)
 
 /-- TEMPORARY AXIOM — solver correctness (soundness + completeness).
 To be proven from the `Watch` implementation (CreuSAT invariant
 structure) once the campaign allows; until then every verified-solver
 proof bottoms out here. See the module doc for why this statement is
 true of the implementation. -/
-axiom cdcl_correct (cnf : CNF) (fuel restartBase : Nat) (branch : List Nat) :
-  (∀ m : Assignment, (cdclSolveB cnf fuel restartBase branch).result = some (.sat m) →
+axiom cdcl_correct (cnf : CNF) (fuel restartBase : Nat)
+    (branch : Std.HashSet Nat) :
+  (∀ m : Assignment,
+    (Cdcl.cdclSolve cnf fuel restartBase branch).result = some (.sat m) →
     checkSat cnf m = true) ∧
-  ((cdclSolveB cnf fuel restartBase branch).result = some .unsat →
+  ((Cdcl.cdclSolve cnf fuel restartBase branch).result = some .unsat →
     ∀ a : Assignment, checkSat cnf a = false)
 
 /-- Soundness: a reported model genuinely satisfies the input. -/
-theorem cdcl_sound (cnf : CNF) (fuel restartBase : Nat) (branch : List Nat)
-    (m : Assignment)
-    (h : (cdclSolveB cnf fuel restartBase branch).result = some (.sat m)) :
+theorem cdcl_sound (cnf : CNF) (fuel restartBase : Nat)
+    (branch : Std.HashSet Nat) (m : Assignment)
+    (h : (Cdcl.cdclSolve cnf fuel restartBase branch).result
+      = some (.sat m)) :
     checkSat cnf m = true :=
   (cdcl_correct cnf fuel restartBase branch).1 m h
 
 /-- Completeness: a reported UNSAT means no satisfying assignment exists. -/
-theorem cdcl_complete (cnf : CNF) (fuel restartBase : Nat) (branch : List Nat)
-    (h : (cdclSolveB cnf fuel restartBase branch).result = some .unsat)
+theorem cdcl_complete (cnf : CNF) (fuel restartBase : Nat)
+    (branch : Std.HashSet Nat)
+    (h : (Cdcl.cdclSolve cnf fuel restartBase branch).result = some .unsat)
     (a : Assignment) :
     checkSat cnf a = false :=
   (cdcl_correct cnf fuel restartBase branch).2 h a
