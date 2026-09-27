@@ -301,6 +301,15 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   cdcl_correct, <native ax>]`, never `sorryAx`). lake build clean,
   suite 30/30, FinDomain still 26/33. Next: meta FinDomain solver
   functions on top of the bridge.
+- Pattern registry (`Lynth/FinSearch/Patterns.lean`, generic over
+  handler kinds): discrimination-tree-indexed shape recognition for
+  problem-definition terms — `wildApp` patterns (untyped wildcard at
+  every arg position; concrete/implicit types expand unpredictably
+  during indexing so anything concrete poisons matching), per-family
+  validators re-derive specifics; seeded length-eq + nodup families.
+  `Test/FinSearch/Patterns.lean` (in CI) covers routing, validation,
+  and extension-without-modification (sum-eq family defined wholly
+  in the test). Next: spec compiler consuming the registry.
 - Verified gate library (`Lynth/Sat/Gates.lean`, generic over
   literals, proven with core axioms only): one-hot rows, Tseitin
   AND/OR/NOT, disjunction-of-conjunctions (covers one-hot equality
