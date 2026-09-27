@@ -72,6 +72,51 @@ theorem checkSat_mem (a : Assignment) (cnf : CNF) (c : Clause)
     · exact checkSat_cons _ _ _ h
     · exact ih hm (checkSat_cons_tail a d ds h)
 
+/-- A CNF holds when every singleton does (clause aggregation). -/
+theorem checkSat_of_all_single (a : Assignment) (cs : CNF)
+    (h : ∀ c ∈ cs, checkSat [c] a = true) : checkSat cs a = true := by
+  induction cs with
+  | nil => simp [checkSat]
+  | cons c cs ih =>
+    have h1 := h c List.mem_cons_self
+    have h2 := ih (fun c' hm => h c' (List.mem_cons.mpr (Or.inr hm)))
+    have h3 := checkSat_append a [c] cs
+    rw [List.singleton_append] at h3
+    rw [h3]
+    simp [h1, h2]
+
+/-- A flatMapped CNF holds when every piece does (generic lifter for
+cell/edge-iterated encodings — no problem-specific content). -/
+theorem checkSat_flatMap (a : Assignment) (l : List α) (f : α → CNF)
+    (h : ∀ x ∈ l, checkSat (f x) a = true) :
+    checkSat (l.flatMap f) a = true := by
+  apply checkSat_of_all_single
+  intro c hc
+  obtain ⟨x, hx, hmem⟩ := List.mem_flatMap.mp hc
+  exact checkSat_mem a _ _ hmem (h x hx)
+
+/-- Conditional clauses: emit `cls` iff the (possibly stuck) Boolean
+`b` holds. Lets encodings branch on input data without evaluating
+it; proofs case-split on `b` instead. -/
+def condClauses (b : Bool) (cls : CNF) : CNF :=
+  if b then cls else []
+
+/-- Conditional emission, positive direction. -/
+theorem condClauses_of_true (a : Assignment) (b : Bool) (cls : CNF)
+    (hb : b = true) (h : checkSat cls a = true) :
+    checkSat (condClauses b cls) a = true := by
+  change checkSat (if b then cls else []) a = true
+  rw [hb]
+  exact h
+
+/-- Conditional emission, elimination direction. -/
+theorem condClauses_elim (a : Assignment) (b : Bool) (cls : CNF)
+    (h : checkSat (condClauses b cls) a = true) (hb : b = true) :
+    checkSat cls a = true := by
+  change checkSat (if b then cls else []) a = true at h
+  rw [hb] at h
+  exact h
+
 /-- At-least-one clause over literals. -/
 def atLeastOneCNF (lits : List Lit) : CNF := [lits]
 
@@ -100,6 +145,20 @@ theorem checkSat_pair_eval (a : Assignment) (x y : Lit)
   rcases hm with rfl | rfl
   · exact Or.inl ht
   · exact Or.inr ht
+
+/-- Converse: a true side satisfies the 2-clause (generic lifter for
+completeness directions — proved once via the same unfolding as
+`checkSat_single`, so callers never re-prove array reasoning). -/
+theorem checkSat_pair_of_true_left (a : Assignment) (x y : Lit)
+    (h : evalLit a x = some true) : checkSat [[x, y]] a = true := by
+  unfold checkSat evalLit lookup at *
+  grind
+
+/-- Converse, right side. -/
+theorem checkSat_pair_of_true_right (a : Assignment) (x y : Lit)
+    (h : evalLit a y = some true) : checkSat [[x, y]] a = true := by
+  unfold checkSat evalLit lookup at *
+  grind
 
 /-- Pairwise exclusion helper: a holding `[¬u, ¬v]` clause plus
 `u` true forces `v` false. Stated with `-` (callers' `negLit`

@@ -313,9 +313,24 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
 - Verified gate library (`Lynth/Sat/Gates.lean`, generic over
   literals, proven with core axioms only): one-hot rows, Tseitin
   AND/OR/NOT, disjunction-of-conjunctions (covers one-hot equality
-  and ordering with one lemma), all correctness stated uniformly in
-  `checkSat` language for future composition; `Test/Sat/GatesTest.lean`
-  (in CI) pins core-only axioms. Next: spec compiler on top.
+  and ordering with one lemma), `checkSat_flatMap`/`condClauses`
+  combinators for parameterized encodings, pair-converse lemmas for
+  completeness; `Test/Sat/GatesTest.lean`
+  (in CI) pins core-only axioms.
+- Generic finite-value layer (`Lynth/Sat/FinVal.lean`, no puzzle
+  content): one-hot cells for `Fin k` values (`idxVar`/`rowLits`/
+  `cellsCNF`), `decodeVal` (first-true, default 0) with
+  `decodeVal_true`/`decodeVal_of_row`, `modelOf` with length +
+  `modelOf_eval` positional lookup (via proof-free `getD`/`getElem?`
+  path + `lookup_eq_getD`; the direct `getElem`/`dif_pos` rewrites
+  fail dependent motives) — all core-only.
+- Generic difference bridge (`Lynth/Sat/Differ.lean`, no puzzle
+  content): `diffClause`/`diffCNF`/`condDiffPair`/`condDiffCNF` for
+  closed (usual) and guarded (meta) inequalities, `diffClause_sound`/
+  `diff_sound`/`diffClause_complete` with core axioms only.
+  `Test/Sat/FinValDifferTest.lean` (in CI) pins core-only axioms.
+  Next: meta solver-procedure consuming these bridges uniformly for
+  usual + meta (same compilation, different staging).
 - Final-only turn (no intermediate): dropped the cert bridge
   (`native_decide` gone from the tree), axiom restated directly over
   `cdclSolve`; added the doubling loop (`cdclLoop`, one exact run per
