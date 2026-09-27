@@ -301,6 +301,12 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   cdcl_correct, <native ax>]`, never `sorryAx`). lake build clean,
   suite 30/30, FinDomain still 26/33. Next: meta FinDomain solver
   functions on top of the bridge.
+- Verified gate library (`Lynth/Sat/Gates.lean`, generic over
+  literals, proven with core axioms only): one-hot rows, Tseitin
+  AND/OR/NOT, disjunction-of-conjunctions (covers one-hot equality
+  and ordering with one lemma), all correctness stated uniformly in
+  `checkSat` language for future composition; `Test/Sat/GatesTest.lean`
+  (in CI) pins core-only axioms. Next: spec compiler on top.
 - Final-only turn (no intermediate): dropped the cert bridge
   (`native_decide` gone from the tree), axiom restated directly over
   `cdclSolve`; added the doubling loop (`cdclLoop`, one exact run per
