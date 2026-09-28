@@ -124,6 +124,31 @@ theorem modelOf_length (n k : Nat) (f : Fin n → Fin k) :
     (fun v _ => by simp [List.length_map, List.length_finRange])]
   simp [List.length_finRange]
 
+/-- Row uniqueness: two true readings in one held row agree. -/
+theorem rowLit_unique (m : Assignment) (k cell : Nat)
+    (hrow : checkSat (oneHotRowCNF (rowLits k cell)) m = true)
+    (c1 c2 : Fin k)
+    (h1 : evalLit m (Int.ofNat (idxVar k cell c1.val)) = some true)
+    (h2 : evalLit m (Int.ofNat (idxVar k cell c2.val)) = some true) :
+    c1.val = c2.val := by
+  by_contra hcon
+  have hne : Int.ofNat (idxVar k cell c1.val) ≠
+      Int.ofNat (idxVar k cell c2.val) := by
+    intro hcc
+    have hccN : idxVar k cell c1.val = idxVar k cell c2.val :=
+      Int.ofNat_inj.mp hcc
+    exact hcon (idxVar_inj k cell _ _ hccN)
+  have hm1 : Int.ofNat (idxVar k cell c1.val) ∈ rowLits k cell := by
+    unfold rowLits
+    exact List.mem_map_of_mem (List.mem_finRange c1)
+  have hm2 : Int.ofNat (idxVar k cell c2.val) ∈ rowLits k cell := by
+    unfold rowLits
+    exact List.mem_map_of_mem (List.mem_finRange c2)
+  obtain ⟨_, hAtMost⟩ := oneHotRow_correct m _ hrow
+  have hf := hAtMost _ hm1 _ hm2 hne h1
+  rw [h2] at hf
+  simp at hf
+
 /-- Lookup as `getD` (proof-free): avoids the dependent-dite motive
 issues that block direct `rw` on `lookup`/`getElem` indices. -/
 theorem lookup_eq_getD (a : Assignment) (v : Nat) (h0 : 0 < v) :

@@ -46,3 +46,35 @@ open Lynth.Sat.Differ
 /-- info: 'Lynth.Sat.Gates.checkSat_pair_of_true_right' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms checkSat_pair_of_true_right
+
+/-- info: 'Lynth.Sat.FinVal.rowLit_unique' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms rowLit_unique
+
+/-- info: 'Lynth.Sat.Differ.diff_sound_decode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms diff_sound_decode
+
+/-- info: 'Lynth.Sat.Differ.diffCNF_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms diffCNF_complete
+
+/-- info: 'Lynth.Sat.Differ.eq_sound_decode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms eq_sound_decode
+
+/-- info: 'Lynth.Sat.Differ.eqClause_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms eqClause_complete
+
+/-- info: 'Lynth.Sat.Differ.eqCNF_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms eqCNF_complete
+
+/-- info: 'Lynth.Sat.Gates.checkSat_flatMap' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms checkSat_flatMap
+
+/-- info: 'Lynth.Sat.Gates.checkSat_of_all_single' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms checkSat_of_all_single
