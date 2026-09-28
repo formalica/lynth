@@ -44,8 +44,8 @@ def CorrectLightsOutSolver
     solver input = none ↔
     ¬∃ presses, LightsOutSolved input presses)
 
-/-- Synthesize a solver for every square board size. -/
 set_option maxHeartbeats 10000000 in
+/-- Synthesize a solver for every square board size. -/
 def lightsOutSolver :
     (n : ℕ) →
       { solver : LightsBoard n → Option (LightsBoard n) //

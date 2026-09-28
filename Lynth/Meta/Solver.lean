@@ -1,3 +1,6 @@
+import Lean
+import Mathlib.Data.Fin.Tuple.Basic
+
 /-!
 Generic enumeration solver: total solver-functions from finite
 candidate lists plus decidable checks.
@@ -66,5 +69,35 @@ theorem enumSolve_none_iff (elems : List O) (check : I → O → Bool)
     | none =>
       unfold enumSolve
       exact hm
+
+/-- Computable enumeration of `Fin n → Fin k` by structural recursion
+(`Fin.cons` rows over `finRange k`). Every finite-function output in
+every meta goal with concrete bounds is covered; symbolic bounds and
+deeper nestings yield to the future SAT-backed path. -/
+def enumFun (n k : Nat) : List (Fin n → Fin k) :=
+  match n with
+  | 0 => [fun i => i.elim0]
+  | n + 1 => (List.finRange k).flatMap fun c =>
+      (enumFun n k).map fun f => Fin.cons c f
+
+/-- Every function occurs in the structural enumeration. -/
+theorem mem_enumFun {n k : Nat} (f : Fin n → Fin k) :
+    f ∈ enumFun n k := by
+  induction n with
+  | zero =>
+    simp only [enumFun]
+    apply List.mem_singleton.mpr
+    funext i
+    exact i.elim0
+  | succ n ih =>
+    simp only [enumFun]
+    have h0 : f 0 ∈ List.finRange k := List.mem_finRange _
+    have ht : Fin.tail f ∈ enumFun n k := ih (Fin.tail f)
+    have hcons : Fin.cons (f 0) (Fin.tail f) ∈
+        ((List.finRange k).flatMap fun c =>
+          (enumFun n k).map fun g => Fin.cons c g) :=
+      List.mem_flatMap.mpr ⟨f 0, h0, List.mem_map.mpr ⟨Fin.tail f, ht, rfl⟩⟩
+    rw [Fin.cons_self_tail] at hcons
+    exact hcons
 
 end Lynth.Meta.Solver

@@ -343,3 +343,23 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   Classical.choice, Quot.sound, cdcl_correct, cdcl_fuel_suffices]`.
   lake build clean, suite 30/30, FinDomain still 26/33. Next:
   verified gate library (generic, proven, core-axioms-only).
+- Meta solver synthesis, first green (generic, no per-puzzle code):
+  `Lynth/Meta/Solver.lean` (`enumSolve` + soundness/completeness/
+  none-iff over abstract `(elems, check)`, core-only) plus computable
+  structural enumeration (`enumFun`/`mem_enumFun` for `Fin n → Fin k`
+  via `Fin.cons` rows, induction with `cons_self_tail`;
+  `Fintype.elems` is a noncomputable `Finset`, unusable for
+  `#guard`-evaluated solvers). `Lynth/Meta/Procedure.lean` (wired
+  into `Frontend.dispatch` between `answer` and `finsearch`): intros
+  size params, matches solver domains (`I → Option O`), extracts the
+  validity predicate from the soundness conjunct, guards cardinality
+  via `estCard` (never evaluates `Fintype.card`: `whnf` blows
+  maxRecDepth), builds `decide` checks over unfolded types (TC never
+  unfolds user aliases), and assembles solver + full correctness by
+  reusing `check`'s baked-in instances (fresh `Decidable` synthesis
+  over alias-typed goal vars always fails; `getLevel` returns the
+  sort level — use `getDecLevel`). `Test/FinDomain/Meta/
+  ThreeColoring.lean` closes end to end with all six `#guard`s green
+  and axioms `[propext, Quot.sound]` (pin updated from `[propext]`).
+  Others yield gracefully (symbolic bounds, huge cards) to the future
+  SAT-backed path reusing `FinVal`/`Differ`.

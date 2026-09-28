@@ -39,8 +39,8 @@ def CorrectSudokuSolver
   (∀ p, solver p = none ↔
     ¬∃ b, ValidSolution p b)
 
-/-- Synthesize a solver function, not merely one completed board. -/
 set_option maxHeartbeats 10000000 in
+/-- Synthesize a solver function, not merely one completed board. -/
 def sudokuInkalaSolver :
     { solver : PartialBoard → Option Board //
       CorrectSudokuSolver solver } := by

@@ -34,8 +34,8 @@ def cycleGraph (n : ℕ) : Graph n :=
 def emptyGraph (n : ℕ) : Graph n :=
   fun _ _ => false
 
-/-- Synthesize a solver for every finite size. -/
 set_option maxHeartbeats 10000000 in
+/-- Synthesize a solver for every finite size. -/
 def tourSolver :
     (n : ℕ) →
       { solver : Graph n → Option (Tour n) //

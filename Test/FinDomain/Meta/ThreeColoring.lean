@@ -46,8 +46,8 @@ def oddWheel : Graph :=
       (j.val = (i.val + 1) % 5 ∨
         i.val = (j.val + 1) % 5))
 
-/-- Synthesize a coloring solver for arbitrary input graphs. -/
 set_option maxHeartbeats 10000000 in
+/-- Synthesize a coloring solver for arbitrary input graphs. -/
 def coloringSolver :
     { solver : Graph → Option Coloring //
       CorrectColoringSolver solver } := by
@@ -60,7 +60,7 @@ def coloringSolver :
 #guard (coloringSolver.1 starGraph).isSome
 #guard (coloringSolver.1 oddWheel).isNone
 
-/-- info: 'FinDomain.Meta.coloringSolver' depends on axioms: [propext] -/
+/-- info: 'FinDomain.Meta.coloringSolver' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in
 #print axioms coloringSolver
 
