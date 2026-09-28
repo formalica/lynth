@@ -29,7 +29,7 @@ def matchSolverDom (dom : Expr) : MetaM (Option (Expr × Expr)) := do
     else
       let oR ← whnf o
       match oR with
-      | .app (.const ``Option _) outTy =>
+      | .app (.const ``Option _) _ =>
         let args := oR.getAppArgs
         if args.size != 1 then pure none
         else pure (some (i, args[0]!))
@@ -220,7 +220,7 @@ closing the current `Subtype` goal. Returns `true` on success.
 /// all `decide` instances are reused from `check` (never freshly
 /// synthesized over alias-typed goal vars). -/
 def synthesize (shape : Lynth.Witness.WitShape) (P : Expr)
-    (inTy outTy elems check : Expr) : TacticM Bool := do
+    (_inTy outTy elems check : Expr) : TacticM Bool := do
   try
     let solverVal ← mkAppM ``Lynth.Meta.Solver.enumSolve #[elems, check]
     unless ← isDefEq (← inferType solverVal) shape.dom do
@@ -307,8 +307,6 @@ def synthesize (shape : Lynth.Witness.WitShape) (P : Expr)
               let hF := mkApp (mkApp hAllF cU) hmem
               let hFeq ← mkExpectedTypeHint hF
                 (← mkEq chkApp (mkConst ``Bool.false []))
-              let symmH ← mkAppM ``Eq.symm #[hFeq]
-              let transH ← mkAppM ``Eq.trans #[symmH, chkTrue]
               -- `chkTrue : chk = true`, `hFeq : chk = false`: derive
               -- `False` via `noConfusion` with explicit `False` motive
               -- (bare `mkAppM` leaves the motive stuck and fails)
