@@ -24,6 +24,7 @@ jobs:
           lake env lean Test/Sat/SolveLoop.lean
           lake env lean Test/Sat/GatesTest.lean
           lake env lean Test/Sat/FinValDifferTest.lean
+          lake env lean Test/Sat/CompileTest.lean
           lake env lean Test/Encode.lean
           lake env lean Test/Tactics.lean
           lake env lean Test/Witness.lean

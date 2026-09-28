@@ -363,3 +363,15 @@ Direction lives in `SPEC.md`; backlog lives in `TASKS.md`.
   and axioms `[propext, Quot.sound]` (pin updated from `[propext]`).
   Others yield gracefully (symbolic bounds, huge cards) to the future
   SAT-backed path reusing `FinVal`/`Differ`.
+- Spec-compiler fragment v1 matchers (`Lynth/Sat/Compile.lean`,
+  generic shapes, zero puzzle names): `matchForall2Fin` (validity
+  lambdas `fun input output => ∀ i j : Fin n, body` with one shared
+  literal bound — `lambdaTelescope` then `forallBoundedTelescope`,
+  since unbounded telescopes swallow the implication too and
+  `forallTelescope` is pi-only) plus `matchGuardNeBody`
+  (`guard = true → lhs ≠ rhs`, matching raw `Ne` heads because `whnf`
+  unfolds `Ne` away, with an unfolded-`Not` fallback).
+  `Test/Sat/CompileTest.lean` (in CI) pins routing over synthetic
+  predicates only: guarded-`≠` accepted; equality conclusions,
+  conjunctions, mismatched bounds rejected. Next: parameterized CNF
+  builder + `solveTotal` wiring on top (SAT-backed symbolic path).
