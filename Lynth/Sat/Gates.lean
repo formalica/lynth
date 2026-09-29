@@ -117,8 +117,62 @@ theorem condClauses_elim (a : Assignment) (b : Bool) (cls : CNF)
   rw [hb] at h
   exact h
 
+
+/-- Sub-CNF extraction: a held flatMap's every piece holds.
+Generic splitter for all compiled encodings. -/
+theorem checkSat_piece (m : Assignment) (l : List α) (f : α → CNF)
+    (x : α) (hx : x ∈ l)
+    (h : checkSat (l.flatMap f) m = true) :
+    checkSat (f x) m = true := by
+  apply checkSat_of_all_single
+  intro cl hc
+  exact checkSat_mem m _ _
+    (List.mem_flatMap.mpr ⟨x, hx, hc⟩) h
+
+/-- Append combination: held parts make a held whole. -/
+theorem appendHeld (a b : CNF) (m : Assignment)
+    (h1 : checkSat a m = true) (h2 : checkSat b m = true) :
+    checkSat (a ++ b) m = true := by
+  have h3 := checkSat_append m a b
+  rw [h3]
+  simp [h1, h2]
+
+/-- Append splitting: a held whole makes held parts. -/
+theorem checkSat_appendHeld (a b : CNF) (m : Assignment)
+    (h : checkSat (a ++ b) m = true) :
+    checkSat a m = true ∧ checkSat b m = true := by
+  have h3 := checkSat_append m a b
+  rw [h3] at h
+  exact (Bool.and_eq_true_iff.mp h)
+theorem checkSat_condFlatMap (m : Assignment) (l : List α)
+    (f : α → CNF) (g : α → Bool) (x : α)
+    (hx : x ∈ l) (hgx : g x = true)
+    (h : checkSat (l.flatMap fun a => condClauses (g a) (f a)) m = true) :
+    checkSat (f x) m = true := by
+  apply checkSat_of_all_single
+  intro cl hc
+  have hmem : cl ∈ l.flatMap fun a => condClauses (g a) (f a) := by
+    apply List.mem_flatMap.mpr
+    refine ⟨x, hx, ?_⟩
+    have heq : condClauses (g x) (f x) = f x := by
+      simp [condClauses, hgx]
+    rw [heq]
+    exact hc
+  exact checkSat_mem m _ _ hmem h
+
 /-- At-least-one clause over literals. -/
 def atLeastOneCNF (lits : List Lit) : CNF := [lits]
+
+/-- At-least-one converse: a true member satisfies the clause. -/
+theorem atLeastOne_of_true (a : Assignment) (lits : List Lit) (l : Lit)
+    (hm : l ∈ lits) (ht : evalLit a l = some true) :
+    checkSat (atLeastOneCNF lits) a = true := by
+  unfold atLeastOneCNF checkSat
+  simp only [List.all_cons, List.all_nil, Bool.and_true]
+  rw [List.any_eq_true]
+  refine ⟨l, hm, ?_⟩
+  unfold evalLit lookup at ht
+  grind
 
 /-- At-least-one correctness: a satisfied clause has a true member. -/
 theorem atLeastOne_correct (a : Assignment) (lits : List Lit)
@@ -134,6 +188,34 @@ theorem atLeastOne_correct (a : Assignment) (lits : List Lit)
 def atMostOneCNF : List Lit → CNF
   | [] => []
   | x :: xs => (xs.map fun y => [negLit x, negLit y]) ++ atMostOneCNF xs
+
+/-- At-most-one membership: every clause is a negated distinct pair
+(needs `Nodup`: otherwise `[¬x, ¬x]` pairs could occur). -/
+theorem mem_atMostOne (lits : List Lit) (nd : lits.Nodup) (c : Clause)
+    (h : c ∈ atMostOneCNF lits) :
+    ∃ x y, x ∈ lits ∧ y ∈ lits ∧ x ≠ y ∧ c = [negLit x, negLit y] := by
+  revert h
+  induction lits with
+  | nil =>
+    intro h
+    simp [atMostOneCNF] at h
+  | cons x xs ih =>
+    intro h
+    have ndx : x ∉ xs ∧ xs.Nodup := List.nodup_cons.mp nd
+    simp only [atMostOneCNF] at h
+    have h3 := List.mem_append.mp h
+    rcases h3 with hm | ht
+    · obtain ⟨y, hym, hfc⟩ := List.mem_map.mp hm
+      subst hfc
+      refine ⟨x, y, List.mem_cons_self,
+        List.mem_cons.mpr (Or.inr hym), ?_, rfl⟩
+      intro hcon
+      subst hcon
+      exact ndx.1 hym
+    · obtain ⟨a, b, ha, hb, hne, hcc⟩ := ih ndx.2 ht
+      exact ⟨a, b, List.mem_cons.mpr (Or.inr ha),
+        List.mem_cons.mpr (Or.inr hb), hne, hcc⟩
+
 
 /-- Pairwise disjunction evaluates: a holding 2-clause has a true side. -/
 theorem checkSat_pair_eval (a : Assignment) (x y : Lit)

@@ -44,19 +44,24 @@ private def checkForall (n : Name) (want : Option Nat) : TacticM Unit := do
     | some _ => throwError "{n}: unexpectedly rejected"
     | none => pure ()
 
-private def checkBodyNe (n : Name) (wantNe : Bool) : TacticM Unit := do
+private def checkBodyKind (n : Name) (want : Option Bool) : TacticM Unit := do
   let P := mkConst n []
   match ← matchForall2Fin P with
   | none =>
-    if wantNe then throwError "{n}: outer rejected"
-    else pure ()
+    match want with
+    | some _ => throwError "{n}: outer rejected"
+    | none => pure ()
   | some (_, _, _, _, _, body) =>
     match ← matchGuardNeBody body with
-    | some _ =>
-      unless wantNe do throwError "{n}: body unexpectedly matched"
+    | some (_, _, _, isNe) =>
+      match want with
+      | some w =>
+        unless isNe == w do throwError "{n}: kind mismatch"
+      | none => throwError "{n}: body unexpectedly matched"
     | none =>
-      if wantNe then throwError "{n}: body unexpectedly rejected"
-      else pure ()
+      match want with
+      | some _ => throwError "{n}: body unexpectedly rejected"
+      | none => pure ()
 
 example : True := by
   run_tac do
@@ -65,6 +70,6 @@ example : True := by
     checkForall ``SynthEqConcl2 (some 4)
     checkForall ``SynthConj none
     checkForall ``SynthMismatch none
-    checkBodyNe ``SynthGuardNe true
-    checkBodyNe ``SynthEqConcl2 false
+    checkBodyKind ``SynthGuardNe (some true)
+    checkBodyKind ``SynthEqConcl2 (some false)
   trivial

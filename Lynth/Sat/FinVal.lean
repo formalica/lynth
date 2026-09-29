@@ -116,6 +116,15 @@ theorem length_flatMap_const (l : List α) (f : α → List β) (k : Nat)
     simp only [List.length_cons]
     ring
 
+/-- Rows from a held cell block: every vertex row holds. -/
+theorem cellsRows (n k : Nat) (m : Assignment)
+    (h : checkSat (cellsCNF n k) m = true) (v : Fin n) :
+    checkSat (oneHotRowCNF (rowLits k v.val)) m = true := by
+  apply checkSat_of_all_single
+  intro cl hcl
+  exact checkSat_mem m _ _
+    (List.mem_flatMap.mpr ⟨v, List.mem_finRange v, hcl⟩) h
+
 /-- Model length. -/
 theorem modelOf_length (n k : Nat) (f : Fin n → Fin k) :
     (modelOf n k f).length = n * k := by
@@ -273,5 +282,80 @@ theorem modelOf_eval (n k : Nat) (_hk : 0 < k) (f : Fin n → Fin k)
   unfold evalLit
   rw [hvar, hlk]
   simp only [ite_true, hpos]
+
+/-- At-most-one completeness: the canonical model respects mutual
+exclusion on rows. -/
+theorem atMostOneComplete (n k v : Nat) (hk : 0 < k)
+    (f : Fin n → Fin k) (w : Fin n) (hw : w.val = v) :
+    checkSat (atMostOneCNF (rowLits k v)) (modelOf n k f) = true := by
+  apply checkSat_of_all_single
+  intro cl hc
+  obtain ⟨x, y, hxm, hym, hne, hcc⟩ :=
+    mem_atMostOne _ (rowLits_nodup k v) _ hc
+  obtain ⟨c1, hcm1, hfc1⟩ := List.mem_map.mp hxm
+  obtain ⟨c2, hcm2, hfc2⟩ := List.mem_map.mp hym
+  subst hfc1
+  subst hfc2
+  -- distinct positions give distinct values
+  have hvv : c1.val ≠ c2.val := by
+    intro hveq
+    apply hne
+    rw [hveq]
+  subst hcc
+  by_cases heq : f w = c1
+  · -- `x` true, `y` false: right side holds
+    have hne2 : f w ≠ c2 := by
+      intro hcon
+      exact hvv (by rw [← heq, hcon])
+    have hnb : decide (f w = c2) = false := by simp [hne2]
+    have hneg : evalLit (modelOf n k f)
+        (-Int.ofNat (idxVar k v c2.val)) = some true := by
+      have he : evalLit (modelOf n k f)
+          ((idxVar k v c2.val : Nat) : Lit)
+          = some (decide (f w = c2)) := by
+        have h0 := modelOf_eval n k hk f w c2
+        rw [hw] at h0
+        simpa using h0
+      simp [evalLit_neg, he, hnb]
+    exact checkSat_pair_of_true_right _ _ _ hneg
+  · -- `x` false: left side holds
+    have hnb : decide (f w = c1) = false := by simp [heq]
+    have heu : evalLit (modelOf n k f)
+        (-Int.ofNat (idxVar k v c1.val)) = some true := by
+      have he : evalLit (modelOf n k f)
+          ((idxVar k v c1.val : Nat) : Lit)
+          = some (decide (f w = c1)) := by
+        have h0 := modelOf_eval n k hk f w c1
+        rw [hw] at h0
+        simpa using h0
+      simp [evalLit_neg, he, hnb]
+    exact checkSat_pair_of_true_left _ _ _ heu
+
+/-- Single-row completeness: the canonical model satisfies one row. -/
+theorem rowComplete (n k : Nat) (hk : 0 < k)
+    (f : Fin n → Fin k) (w : Fin n) :
+    checkSat (oneHotRowCNF (rowLits k w.val)) (modelOf n k f) = true := by
+  have h1 : checkSat (atLeastOneCNF (rowLits k w.val)) (modelOf n k f)
+      = true := by
+    apply atLeastOne_of_true _ _ _
+      (List.mem_map_of_mem (List.mem_finRange (f w)))
+    have he : evalLit (modelOf n k f)
+        ((idxVar k w.val (f w).val : Nat) : Lit)
+        = some (decide (f w = f w)) := by
+      simpa using modelOf_eval n k hk f w (f w)
+    simp [he]
+  have h2 := atMostOneComplete n k w.val hk f w rfl
+  have h3 := checkSat_append (modelOf n k f)
+    (atLeastOneCNF (rowLits k w.val)) (atMostOneCNF (rowLits k w.val))
+  unfold oneHotRowCNF at h3 ⊢
+  rw [h3]
+  simp [h1, h2]
+
+/-- Cell-block completeness: the canonical model satisfies all rows. -/
+theorem cellsComplete (n k : Nat) (hk : 0 < k) (f : Fin n → Fin k) :
+    checkSat (cellsCNF n k) (modelOf n k f) = true := by
+  apply checkSat_flatMap
+  intro v hv
+  exact rowComplete n k hk f v
 
 end Lynth.Sat.FinVal

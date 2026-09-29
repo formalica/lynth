@@ -6,19 +6,21 @@ import Lynth.Sat.Compile
 
 /-!
 Meta solver-function procedure: synthesize total `I → Option O`
-solvers from finite candidate lists plus decidable checks.
+solvers through the shared spec compiler + verified total solver.
 
 Generic over all puzzles: recognizes `Subtype` goals whose domain is
 a solver function (`I → Option O`) and whose predicate unfolds to the
 three-conjunct correctness shape (soundness + completeness +
-none-iff), extracts the validity predicate `P`, and builds
-`enumSolve Fintype.elems (fun i o => decide (P i o))` with correctness
-via `Lynth.Meta.Solver` lemmas (core axioms only). Yields gracefully
-on anything else; never mentions any puzzle by name.
+none-iff), extracts the validity predicate `P`, compiles it to a
+parameterized CNF via the discrimination-tree fragment registry, and
+builds the uniform `runSolver` body with correctness assembled from
+fragment lemmas + solver corollaries. Yields gracefully on anything
+else; never mentions any puzzle by name.
 -/
 namespace Lynth.Meta.Procedure
 
 open Lean Elab Tactic Meta
+open Lynth.Sat.Compile
 
 /-- Solver domain match: `I → Option O` (non-dependent Pi). -/
 def matchSolverDom (dom : Expr) : MetaM (Option (Expr × Expr)) := do
@@ -100,16 +102,214 @@ def extractValid (pred solverDom : Expr) : MetaM (Option (Expr × Expr × Expr))
 /-- Synthesize via the shared compiler + total solver (plan):
 compile the extracted validity predicate to a parameterized CNF,
 run the total solver under the hood, decode, and assemble the three
-correctness proofs from fragment lemmas + solver corollaries.
-Currently yielding: the encoder/assembler lands incrementally below,
-never as a contradicting shortcut. -/
+correctness proofs from fragment lemmas + solver corollaries. -/
 def synthesizeSat (shape : Lynth.Witness.WitShape) (P : Expr) :
     TacticM Bool := do
   try
-    let PR ← whnf P
-    let _ ← lambdaTelescope PR fun lams _ => pure lams.size
-    pure false
-  catch _ => pure false
+    let some frags ← matchFrag P
+      | return false
+    if frags.isEmpty then return false
+    -- uniform bounds from the output type; all frags must agree
+    let outTy ← do
+      let PR ← whnf P
+      lambdaTelescope PR fun lams _ => do
+        if lams.size != 2 then throwError "P shape"
+        pure (← inferType lams[1]!)
+    let outTyR ← whnf outTy
+    let (n, k) ← match outTyR with
+      | .forallE _ dom cod _ =>
+        if cod.hasLooseBVars then return false
+        else
+          match ← finBound dom, ← finBound cod with
+          | some nn, some kk => pure (nn, kk)
+          | _, _ => return false
+      | _ => return false
+    if !(frags.all fun fr => fr.n == n && fr.k == k) then
+      return false
+    -- input type from `P`
+    let inTy ← do
+      let PR ← whnf P
+      lambdaTelescope PR fun lams _ => do
+        if lams.size != 2 then throwError "P shape"
+        pure (← inferType lams[0]!)
+    let hk ← zeroLtLit k
+    let encode ← mkEncode frags n k inTy
+    let decode ← mkDecode n k hk
+    -- solver value: `fun input => runSolver ... input`
+    let solverVal ← withLocalDeclD `input inTy fun gin => do
+      let sv ← mkAppM ``Lynth.Sat.Compile.runSolver
+        #[encode, decode,
+          mkNatLit compileFuel, mkNatLit compileRestart, gin]
+      mkLambdaFVars #[gin] sv
+    unless ← isDefEq (← inferType solverVal) shape.dom do
+      return false
+    -- assemble `hsound` / `hcomp` from fragment masters, then close
+    -- via `runSolver_*` (all first-order over Nats/Bools; `Decidable`
+    -- instances are reused from `check`, never synthesized afresh)
+    let aty ← assignTy
+    let ok ← withLocalDeclD `input inTy fun gin =>
+      withLocalDeclD `mod aty fun m => do
+        -- open body + components with our fvars (single source: the
+        -- closed `encode` is alpha-equal, so everything unifies)
+        let (body, comps) ← mkEncodeBody gin frags n k
+        -- hsound: decode every model into validity
+        let hsound ← withLocalDeclD `h
+          (← mkEq (mkApp (mkApp (mkConst ``Lynth.Sat.checkSat []) body) m)
+            (mkConst ``Bool.true [])) fun h => do
+          let helds ← splitHeld m h comps
+          let mlen := comps.length
+          let cellsHeld ← match helds[mlen - 1]? with
+            | some e => pure e
+            | none => throwError "cells held"
+          let hrows ← withLocalDeclD `v (mkApp (mkConst ``Fin []) (mkNatLit n)) fun v => do
+            let rh ← mkAppM ``Lynth.Sat.FinVal.cellsRows
+              #[mkNatLit n, mkNatLit k, m, cellsHeld, v]
+            mkLambdaFVars #[v] rh
+          -- `P gin (decode m)` split into conjuncts (same order as frags)
+          let decApp := mkApp decode m
+          let papp := mkApp (mkApp P gin) decApp
+          let pappR ← whnf (← Core.betaReduce papp)
+          let conjs := splitConj pappR
+          if conjs.length != frags.length then throwError "conj/frag mismatch"
+          else
+            let mut proofs : List Expr := []
+            for (jc, (cj, fr)) in (List.range frags.length).zip (conjs.zip frags) do
+              let fh ← match helds[jc]? with
+                | some e => pure e
+                | none => throwError "fam held"
+              let pf ← forallTelescope cj fun fvs cbody => do
+                if fr.kind == .ne then
+                  if fvs.size != 3 then throwError "ne shape"
+                  else
+                    let q ← mkAppM ``Lynth.Sat.Compile.neFam_sound
+                      #[inTy, mkNatLit n, mkNatLit k, hk, fr.guard, gin,
+                        m, hrows, fh, fvs[0]!, fvs[1]!, fvs[2]!]
+                    let qh ← mkExpectedTypeHint q cbody
+                    mkLambdaFVars fvs qh
+                else if fr.kind == .eq then
+                  if fvs.size != 3 then throwError "eq shape"
+                  else
+                    let q ← mkAppM ``Lynth.Sat.Compile.eqFam_sound
+                      #[inTy, mkNatLit n, mkNatLit k, hk, fr.guard, gin,
+                        m, hrows, fh, fvs[0]!, fvs[1]!, fvs[2]!]
+                    let qh ← mkExpectedTypeHint q cbody
+                    mkLambdaFVars fvs qh
+                else if fr.kind == .inj then
+                  let q ← mkAppM ``Lynth.Sat.Compile.injFam_sound
+                    #[mkNatLit n, mkNatLit k, hk, m, hrows, fh]
+                  let qh ← mkExpectedTypeHint q cbody
+                  mkLambdaFVars fvs qh
+                else
+                  if fvs.size != 1 then throwError "req shape"
+                  else
+                    let q ← mkAppM ``Lynth.Sat.Compile.reqFam_sound
+                      #[inTy, mkNatLit n, mkNatLit k, hk, fr.guard, gin,
+                        m, hrows, fh, fvs[0]!]
+                    let qh ← mkExpectedTypeHint q cbody
+                    mkLambdaFVars fvs qh
+              proofs := proofs ++ [pf]
+            let whole ← combineConj proofs
+            let wholeH ← mkExpectedTypeHint whole papp
+            mkLambdaFVars #[gin, m, h] wholeH
+            -- traced by caller
+        -- hcomp: every validity proof yields a satisfying model.
+        -- NOTE: `f` binds the *structural* output type (not the
+        -- alias): master applications need the unfolded form.
+        let hcomp ← withLocalDeclD `input inTy fun gin =>
+          withLocalDeclD `f outTyR fun f => do
+            withLocalDeclD `hPf (mkApp (mkApp P gin) f) fun hPf => do
+            -- `P gin f` split; pair conjunct-proofs with frags
+            let papp2 := mkApp (mkApp P gin) f
+            let pappR ← whnf (← Core.betaReduce papp2)
+            let conjs := splitConj pappR
+            if conjs.length != frags.length then throwError "conj/frag mismatch"
+            else
+              let mod ← mkAppM ``Lynth.Sat.FinVal.modelOf
+                #[mkNatLit n, mkNatLit k, f]
+              let cellsProof ← mkAppM ``Lynth.Sat.FinVal.cellsComplete
+                #[mkNatLit n, mkNatLit k, hk, f]
+              let mut famProofs : List Expr := []
+              for (jc, fr) in (List.range frags.length).zip frags do
+                let cp ← conjProj hPf jc frags.length
+                let pf ← if fr.kind == .ne then
+                  mkAppM ``Lynth.Sat.Compile.neFam_complete
+                    #[inTy, mkNatLit n, mkNatLit k, hk, fr.guard,
+                      gin, f, cp]
+                else if fr.kind == .eq then
+                  mkAppM ``Lynth.Sat.Compile.eqFam_complete
+                    #[inTy, mkNatLit n, mkNatLit k, hk, fr.guard,
+                      gin, f, cp]
+                else if fr.kind == .inj then
+                  mkAppM ``Lynth.Sat.Compile.injFam_complete
+                    #[mkNatLit n, mkNatLit k, hk, f, cp]
+                else
+                  mkAppM ``Lynth.Sat.Compile.reqFam_complete
+                    #[inTy, mkNatLit n, mkNatLit k, hk, fr.guard,
+                      gin, f, cp]
+                famProofs := famProofs ++ [pf]
+              -- combine over components rebuilt with this `gin`
+              let (_, comps2) ← mkEncodeBody gin frags n k
+              let fullProof ← combineHeld mod
+                (famProofs ++ [cellsProof]) comps2
+              -- `∃ m, ...` with explicit predicate over the
+              -- scope-local body (never a foreign closed `encode`,
+              -- whose fvars would break defeq)
+              let body2 ← appendChain comps2
+              let aty2 ← assignTy
+              let exPred ← withLocalDeclD `mm aty2 fun mm => do
+                let stmt ← mkEq
+                  (mkApp (mkApp (mkConst ``Lynth.Sat.checkSat []) body2) mm)
+                  (mkConst ``Bool.true [])
+                mkLambdaFVars #[mm] stmt
+              let wit ← mkExpectedTypeHint fullProof
+                (mkApp exPred mod)
+              let exM := mkAppN (mkConst ``Exists.intro [Level.succ Level.zero])
+                #[aty2, exPred, mod, wit]
+              mkLambdaFVars #[gin, f, hPf] exM
+        -- goal assembly: prove the three `Correctness` conjuncts
+        -- about `solverVal` via `runSolver_*`, then close
+        let hct ← inferType hcomp
+        let specApp := mkApp shape.pred solverVal
+        let specR ← whnf specApp
+        let spec3 := splitAnd3 specR
+        let (sC, cC, nC) ← match spec3 with
+          | some t => pure t
+          | none => throwError "resplit"
+        let soundPf ← forallTelescope sC fun fvs sbody => do
+          if fvs.size != 3 then throwError "sound goal shape"
+          else
+            let q ← mkAppM ``Lynth.Sat.Compile.runSolver_sound
+              #[encode, decode, P,
+                mkNatLit compileFuel, mkNatLit compileRestart,
+                hsound, fvs[0]!, fvs[1]!, fvs[2]!]
+            let qh ← mkExpectedTypeHint q sbody
+            mkLambdaFVars fvs qh
+        let completePf ← forallTelescope cC fun fvs cbody => do
+          if fvs.size != 2 then throwError "complete goal shape"
+          else
+            let q ← mkAppM ``Lynth.Sat.Compile.runSolver_complete
+              #[encode, decode, P,
+                mkNatLit compileFuel, mkNatLit compileRestart,
+                hcomp, fvs[0]!, fvs[1]!]
+            let qh ← mkExpectedTypeHint q cbody
+            mkLambdaFVars fvs qh
+        let nonePf ← forallTelescope nC fun fvs nbody => do
+          if fvs.size != 1 then throwError "none goal shape"
+          else
+            let q ← mkAppM ``Lynth.Sat.Compile.runSolver_none
+              #[encode, decode, P,
+                mkNatLit compileFuel, mkNatLit compileRestart,
+                hsound, hcomp, fvs[0]!]
+            let qh ← mkExpectedTypeHint q nbody
+            mkLambdaFVars fvs qh
+        let pfCC ← mkAppM ``And.intro #[completePf, nonePf]
+        let pf ← mkAppM ``And.intro #[soundPf, pfCC]
+        let pfH ← mkExpectedTypeHint pf specApp
+        let val ← shape.mkVal solverVal pfH
+        (← getMainGoal).assign val
+        pure true
+    if ok then return true else return false
+  catch e => throw e
 
 /-- Run: intro Pi params (e.g. board size), recognize solver subtypes,
 extract the validity predicate, and synthesize via the shared

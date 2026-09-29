@@ -50,6 +50,66 @@ solver-functions): emitted iff the stuck guard holds. -/
 def condEqPair (k u v : Nat) (guard : Bool) : CNF :=
   condClauses guard (eqCNF k [(u, v)])
 
+/-- Required-guard unit: forbid value `c` at cell `u` unless `guard`
+holds. Used for edge-coverage shapes (`t i = v → g i v`). -/
+def condUnitNeg (k u c : Nat) (guard : Bool) : CNF :=
+  condClauses (!guard) [[-Int.ofNat (idxVar k u c)]]
+
+/-- Required-guard soundness: a held unit family forces the guard
+at the decoded value. -/
+theorem unitNeg_sound (n k : Nat) (guard : Fin n → Fin k → Bool) (hk : 0 < k)
+    (m : Assignment) (u : Fin n)
+    (hrow : checkSat (oneHotRowCNF (rowLits k u.val)) m = true)
+    (h : ∀ c : Fin k,
+      checkSat (condUnitNeg k u.val c.val (guard u c)) m = true) :
+    guard u (decodeVal n k hk m u) = true := by
+  by_cases hg : guard u (decodeVal n k hk m u) = true
+  · exact hg
+  · -- guard false: the unit clause fires and contradicts decode
+    have hbf : guard u (decodeVal n k hk m u) = false :=
+      Bool.eq_false_of_ne_true hg
+    have hnot : (!(guard u (decodeVal n k hk m u))) = true := by
+      simp [hbf]
+    have hcls := condClauses_elim m _
+      [[-Int.ofNat (idxVar k u.val (decodeVal n k hk m u).val)]]
+      (h _) hnot
+    have hev := (checkSat_single m _).mp hcls
+    rw [evalLit_neg] at hev
+    have hxt := (checkSat_single m _).mp
+      (decodeVal_of_row n k hk m u hrow)
+    rw [hxt] at hev
+    simp at hev
+
+/-- Required-guard completeness: guard-holding values satisfy the family. -/
+theorem unitNeg_complete (n k : Nat) (guard : Fin n → Fin k → Bool) (hk : 0 < k)
+    (f : Fin n → Fin k) (u : Fin n)
+    (h : guard u (f u) = true) :
+    ∀ c : Fin k, checkSat
+      (condUnitNeg k u.val c.val (guard u c))
+      (modelOf n k f) = true := by
+  intro c
+  unfold condUnitNeg
+  by_cases hg : guard u c = true
+  · have hfalse : (!(guard u c)) = false := by simp [hg]
+    rw [hfalse]
+    rfl
+  · have htrue : (!(guard u c)) = true := by
+      have hbf : guard u c = false := Bool.eq_false_of_ne_true hg
+      simp [hbf]
+    rw [htrue]
+    -- unit clause `[¬x]` with `x` false under the model
+    have hne : f u ≠ c := fun hcon => hg (hcon ▸ h)
+    have hnb : decide (f u = c) = false := by simp [hne]
+    have hev : evalLit (modelOf n k f)
+        (-Int.ofNat (idxVar k u.val c.val)) = some true := by
+      rw [evalLit_neg]
+      have he : evalLit (modelOf n k f)
+          ((idxVar k u.val c.val : Nat) : Lit)
+          = some (decide (f u = c)) := by
+        simpa using modelOf_eval n k hk f u c
+      simp [he, hnb]
+    exact (checkSat_single _ _).mpr hev
+
 /-- Soundness (single value): a satisfied difference clause rules out
 both cells reading true at that value. -/
 theorem diffClause_sound (m : Assignment) (k u v c : Nat)
