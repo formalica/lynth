@@ -1,5 +1,5 @@
 import Lynth.Procedure
-import Lynth.Interval.Goals.Closed
+import Lynth.Interval.Goals.Approx
 
 /-!
 # The `interval` procedure of `lynth`
@@ -31,8 +31,14 @@ def run : TacticM ProcedureOutcome := do
         goal.assign pf
         replaceMainGoal []
         return .success
+    else if !(← isProp ty) then
+      let ty' ← whnfR ty
+      if let some pf ← Goals.proveRatSubtype? ty' then
+        goal.assign pf
+        replaceMainGoal []
+        return .success
   catch e =>
-    trace[lynth.interval] "closed: {e.toMessageData}"
+    trace[lynth.interval] "interval: {e.toMessageData}"
   s.restore
   return .failure []
 

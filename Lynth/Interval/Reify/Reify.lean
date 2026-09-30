@@ -1,4 +1,5 @@
 import Lynth.Interval.Reify.Registry
+import Lynth.Interval.Reify.ExactAttr
 import Lynth.Interval.Fns.Arith
 import Mathlib.Tactic.NormNum.Core
 import Mathlib.Tactic.NormNum.Basic
@@ -103,28 +104,65 @@ def isTranscendentalHead (e : Lean.Expr) : Bool :=
   | .const n _ => (`Real).isPrefixOf n || (`Complex).isPrefixOf n && n != ``Complex.ofReal
   | _ => false
 
+/-- head constants of `lynth_exact` left-hand sides, minus generic heads -/
+def exactTriggers : MetaM (Array Name) := do
+  let some ext ← getSimpExtension? `lynth_exact | return #[]
+  let thms ← ext.getTheorems
+  let generic := [``Finset.sum, ``Finset.prod, ``Polynomial.eval, ``HAdd.hAdd, ``HMul.hMul,
+    ``HSub.hSub, ``HDiv.hDiv, ``Neg.neg, ``HPow.hPow, ``Nat.cast, ``Int.cast, ``Rat.cast]
+  let mut out := #[]
+  for tree in [thms.post, thms.pre] do
+    for (k, _) in tree.root.toList do
+      if let .const n _ := k then
+        unless generic.contains n || out.contains n do out := out.push n
+  return out
+
+/-- `Finset.range n` with a numeral `n > 64` (never unrolled by the exact path) -/
+def hasBigRange (e : Lean.Expr) : Bool :=
+  (e.find? fun s => s.isAppOfArity ``Finset.range 1 && (s.appArg!.nat?.any (· > 64))).isSome
+
+/-- `norm_num [lynth_exact]` on a closed term mentioning a trigger -/
+def simpExact? (e : Lean.Expr) : MetaM (Option Simp.Result) := do
+  let some ext ← getSimpExtension? `lynth_exact | return none
+  let triggers ← exactTriggers
+  unless (e.find? fun s => match s with | .const n _ => triggers.contains n | _ => false).isSome do
+    return none
+  if hasBigRange e then return none
+  try
+    let ctx ← Simp.mkContext {} (simpTheorems := #[← getSimpTheorems, ← ext.getTheorems])
+      (congrTheorems := ← getSimpCongrTheorems)
+    return some (← Mathlib.Meta.NormNum.deriveSimp ctx #[← Simp.getSimprocs] true e)
+  catch _ => return none
+
+/-- `(q, e = mk q)`: plain norm_num first, then the `lynth_exact` simp set -/
+def ratEq? {u : Level} {α : Q(Type u)} (e : Q($α)) (mk : ℚ → Option Q($α)) :
+    MetaM (Option (ℚ × Lean.Expr)) := do
+  if let some q ← ratValue? e then
+    if let some c := mk q then
+      if let some pf ← normNumEq? e c then return some (q, pf)
+  let some r ← simpExact? e | return none
+  let e' : Q($α) := r.expr
+  let some q ← ratValue? e' | return none
+  let some c := mk q | return none
+  let some pf ← normNumEq? e' c | return none
+  return some (q, ← mkEqTrans (← r.getProof) pf)
+
 def exact? (t : Ty) (e : Lean.Expr) (senv : Lean.Expr) : MetaM (Option Reified) := do
   if e.hasFVar || e.hasMVar || isTranscendentalHead e then return none
   match t with
   | .real =>
-    let some q ← ratValue? (α := q(ℝ)) e | return none
-    let qE : Q(ℚ) := toExpr q
-    let castE : Q(ℝ) := q(($qE : ℝ))
-    let some pf ← normNumEq? (α := q(ℝ)) e castE | return none
-    let ex := mkApp (mkConst ``Expr.lit) qE
-    return some ⟨.real, ex, pf⟩
+    let some (q, pf) ← ratEq? (α := q(ℝ)) e (fun q => let qE : Q(ℚ) := toExpr q; some q(($qE : ℝ)))
+      | return none
+    return some ⟨.real, mkApp (mkConst ``Expr.lit) (toExpr q), pf⟩
   | .nat =>
-    let some q ← ratValue? (α := q(ℕ)) e | return none
-    unless q.den == 1 && q.num ≥ 0 do return none
-    let n := q.num.toNat
-    let nE := mkNatLit n
-    let some pf ← normNumEq? (α := q(ℕ)) e nE | return none
-    return some ⟨.nat, mkApp (mkConst ``Expr.natLit) nE, pf⟩
+    let some (q, pf) ← ratEq? (α := q(ℕ)) e
+        (fun q => if q.den == 1 && q.num ≥ 0 then some (mkNatLit q.num.toNat) else none)
+      | return none
+    return some ⟨.nat, mkApp (mkConst ``Expr.natLit) (mkNatLit q.num.toNat), pf⟩
   | .cplx =>
-    let some q ← ratValue? (α := q(ℂ)) e | return none
+    let some (q, pf) ← ratEq? (α := q(ℂ)) e (fun q => let qE : Q(ℚ) := toExpr q; some q(($qE : ℂ)))
+      | return none
     let qE : Q(ℚ) := toExpr q
-    let castC : Q(ℂ) := q(($qE : ℂ))
-    let some pf ← normNumEq? (α := q(ℂ)) e castC | return none
     -- `(q : ℂ) = ((q : ℝ) : ℂ)`
     let pf2 : Lean.Expr := q((Complex.ofReal_ratCast $qE).symm)
     let pf ← mkEqTrans pf pf2

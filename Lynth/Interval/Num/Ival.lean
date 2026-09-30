@@ -234,13 +234,13 @@ def mulFin (p : Nat) (a b c d : Dy) : Ival :=
   ⟨some (Dy.min (Dy.min (mulD p a c) (mulD p a d)) (Dy.min (mulD p b c) (mulD p b d))),
    some (Dy.max (Dy.max (mulU p a c) (mulU p a d)) (Dy.max (mulU p b c) (mulU p b d)))⟩
 
-private theorem min_toReal_le_left (u v : Dy) : (Dy.min u v).toReal ≤ u.toReal := by
+theorem min_toReal_le_left (u v : Dy) : (Dy.min u v).toReal ≤ u.toReal := by
   simp only [toReal_def]; exact_mod_cast toRat_min_le_left u v
-private theorem min_toReal_le_right (u v : Dy) : (Dy.min u v).toReal ≤ v.toReal := by
+theorem min_toReal_le_right (u v : Dy) : (Dy.min u v).toReal ≤ v.toReal := by
   simp only [toReal_def]; exact_mod_cast toRat_min_le_right u v
-private theorem le_max_toReal_left (u v : Dy) : u.toReal ≤ (Dy.max u v).toReal := by
+theorem le_max_toReal_left (u v : Dy) : u.toReal ≤ (Dy.max u v).toReal := by
   simp only [toReal_def]; exact_mod_cast le_toRat_max_left u v
-private theorem le_max_toReal_right (u v : Dy) : v.toReal ≤ (Dy.max u v).toReal := by
+theorem le_max_toReal_right (u v : Dy) : v.toReal ≤ (Dy.max u v).toReal := by
   simp only [toReal_def]; exact_mod_cast le_toRat_max_right u v
 
 private theorem mulD_toReal (p) (u v : Dy) : (mulD p u v).toReal ≤ u.toReal * v.toReal := by
