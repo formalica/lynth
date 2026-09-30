@@ -137,3 +137,11 @@ example : True := by
 /-- info: 'Lynth.Sat.Compile.neFam_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms neFam_sound
+
+/-- info: 'Lynth.Sat.Compile.injList_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms injList_sound
+
+/-- info: 'Lynth.Sat.Compile.injList_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms injList_complete

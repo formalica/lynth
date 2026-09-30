@@ -207,6 +207,89 @@ def injFamCNF (n k : Nat) : CNF :=
     (List.finRange n).flatMap fun j =>
       condDiffPair k i.val j.val (decide (i ≠ j))
 
+/-- Scoped injectivity family: pairwise difference over an
+explicit cell list (rows, columns, boxes share this one construction). -/
+def injListCNF (N k : Nat) (cells : List (Fin N)) : CNF :=
+  cells.flatMap fun u =>
+    cells.flatMap fun v =>
+      condDiffPair k u.val v.val (decide (u ≠ v))
+
+/-- Scoped injectivity soundness. -/
+theorem injList_sound (N k : Nat) (hk : 0 < k) (cells : List (Fin N))
+    (m : Assignment)
+    (hrows : ∀ v ∈ cells,
+      checkSat (oneHotRowCNF (rowLits k v.val)) m = true)
+    (hfam : checkSat (injListCNF N k cells) m = true) :
+    ∀ a ∈ cells, ∀ b ∈ cells,
+      decodeVal N k hk m a = decodeVal N k hk m b → a = b := by
+  intro a ha b hb hab
+  by_cases heq : a = b
+  · exact heq
+  · have hne : a ≠ b := heq
+    have hg : decide (a ≠ b) = true := decide_eq_true hne
+    have hfamIJ : condDiffPair k a.val b.val (decide (a ≠ b))
+        = diffCNF k [(a.val, b.val)] := by
+      simp [condDiffPair, condClauses, hg]
+    have hpiece : checkSat (diffCNF k [(a.val, b.val)]) m = true := by
+      rw [← hfamIJ]
+      apply checkSat_of_all_single
+      intro cl hc
+      rw [hfamIJ] at hc
+      obtain ⟨p, hpm, hclm⟩ := List.mem_flatMap.mp hc
+      simp only [List.mem_cons, List.mem_nil_iff, or_false] at hpm
+      subst hpm
+      obtain ⟨c, hcm, hfc⟩ := List.mem_map.mp hclm
+      subst hfc
+      apply checkSat_mem m _ _ _ hfam
+      apply List.mem_flatMap.mpr
+      refine ⟨a, ha, ?_⟩
+      apply List.mem_flatMap.mpr
+      refine ⟨b, hb, ?_⟩
+      show diffClause k a.val b.val c.val ∈
+        condDiffPair k a.val b.val (decide (a ≠ b))
+      rw [hfamIJ]
+      apply List.mem_flatMap.mpr
+      refine ⟨(a.val, b.val), List.mem_cons_self, ?_⟩
+      exact List.mem_map.mpr ⟨c, hcm, rfl⟩
+    have hper : ∀ c : Fin k,
+        checkSat [diffClause k a.val b.val c.val] m = true := by
+      intro c
+      have hmem : diffClause k a.val b.val c.val ∈ diffCNF k [(a.val, b.val)] := by
+        unfold diffCNF
+        exact List.mem_flatMap.mpr ⟨(a.val, b.val), List.mem_cons_self,
+          List.mem_map.mpr ⟨c, List.mem_finRange c, rfl⟩⟩
+      exact checkSat_mem m _ _ hmem hpiece
+    have hdn := diff_sound_decode N k hk m a b
+      (hrows a ha) (hrows b hb) hper
+    exact absurd hab hdn
+
+/-- Scoped injectivity completeness. -/
+theorem injList_complete (N k : Nat) (hk : 0 < k) (cells : List (Fin N))
+    (f : Fin N → Fin k)
+    (hinj : ∀ a ∈ cells, ∀ b ∈ cells, f a = f b → a = b) :
+    checkSat (injListCNF N k cells) (modelOf N k f) = true := by
+  apply checkSat_flatMap
+  intro u hum
+  apply checkSat_flatMap
+  intro v hvm
+  by_cases heq : u = v
+  · have hgf : decide (u ≠ v) = false := by simp [heq]
+    have h0 : condDiffPair k u.val v.val (decide (u ≠ v)) = [] := by
+      simp [condDiffPair, condClauses, hgf]
+    change checkSat (condDiffPair k u.val v.val (decide (u ≠ v)))
+      (modelOf N k f) = true
+    rw [h0]
+    rfl
+  · have hne : u ≠ v := heq
+    have hg : decide (u ≠ v) = true := decide_eq_true hne
+    have h2 : checkSat (diffCNF k [(u.val, v.val)]) (modelOf N k f)
+        = true :=
+      diffCNF_complete N k hk f u v (fun h => hne (hinj u hum v hvm h))
+    have h3 : checkSat (condDiffPair k u.val v.val (decide (u ≠ v)))
+        (modelOf N k f) = true :=
+      condClauses_of_true _ _ _ hg h2
+    simpa [condDiffPair] using h3
+
 /-- Fragment soundness (injectivity). -/
 theorem injFam_sound (n k : Nat) (hk : 0 < k)
     (m : Assignment)
