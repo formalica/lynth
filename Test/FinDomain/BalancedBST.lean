@@ -43,7 +43,7 @@ def balanced : BTree → Bool
   | leaf => true
   | node l _ r =>
     balanced l ∧ balanced r ∧
-    Nat.abs (height l - height r) ≤ 1
+    (height l - height r ≤ 1) && (height r - height l ≤ 1)
 
 end BTree
 

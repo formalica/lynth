@@ -51,3 +51,8 @@ axioms (`propext`, `Classical.choice`, `Quot.sound`).
 Implementation survey of Z3 at `d5d92669ebccc2bb00cecfa72f0f2787941ba3ce`
 (see `docs/Z3-NOTES.md`): `src/sat` (CDCL + DRAT), `src/math/simplex` +
 `src/math/lp` (Simplex), `src/smt` (theory combination).
+
+## Upstream commits
+
+- Lean 4 (`Grind`): `293d5d0c0c3f3dded4688b3ccd6a33939ac5102b`
+- CreuSAT: `232edff08ec6a5713cc3d61797f353550ca94d6f`

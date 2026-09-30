@@ -14,6 +14,20 @@ name = "mathlib"
 scope = "leanprover-community"
 rev = "v4.34.0"
 
+# The `Equiv` corpus: alternative definitions of `Nat`/`List` functions under
+# `Scripts/Test/Equiv`.  Declared as a library so the proof files under
+# `List/Proofs/` can `import` the definitions instead of copying them.
+#
+# The globs name `Scripts.Test.Equiv.Nat.+` and `Scripts.Test.Equiv.List.+`,
+# i.e. each of those two subtrees and everything below it.  The `+` suffix
+# excludes `Scripts.Test.Equiv` itself from the library.
+#
+# Not listed in `defaultTargets`, so a plain `lake build` still builds only
+# `Lynth`.  Build this one explicitly with `lake build EquivCorpus`.
+[[lean_lib]]
+name = "EquivCorpus"
+globs = ["Scripts.Test.Equiv.Nat.+", "Scripts.Test.Equiv.List.+"]
+
 [[lean_lib]]
 name = "Lynth"
 # Native precompilation: tactic execution (notably the SAT solver hot
