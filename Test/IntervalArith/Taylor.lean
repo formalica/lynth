@@ -5,7 +5,7 @@ namespace IntervalArith
 
 noncomputable def derivativeAt
     (f : ℝ → ℝ) (k : Nat) (z : ℝ) : ℝ :=
-  Function.iterate deriv k f z
+  deriv^[k] f z
 
 /-- The rational coefficients approximate the Taylor coefficients
 `f^(k)(z) / k!`. -/

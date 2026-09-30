@@ -65,7 +65,7 @@ noncomputable def expCosNegativeInequalityResidual (x : Rat) : ℝ :=
 
 /-- **AR01** — `r^5 - r - 1 = 0` on `[1, 3/2]`. -/
 def quinticRoot :
-    RootOrNoRoot quinticResidual 1 3/2 rootTolerance := by
+    RootOrNoRoot quinticResidual 1 (3/2) rootTolerance := by
   lynth
 
 /-- **C01** — `exp (cos r) = r + 2` on `[0, 1]`. -/
@@ -85,12 +85,12 @@ def expNegSquareRoot :
 
 /-- **C04** — `sin (r^2) = r / 2` on `[1/2, 1]`. -/
 def sinSquareRoot :
-    RootOrNoRoot sinSquareResidual 1/2 1 rootTolerance := by
+    RootOrNoRoot sinSquareResidual (1/2) 1 rootTolerance := by
   lynth
 
 /-- **C05** — `exp (sin r) = r + 11/10` on `[1/10, 1]`. -/
 def expSinOffsetRoot :
-    RootOrNoRoot expSinOffsetResidual 1/10 1 rootTolerance := by
+    RootOrNoRoot expSinOffsetResidual (1/10) 1 rootTolerance := by
   lynth
 
 /-- **N01** — `exp (cos r) = -1` has no solution on `[0, 1]`. -/
@@ -100,7 +100,7 @@ def expCosNoSolution :
 
 /-- **N02** — `cos (r^2) = r^2 + 1` has no solution on `[1/2, 1]`. -/
 def cosSquareNoSolution :
-    RootOrNoRoot cosSquareNoSolutionResidual 1/2 1 rootTolerance := by
+    RootOrNoRoot cosSquareNoSolutionResidual (1/2) 1 rootTolerance := by
   lynth
 
 /-- **N03** — `exp (sin r) + r = -1` has no solution on `[0, 1]`. -/
@@ -115,7 +115,7 @@ def sinExpNoSolution :
 
 /-- **I01** — `exp (cos r) - r - 2 < 0` on `[4/5, 1]`. -/
 def expCosNegativeInequalitySolution :
-    InequalityOrNoWitness expCosInequalityResidual 4/5 1 rootTolerance := by
+    InequalityOrNoWitness expCosInequalityResidual (4/5) 1 rootTolerance := by
   lynth
 
 /-- **I02** — `exp (cos r) < -1` has no witness on `[0, 1]`. -/

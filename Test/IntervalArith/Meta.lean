@@ -8,6 +8,7 @@ def expNegSquareConverges (a b : ℝ) : Prop :=
     (fun y : ℝ => Real.exp (-(y ^ 2)))
     (Set.Icc a b)
 
+open Classical in
 def integralExpNegSqMeta :
     { f : Rat → Rat → Rat //
       ∀ a b : Rat,
@@ -24,6 +25,13 @@ def expMeta :
     { f : Rat → Rat //
       ∀ x : Rat,
         abs (Real.exp (x : ℝ) - (f x : ℝ)) <
+          1 / 1000 } := by
+  lynth
+
+def expExpMetaRange :
+    { f : Rat → Rat //
+      ∀ x : Rat, -10 < x -> x < 10 ->
+        abs (Real.exp (Real.exp (x : ℝ)) - (f x : ℝ)) <
           1 / 1000 } := by
   lynth
 

@@ -479,22 +479,17 @@ Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def log_mul_hypergeometric : { x : Rat // abs (Real.log 2 * ordinaryHypergeometric (1 : ℝ) 1 1 ((1 / 2 : ℝ)) - x) < 1 / 1000000 } := by lynth
 
-/-- **MP31** — `regularized_gauss_hypergeometric_neg5`: `regularizedGaussHGFun` composed in one
-expression, evaluated at `a = 1, b = 2, c = 3, z = -5`.
+/-- **MP31** — `regularized_gauss_hypergeometric_neg_half`: `regularizedGaussHGFun` evaluated at
+`a = 1, b = 2, c = 3, z = -1/2`.
 
 `x` is the *unknown*: the tactic has to produce a rational witness inside the tolerance
-`1/1000000`. Arb encloses the composition in `0.1283296212308777939359317` /
-`0.1283296212308777939359317` (it is far narrower than the tolerance), which is the certificate
-that such an `x` exists; the concrete witness Arb found -- `128329621231/1000000000000`, within
-`1.22e-13` -- is recorded here only, never in the goal.
+`1/1000000`. Closed form: `2F1(1,2;3;z)/Gamma(3) = sum z^n/(n+2) = (-log(1-z) - z)/z^2`, i.e.
+`4 * (1/2 - log (3/2)) = 0.3781395675673425` at `z = -1/2`.
 
-the regularized Gaussian hypergeometric function (`Complex.regularizedGaussHGFun`, i.e.
-2F1/Gamma(c)) evaluated outside the unit disc: the same value as the Arb specialized kernel D06
-check.
-
-Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
-`arb/compositions.py`). -/
-def regularized_gauss_hypergeometric_neg5 : { x : Rat // abs ((Complex.regularizedGaussHGFun 1 2 3 (-5)).re - x) < 1 / 1000000 } := by lynth
+Changed from `z = -5`: Mathlib defines the function as the sum of its power series, which
+diverges for `|z| >= 1` (its Mathlib value at `-5` is `0`), so the test now uses a point
+inside the disc of convergence. -/
+def regularized_gauss_hypergeometric_neg_half : { x : Rat // abs ((Complex.regularizedGaussHGFun 1 2 3 (-1 / 2)).re - x) < 1 / 1000000 } := by lynth
 
 /-- **MP32** — `regularized_pfq_3f2`: `regularizedHGFun` composed in one expression, evaluated at
 `3F2: a = (1, 1, 1), b = (2, 2), z = 1/2`.
@@ -650,11 +645,11 @@ def regularized_pfq_terminating_3f2 : { x : Rat // abs ((Complex.regularizedHGFu
 /-- info: 'IntervalArith.log_mul_hypergeometric' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms log_mul_hypergeometric
-/-- info: 'IntervalArith.regularized_gauss_hypergeometric_neg5' depends on axioms: [propext,
+/-- info: 'IntervalArith.regularized_gauss_hypergeometric_neg_half' depends on axioms: [propext,
  Classical.choice,
  Quot.sound] -/
 #guard_msgs in
-#print axioms regularized_gauss_hypergeometric_neg5
+#print axioms regularized_gauss_hypergeometric_neg_half
 /-- info: 'IntervalArith.regularized_pfq_3f2' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms regularized_pfq_3f2

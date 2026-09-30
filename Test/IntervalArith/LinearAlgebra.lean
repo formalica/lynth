@@ -6,7 +6,7 @@ namespace IntervalArith
 def Vec3 := Fin 3 → Rat
 
 def linearMatrix : Matrix (Fin 3) (Fin 3) ℝ :=
-  !![![2, 1, 1], ![1, 3, -1], ![1, -1, 2]]
+  !![2, 1, 1; 1, 3, -1; 1, -1, 2]
 
 def linearRhs : Fin 3 → ℝ :=
   ![5, 1, 7]
@@ -22,7 +22,7 @@ def linearSolveGoal :
   lynth
 
 def rotationMatrix : Matrix (Fin 2) (Fin 2) ℝ :=
-  !![![0, -1], ![1, 0]]
+  !![0, -1; 1, 0]
 
 /-- L02 — approximate the matrix exponential of the rotation matrix.
 Etalon: `[[cos 1, -sin 1], [sin 1, cos 1]]`. -/

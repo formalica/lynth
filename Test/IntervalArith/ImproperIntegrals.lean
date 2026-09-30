@@ -53,7 +53,7 @@ noncomputable def logIntegrand (x : ℝ) : ℝ :=
 noncomputable def narrowGaussian (x : ℝ) : ℝ :=
   Real.exp (-1000 * (x - 1 / 2) ^ 2)
 
-noncomputable def cubeSum (x : ℝ ^ 10) : ℝ :=
+noncomputable def cubeSum (x : Fin 10 → ℝ) : ℝ :=
   ∑ i : Fin 10, x i
 
 noncomputable def reciprocalX (x : ℝ) : ℝ :=
@@ -133,8 +133,8 @@ def narrowGaussianSubtype :
 def cubeSumSubtype :
     { x : Rat //
       MeasureTheory.IntegrableOn cubeSum
-          (Set.Icc (0 : ℝ ^ 10) (1 : ℝ ^ 10)) ∧
-      abs ((∫ y in Set.Icc (0 : ℝ ^ 10) (1 : ℝ ^ 10), cubeSum y) - x) < integralTolerance } := by
+          (Set.Icc (0 : Fin 10 → ℝ) (1 : Fin 10 → ℝ)) ∧
+      abs ((∫ y in Set.Icc (0 : Fin 10 → ℝ) (1 : Fin 10 → ℝ), cubeSum y) - x) < integralTolerance } := by
   lynth
 
 /-- **ID01** — `∫₀¹ 1/x dx`; the improper integral diverges. -/
