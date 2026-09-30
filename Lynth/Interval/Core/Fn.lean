@@ -1,4 +1,5 @@
 import Lynth.Interval.Core.Ctx
+import Lynth.Interval.Core.Asy
 
 /-!
 # Function records (the open registry's entries)
@@ -50,6 +51,11 @@ structure Fn1 (a r : Ty) where
   sound : ∀ (c : Ctx) (x : a.Val) (y : r.Val) (X : a.Enc),
     c.Valid → graph x y → a.Mem X x → r.Mem (ev c X) y
   cost : Nat := 1
+  /-- asymptotic (sequence-tail) rule, `docs/interval/08-series.md §2` -/
+  asy : Ctx → ℕ → a.Asy → r.Asy := fun _ _ _ => r.asyTop
+  asy_sound : ∀ (c : Ctx) (N : ℕ) (A : a.Asy) (f : ℕ → a.Val) (g : ℕ → r.Val),
+    c.Valid → (∀ k, graph (f k) (g k)) → a.AsyHolds N f A → r.AsyHolds N g (asy c N A) := by
+    intros; exact Ty.asyHolds_top _ _ _
 
 /-- binary function -/
 structure Fn2 (a b r : Ty) where
@@ -60,6 +66,12 @@ structure Fn2 (a b r : Ty) where
   sound : ∀ (c : Ctx) (x : a.Val) (y : b.Val) (z : r.Val) (X : a.Enc) (Y : b.Enc),
     c.Valid → graph x y z → a.Mem X x → b.Mem Y y → r.Mem (ev c X Y) z
   cost : Nat := 1
+  /-- asymptotic (sequence-tail) rule -/
+  asy : Ctx → ℕ → a.Asy → b.Asy → r.Asy := fun _ _ _ _ => r.asyTop
+  asy_sound : ∀ (c : Ctx) (N : ℕ) (A : a.Asy) (B : b.Asy) (f : ℕ → a.Val) (g : ℕ → b.Val)
+    (h : ℕ → r.Val), c.Valid → (∀ k, graph (f k) (g k) (h k)) → a.AsyHolds N f A →
+      b.AsyHolds N g B → r.AsyHolds N h (asy c N A B) := by
+    intros; exact Ty.asyHolds_top _ _ _
 
 namespace Fn0
 variable {r : Ty} (f : Fn0 r)

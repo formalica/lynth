@@ -1,6 +1,7 @@
 import Lynth.Interval.Fns.Trig
 import Lynth.Interval.Fns.Log
 import Lynth.Interval.Series.Arctan
+import Lynth.Interval.Series.AsyOps
 import Mathlib.Analysis.SpecialFunctions.Arsinh
 import Mathlib.Analysis.SpecialFunctions.Arcosh
 import Mathlib.Analysis.SpecialFunctions.Artanh
@@ -324,6 +325,92 @@ theorem mem_rpowIval {c : Ctx} (hc : c.Valid) {x y : ℝ} {X Y : Ival} (hx : x �
     exact mem_expIval c (Ival.mem_mul (mem_logIval hc hx) hy)
   · exact Ival.mem_top _
 
+/-- AIA rule for `x ^ y` on `pow` values: constant exponent, or `(k + a)^(k + b)`-type
+self powers -/
+def rpowAsyPow (c : Ctx) (N a : ℕ) (α : ℚ) (I : Ival) (b : ℕ) (β : ℚ) (K : Ival) : RAsy :=
+  if β = 0 then
+    match K.point? with
+    | some s =>
+      if I.pos then
+        let E := rpowIval c I (Ival.pt s)
+        .pow a (α * s.toRat) E E
+      else .top
+    | none => .top
+  else if α = 1 ∧ β = 1 ∧ RAsy.unitJ K = true ∧ 2 ≤ N + a then
+    match I.lo with
+    | some l => if Dy.leB Dy.one l then
+        .grow (Dy.ofNat ((N + a) ^ (N + b))) (Dy.ofNat (N + a)) else .top
+    | none => .top
+  else .top
+
+def rpowAsy (c : Ctx) (N : ℕ) : RAsy → RAsy → RAsy
+  | .pow a α I _, .pow b β K _ => rpowAsyPow c N a α I b β K
+  | _, _ => .top
+
+theorem rpowAsy_holds {c : Ctx} (hc : c.Valid) {N : ℕ} {A B : RAsy} {f g : ℕ → ℝ}
+    (hA : A.Holds N f) (hB : B.Holds N g) : (rpowAsy c N A B).Holds N (fun k => f k ^ g k) := by
+  cases A with
+  | pow a α I J =>
+    cases B with
+    | pow b β K L =>
+      show (rpowAsyPow c N a α I b β K).Holds N _
+      unfold rpowAsyPow
+      split
+      · rename_i hβ; subst hβ
+        split
+        · rename_i s hs
+          split
+          · rename_i hI
+            intro k hk
+            obtain ⟨hpos, u, hu, _, hfe⟩ := hA k hk
+            obtain ⟨_, v, hv, _, hge⟩ := hB k hk
+            have hv' : v = s.toReal := Ival.eq_of_point? hv hs
+            have hgv : g k = s.toReal := by rw [hge, hv']; simp
+            have hu0 : 0 < u := Ival.pos_of hI hu
+            have hE : u ^ s.toReal ∈ rpowIval c I (Ival.pt s) := mem_rpowIval hc hu (Ival.mem_pt s)
+            refine ⟨hpos, u ^ s.toReal, hE, by rwa [abs_of_nonneg (Real.rpow_nonneg hu0.le _)], ?_⟩
+            show f k ^ g k = _
+            rw [hfe, hgv, Real.mul_rpow (Real.rpow_nonneg hpos.le _) hu0.le, ← Real.rpow_mul hpos.le]
+            congr 2
+            simp [toReal_def]
+          · trivial
+        · trivial
+      · split
+        · rename_i _ hcnd
+          obtain ⟨hα, hβ, hK, hNa⟩ := hcnd
+          subst hα; subst hβ
+          split
+          · rename_i l hl
+            split
+            · rename_i hl1
+              have hl1' := Dy.one_le_of_leB hl1
+              intro k hk
+              obtain ⟨hpos, u, hu, _, hfe⟩ := hA k hk
+              obtain ⟨_, v, hv, _, hge⟩ := hB k hk
+              have hlu : l.toReal ≤ u := hu.1 l hl
+              have hu1 : 1 ≤ u := le_trans hl1' hlu
+              have hv1 : v = 1 := RAsy.abs_eq_one_of_unitJ hv hK
+              have hfx : f k = ((k : ℝ) + a) * u := by rw [hfe]; simp
+              have hgy : g k = (k : ℝ) + b := by rw [hge, hv1]; simp
+              have hNa' : (2 : ℝ) ≤ (N : ℝ) + a := by exact_mod_cast hNa
+              have hk' : (N : ℝ) ≤ k := by exact_mod_cast hk
+              have hx : (N : ℝ) + a ≤ f k := by rw [hfx]; nlinarith
+              have hy0 : (0 : ℝ) ≤ g k := by rw [hgy]; positivity
+              show (Dy.ofNat ((N + a) ^ (N + b))).toReal * (Dy.ofNat (N + a)).toReal ^ (k - N) ≤
+                f k ^ g k
+              have e1 : (Dy.ofNat ((N + a) ^ (N + b))).toReal = ((N : ℝ) + a) ^ (N + b) := by
+                simp [toReal_def]
+              have e2 : (Dy.ofNat (N + a)).toReal = (N : ℝ) + a := by simp [toReal_def]
+              rw [e1, e2, ← pow_add, show N + b + (k - N) = k + b by omega]
+              calc ((N : ℝ) + a) ^ (k + b) = ((N : ℝ) + a) ^ (g k) := by
+                    rw [hgy, ← Real.rpow_natCast]; push_cast; ring_nf
+                _ ≤ f k ^ g k := Real.rpow_le_rpow (by linarith) hx hy0
+            · trivial
+          · trivial
+        · trivial
+    | _ => trivial
+  | _ => trivial
+
 @[lynth_fn] def rpowR : Fn2 .real .real .real where
   name := "rpow"
   graph x y z := z = x ^ y
@@ -331,6 +418,10 @@ theorem mem_rpowIval {c : Ctx} (hc : c.Valid) {x y : ℝ} {X Y : Ival} (hx : x �
   ev := rpowIval
   sound := fun _ _ _ _ _ _ hc hz hx hy => by obtain rfl := hz; exact mem_rpowIval hc hx hy
   cost := 100
+  asy := rpowAsy
+  asy_sound := fun _ _ _ _ f g h hc hg hA hB => by
+    obtain rfl : h = fun k => f k ^ g k := funext fun k => hg k
+    exact rpowAsy_holds hc hA hB
 
 def sincIval (c : Ctx) (X : Ival) : Ival :=
   if X.pos || X.negv then Ival.div (c.prec + 8) (sinIval c X) X

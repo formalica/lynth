@@ -1,5 +1,6 @@
 import Lynth.Procedure
 import Lynth.Interval.Goals.Approx
+import Lynth.Interval.Goals.Series
 
 /-!
 # The `interval` procedure of `lynth`
@@ -31,7 +32,15 @@ def run : TacticM ProcedureOutcome := do
         goal.assign pf
         replaceMainGoal []
         return .success
+      if let some pf ← Goals.proveSeries? ty then
+        goal.assign pf
+        replaceMainGoal []
+        return .success
     else if !(← isProp ty) then
+      if let some pf ← Goals.proveSeries? ty then
+        goal.assign pf
+        replaceMainGoal []
+        return .success
       let ty' ← whnfR ty
       if let some pf ← Goals.proveRatSubtype? ty' then
         goal.assign pf

@@ -1,4 +1,5 @@
 import Lynth.Interval.Reify.Registry
+import Lynth.Interval.Series.AsyOps
 import Mathlib.Data.Nat.Fib.Basic
 
 /-!
@@ -20,6 +21,10 @@ open Lynth.Interval
   exu := exu_eq₂ _
   ev c X Y := Ival.add c.prec X Y
   sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact Ival.mem_add hx hy
+  asy c N A B := RAsy.add c.prec N A B
+  asy_sound := fun _ _ _ _ f g h _ hg hA hB => by
+    obtain rfl : h = fun k => f k + g k := funext fun k => hg k
+    exact RAsy.add_holds hA hB
 
 @[lynth_fn] def subR : Fn2 .real .real .real where
   name := "-"
@@ -27,6 +32,10 @@ open Lynth.Interval
   exu := exu_eq₂ _
   ev c X Y := Ival.sub c.prec X Y
   sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact Ival.mem_sub hx hy
+  asy c N A B := RAsy.add c.prec N A (RAsy.neg B)
+  asy_sound := fun _ _ _ _ f g h _ hg hA hB => by
+    obtain rfl : h = fun k => f k + -g k := funext fun k => (hg k).trans (sub_eq_add_neg _ _)
+    exact RAsy.add_holds hA (RAsy.neg_holds hB)
 
 @[lynth_fn] def mulR : Fn2 .real .real .real where
   name := "*"
@@ -34,6 +43,10 @@ open Lynth.Interval
   exu := exu_eq₂ _
   ev c X Y := Ival.mul c.prec X Y
   sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact Ival.mem_mul hx hy
+  asy c N A B := RAsy.mul c.prec N A B
+  asy_sound := fun _ _ _ _ f g h _ hg hA hB => by
+    obtain rfl : h = fun k => f k * g k := funext fun k => hg k
+    exact RAsy.mul_holds hA hB
 
 @[lynth_fn] def divR : Fn2 .real .real .real where
   name := "/"
@@ -41,6 +54,10 @@ open Lynth.Interval
   exu := exu_eq₂ _
   ev c X Y := Ival.div c.prec X Y
   sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact Ival.mem_div hx hy
+  asy c N A B := RAsy.mul c.prec N A (RAsy.inv c.prec B)
+  asy_sound := fun _ _ _ _ f g h _ hg hA hB => by
+    obtain rfl : h = fun k => f k * (g k)⁻¹ := funext fun k => (hg k).trans (div_eq_mul_inv _ _)
+    exact RAsy.mul_holds hA (RAsy.inv_holds hB)
 
 @[lynth_fn] def negR : Fn1 .real .real where
   name := "neg"
@@ -48,6 +65,10 @@ open Lynth.Interval
   exu := exu_eq _
   ev _ X := Ival.neg X
   sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact Ival.mem_neg hx
+  asy _ _ A := RAsy.neg A
+  asy_sound := fun _ _ _ f g _ hg hA => by
+    obtain rfl : g = fun k => -f k := funext fun k => hg k
+    exact RAsy.neg_holds hA
 
 @[lynth_fn] def invR : Fn1 .real .real where
   name := "inv"
@@ -55,6 +76,10 @@ open Lynth.Interval
   exu := exu_eq _
   ev c X := Ival.inv c.prec X
   sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact Ival.mem_inv hx
+  asy c _ A := RAsy.inv c.prec A
+  asy_sound := fun _ _ _ f g _ hg hA => by
+    obtain rfl : g = fun k => (f k)⁻¹ := funext fun k => hg k
+    exact RAsy.inv_holds hA
 
 @[lynth_fn] def npowR : Fn2 .real .nat .real where
   name := "^ℕ"
@@ -72,6 +97,21 @@ open Lynth.Interval
     · rename_i m hm
       rw [NIval.eq_of_isPoint hn hm]; exact Ival.mem_npow hx m
     · exact Ival.mem_top _
+  asy c N A B := match B with
+    | .const n => RAsy.npowC c.prec n A
+    | .affine b => RAsy.npowK c.prec N b A
+    | _ => RAsy.top
+  asy_sound := fun c N A B f g h _ hg hA hB => by
+    obtain rfl : h = fun k => f k ^ g k := funext fun k => hg k
+    cases B with
+    | const n =>
+      exact RAsy.holds_congr (RAsy.npowC_holds (p := c.prec) (n := n) hA)
+        (fun k hk => by show f k ^ n = f k ^ g k; rw [hB k hk])
+    | affine b =>
+      exact RAsy.holds_congr (RAsy.npowK_holds (p := c.prec) (b := b) hA)
+        (fun k hk => by show f k ^ (k + b) = f k ^ g k; rw [hB k hk])
+    | grow => trivial
+    | top => trivial
 
 @[lynth_fn] def absR : Fn1 .real .real where
   name := "abs"
@@ -79,6 +119,10 @@ open Lynth.Interval
   exu := exu_eq _
   ev _ X := Ival.abs X
   sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact Ival.mem_abs hx
+  asy _ _ A := RAsy.abs A
+  asy_sound := fun _ _ _ f g _ hg hA => by
+    obtain rfl : g = fun k => |f k| := funext fun k => hg k
+    exact RAsy.abs_holds hA
 
 @[lynth_fn] def maxR : Fn2 .real .real .real where
   name := "max"
@@ -109,6 +153,10 @@ open Lynth.Interval
   exu := exu_eq _
   ev _ N := NIval.toIval N
   sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact NIval.mem_toIval hx
+  asy _ N A := RAsy.natCast N A
+  asy_sound := fun _ _ _ f g _ hg hA => by
+    obtain rfl : g = fun k => (f k : ℝ) := funext fun k => hg k
+    exact RAsy.natCast_holds hA
 
 @[lynth_fn] def addN : Fn2 .nat .nat .nat where
   name := "+ℕ"
@@ -116,6 +164,10 @@ open Lynth.Interval
   exu := exu_eq₂ _
   ev _ X Y := NIval.add X Y
   sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact NIval.mem_add hx hy
+  asy _ _ A B := NAsy.add A B
+  asy_sound := fun _ _ _ _ f g h _ hg hA hB => by
+    obtain rfl : h = fun k => f k + g k := funext fun k => hg k
+    exact NAsy.add_holds hA hB
 
 @[lynth_fn] def mulN : Fn2 .nat .nat .nat where
   name := "*ℕ"
@@ -138,6 +190,10 @@ open Lynth.Interval
   ev _ N := NIval.mapMono Nat.factorial N
   sound := fun _ _ _ _ _ hy hx => by
     obtain rfl := hy; exact NIval.mem_mapMono Nat.monotone_factorial hx
+  asy _ N A := NAsy.factorial N A
+  asy_sound := fun _ _ _ f g _ hg hA => by
+    obtain rfl : g = fun k => (f k).factorial := funext fun k => hg k
+    exact NAsy.factorial_holds hA
 
 @[lynth_fn] def fibN : Fn1 .nat .nat where
   name := "fib"
@@ -146,6 +202,10 @@ open Lynth.Interval
   ev _ N := NIval.mapMono Nat.fib N
   sound := fun _ _ _ _ _ hy hx => by
     obtain rfl := hy; exact NIval.mem_mapMono Nat.fib_mono hx
+  asy _ N A := NAsy.fib N A
+  asy_sound := fun _ _ _ f g _ hg hA => by
+    obtain rfl : g = fun k => Nat.fib (f k) := funext fun k => hg k
+    exact NAsy.fib_holds hA
 
 @[lynth_fn] def powN : Fn2 .nat .nat .nat where
   name := "^ℕℕ"
