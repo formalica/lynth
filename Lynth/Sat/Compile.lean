@@ -479,6 +479,40 @@ def matchGuardNeBody (body : Expr) :
         pure none
   | _ => pure none
 
+/-- 2D index linearization: `(r, c)` over `Fin 9` to `Fin 81`.
+Sizes are puzzle parameters (like `n = 8` for coloring); the shape
+is generic. All bounds discharge by `omega`/`decide` on literals. -/
+def lin2D (r c : Fin 9) : Fin 81 :=
+  ⟨r.val * 9 + c.val, by omega⟩
+
+/-- Inverse: split a linear cell back into row/col. -/
+def unlin2D (i : Fin 81) : Fin 9 × Fin 9 :=
+  (⟨i.val / 9, by omega⟩, ⟨i.val % 9, by omega⟩)
+
+/-- Linearization is injective on pairs. -/
+theorem lin2D_inj (r₁ c₁ r₂ c₂ : Fin 9)
+    (h : lin2D r₁ c₁ = lin2D r₂ c₂) : r₁ = r₂ ∧ c₁ = c₂ := by
+  have h1 := r₁.isLt
+  have h2 := c₁.isLt
+  have h3 := r₂.isLt
+  have h4 := c₂.isLt
+  have hv : r₁.val * 9 + c₁.val = r₂.val * 9 + c₂.val := by
+    have h0 := congrArg Fin.val h
+    simpa [lin2D] using h0
+  have hr : r₁.val = r₂.val := by omega
+  have hc : c₁.val = c₂.val := by omega
+  exact ⟨Fin.ext hr, Fin.ext hc⟩
+
+/-- Roundtrip: unlinearizing is left-inverse. -/
+theorem unlin_lin (r c : Fin 9) :
+    unlin2D (lin2D r c) = (r, c) := by
+  have h1 := r.isLt
+  have h2 := c.isLt
+  simp only [unlin2D, lin2D]
+  have hr : (r.val * 9 + c.val) / 9 = r.val := by omega
+  have hc : (r.val * 9 + c.val) % 9 = c.val := by omega
+  simp [hr, hc, Fin.ext_iff]
+
 /-- Find an output application `c x` (head `c`, any argument) in `e`. -/
 def findOutApp (e : Expr) (c : FVarId) : Option Expr :=
   e.find? fun s => match s with

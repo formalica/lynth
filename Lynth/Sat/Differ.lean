@@ -55,6 +55,11 @@ holds. Used for edge-coverage shapes (`t i = v → g i v`). -/
 def condUnitNeg (k u c : Nat) (guard : Bool) : CNF :=
   condClauses (!guard) [[-Int.ofNat (idxVar k u c)]]
 
+/-- Forced-value unit: require value `c` at cell `u` when `guard`
+holds. Used for givens (`p r c = some v → b r c = v`). -/
+def condUnitPos (k u c : Nat) (guard : Bool) : CNF :=
+  condClauses guard [[Int.ofNat (idxVar k u c)]]
+
 /-- Required-guard soundness: a held unit family forces the guard
 at the decoded value. -/
 theorem unitNeg_sound (n k : Nat) (guard : Fin n → Fin k → Bool) (hk : 0 < k)
@@ -109,6 +114,48 @@ theorem unitNeg_complete (n k : Nat) (guard : Fin n → Fin k → Bool) (hk : 0 
         simpa using modelOf_eval n k hk f u c
       simp [he, hnb]
     exact (checkSat_single _ _).mpr hev
+
+/-- Forced-value soundness: held positive units pin the decoded value. -/
+theorem unitPos_sound (n k : Nat) (guard : Fin n → Fin k → Bool)
+    (hk : 0 < k) (m : Assignment) (u : Fin n)
+    (hrow : checkSat (oneHotRowCNF (rowLits k u.val)) m = true)
+    (h : ∀ c : Fin k,
+      checkSat (condUnitPos k u.val c.val (guard u c)) m = true)
+    (c : Fin k) (hg : guard u c = true) :
+    decodeVal n k hk m u = c := by
+  have hcls := condClauses_elim m _ _ (h c) hg
+  have hev := (checkSat_single m _).mp hcls
+  -- `x_c` true plus decode reads some true value: uniqueness
+  have hxt := (checkSat_single m _).mp
+    (decodeVal_of_row n k hk m u hrow)
+  have huniq := rowLit_unique m k u.val hrow c
+    (decodeVal n k hk m u) hev hxt
+  exact Fin.ext huniq.symm
+
+/-- Forced-value completeness: pinned values satisfy the units. -/
+theorem unitPos_complete (n k : Nat) (guard : Fin n → Fin k → Bool)
+    (hk : 0 < k) (f : Fin n → Fin k) (u : Fin n)
+    (h : ∀ c : Fin k, guard u c = true → f u = c) :
+    ∀ c : Fin k, checkSat
+      (condUnitPos k u.val c.val (guard u c))
+      (modelOf n k f) = true := by
+  intro c
+  unfold condUnitPos
+  by_cases hg : guard u c = true
+  · have hfc : f u = c := h c hg
+    have hev : evalLit (modelOf n k f)
+        (Int.ofNat (idxVar k u.val c.val)) = some true := by
+      have hye : decide (f u = c) = true := by simp [hfc]
+      have he : evalLit (modelOf n k f)
+          ((idxVar k u.val c.val : Nat) : Lit)
+          = some (decide (f u = c)) := by
+        simpa using modelOf_eval n k hk f u c
+      simp [he, hye]
+    exact condClauses_of_true _ _ _ hg ((checkSat_single _ _).mpr hev)
+  · have hempty : condClauses (guard u c) [[Int.ofNat (idxVar k u.val c.val)]] = [] := by
+      simp [condClauses, hg]
+    rw [hempty]
+    rfl
 
 /-- Soundness (single value): a satisfied difference clause rules out
 both cells reading true at that value. -/

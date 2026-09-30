@@ -78,3 +78,59 @@ open Lynth.Sat.Differ
 /-- info: 'Lynth.Sat.Gates.checkSat_of_all_single' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in
 #print axioms checkSat_of_all_single
+
+/-- info: 'Lynth.Sat.Gates.atLeastOne_of_true' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms atLeastOne_of_true
+
+/-- info: 'Lynth.Sat.Gates.mem_atMostOne' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms mem_atMostOne
+
+/-- info: 'Lynth.Sat.FinVal.atMostOneComplete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms atMostOneComplete
+
+/-- info: 'Lynth.Sat.FinVal.rowComplete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms rowComplete
+
+/-- info: 'Lynth.Sat.FinVal.cellsComplete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms cellsComplete
+
+/-- info: 'Lynth.Sat.Gates.checkSat_piece' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms checkSat_piece
+
+/-- info: 'Lynth.Sat.Gates.checkSat_condFlatMap' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms checkSat_condFlatMap
+
+/-- info: 'Lynth.Sat.Gates.appendHeld' depends on axioms: [propext] -/
+#guard_msgs in
+#print axioms appendHeld
+
+/-- info: 'Lynth.Sat.Gates.checkSat_appendHeld' depends on axioms: [propext] -/
+#guard_msgs in
+#print axioms checkSat_appendHeld
+
+/-- info: 'Lynth.Sat.Differ.eqClause_imp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms eqClause_imp
+
+/-- info: 'Lynth.Sat.Differ.unitNeg_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms unitNeg_sound
+
+/-- info: 'Lynth.Sat.Differ.unitNeg_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms unitNeg_complete
+
+/-- info: 'Lynth.Sat.Differ.unitPos_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms unitPos_sound
+
+/-- info: 'Lynth.Sat.Differ.unitPos_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms unitPos_complete

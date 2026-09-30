@@ -73,3 +73,67 @@ example : True := by
     checkBodyKind ``SynthGuardNe (some true)
     checkBodyKind ``SynthEqConcl2 (some false)
   trivial
+
+/-- info: 'Lynth.Sat.Compile.lin2D_inj' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms lin2D_inj
+
+/-- info: 'Lynth.Sat.Compile.unlin_lin' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms unlin_lin
+
+/-- info: 'Lynth.Sat.Compile.neFam_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms neFam_complete
+
+/-- info: 'Lynth.Sat.Compile.eqFam_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms eqFam_sound
+
+/-- info: 'Lynth.Sat.Compile.eqFam_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms eqFam_complete
+
+/-- info: 'Lynth.Sat.Compile.injFam_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms injFam_sound
+
+/-- info: 'Lynth.Sat.Compile.injFam_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms injFam_complete
+
+/-- info: 'Lynth.Sat.Compile.reqFam_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms reqFam_sound
+
+/-- info: 'Lynth.Sat.Compile.reqFam_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms reqFam_complete
+
+/-- info: 'Lynth.Sat.Compile.runSolver_sound' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Lynth.Sat.cdcl_correct,
+ Lynth.Sat.cdcl_fuel_suffices] -/
+#guard_msgs in
+#print axioms runSolver_sound
+
+/-- info: 'Lynth.Sat.Compile.runSolver_complete' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Lynth.Sat.cdcl_correct,
+ Lynth.Sat.cdcl_fuel_suffices] -/
+#guard_msgs in
+#print axioms runSolver_complete
+
+/-- info: 'Lynth.Sat.Compile.runSolver_none' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Lynth.Sat.cdcl_correct,
+ Lynth.Sat.cdcl_fuel_suffices] -/
+#guard_msgs in
+#print axioms runSolver_none
+
+/-- info: 'Lynth.Sat.Compile.neFam_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms neFam_sound
