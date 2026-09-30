@@ -35,5 +35,6 @@ import Lynth.BV.Procedure
 import Lynth.Ring.Procedure
 import Lynth.Nlin.Procedure
 import Lynth.Witness
+import Lynth.Interval
 import Lynth.Frontend
 import Lynth.Basic

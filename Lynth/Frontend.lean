@@ -15,6 +15,7 @@ import Lynth.Nlin.Procedure
 import Lynth.Witness
 import Lynth.Sat.Procedure
 import Lynth.Arith.Procedure
+import Lynth.Interval
 
 /-!
 `lynth` dispatcher: runs procedures in order, threading explanations.
@@ -40,6 +41,7 @@ Failures accumulate notes; the final error reports every procedure's
 outcome so users can see how far the pipeline got. -/
 def dispatch : TacticM Unit := do
   let procs : List (String × TacticM ProcedureOutcome) := [
+    ("interval", Lynth.Interval.Procedure.run),
     ("answer", Lynth.Answer.Procedure.run),
     ("meta", Lynth.Meta.Procedure.run),
     ("finsearch", Lynth.FinSearch.Procedure.run),
