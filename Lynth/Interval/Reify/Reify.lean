@@ -148,7 +148,7 @@ def ratEq? {u : Level} {α : Q(Type u)} (e : Q($α)) (mk : ℚ → Option Q($α)
   return some (q, ← mkEqTrans (← r.getProof) pf)
 
 def exact? (t : Ty) (e : Lean.Expr) (senv : Lean.Expr) : MetaM (Option Reified) := do
-  if e.hasFVar || e.hasMVar || isTranscendentalHead e then return none
+  if e.hasFVar || e.hasMVar || isTranscendentalHead e || hasBigRange e then return none
   match t with
   | .real =>
     let some (q, pf) ← ratEq? (α := q(ℝ)) e (fun q => let qE : Q(ℚ) := toExpr q; some q(($qE : ℝ)))

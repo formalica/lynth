@@ -269,6 +269,7 @@ theorem mem_mulFin {p : Nat} {x y : ℝ} {a b c d : Dy}
 
 /-- Interval product (sound for extended intervals). -/
 def mul (p : Nat) (I J : Ival) : Ival :=
+  if I.nonneg && J.nonneg then mulNN p I J else
   match I, J with
   | ⟨some a, some b⟩, ⟨some c, some d⟩ => mulFin p a b c d
   | I, J =>
@@ -305,7 +306,10 @@ theorem mem_mul {p : Nat} {x y : ℝ} {I J : Ival} (hx : x ∈ I) (hy : y ∈ J)
     · exact mem_top _
   unfold mul
   split
-  · rename_i a b c d
+  · rename_i h; simp only [Bool.and_eq_true] at h
+    exact mem_mulNN h.1 h.2 hx hy
+  split
+  · rename_i a b c d _
     obtain ⟨hx1, hx2⟩ := hx; obtain ⟨hy1, hy2⟩ := hy
     exact mem_mulFin ⟨hx1 a rfl, hx2 b rfl⟩ ⟨hy1 c rfl, hy2 d rfl⟩
   · exact generic
@@ -353,25 +357,28 @@ theorem mem_sq {p : Nat} {x : ℝ} {I : Ival} (hx : x ∈ I) : x ^ 2 ∈ sq p I 
 def npowAux (p : Nat) (I : Ival) : Nat → Nat → Ival
   | 0, _ => top
   | _ + 1, 0 => one
-  | fuel + 1, n + 1 =>
-    if (n + 1) % 2 = 0 then sq p (npowAux p I fuel ((n + 1) / 2))
-    else mul p I (npowAux p I fuel n)
+  | _ + 1, 1 => I
+  | fuel + 1, n + 2 =>
+    if n % 2 = 0 then sq p (npowAux p I fuel ((n + 2) / 2))
+    else mul p I (npowAux p I fuel (n + 1))
 
-def npow (p : Nat) (I : Ival) (n : Nat) : Ival := npowAux p I (2 * Nat.log2 n + 4) n
+/-- fuel `130` covers every exponent `< 2^64` (at most `2·log₂ n + 2` steps) -/
+def npow (p : Nat) (I : Ival) (n : Nat) : Ival := npowAux p I 130 n
 
 theorem mem_npowAux {p : Nat} {x : ℝ} {I : Ival} (hx : x ∈ I) :
     ∀ fuel n, x ^ n ∈ npowAux p I fuel n
   | 0, _ => mem_top _
   | _ + 1, 0 => by simpa [npowAux] using mem_one
-  | fuel + 1, n + 1 => by
+  | _ + 1, 1 => by simpa [npowAux] using hx
+  | fuel + 1, n + 2 => by
     unfold npowAux
     split
     · rename_i h
-      have := mem_sq (p := p) (mem_npowAux (p := p) (I := I) hx fuel ((n + 1) / 2))
+      have := mem_sq (p := p) (mem_npowAux (p := p) (I := I) hx fuel ((n + 2) / 2))
       rw [← pow_mul] at this
-      have hn : (n + 1) / 2 * 2 = n + 1 := Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero h)
+      have hn : (n + 2) / 2 * 2 = n + 2 := by omega
       rwa [hn] at this
-    · have := mem_mul (p := p) hx (mem_npowAux (p := p) (I := I) hx fuel n)
+    · have := mem_mul (p := p) hx (mem_npowAux (p := p) (I := I) hx fuel (n + 1))
       rwa [← pow_succ'] at this
 
 theorem mem_npow {p : Nat} {x : ℝ} {I : Ival} (hx : x ∈ I) (n : Nat) : x ^ n ∈ npow p I n :=
@@ -481,11 +488,48 @@ theorem mem_inv {p : Nat} {x : ℝ} {I : Ival} (hx : x ∈ I) : x⁻¹ ∈ inv p
       · simp only [toReal_def, toRat_zero, Rat.cast_zero]; exact le_of_lt (inv_lt_zero.2 hxneg)
   · exact mem_top _
 
-def div (p : Nat) (I J : Ival) : Ival := mul p I (inv p J)
+/-- quotient, with a direct fast path for `I ≥ 0`, `J > 0` (finite) -/
+def div (p : Nat) (I J : Ival) : Ival :=
+  match I, J with
+  | ⟨some a, some b⟩, ⟨some c, some d⟩ =>
+    if isNonneg a && isPos c then ⟨some (divD p a d), some (divU p b c)⟩
+    else mul p ⟨some a, some b⟩ (inv p ⟨some c, some d⟩)
+  | I, J => mul p I (inv p J)
 
 theorem mem_div {p : Nat} {x y : ℝ} {I J : Ival} (hx : x ∈ I) (hy : y ∈ J) :
     x / y ∈ div p I J := by
-  rw [div_eq_mul_inv]; exact mem_mul hx (mem_inv hy)
+  unfold div
+  split
+  · rename_i a b c d
+    split
+    · rename_i h
+      simp only [Bool.and_eq_true] at h
+      have ha0 : (0 : ℝ) ≤ a.toReal := by simp only [toReal_def]; exact_mod_cast (isNonneg_iff a).1 h.1
+      have hc0 : (0 : ℝ) < c.toReal := by simp only [toReal_def]; exact_mod_cast (isPos_iff c).1 h.2
+      have hax := hx.1 a rfl; have hxb := hx.2 b rfl
+      have hcy := hy.1 c rfl; have hyd := hy.2 d rfl
+      have hy0 : 0 < y := lt_of_lt_of_le hc0 hcy
+      have hd0 : 0 < d.toReal := lt_of_lt_of_le hy0 hyd
+      have hx0 : 0 ≤ x := le_trans ha0 hax
+      have h1 : (divD p a d).toReal ≤ a.toReal / d.toReal := by
+        have := divD_le p a d (by
+          intro h0; have : d.toReal = 0 := by simp [toReal_def, h0]
+          linarith)
+        simp only [toReal_def]; exact_mod_cast this
+      have h2 : b.toReal / c.toReal ≤ (divU p b c).toReal := by
+        have := le_divU p b c (by
+          intro h0; have : c.toReal = 0 := by simp [toReal_def, h0]
+          linarith)
+        simp only [toReal_def]; exact_mod_cast this
+      refine ⟨fun l hl => ?_, fun u hu => ?_⟩
+      · cases hl
+        refine le_trans h1 ?_
+        rw [div_le_div_iff₀ hd0 hy0]; nlinarith
+      · cases hu
+        refine le_trans ?_ h2
+        rw [div_le_div_iff₀ hy0 hc0]; nlinarith
+    · rw [div_eq_mul_inv]; exact mem_mul hx (mem_inv hy)
+  · rw [div_eq_mul_inv]; exact mem_mul hx (mem_inv hy)
 
 /-! ### Order-based operations -/
 

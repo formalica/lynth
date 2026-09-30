@@ -35,10 +35,20 @@ noncomputable def denote : {t : Ty} → Expr t → SEnv → t.Val
   | _, .c2 f x y, ρ => f.fn (x.denote ρ) (y.denote ρ)
   | _, .sum t n body, ρ => ∑ k ∈ Finset.range (n.denote ρ), body.denote (ρ.push .nat k)
 
-/-- accumulate `f 0 + … + f (N-1)` -/
-def sumLoop (t : Ty) (p : Nat) (f : Nat → t.Enc) : Nat → t.Enc
+/-- `f lo + … + f (lo + n - 1)`, linear -/
+def sumLin (t : Ty) (p : Nat) (f : Nat → t.Enc) (lo : Nat) : Nat → t.Enc
   | 0 => t.zeroE
-  | N + 1 => t.addE p (sumLoop t p f N) (f N)
+  | n + 1 => t.addE p (sumLin t p f lo n) (f (lo + n))
+
+/-- `f lo + … + f (lo + n - 1)`, balanced (kernel recursion depth `O(log n)`) -/
+def sumBal (t : Ty) (p : Nat) (f : Nat → t.Enc) : Nat → Nat → Nat → t.Enc
+  | 0, lo, n => sumLin t p f lo n
+  | fuel + 1, lo, n =>
+    if n ≤ 4 then sumLin t p f lo n
+    else t.addE p (sumBal t p f fuel lo (n / 2)) (sumBal t p f fuel (lo + n / 2) (n - n / 2))
+
+/-- `f 0 + … + f (N-1)` -/
+def sumLoop (t : Ty) (p : Nat) (f : Nat → t.Enc) (N : Nat) : t.Enc := sumBal t p f 64 0 N
 
 /-- Interval evaluation. -/
 def eval (c : Ctx) : {t : Ty} → Expr t → IEnv → t.Enc
@@ -53,12 +63,31 @@ def eval (c : Ctx) : {t : Ty} → Expr t → IEnv → t.Enc
     | some N => sumLoop t c.prec (fun k => body.eval c (σ.push .nat (NIval.pt k))) N
     | none => t.top
 
-theorem sumLoop_sound (t : Ty) (p : Nat) (F : Nat → t.Enc) (f : ℕ → t.Val)
-    (h : ∀ k, t.Mem (F k) (f k)) : ∀ N, t.Mem (sumLoop t p F N) (∑ k ∈ Finset.range N, f k)
-  | 0 => by simpa [sumLoop] using t.mem_zeroE
-  | N + 1 => by
+theorem sumLin_sound (t : Ty) (p : Nat) (F : Nat → t.Enc) (f : ℕ → t.Val)
+    (h : ∀ k, t.Mem (F k) (f k)) (lo : Nat) :
+    ∀ n, t.Mem (sumLin t p F lo n) (∑ i ∈ Finset.range n, f (lo + i))
+  | 0 => by simpa [sumLin] using t.mem_zeroE
+  | n + 1 => by
     rw [Finset.sum_range_succ]
-    exact t.mem_addE (sumLoop_sound t p F f h N) (h N)
+    exact t.mem_addE (sumLin_sound t p F f h lo n) (h _)
+
+theorem sumBal_sound (t : Ty) (p : Nat) (F : Nat → t.Enc) (f : ℕ → t.Val)
+    (h : ∀ k, t.Mem (F k) (f k)) :
+    ∀ fuel lo n, t.Mem (sumBal t p F fuel lo n) (∑ i ∈ Finset.range n, f (lo + i))
+  | 0, lo, n => sumLin_sound t p F f h lo n
+  | fuel + 1, lo, n => by
+    unfold sumBal
+    split
+    · exact sumLin_sound t p F f h lo n
+    · have e := Finset.sum_range_add (fun i => f (lo + i)) (n / 2) (n - n / 2)
+      rw [show n / 2 + (n - n / 2) = n by omega] at e
+      rw [e]
+      refine t.mem_addE (sumBal_sound t p F f h fuel lo (n / 2)) ?_
+      simpa [add_assoc] using sumBal_sound t p F f h fuel (lo + n / 2) (n - n / 2)
+
+theorem sumLoop_sound (t : Ty) (p : Nat) (F : Nat → t.Enc) (f : ℕ → t.Val)
+    (h : ∀ k, t.Mem (F k) (f k)) (N : Nat) : t.Mem (sumLoop t p F N) (∑ k ∈ Finset.range N, f k) := by
+  unfold sumLoop; simpa using sumBal_sound t p F f h 64 0 N
 
 /-- **Soundness** of interval evaluation. -/
 theorem eval_sound {c : Ctx} (hc : c.Valid) :

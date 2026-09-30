@@ -103,7 +103,7 @@ def npowAux (p : Nat) (A : CBox) : Nat → Nat → CBox
       mul p B B
     else mul p A (npowAux p A fuel n)
 
-def npow (p : Nat) (A : CBox) (n : Nat) : CBox := npowAux p A (2 * Nat.log2 n + 4) n
+def npow (p : Nat) (A : CBox) (n : Nat) : CBox := npowAux p A 130 n
 
 theorem mem_npowAux {p : Nat} {z : ℂ} {A : CBox} (hz : z ∈ A) :
     ∀ fuel n, z ^ n ∈ npowAux p A fuel n

@@ -225,9 +225,44 @@ def shiftUp (d : Dyadic) (newExp : Int) : Dyadic :=
 
 /-! ### Normalization (Mantissa Control) -/
 
-/-- Get the bit length of a natural number -/
-private def natBitLength (n : Nat) : Nat :=
-  if n = 0 then 0 else Nat.log2 n + 1
+/-- smallest `k ∈ (lo, hi]` with `n >>> k = 0` (binary search; compiled version) -/
+def bitSearchS (n : Nat) : Nat → Nat → Nat → Nat
+  | 0, _, hi => hi
+  | fuel + 1, lo, hi =>
+    cond (hi.ble (lo + 1)) hi
+      (cond ((n >>> ((lo + hi) / 2)).beq 0) (bitSearchS n fuel lo ((lo + hi) / 2))
+        (bitSearchS n fuel ((lo + hi) / 2) hi))
+
+/-- kernel version of `bitSearchS`: raw `Nat.rec`/`Bool.rec` (no `brecOn`
+overhead) over GMP-accelerated primitives; replaced by `bitSearchS` in
+compiled code via `@[csimp]` -/
+noncomputable def bitSearchK (n : Nat) (fuel : Nat) : Nat → Nat → Nat :=
+  fuel.rec (motive := fun _ => Nat → Nat → Nat) (fun _ hi => hi)
+    (fun _ ih lo hi => Bool.rec (motive := fun _ => Nat)
+      (Bool.rec (motive := fun _ => Nat) (ih ((lo + hi) / 2) hi) (ih lo ((lo + hi) / 2))
+        ((n >>> ((lo + hi) / 2)).beq 0))
+      hi (hi.ble (lo + 1)))
+
+theorem bitSearchK_eq_S (n : Nat) : ∀ fuel lo hi, bitSearchK n fuel lo hi = bitSearchS n fuel lo hi
+  | 0, _, _ => rfl
+  | k + 1, lo, hi => by
+    rw [bitSearchS]
+    show Bool.rec (motive := fun _ => Nat)
+      (Bool.rec (motive := fun _ => Nat) (bitSearchK n k ((lo + hi) / 2) hi)
+        (bitSearchK n k lo ((lo + hi) / 2)) ((n >>> ((lo + hi) / 2)).beq 0)) hi (hi.ble (lo + 1)) = _
+    rw [bitSearchK_eq_S n k, bitSearchK_eq_S n k]
+    cases hi.ble (lo + 1) <;> cases (n >>> ((lo + hi) / 2)).beq 0 <;> rfl
+
+@[csimp] theorem bitSearchK_eq_S' : @bitSearchK = @bitSearchS := by
+  funext n fuel lo hi; exact bitSearchK_eq_S n fuel lo hi
+
+/-- Get the bit length of a natural number (exact for `n < 2^65536`).
+
+Lynth change: the original `Nat.log2 n + 1` costs one kernel step per bit;
+this binary search costs `≈ 16` cheap steps.  No proof depends on the exact
+value (any shift is sound for directed rounding). -/
+def natBitLength (n : Nat) : Nat :=
+  cond (n.beq 0) 0 (bitSearchK n 20 0 (cond ((n >>> 256).beq 0) 256 65536))
 
 /-- Get the bit length of the absolute value of an integer -/
 def bitLength (m : Int) : Nat := natBitLength m.natAbs
