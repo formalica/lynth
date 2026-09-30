@@ -74,6 +74,57 @@ example : True := by
     checkBodyKind ``SynthEqConcl2 (some false)
   trivial
 
+/-- Synthetic 9x9 board parts (shape-only, no puzzle). -/
+def SynthPart := Fin 9 → Fin 9 → Option (Fin 9)
+def SynthBoard := Fin 9 → Fin 9 → Fin 9
+def SynthBox (r c : Fin 9) : Fin 9 := (r / 3) * 3 + (c / 3)
+
+/-- Row injectivity shape. -/
+def SynthRows (_p : SynthPart) (b : SynthBoard) : Prop :=
+  ∀ r c₁ c₂, b r c₁ = b r c₂ → c₁ = c₂
+
+/-- Column injectivity shape. -/
+def SynthCols (_p : SynthPart) (b : SynthBoard) : Prop :=
+  ∀ c r₁ r₂, b r₁ c = b r₂ c → r₁ = r₂
+
+/-- Box shape with user guard + value guard + paired conclusion. -/
+def SynthBoxes (_p : SynthPart) (b : SynthBoard) : Prop :=
+  ∀ r₁ c₁ r₂ c₂, SynthBox r₁ c₁ = SynthBox r₂ c₂ →
+    b r₁ c₁ = b r₂ c₂ → r₁ = r₂ ∧ c₁ = c₂
+
+/-- Givens shape. -/
+def SynthGivens (p : SynthPart) (b : SynthBoard) : Prop :=
+  ∀ r c v, p r c = some v → b r c = v
+
+private def checkNested (n : Name) (wantKinds : List String) : TacticM Unit := do
+  let P := mkConst n []
+  match ← matchFrag P with
+  | none =>
+    unless wantKinds.isEmpty do throwError "{n}: unexpectedly rejected"
+  | some frags =>
+    if frags.length != wantKinds.length then
+      throwError "{n}: {frags.length} frags, want {wantKinds.length}"
+    else
+      for (fr, w) in frags.zip wantKinds do
+        let got := match fr.kind with
+          | .row => "row"
+          | .col => "col"
+          | .box => "box"
+          | .given => "given"
+          | .ne => "ne"
+          | .eq => "eq"
+          | .inj => "inj"
+          | .req => "req"
+        unless got == w do throwError "{n}: kind {got}, want {w}"
+
+example : True := by
+  run_tac do
+    checkNested ``SynthRows ["row"]
+    checkNested ``SynthCols ["col"]
+    checkNested ``SynthBoxes ["box"]
+    checkNested ``SynthGivens ["given"]
+  trivial
+
 /-- info: 'Lynth.Sat.Compile.lin2D_inj' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in
 #print axioms lin2D_inj
@@ -145,3 +196,95 @@ example : True := by
 /-- info: 'Lynth.Sat.Compile.injList_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms injList_complete
+
+/-- info: 'Lynth.Sat.Compile.rowGuard81' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms rowGuard81
+
+/-- info: 'Lynth.Sat.Compile.colGuard81' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms colGuard81
+
+/-- info: 'Lynth.Sat.Compile.rowAdequate_sound' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms rowAdequate_sound
+
+/-- info: 'Lynth.Sat.Compile.rowAdequate_complete' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms rowAdequate_complete
+
+/-- info: 'Lynth.Sat.Compile.colAdequate_sound' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms colAdequate_sound
+
+/-- info: 'Lynth.Sat.Compile.colAdequate_complete' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms colAdequate_complete
+
+/-- info: 'Lynth.Sat.Compile.boxGuardLin' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms boxGuardLin
+
+/-- info: 'Lynth.Sat.Compile.boxAdequate_sound' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms boxAdequate_sound
+
+/-- info: 'Lynth.Sat.Compile.boxAdequate_complete' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms boxAdequate_complete
+
+/-- info: 'Lynth.Sat.Compile.givenGuardLin' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms givenGuardLin
+
+/-- info: 'Lynth.Sat.Compile.givenAdequate_sound' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms givenAdequate_sound
+
+/-- info: 'Lynth.Sat.Compile.givenAdequate_complete' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms givenAdequate_complete
+
+/-- info: 'Lynth.Sat.Compile.givenFamCNF' does not depend on any axioms -/
+#guard_msgs in
+#print axioms givenFamCNF
+
+/-- info: 'Lynth.Sat.Compile.givenFam_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms givenFam_sound
+
+/-- info: 'Lynth.Sat.Compile.givenFam_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms givenFam_complete
+
+/-- info: 'Lynth.Sat.Compile.rowNested_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms rowNested_sound
+
+/-- info: 'Lynth.Sat.Compile.rowNested_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms rowNested_complete
+
+/-- info: 'Lynth.Sat.Compile.colNested_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms colNested_sound
+
+/-- info: 'Lynth.Sat.Compile.colNested_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms colNested_complete
+
+/-- info: 'Lynth.Sat.Compile.boxNested_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms boxNested_sound
+
+/-- info: 'Lynth.Sat.Compile.boxNested_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms boxNested_complete
+
+/-- info: 'Lynth.Sat.Compile.givenNested_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms givenNested_sound
+
+/-- info: 'Lynth.Sat.Compile.givenNested_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms givenNested_complete

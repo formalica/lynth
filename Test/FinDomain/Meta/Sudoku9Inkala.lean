@@ -86,13 +86,17 @@ def contradictoryPartial (r c : Fin 9) : Option (Fin 9) :=
   else
     none
 
-/-- Benchmark the synthesized solver on the satisfiable instance. -/
+-- Benchmark the synthesized solver on the satisfiable instance.
 #guard (sudokuInkalaSolver.1 example_partial).isSome
 
-/-- Benchmark the synthesized solver on the unsatisfiable instance. -/
+-- Benchmark the synthesized solver on the unsatisfiable instance.
 #guard (sudokuInkalaSolver.1 contradictoryPartial).isNone
 
-/-- info: 'FinDomain.Meta.sudokuInkalaSolver' depends on axioms: [propext] -/
+/-- info: 'FinDomain.Meta.sudokuInkalaSolver' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Lynth.Sat.cdcl_correct,
+ Lynth.Sat.cdcl_fuel_suffices] -/
 #guard_msgs in
 #print axioms sudokuInkalaSolver
 
