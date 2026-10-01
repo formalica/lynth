@@ -1,0 +1,17 @@
+look into /home/z0058nrz/lynth/LatestTask.md, which about Test/FinDomain/* problems
+user can write spec of finite brutforcable problem by lean term which is in general very abstract, it can be defined by inductive/recursive proposition, or many high level functions, and no metter how user defined problem we should be able to solve it. in many cases bound and value ranges are not known so to be able to brute force we should infer that bounds
+all this should be implemented in generic way because we allow user to write spec how he want 
+to reach it we can use advance structures like egraphs, disctimination trees in all places where we can
+it will allow inference in generic way from existing spec and except it allow to add properties of well known functions and use them to infer their properties faster, but even if propoerties of some well known functions are not added in that advance structures then we should be able to infer(it may be slow but we should be able to do it, this is very very important point which we should not forgot). 
+
+there is meta tests which ask to syntheisze solver, this is also very important, we should be able to embed sat solver inside solver function but avoid from recheck of result. even if problem is unsat or sat then we should one time prove that result of high level problem is same as its equivalent low level SAT-Bool problem, so to do it we should generate runtime decode and encode functions and also runtime proof that they keep result of high level problem and low level problem equivalent. this runtime code and runtime generated proof should be used to prove correctness of decode and encode functions and we can call them inside solver function by passing spec constraints. for now it is hard to prove sat solver correctness(obviously we rely on it) so we used temporary axioms but later we will prove it. also it is hard to prove that function is total and we using some termination axiom. 
+
+also it is imortant to be able to generate functions which arguement is "Fin n" where n can be arbitrary natural number, this require to use loops inside decode and encode functions and proof of their correctness will probably require induction, but we still should be able to solve such problems too this is also important
+
+it is very important that all tests should pass and also meta tests are less than non meta, but we should be able to solve meta equivalent of current non meta tests, this is very important
+
+currently FinDomain is partialy implemented by some not very inteligent llm, and I am not sure whether it followed all my requirements, so I need to make sure that everything is good with codes and want very detailed high level high quality imeplemnation spec about how we can implemnt curent gaps and also increase generosity(it should be very generally working code) of code and able to solve almost any meta and non meta finite problem defined by various abstract specs
+
+i saw that there is no problem whose spec is custom recustivelly defined inductive propositon, this is also imortant to support, so give very detailed description of their implementation too along very detailed implmenetation spec of many other parts and aspects, write test for it too
+
+I am not expert in this topic, for now ask questions about high level decisions, then write multifile detailed spec with code snippets of important parts and very detailed description of algoirthms. do not start to implement, just write specs and stop
