@@ -5,6 +5,7 @@ import Lynth.Interval.Fns.Trig
 import Lynth.Interval.Fns.Elem
 import Lynth.Interval.Fns.Exact
 import Lynth.Interval.Fns.Const
+import Lynth.Interval.Fns.Gamma
 
 /-!
 All registry entries.  Every `Lynth/Interval/Fns/*.lean` file must be imported

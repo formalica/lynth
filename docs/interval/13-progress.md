@@ -39,9 +39,15 @@ M0 → M1: vendor `LeanCert/Core/Dyadic.lean`, write `Num/Dy.lean` rounding API.
 
 ## Deferred notes (special functions, for later phases)
 
-* Gamma: shift `s` into `(0,1]` with `Real.Gamma_add_one`; `Real.Gamma_eq_integral`
-  split at `X = 40`: `∫_0^X e^{-t}t^{s-1} = Σ (-1)^k X^{s+k}/(k!(s+k))` (termwise
-  integration of the exp series, `integral_rpow`), tail `≤ X^{s-1}e^{-X}`.
+* Gamma: IMPLEMENTED (`Lynth/Interval/Fns/Gamma.lean`, registry `gammaR`)
+  via Stirling + shifting + reflection (FLINT design), modulo the temporary
+  axiom `stirling_logGamma`.  The old incomplete-gamma plan (shift into
+  `(0,1]`, split `Real.Gamma_eq_integral` at `X = 40`) was benchmarked out:
+  120+ transcendental evals per point and ~2^16 cancellation vs ~60 interval
+  ops for Stirling.  T18, P28, MP03, MP04, MP23 close (footprint `+ stirling_logGamma`).
+  MD02 additionally needs `Nat.floor` (unregistered).  Future work: prove
+  `stirling_logGamma` (Euler–Maclaurin, not in Mathlib); endpoint-tight
+  wide intervals via certified monotonicity pieces.
 * zeta (real `s > 1`): `zeta_eq_tsum_one_div_nat_add_one_cpow`, partial sums +
   integral-test tail.
 * Euler γ: `eulerMascheroniSeq n < γ < eulerMascheroniSeq' n` (width ~ 1/n).
