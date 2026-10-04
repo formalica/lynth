@@ -1,8 +1,10 @@
 import Lynth
 import Mathlib.Data.Fintype.Card
 
-abbrev Board := Fin 10 → Fin 10 → Bool
+set_option maxHeartbeats 10 in
+abbrev starBattle10x10_Board := Fin 10 → Fin 10 → Bool
 
+set_option maxHeartbeats 1371 in
 -- 1. Region Map: Maps each cell in the 10x10 grid to one of 10 regions (0 to 9)
 --    Puzzle: 10x10 2-star Star Battle by 2557_letters
 --    (puzz.link / PZPRV3 id: starbattle/10/10/2/0g4hi22n1j9ln2ccgi1oq84f3ol68m6870fi)
@@ -19,8 +21,9 @@ def regionID : Fin 10 → Fin 10 → Fin 10
   | 8, c => if c.val < 1 then 6 else if c.val < 5 then 8 else if c.val < 6 then 7 else if c.val < 9 then 9 else 5
   | 9, c => if c.val < 5 then 6 else if c.val < 8 then 9 else 5
 
+set_option maxHeartbeats 182 in
 -- 2. Formal rules for 10x10 2-Star Battle
-def valid10x10 (s : Board) : Prop :=
+def valid10x10 (s : starBattle10x10_Board) : Prop :=
   -- Exactly 2 stars per Row
   (∀ r : Fin 10, Fintype.card { c : Fin 10 // s r c = true } = 2) ∧
   -- Exactly 2 stars per Column
@@ -33,11 +36,12 @@ def valid10x10 (s : Board) : Prop :=
     (c1.val : Int) - c2.val ∈ ([-1, 0, 1] : List Int) →
     ¬(s r1 c1 ∧ s r2 c2))
 
+set_option maxHeartbeats 239480 in
 -- 3. Solved board synthesis & verification using lynth
 set_option maxHeartbeats 10000000 in
-def solveStarBattle10x10 : { s : Board // valid10x10 s } := by
+def solveStarBattle10x10 : { s : starBattle10x10_Board // valid10x10 s } := by
   lynth
-
 /-- info: 'solveStarBattle10x10' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms solveStarBattle10x10
+

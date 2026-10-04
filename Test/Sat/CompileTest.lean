@@ -9,28 +9,34 @@ import Lynth.Sat.Compile
 open Lean Elab Tactic Meta
 open Lynth.Sat.Compile
 
+set_option maxHeartbeats 21 in
 /-- Synthetic guarded inequality over `Fin 3 → Fin 2`. -/
 def SynthGuardNe (g : Fin 3 → Fin 3 → Bool) (c : Fin 3 → Fin 2) : Prop :=
   ∀ i j, g i j = true → c i ≠ c j
 
+set_option maxHeartbeats 17 in
 /-- Sudoku-like: equality conclusion (a LATER fragment, not this one). -/
 def SynthEqConcl (b : Fin 4 → Fin 4 → Fin 4) : Prop :=
   ∀ r c₁ c₂, b r c₁ = b r c₂ → c₁ = c₂
 
+set_option maxHeartbeats 20 in
 /-- Guarded equality: outer shape matches, body conclusion is `=`
 rather than `≠` — rejected at the body level. -/
 def SynthEqConcl2 (g : Fin 4 → Fin 4 → Bool) (c : Fin 4 → Fin 4) : Prop :=
   ∀ i j, g i j = true → c i = c j
 
+set_option maxHeartbeats 15 in
 /-- Tour-like: bare conjunction (no `∀`-guard shape at all). -/
 def SynthConj (t : Fin 5 → Fin 5) : Prop :=
   Function.Injective t ∧ ∀ _ : Fin 5, True
 
+set_option maxHeartbeats 25 in
 /-- Mismatched index bounds (elaborates, but the fragment requires
 one shared bound). -/
 def SynthMismatch (g : Fin 3 → Fin 4 → Bool) (c : Fin 3 → Fin 2) : Prop :=
   ∀ (i : Fin 3) (j : Fin 4), g i j = true → c i ≠ c i
 
+set_option maxHeartbeats 685 in
 private def checkForall (n : Name) (want : Option Nat) : TacticM Unit := do
   let P := mkConst n []
   match ← matchForall2Fin P with
@@ -44,6 +50,7 @@ private def checkForall (n : Name) (want : Option Nat) : TacticM Unit := do
     | some _ => throwError "{n}: unexpectedly rejected"
     | none => pure ()
 
+set_option maxHeartbeats 895 in
 private def checkBodyKind (n : Name) (want : Option Bool) : TacticM Unit := do
   let P := mkConst n []
   match ← matchForall2Fin P with
@@ -63,6 +70,7 @@ private def checkBodyKind (n : Name) (want : Option Bool) : TacticM Unit := do
       | some _ => throwError "{n}: body unexpectedly rejected"
       | none => pure ()
 
+set_option maxHeartbeats 244 in
 example : True := by
   run_tac do
     checkForall ``SynthGuardNe (some 3)
@@ -74,28 +82,36 @@ example : True := by
     checkBodyKind ``SynthEqConcl2 (some false)
   trivial
 
+set_option maxHeartbeats 12 in
 /-- Synthetic 9x9 board parts (shape-only, no puzzle). -/
 def SynthPart := Fin 9 → Fin 9 → Option (Fin 9)
+set_option maxHeartbeats 11 in
 def SynthBoard := Fin 9 → Fin 9 → Fin 9
+set_option maxHeartbeats 77 in
 def SynthBox (r c : Fin 9) : Fin 9 := (r / 3) * 3 + (c / 3)
 
+set_option maxHeartbeats 15 in
 /-- Row injectivity shape. -/
 def SynthRows (_p : SynthPart) (b : SynthBoard) : Prop :=
   ∀ r c₁ c₂, b r c₁ = b r c₂ → c₁ = c₂
 
+set_option maxHeartbeats 15 in
 /-- Column injectivity shape. -/
 def SynthCols (_p : SynthPart) (b : SynthBoard) : Prop :=
   ∀ c r₁ r₂, b r₁ c = b r₂ c → r₁ = r₂
 
+set_option maxHeartbeats 23 in
 /-- Box shape with user guard + value guard + paired conclusion. -/
 def SynthBoxes (_p : SynthPart) (b : SynthBoard) : Prop :=
   ∀ r₁ c₁ r₂ c₂, SynthBox r₁ c₁ = SynthBox r₂ c₂ →
     b r₁ c₁ = b r₂ c₂ → r₁ = r₂ ∧ c₁ = c₂
 
+set_option maxHeartbeats 18 in
 /-- Givens shape. -/
 def SynthGivens (p : SynthPart) (b : SynthBoard) : Prop :=
   ∀ r c v, p r c = some v → b r c = v
 
+set_option maxHeartbeats 921 in
 private def checkNested (n : Name) (wantKinds : List String) : TacticM Unit := do
   let P := mkConst n []
   match ← matchFrag P with
@@ -117,6 +133,7 @@ private def checkNested (n : Name) (wantKinds : List String) : TacticM Unit := d
           | .req => "req"
         unless got == w do throwError "{n}: kind {got}, want {w}"
 
+set_option maxHeartbeats 213 in
 example : True := by
   run_tac do
     checkNested ``SynthRows ["row"]

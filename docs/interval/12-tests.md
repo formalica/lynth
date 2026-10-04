@@ -27,7 +27,7 @@ cos/sin of rational multiples of π, exp, log(π/100), rpow, sqrt — Approx.
 ### Compositions.lean (MP01–MP35)
 * M4: MP01, MP02, MP05, MP06, MP08–MP16, MP17, MP19 (Nat.bell exact), MP20,
   MP21 (bernoulli exact), MP22, MP24, MP25, MP28, MP29.
-* Gamma (implemented, `Fns/Gamma.lean`, footprint `+ stirling_logGamma`):
+* Gamma (implemented, `Fns/Gamma.lean`, standard footprint):
   MP03, MP04, MP23.
 * D: MP07 (zeta), MP18 (Euler γ — could be M5 via
   `eulerMascheroniSeq` bounds, tolerance π/100), MP26 (agm — M5 candidate via
@@ -35,11 +35,13 @@ cos/sin of rational multiples of π, exp, log(π/100), rpow, sqrt — Approx.
 
 ### Special.lean
 T20 (π) M4; B06 (root of x³-2) M6 (root finder, or closed check with a guessed
-witness); T18 (Gamma — implemented, `+ stirling_logGamma`), T19 (zeta) D.
+witness); T18 (Gamma — implemented, standard footprint), T19 (zeta) D.
 
 ### Discrete.lean — M5
-MD01, MD03, MD04, MD06, MD07 interval; MD05 exact ℕ (`decide`, zero axioms);
-MD02 needs Gamma (done) **and** `Nat.floor` (unregistered).
+MD01, MD03, MD04, MD06, MD07 interval (discrete witnesses via `Goals/Discrete.lean`);
+MD05 exact ℕ (`decide`, zero axioms, closed by `witness`);
+MD02 needs Gamma (done) **and** `Nat.floor` (now registered; closed with
+standard footprint, needs `maxHeartbeats 1000000`).
 
 ### Sums.lean
 T12, T13, T14 M5 (finite sums); B01, B03 M5 (closed props with 1000/100-term
@@ -47,7 +49,7 @@ sums vs π); T15 infinite product D; B02, P-style `∀ n` identities L.
 
 ### Theorems.lean
 P21, P23, P24, P27, P29 M6; P22, P25, P26 M7; P28 (Gamma — implemented,
-`+ stirling_logGamma`); P30 L.
+standard footprint); P30 L.
 
 ### Roots.lean — M6.  ApproxRoots.lean — M6 (after statement fix).
 

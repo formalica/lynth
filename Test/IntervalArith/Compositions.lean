@@ -31,6 +31,7 @@ Ground truth: `arb/CERTIFICATES.md` (MP01-MP35).
 namespace IntervalArith
 
 
+set_option maxHeartbeats 6480 in
 /-- **MP01** — `exp_sin_add_cos`: `exp, sin, cos` composed in one expression, evaluated at `x =
 1/2`.
 
@@ -45,7 +46,11 @@ exp of a sum of two trigonometric values.
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def exp_sin_add_cos : { x : Rat // abs (Real.exp (Real.sin (1 / 2) + Real.cos (1 / 2)) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.exp_sin_add_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms exp_sin_add_cos
 
+set_option maxHeartbeats 6747 in
 /-- **MP02** — `sin_exp_mul_cos`: `sin, exp, cos` composed in one expression, evaluated at `x =
 1/2`.
 
@@ -60,7 +65,11 @@ trigonometric function of a product of exp and cos.
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def sin_exp_mul_cos : { x : Rat // abs (Real.sin (Real.exp (1 / 2) * Real.cos (1 / 2)) - x) < 1 / 10000 } := by lynth
+/-- info: 'IntervalArith.sin_exp_mul_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sin_exp_mul_cos
 
+set_option maxHeartbeats 28679 in
 /-- **MP03** — `gamma_sin_add_two`: `Gamma, sin` composed in one expression, evaluated at `x = 1/2`.
 
 `x` is the *unknown*: the tactic has to produce a rational witness inside the tolerance
@@ -74,7 +83,11 @@ Gamma at an irrational argument built from sin.
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def gamma_sin_add_two : { x : Rat // abs (Real.Gamma (Real.sin (1 / 2) + 2) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.gamma_sin_add_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms gamma_sin_add_two
 
+set_option maxHeartbeats 28865 in
 /-- **MP04** — `log_gamma_add_sqrt`: `log, Gamma, sqrt` composed in one expression, evaluated at `x
 = 1/4, 2`.
 
@@ -89,7 +102,11 @@ log of a sum of two irrational special values.
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def log_gamma_add_sqrt : { x : Rat // abs (Real.log (Real.Gamma (1 / 4) + Real.sqrt 2) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.log_gamma_add_sqrt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms log_gamma_add_sqrt
 
+set_option maxHeartbeats 9274 in
 /-- **MP05** — `tan_sinh_mul_cos`: `tan, sinh, cos` composed in one expression, evaluated at `x =
 1/3`.
 
@@ -104,7 +121,11 @@ that such an `x` exists; the concrete witness Arb found -- `166167179457/5000000
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def tan_sinh_mul_cos : { x : Rat // abs (Real.tan (Real.sinh (1 / 3) * Real.cos (1 / 3)) - x) < 1 / 100000 } := by lynth
+/-- info: 'IntervalArith.tan_sinh_mul_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms tan_sinh_mul_cos
 
+set_option maxHeartbeats 14432 in
 /-- **MP06** — `cosh_sin_add_arctan`: `cosh, sin, arctan` composed in one expression, evaluated at
 `x = 1`.
 
@@ -119,22 +140,11 @@ that such an `x` exists; the concrete witness Arb found -- `66055802421/25000000
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def cosh_sin_add_arctan : { x : Rat // abs (Real.cosh (Real.sin 1 + Real.arctan 1) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.cosh_sin_add_arctan' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms cosh_sin_add_arctan
 
-/-- **MP07** — `zeta_cos_add_three`: `riemannZeta, cos` composed in one expression, evaluated at `s
-= cos(1/3) + 3`.
-
-`x` is the *unknown*: the tactic has to produce a rational witness inside the tolerance
-`1/1000000`. Arb encloses the composition in `1.086216932382800592904459` /
-`1.086216932382800592904459` (it is far narrower than the tolerance), which is the certificate
-that such an `x` exists; the concrete witness Arb found -- `54310846619/50000000000`, within
-`2.8e-12` -- is recorded here only, never in the goal.
-
-zeta at an irrational argument off the real axis's critical strip.
-
-Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
-`arb/compositions.py`). -/
-def zeta_cos_add_three : { x : Rat // abs ((riemannZeta (Real.cos (1 / 3) + 3)).re - x) < 1 / 1000000 } := by lynth
-
+set_option maxHeartbeats 11465 in
 /-- **MP08** — `arcsin_tanh_mul_cos`: `arcsin, tanh, cos` composed in one expression, evaluated at
 `x = 1/2, 1/3`.
 
@@ -149,7 +159,11 @@ arcsin of a product of an unrelated hyperbolic and trig value (deliberately not 
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def arcsin_tanh_mul_cos : { x : Rat // abs (Real.arcsin (Real.tanh (1 / 2) * Real.cos (1 / 3)) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.arcsin_tanh_mul_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms arcsin_tanh_mul_cos
 
+set_option maxHeartbeats 13476 in
 /-- **MP09** — `arccos_sinh_mul_exp`: `arccos, sinh, exp` composed in one expression, evaluated at
 `x = 1/2`.
 
@@ -164,7 +178,11 @@ that such an `x` exists; the concrete witness Arb found -- `124922231359/1000000
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def arccos_sinh_mul_exp : { x : Rat // abs (Real.arccos (Real.sinh (1 / 2) * Real.exp (-(1 / 2))) - x) < Real.pi / 1000 } := by lynth
+/-- info: 'IntervalArith.arccos_sinh_mul_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms arccos_sinh_mul_exp
 
+set_option maxHeartbeats 6809 in
 /-- **MP10** — `sinc_exp_mul_sin`: `sinc, exp, sin` composed in one expression, evaluated at `x =
 1`.
 
@@ -179,7 +197,11 @@ that such an `x` exists; the concrete witness Arb found -- `492052565077/5000000
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def sinc_exp_mul_sin : { x : Rat // abs (Real.sinc (Real.exp (-1) * Real.sin 1) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.sinc_exp_mul_sin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sinc_exp_mul_sin
 
+set_option maxHeartbeats 8587 in
 /-- **MP11** — `cot_sinh_add_two`: `cot, sinh` composed in one expression, evaluated at `x = 1/2`.
 
 `x` is the *unknown*: the tactic has to produce a rational witness inside the tolerance
@@ -193,7 +215,11 @@ that such an `x` exists; the concrete witness Arb found -- `-139926658263/100000
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def cot_sinh_add_two : { x : Rat // abs (Real.cot (Real.sinh (1 / 2) + 2) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.cot_sinh_add_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms cot_sinh_add_two
 
+set_option maxHeartbeats 8319 in
 /-- **MP12** — `arsinh_cos_mul_exp`: `arsinh, cos, exp` composed in one expression, evaluated at `x
 = 1/2`.
 
@@ -208,7 +234,11 @@ arsinh fed by cos and exp -- no sinh anywhere, so no inverse pair.
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def arsinh_cos_mul_exp : { x : Rat // abs (Real.arsinh (Real.cos (1 / 2) * Real.exp (1 / 2)) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.arsinh_cos_mul_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms arsinh_cos_mul_exp
 
+set_option maxHeartbeats 6956 in
 /-- **MP13** — `arcosh_exp_add_sin`: `arcosh, exp, sin` composed in one expression, evaluated at `x
 = 1/2`.
 
@@ -223,7 +253,11 @@ that such an `x` exists; the concrete witness Arb found -- `69398553277/50000000
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def arcosh_exp_add_sin : { x : Rat // abs (Real.arcosh (Real.exp (1 / 2) + Real.sin (1 / 2)) - x) < 1 / 100000000 } := by lynth
+/-- info: 'IntervalArith.arcosh_exp_add_sin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms arcosh_exp_add_sin
 
+set_option maxHeartbeats 7958 in
 /-- **MP14** — `artanh_sin_mul_exp`: `artanh, sin, exp` composed in one expression, evaluated at `x
 = 1/4`.
 
@@ -238,7 +272,11 @@ that such an `x` exists; the concrete witness Arb found -- `912673999573/1000000
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def artanh_sin_mul_exp : { x : Rat // abs (Real.artanh (Real.sin (1 / 4) * Real.exp (-1)) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.artanh_sin_mul_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms artanh_sin_mul_exp
 
+set_option maxHeartbeats 8730 in
 /-- **MP15** — `logb_exp_sin`: `logb, exp, sin` composed in one expression, evaluated at `base 2, x
 = 1`.
 
@@ -253,7 +291,11 @@ that such an `x` exists; the concrete witness Arb found -- `173108625823/1000000
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def logb_exp_sin : { x : Rat // abs (Real.logb 2 (Real.exp (Real.sin 1) + 1) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.logb_exp_sin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms logb_exp_sin
 
+set_option maxHeartbeats 9646 in
 /-- **MP16** — `exp_chebyshev_t_add_sin`: `Chebyshev T, exp, sin` composed in one expression,
 evaluated at `n = 4, x = 1/3`.
 
@@ -268,7 +310,11 @@ an exact rational polynomial value fed into exp together with sin.
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def exp_chebyshev_t_add_sin : { x : Rat // abs (Real.exp ((((Polynomial.Chebyshev.T ℚ 4).eval (1 / 3) : ℚ) : ℝ) + Real.sin (1 / 2)) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.exp_chebyshev_t_add_sin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms exp_chebyshev_t_add_sin
 
+set_option maxHeartbeats 6577 in
 /-- **MP17** — `log_chebyshev_u_add_three`: `Chebyshev U, log` composed in one expression, evaluated
 at `n = 4, x = 1/3`.
 
@@ -283,7 +329,11 @@ that such an `x` exists; the concrete witness Arb found -- `105228821699/1000000
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def log_chebyshev_u_add_three : { x : Rat // abs (Real.log (3 + (((Polynomial.Chebyshev.U ℚ 4).eval (1 / 3) : ℚ) : ℝ)) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.log_chebyshev_u_add_three' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms log_chebyshev_u_add_three
 
+set_option maxHeartbeats 8687 in
 /-- **MP18** — `cos_euler_add_sqrt`: `cos, eulerMascheroniConstant, sqrt` composed in one
 expression, evaluated at `x = gamma + sqrt 2`.
 
@@ -298,7 +348,11 @@ that such an `x` exists; the concrete witness Arb found -- `-204169132891/500000
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def cos_euler_add_sqrt : { x : Rat // abs (Real.cos (Real.eulerMascheroniConstant + Real.sqrt 2) - x) < Real.pi / 100 } := by lynth
+/-- info: 'IntervalArith.cos_euler_add_sqrt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms cos_euler_add_sqrt
 
+set_option maxHeartbeats 9317 in
 /-- **MP19** — `sinh_bell_over_hundred`: `sinh, Nat.bell` composed in one expression, evaluated at
 `n = 5`.
 
@@ -313,7 +367,11 @@ integer-valued Bell number (52) inside a hyperbolic function.
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def sinh_bell_over_hundred : { x : Rat // abs (Real.sinh (((Nat.bell 5 : ℕ) : ℝ) / 100) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.sinh_bell_over_hundred' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sinh_bell_over_hundred
 
+set_option maxHeartbeats 16266 in
 /-- **MP20** — `exp_bernoulli_poly`: `Polynomial.bernoulli, exp` composed in one expression,
 evaluated at `n = 2, x = 1/3`.
 
@@ -328,7 +386,11 @@ that such an `x` exists; the concrete witness Arb found -- `189191893781/1000000
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def exp_bernoulli_poly : { x : Rat // abs (Real.exp ((((Polynomial.bernoulli 2).eval (1 / 3) : ℚ) : ℝ)) * 2 - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.exp_bernoulli_poly' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms exp_bernoulli_poly
 
+set_option maxHeartbeats 4911 in
 /-- **MP21** — `cos_bernoulli_four_add_sqrt`: `cos, bernoulli, sqrt` composed in one expression,
 evaluated at `n = 4`.
 
@@ -343,7 +405,11 @@ that such an `x` exists; the concrete witness Arb found -- `2949632843/156250000
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def cos_bernoulli_four_add_sqrt : { x : Rat // abs (Real.cos ((bernoulli 4 : ℝ) + Real.sqrt 2) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.cos_bernoulli_four_add_sqrt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms cos_bernoulli_four_add_sqrt
 
+set_option maxHeartbeats 10982 in
 /-- **MP22** — `arctan_log_ten_mul_exp`: `arctan, log 10, exp` composed in one expression, evaluated
 at `x = log 10 / e`.
 
@@ -358,7 +424,11 @@ that such an `x` exists; the concrete witness Arb found -- `5490568369/781250000
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def arctan_log_ten_mul_exp : { x : Rat // abs (Real.arctan (Real.log 10 * Real.exp (-1)) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.arctan_log_ten_mul_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms arctan_log_ten_mul_exp
 
+set_option maxHeartbeats 29195 in
 /-- **MP23** — `log_two_gamma_div_exp`: `log 2, Gamma, exp` composed in one expression, evaluated at
 `x = 1/4`.
 
@@ -373,7 +443,11 @@ that such an `x` exists; the concrete witness Arb found -- `924510939/1000000000
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def log_two_gamma_div_exp : { x : Rat // abs (Real.log 2 * Real.Gamma (1 / 4) / Real.exp 1 - x) < 1 / 100000000 } := by lynth
+/-- info: 'IntervalArith.log_two_gamma_div_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms log_two_gamma_div_exp
 
+set_option maxHeartbeats 6151 in
 /-- **MP24** — `sqrt_pi_mul_tanh`: `sqrt, pi, tanh` composed in one expression, evaluated at `x =
 1/2`.
 
@@ -388,7 +462,11 @@ that such an `x` exists; the concrete witness Arb found -- `163816266991/2000000
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def sqrt_pi_mul_tanh : { x : Rat // abs (Real.sqrt Real.pi * Real.tanh (1 / 2) - x) < Real.pi / (10 : ℝ) ^ 7 } := by lynth
+/-- info: 'IntervalArith.sqrt_pi_mul_tanh' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sqrt_pi_mul_tanh
 
+set_option maxHeartbeats 2319 in
 /-- **MP25** — `choose_div_factorial_mul_sqrt`: `Nat.choose, Nat.factorial, sqrt` composed in one
 expression, evaluated at `n = 7, k = 3`.
 
@@ -403,36 +481,11 @@ that such an `x` exists; the concrete witness Arb found -- `103119738923/5000000
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def choose_div_factorial_mul_sqrt : { x : Rat // abs (((Nat.choose 7 3 : ℕ) : ℝ) / ((Nat.factorial 4 : ℕ) : ℝ) * Real.sqrt 2 - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.choose_div_factorial_mul_sqrt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms choose_div_factorial_mul_sqrt
 
-/-- **MP26** — `sqrt_agm`: `sqrt, agm` composed in one expression, evaluated at `x = 1, y = 2`.
-
-`x` is the *unknown*: the tactic has to produce a rational witness inside the tolerance
-`1/1000000`. Arb encloses the composition in `1.2069759861102900000418` /
-`1.2069759861102900000418` (it is far narrower than the tolerance), which is the certificate
-that such an `x` exists; the concrete witness Arb found -- `120697598611/100000000000`, within
-`2.9e-13` -- is recorded here only, never in the goal.
-
-.
-
-Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
-`arb/compositions.py`). -/
-def sqrt_agm : { x : Rat // abs (Real.sqrt (((NNReal.agm 1 2 : NNReal) : ℝ)) - x) < 1 / 1000000 } := by lynth
-
-/-- **MP27** — `sqrt_digamma_add_exp`: `sqrt, digamma, exp` composed in one expression, evaluated at
-`x = 3`.
-
-`x` is the *unknown*: the tactic has to produce a rational witness inside the tolerance
-`1/10000`. Arb encloses the composition in `1.136073842789239396466883` /
-`1.136073842789239396466883` (it is far narrower than the tolerance), which is the certificate
-that such an `x` exists; the concrete witness Arb found -- `113607384279/100000000000`, within
-`7.61e-13` -- is recorded here only, never in the goal.
-
-.
-
-Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
-`arb/compositions.py`). -/
-def sqrt_digamma_add_exp : { x : Rat // abs (Real.sqrt ((Complex.digamma 3).re + Real.exp (-1)) - x) < 1 / 10000 } := by lynth
-
+set_option maxHeartbeats 6951 in
 /-- **MP28** — `pochhammer_four_third_mul_exp`: `ascPochhammer, exp` composed in one expression,
 evaluated at `n = 4, x = 1/3`.
 
@@ -447,7 +500,11 @@ that such an `x` exists; the concrete witness Arb found -- `63584100943/50000000
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def pochhammer_four_third_mul_exp : { x : Rat // abs ((((ascPochhammer ℚ 4).eval (1 / 3) : ℚ) : ℝ) * Real.exp (-1) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.pochhammer_four_third_mul_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms pochhammer_four_third_mul_exp
 
+set_option maxHeartbeats 6599 in
 /-- **MP29** — `rpow_sin_exponent`: `rpow, sin` composed in one expression, evaluated at `base 2,
 exponent sin(1/2) + 1/4`.
 
@@ -462,213 +519,6 @@ that such an `x` exists; the concrete witness Arb found -- `82898938787/50000000
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def rpow_sin_exponent : { x : Rat // abs ((2 : ℝ) ^ (Real.sin (1 / 2) + 1 / 4) - x) < 1 / 1000000 } := by lynth
-
-/-- **MP30** — `log_mul_hypergeometric`: `log, ordinaryHypergeometric` composed in one expression,
-evaluated at `a = b = 1, c = 2, x = 1/2`.
-
-`x` is the *unknown*: the tactic has to produce a rational witness inside the tolerance
-`1/1000000`. Arb encloses the composition in `0.9609060278364028873099301` /
-`0.9609060278364028873099301` (it is far narrower than the tolerance), which is the certificate
-that such an `x` exists; the concrete witness Arb found -- `240226506959/250000000000`, within
-`4.03e-13` -- is recorded here only, never in the goal.
-
-the Gaussian 2F1 is now a mathlib declaration (`ordinaryHypergeometric`, notation `₂F₁`); 2F1(1,
-1; 2; 1/2) = 2 log 2, so the composition multiplies the series value by another log.
-
-Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
-`arb/compositions.py`). -/
-def log_mul_hypergeometric : { x : Rat // abs (Real.log 2 * ordinaryHypergeometric (1 : ℝ) 1 1 ((1 / 2 : ℝ)) - x) < 1 / 1000000 } := by lynth
-
-/-- **MP31** — `regularized_gauss_hypergeometric_neg_half`: `regularizedGaussHGFun` evaluated at
-`a = 1, b = 2, c = 3, z = -1/2`.
-
-`x` is the *unknown*: the tactic has to produce a rational witness inside the tolerance
-`1/1000000`. Closed form: `2F1(1,2;3;z)/Gamma(3) = sum z^n/(n+2) = (-log(1-z) - z)/z^2`, i.e.
-`4 * (1/2 - log (3/2)) = 0.3781395675673425` at `z = -1/2`.
-
-Changed from `z = -5`: Mathlib defines the function as the sum of its power series, which
-diverges for `|z| >= 1` (its Mathlib value at `-5` is `0`), so the test now uses a point
-inside the disc of convergence. -/
-def regularized_gauss_hypergeometric_neg_half : { x : Rat // abs ((Complex.regularizedGaussHGFun 1 2 3 (-1 / 2)).re - x) < 1 / 1000000 } := by lynth
-
-/-- **MP32** — `regularized_pfq_3f2`: `regularizedHGFun` composed in one expression, evaluated at
-`3F2: a = (1, 1, 1), b = (2, 2), z = 1/2`.
-
-`x` is the *unknown*: the tactic has to produce a rational witness inside the tolerance
-`1/1000000`. Arb encloses the composition in `1.164481052930024906899575` /
-`1.164481052930024906899575` (it is far narrower than the tolerance), which is the certificate
-that such an `x` exists; the concrete witness Arb found -- `116448105293/100000000000`, within
-`2.5e-14` -- is recorded here only, never in the goal.
-
-3F2 -- five parameters, no specialized Arb kernel (the general hypgeom path is used), normalized
-by Gamma(2)Gamma(2) = 1.
-
-Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
-`arb/compositions.py`). -/
-def regularized_pfq_3f2 : { x : Rat // abs ((Complex.regularizedHGFun {1, 1, 1} {2, 2} (1 / 2)).re - x) < 1 / 1000000 } := by lynth
-
-/-- **MP33** — `regularized_pfq_2f3`: `regularizedHGFun` composed in one expression, evaluated at
-`2F3: a = (1, 2), b = (3, 4, 5), z = 1/4`.
-
-`x` is the *unknown*: the tactic has to produce a rational witness inside the tolerance
-`1/1000000`. Arb encloses the composition in `0.003501339116694342137175999` /
-`0.003501339116694342137175999` (it is far narrower than the tolerance), which is the
-certificate that such an `x` exists; the concrete witness Arb found --
-`350133911669/100000000000000`, within `4.34e-15` -- is recorded here only, never in the goal.
-
-2F3 -- the normalization divisor Gamma(3)Gamma(4)Gamma(5) = 288 is not 1, so this is the case
-that actually distinguishes the regularized definition.
-
-Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
-`arb/compositions.py`). -/
-def regularized_pfq_2f3 : { x : Rat // abs ((Complex.regularizedHGFun {1, 2} {3, 4, 5} (1 / 4)).re - x) < 1 / 1000000 } := by lynth
-
-/-- **MP34** — `regularized_pfq_4f3`: `regularizedHGFun` composed in one expression, evaluated at
-`4F3: a = (1, 1, 1, 1), b = (2, 2, 2), z = 1/4`.
-
-`x` is the *unknown*: the tactic has to produce a rational witness inside the tolerance
-`1/1000000`. Arb encloses the composition in `1.033845583186293159982938` /
-`1.033845583186293159982938` (it is far narrower than the tolerance), which is the certificate
-that such an `x` exists; the concrete witness Arb found -- `103384558319/100000000000`, within
-`3.71e-12` -- is recorded here only, never in the goal.
-
-4F3 -- seven parameters, three more than any specialized form.
-
-Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
-`arb/compositions.py`). -/
-def regularized_pfq_4f3 : { x : Rat // abs ((Complex.regularizedHGFun {1, 1, 1, 1} {2, 2, 2} (1 / 4)).re - x) < 1 / 1000000 } := by lynth
-
-/-- **MP35** — `regularized_pfq_terminating_3f2`: `regularizedHGFun` composed in one expression,
-evaluated at `3F2: a = (-3, 1, 1), b = (2, 2), z = 1/2`.
-
-`x` is the *unknown*: the tactic has to produce a rational witness inside the tolerance
-`1/1000000`. Arb encloses the composition in `0.7005208333333333703407675` /
-`0.7005208333333333703407675` (it is far narrower than the tolerance), which is the certificate
-that such an `x` exists; the concrete witness Arb found -- `700520833333/1000000000000`, within
-`3.33e-13` -- is recorded here only, never in the goal.
-
-a negative-integer numerator parameter terminates the series: the value is the exact rational
-269/384 (Arb ball of radius 0), the only composition here with an exact answer.
-
-Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
-`arb/compositions.py`). -/
-def regularized_pfq_terminating_3f2 : { x : Rat // abs ((Complex.regularizedHGFun {(-3 : ℂ), 1, 1} {2, 2} (1 / 2)).re - x) < 1 / 1000000 } := by lynth
-
--- Axiom footprint checks.
-/-- info: 'IntervalArith.exp_sin_add_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms exp_sin_add_cos
-/-- info: 'IntervalArith.sin_exp_mul_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms sin_exp_mul_cos
-/-- info: 'IntervalArith.gamma_sin_add_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms gamma_sin_add_two
-/-- info: 'IntervalArith.log_gamma_add_sqrt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms log_gamma_add_sqrt
-/-- info: 'IntervalArith.tan_sinh_mul_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms tan_sinh_mul_cos
-/-- info: 'IntervalArith.cosh_sin_add_arctan' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms cosh_sin_add_arctan
-/-- info: 'IntervalArith.zeta_cos_add_three' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms zeta_cos_add_three
-/-- info: 'IntervalArith.arcsin_tanh_mul_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms arcsin_tanh_mul_cos
-/-- info: 'IntervalArith.arccos_sinh_mul_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms arccos_sinh_mul_exp
-/-- info: 'IntervalArith.sinc_exp_mul_sin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms sinc_exp_mul_sin
-/-- info: 'IntervalArith.cot_sinh_add_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms cot_sinh_add_two
-/-- info: 'IntervalArith.arsinh_cos_mul_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms arsinh_cos_mul_exp
-/-- info: 'IntervalArith.arcosh_exp_add_sin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms arcosh_exp_add_sin
-/-- info: 'IntervalArith.artanh_sin_mul_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms artanh_sin_mul_exp
-/-- info: 'IntervalArith.logb_exp_sin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms logb_exp_sin
-/-- info: 'IntervalArith.exp_chebyshev_t_add_sin' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms exp_chebyshev_t_add_sin
-/-- info: 'IntervalArith.log_chebyshev_u_add_three' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms log_chebyshev_u_add_three
-/-- info: 'IntervalArith.cos_euler_add_sqrt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms cos_euler_add_sqrt
-/-- info: 'IntervalArith.sinh_bell_over_hundred' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms sinh_bell_over_hundred
-/-- info: 'IntervalArith.exp_bernoulli_poly' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms exp_bernoulli_poly
-/-- info: 'IntervalArith.cos_bernoulli_four_add_sqrt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms cos_bernoulli_four_add_sqrt
-/-- info: 'IntervalArith.arctan_log_ten_mul_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms arctan_log_ten_mul_exp
-/-- info: 'IntervalArith.log_two_gamma_div_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms log_two_gamma_div_exp
-/-- info: 'IntervalArith.sqrt_pi_mul_tanh' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms sqrt_pi_mul_tanh
-/-- info: 'IntervalArith.choose_div_factorial_mul_sqrt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms choose_div_factorial_mul_sqrt
-/-- info: 'IntervalArith.sqrt_agm' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms sqrt_agm
-/-- info: 'IntervalArith.sqrt_digamma_add_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms sqrt_digamma_add_exp
-/-- info: 'IntervalArith.pochhammer_four_third_mul_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms pochhammer_four_third_mul_exp
 /-- info: 'IntervalArith.rpow_sin_exponent' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms rpow_sin_exponent
-/-- info: 'IntervalArith.log_mul_hypergeometric' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms log_mul_hypergeometric
-/-- info: 'IntervalArith.regularized_gauss_hypergeometric_neg_half' depends on axioms: [propext,
- Classical.choice,
- Quot.sound] -/
-#guard_msgs in
-#print axioms regularized_gauss_hypergeometric_neg_half
-/-- info: 'IntervalArith.regularized_pfq_3f2' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms regularized_pfq_3f2
-/-- info: 'IntervalArith.regularized_pfq_2f3' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms regularized_pfq_2f3
-/-- info: 'IntervalArith.regularized_pfq_4f3' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms regularized_pfq_4f3
-/-- info: 'IntervalArith.regularized_pfq_terminating_3f2' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms regularized_pfq_terminating_3f2
-
-end IntervalArith
-
--- The repository convention (`Test/*.lean`, `Test/Grind/README.md`) pins the
--- axiom footprint of every declaration once the goals go through.  Uncomment
--- (and keep the `info` docstring in sync) when a goal starts closing:
---
--- /-- info: 'regularized_pfq_terminating_3f2' depends on axioms: [propext, Classical.choice, Quot.sound] -/
--- #guard_msgs in
--- #print axioms regularized_pfq_terminating_3f2

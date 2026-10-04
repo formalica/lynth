@@ -1,12 +1,14 @@
 import Lynth.Interval.Fns.Log
+import Lynth.Interval.Fns.EulerGamma.Eval
 import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 
 /-!
 # Constants: Euler–Mascheroni `γ`
 
-`harmonic N - log (N + 1) < γ < harmonic N - log N` (Mathlib's monotone
-bracketing sequences), `N = 128`: width `≈ 1/N`.  Low accuracy; a sharper
-Euler–Maclaurin enclosure is future work (`docs/interval/04 §13`).
+Brent–McMillan B3 (`eulerBMIval`, proved in `EulerGamma/Eval.lean`):
+`γ ≈ A_N/B_N − K/B_N² − log m` with rigorous radius.  The old
+`harmonic N − log` bracketing (`eulerIvalN`, width `≈ 1/N`) is kept
+below for reference only; the registry uses the B3 evaluator.
 -/
 
 namespace Lynth.Interval.Fns
@@ -57,8 +59,8 @@ theorem mem_eulerIval {c : Ctx} (hc : c.Valid) : Real.eulerMascheroniConstant �
   name := "eulerMascheroni"
   graph y := y = Real.eulerMascheroniConstant
   exu := exu_eq₀ _
-  ev := eulerIval
-  sound := fun _ _ hc hy => by obtain rfl := hy; exact mem_eulerIval hc
+  ev := eulerBMIval
+  sound := fun _ _ hc hy => by obtain rfl := hy; exact mem_eulerBMIval hc
   cost := 400
 
 end Lynth.Interval.Fns

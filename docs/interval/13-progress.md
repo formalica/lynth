@@ -40,17 +40,23 @@ M0 → M1: vendor `LeanCert/Core/Dyadic.lean`, write `Num/Dy.lean` rounding API.
 ## Deferred notes (special functions, for later phases)
 
 * Gamma: IMPLEMENTED (`Lynth/Interval/Fns/Gamma.lean`, registry `gammaR`)
-  via Stirling + shifting + reflection (FLINT design), modulo the temporary
-  axiom `stirling_logGamma`.  The old incomplete-gamma plan (shift into
+  via Stirling + shifting + reflection (FLINT design), fully proved
+  (Stirling analysis in `Fns/StirlingExpansion.lean`, no axioms).
+  The old incomplete-gamma plan (shift into
   `(0,1]`, split `Real.Gamma_eq_integral` at `X = 40`) was benchmarked out:
   120+ transcendental evals per point and ~2^16 cancellation vs ~60 interval
-  ops for Stirling.  T18, P28, MP03, MP04, MP23 close (footprint `+ stirling_logGamma`).
-  MD02 additionally needs `Nat.floor` (unregistered).  Future work: prove
-  `stirling_logGamma` (Euler–Maclaurin, not in Mathlib); endpoint-tight
-  wide intervals via certified monotonicity pieces.
+  ops for Stirling.  T18, P28, MP03, MP04, MP23 close (standard footprint).
+  MD02 additionally needs `Nat.floor` (registered).  Future work:
+  endpoint-tight wide intervals via certified monotonicity pieces.
 * zeta (real `s > 1`): `zeta_eq_tsum_one_div_nat_add_one_cpow`, partial sums +
   integral-test tail.
-* Euler γ: `eulerMascheroniSeq n < γ < eulerMascheroniSeq' n` (width ~ 1/n).
+* Euler γ: IMPLEMENTED (`Lynth/Interval/Fns/EulerGamma/Eval.lean`,
+  registry `eulerR`) via Brent–McMillan B3 (FLINT design:
+  `γ ≈ A_N/B_N − K/B_N² − log m`, joint `A`/`B` fold + `K` fold,
+  analytic radius + `24·e^{−8m}` main bound), fully proved
+  (`EulerGamma/Bound`, `SeriesBounds`, `Eval`, no axioms).
+  The old `eulerMascheroniSeq` bracketing (width ~ 1/n) is kept in
+  `Fns/Const.lean` (`eulerIvalN`) for reference only.
 * digamma at naturals: `Complex.digamma_nat_add_one` (`H_n - γ`).
 * agm: `NNReal.agmSequences_fst_le_agm`, `NNReal.agm_le_agmSequences_snd`.
 * Hypergeometric (|z| < 1): coefficient lemma

@@ -6,32 +6,36 @@
 -- TODO: failing until multi-property list synthesis lands in the pipeline.
 import Lynth
 
+set_option maxHeartbeats 98 in
 /-- Target property: take/drop windows + mapped-value count. -/
 def tdValid (l : List Nat) : Prop :=
   l.take 2 = [7, 1] ∧ l.drop 2 = [1, 7] ∧ (l.map (· % 3)).count 1 = 4
 
+set_option maxHeartbeats 205 in
 /-- Computable check (mirrors `tdValid`). -/
 def tdCheck (l : List Nat) : Bool :=
   decide (l.take 2 = [7, 1]) &&
   decide (l.drop 2 = [1, 7]) &&
   decide ((l.map (· % 3)).count 1 = 4)
 
+set_option maxHeartbeats 279 in
 /-- The goal `lynth` must fill: the windowed list. -/
 def tdSol : { l : List Nat // tdValid l } := by
   lynth
+/-- info: 'tdSol' does not depend on any axioms -/
+#guard_msgs in
+#print axioms tdSol
 
+set_option maxHeartbeats 28 in
 /-- Etalon: [7, 1, 1, 7]. -/
-def etalon : List Nat := [7, 1, 1, 7]
+def takeDropExact_etalon : List Nat := [7, 1, 1, 7]
 
 -- The value computed by `lynth`:
 #eval (tdSol : List Nat)
 
--- The etalon:
-#eval etalon
+-- The takeDropExact_etalon:
+#eval takeDropExact_etalon
 
 -- Runtime check: witness satisfies the window + count properties.
 #guard tdCheck (tdSol : List Nat)
 
-/-- info: 'tdSol' does not depend on any axioms -/
-#guard_msgs in
-#print axioms tdSol

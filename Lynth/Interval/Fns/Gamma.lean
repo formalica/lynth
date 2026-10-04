@@ -1,4 +1,5 @@
 import Lynth.Interval.Fns.Elem
+import Lynth.Interval.Fns.StirlingExpansion
 import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 
@@ -16,10 +17,11 @@ at `0` and the pieces joined with `hull`.
 The per-function proof obligations that follow from Mathlib facts
 (recurrence chaining, reflection, interval composition) are proved here.
 The one analytic input — the Stirling expansion with remainder on
-`[8, ∞)` — is isolated as the temporary axiom `stirling_logGamma`
-(see its docstring).  It is used at every runtime evaluation, so proving
-it once (however long that takes) fixes the soundness of all Gamma
-goals; nothing else in this file depends on unproved analysis.
+`[8, ∞)` — is proved in `StirlingExpansion` and instantiated here as
+`stirling_logGamma` (see its docstring).  It is used at every runtime
+evaluation, so proving it once (however long that takes) fixes the
+soundness of all Gamma goals; everything in this file is proved from
+Mathlib facts, with no axioms and no `sorry`.
 
 Speed notes (runtime matters more than proof length here):
 * the hot loop is Horner in `z⁻²` (`stirlingAcc`, structural recursion on a
@@ -27,8 +29,9 @@ Speed notes (runtime matters more than proof length here):
   recursion in the hot path, so both native and kernel checking stay fast;
 * `N` (number of Stirling terms) is chosen adaptively by `chooseN`
   (pure computation, no proofs needed — any `N` is sound);
-* Bernoulli numbers never enter the computation: `stirlingCoeff` stores
-  the quotients `B_{2k}/(2k(2k-1))` directly as `ℚ` literals.
+* `stirlingCoeff` is hybrid: exact `ℚ` literals below 24, values from a
+  structural Bernoulli recurrence (`bernoulliList`, evaluated once per
+  point) beyond — unbounded term counts, hence no precision ceiling.
 -/
 
 namespace Lynth.Interval.Fns
@@ -37,9 +40,9 @@ open Lynth.Interval Dy
 
 /-! ### Stirling coefficients -/
 
-/-- Stirling coefficient `B_{2k} / (2k * (2k-1))` as an exact rational
-(`k = 1..24`, `0` beyond — `chooseN` never returns more than `24`). -/
-def stirlingCoeff : Nat → ℚ
+/-- table values `B_{2k} / (2k * (2k-1))` for `k = 1..24` (`0` beyond;
+used below the cutoff — see `stirlingCoeff`). -/
+def stirlingTable : Nat → ℚ
   | 1 => 1 / 12
   | 2 => -1 / 360
   | 3 => 1 / 1260
@@ -66,35 +69,262 @@ def stirlingCoeff : Nat → ℚ
   | 24 => -5609403368997817686249127547 / 104700960
   | _ => 0
 
+/-! ### General Bernoulli computation (arbitrary `k`) -/
+
+/-- one Pascal-triangle step on adjacent pairs. -/
+def pascalAdd : Nat → List Nat → List Nat
+  | prev, [] => [prev]
+  | prev, x :: xs => (prev + x) :: pascalAdd x xs
+
+theorem length_pascalAdd (prev : Nat) (r : List Nat) :
+    (pascalAdd prev r).length = r.length + 1 := by
+  induction r generalizing prev with
+  | nil => rfl
+  | cons x xs ih =>
+    have e : pascalAdd prev (x :: xs) = (prev + x) :: pascalAdd x xs := rfl
+    have h := ih x
+    simp only [e, List.length_cons, h]
+
+/-- next Pascal row from the current one. -/
+def nextPascal : List Nat → List Nat
+  | [] => [1]
+  | _ :: r => 1 :: pascalAdd 1 r
+
+theorem length_nextPascal (r : List Nat) :
+    (nextPascal r).length = r.length + 1 := by
+  cases r with
+  | nil => rfl
+  | cons a r =>
+    have e : nextPascal (a :: r) = 1 :: pascalAdd 1 r := rfl
+    have h := length_pascalAdd 1 r
+    simp only [e, List.length_cons, h]
+
+/-- incremental Bernoulli state: `vals = [B_0, …, B_{L-1}]` with
+`L = vals.length`, and `row = C(L+1, ·)` for computing `B_L` next. -/
+structure BernState where
+  vals : List ℚ
+  row : List Nat
+
+/-- the next Bernoulli number from the state (binomial recurrence
+`B_L = -Σ_{k<L} C(L+1,k)·B_k / (L+1)`). -/
+def bernNext (st : BernState) : ℚ :=
+  -(∑ k ∈ Finset.range st.vals.length, (st.row.getD k 0 : ℚ) * st.vals.getD k 0) /
+    ((st.vals.length : ℚ) + 1)
+
+/-- one step: append `B_L`, advance the Pascal row. -/
+def bernStep (st : BernState) : BernState :=
+  ⟨st.vals ++ [bernNext st], nextPascal st.row⟩
+
+/-- iterate from `[B_0] = [1]` with row `C(2, ·)`; `vals` grows by append. -/
+def bernState : Nat → BernState
+  | 0 => ⟨[1], [1, 2, 1]⟩
+  | n + 1 => bernStep (bernState n)
+
+theorem length_bernState_vals (n : Nat) : (bernState n).vals.length = n + 1 := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    have e : (bernState (n + 1)).vals
+        = (bernState n).vals ++ [bernNext (bernState n)] := rfl
+    simp [e, List.length_append, ih]
+
+/-- `[B_0, …, B_N]` (length `N+1`). -/
+def bernoulliList (N : Nat) : List ℚ := (bernState N).vals
+
+/-- computed `n`-th Bernoulli number. -/
+def bernoulliQ (n : Nat) : ℚ := (bernoulliList n).getD n 0
+
+/-- quotient form shared by the spec and the Horner entries. -/
+def stirlingQuot (b : ℚ) (k : Nat) : ℚ := b / ((2 * (k : ℚ)) * (2 * (k : ℚ) - 1))
+
+/-- general Stirling coefficient for any `k ≥ 1`, computed from Bernoulli. -/
+def stirlingGen (k : Nat) : ℚ := stirlingQuot (bernoulliQ (2 * k)) k
+
+/-- hybrid: exact table below the cutoff, computed values beyond
+(the cutoff moves with the table; `chooseN` has no cap). -/
+def stirlingCoeff (k : Nat) : ℚ :=
+  if k ≤ 24 then stirlingTable k else stirlingGen k
+
+/-- `getD` is stable under appending on the right. -/
+theorem getD_append_left {α : Type} (l₁ l₂ : List α) (i : Nat) (d : α)
+    (h : i < l₁.length) : (l₁ ++ l₂).getD i d = l₁.getD i d := by
+  induction l₁ generalizing i with
+  | nil => simp at h
+  | cons a t ih =>
+    cases i with
+    | zero => rfl
+    | succ i => exact ih i (by simpa using h)
+
+/-- growing the state preserves all computed Bernoulli numbers. -/
+theorem bernState_getD_stable (n k i : Nat) (hi : i ≤ n) :
+    ((bernState (n + k)).vals.getD i (0 : ℚ)) =
+      ((bernState n).vals.getD i (0 : ℚ)) := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    have e : n + (k + 1) = (n + k) + 1 := by omega
+    have step : (bernState ((n + k) + 1)).vals
+        = (bernState (n + k)).vals ++ [bernNext (bernState (n + k))] := rfl
+    have hlen := length_bernState_vals (n + k)
+    rw [e, step, getD_append_left _ _ _ _ (by omega), ih]
+
+/-- usable form: a longer list agrees with a shorter one on the overlap. -/
+theorem bernoulliList_getD_stable {a b i : Nat} (hi : i ≤ a) (hab : a ≤ b) :
+    (bernoulliList b).getD i (0 : ℚ) = (bernoulliList a).getD i (0 : ℚ) := by
+  obtain ⟨m, rfl⟩ : ∃ m, b = a + m := ⟨b - a, by omega⟩
+  show ((bernState (a + m)).vals.getD i (0 : ℚ)) = _
+  exact bernState_getD_stable a m i hi
+
 /-- Stirling summand `c_k / z^(2k-1)` (for `k ≥ 1`). -/
 noncomputable def stirlingTerm (z : ℝ) (k : ℕ) : ℝ := (stirlingCoeff k : ℝ) / z ^ (2 * k - 1)
 
-/--
-Temporary axiom: Stirling expansion of `log Γ` on `[8, ∞)` with an explicit
-remainder bound.  This is the real case of FLINT's
-`acb_gamma_stirling_bound` (`2|B_{2n}|Γ(2n+k-1)/(Γ(k+1)Γ(2n+1))·|z|·c^{2n+k}`
-with `k = 0` and phase factor `c = 1/|z|`, i.e. `2|B_{2n}|/((2n)(2n-1)z^{2n-1})`).
+/-! ### Stirling expansion with remainder (proved)
 
-Why it is true: the classical Stieltjes enveloping estimate for the
-Stirling series at real `z > 0` (see e.g. Olver, *Asymptotics and Special
-Functions*, Ch. 8, or DlMF §5.11): the remainder after `N - 1` terms is at
-most twice the first neglected term in absolute value.  The hypothesis
-`8 ≤ z` keeps us far from the regime where the optimal-truncation
-constant could matter.
-
-How to prove it (once): Euler–Maclaurin summation applied to `log` on
-`[1, z]` (Bernoulli-number form with integral remainder), transferred from
-`log (n!)` to `log Γ` via `Real.Gamma_nat_eq_factorial` and Bohr–Mollerup
-uniqueness, then the integral remainder estimated on `[8, ∞)`.  None of
-the Euler–Maclaurin machinery exists in Mathlib yet, so this is a genuine
-formalization project — but its statement is exactly what the interval
-kernel needs, and every Gamma evaluation bottoms out here.
+The analytic input — Stirling expansion of `log Γ` on `[8, ∞)` with an
+explicit remainder — is proved here via `StirlingExpansion` (Euler–Maclaurin
+summation on `log`, transferred from `log (n!)` to `log Γ` by Bohr–Mollerup).
+The Bernoulli recurrence and the 24-entry table are verified against
+Mathlib's `bernoulli` below, so every coefficient the kernel evaluates is
+the Bernoulli quotient the analysis is about.  No axioms, no `sorry`.
 -/
-axiom stirling_logGamma (z : ℝ) (hz : 8 ≤ z) (N : ℕ) (hN : 1 ≤ N) (hN24 : N ≤ 24) :
-  ∃ R : ℝ, Real.log (Real.Gamma z)
-      = (z - 1 / 2) * Real.log z - z + Real.log (Real.sqrt (2 * Real.pi))
-        + (∑ k ∈ Finset.range (N - 1), stirlingTerm z (k + 1)) + R
-    ∧ |R| ≤ 2 * |(stirlingCoeff N : ℝ)| / z ^ (2 * N - 1)
+
+lemma pascalAdd_choose (L : ℕ) : ∀ r a : ℕ, a + r = L →
+    pascalAdd (L.choose a) ((List.range' (a + 1) r).map L.choose) =
+      (List.range' (a + 1) (r + 1)).map (L + 1).choose := by
+  intro r
+  induction r with
+  | zero =>
+    intro a h
+    subst h
+    simp [pascalAdd]
+  | succ r ih =>
+    intro a h
+    rw [List.range'_succ, List.map_cons, pascalAdd, ih (a + 1) (by omega), List.range'_succ (s := a + 1) (n := r + 1),
+      List.map_cons, Nat.choose_succ_succ]
+
+lemma nextPascal_choose (L : ℕ) :
+    nextPascal ((List.range' 0 (L + 1)).map L.choose) = (List.range' 0 (L + 2)).map (L + 1).choose := by
+  rw [List.range'_succ, List.map_cons, nextPascal, List.range'_succ (s := 0) (n := L + 1), List.map_cons]
+  have := pascalAdd_choose L L 0 (by omega)
+  simp only [Nat.choose_zero_right] at this ⊢
+  rw [this]
+
+lemma bernState_spec (n : ℕ) :
+    (bernState n).vals.length = n + 1 ∧
+    (∀ i ≤ n, (bernState n).vals.getD i 0 = bernoulli i) ∧
+    (bernState n).row = (List.range' 0 (n + 3)).map (n + 2).choose := by
+  induction n with
+  | zero =>
+    refine ⟨rfl, ?_, by decide⟩
+    intro i hi
+    obtain rfl : i = 0 := by omega
+    simp [bernState]
+  | succ n ih =>
+    obtain ⟨hlen, hval, hrow⟩ := ih
+    have hnext : bernNext (bernState n) = bernoulli (n + 1) := by
+      have hs := sum_bernoulli (n + 2)
+      rw [ite_eq_right (show n + 2 ≠ 1 by omega), Finset.sum_range_succ, Nat.choose_succ_self_right] at hs
+      unfold bernNext
+      rw [hlen]
+      have hsum : ∑ k ∈ Finset.range (n + 1),
+          ((bernState n).row.getD k 0 : ℚ) * (bernState n).vals.getD k 0 =
+          ∑ k ∈ Finset.range (n + 1), ((n + 2).choose k : ℚ) * bernoulli k := by
+        apply Finset.sum_congr rfl
+        intro k hk
+        rw [Finset.mem_range] at hk
+        rw [hval k (by omega), hrow]
+        congr 1
+        simp [List.getD_eq_getElem?_getD, show k < n + 3 by omega]
+      rw [hsum]
+      push_cast at hs ⊢
+      field_simp
+      linarith
+    refine ⟨?_, ?_, ?_⟩
+    · simp [bernState, bernStep, hlen]
+    · intro i hi
+      simp only [bernState, bernStep]
+      rcases Nat.lt_or_ge i (n + 1) with h | h
+      · rw [List.getD_append _ _ _ _ (by omega), hval i (by omega)]
+      · obtain rfl : i = n + 1 := by omega
+        rw [List.getD_append_right _ _ _ _ (by omega), hlen, Nat.sub_self]
+        simpa using hnext
+    · simp only [bernState, bernStep, hrow]
+      exact nextPascal_choose (n + 2)
+
+/-- `bernoulliList n` really lists Bernoulli numbers (helper form of (2)). -/
+lemma bernoulliList_getD (n i : Nat) (hi : i ≤ n) :
+    (bernoulliList n).getD i 0 = bernoulli i :=
+  (bernState_spec n).2.1 i hi
+
+/-- Boolean certificate that the first `K` table entries equal the Bernoulli
+quotients computed by the recurrence (all Bernoulli numbers computed once, by
+`bernoulliList (2 * K)`). Checked by the kernel with `decide +kernel`. -/
+def stirlingTableCheck (K : ℕ) : Bool :=
+  let L := bernoulliList (2 * K)
+  (List.range K).all fun i =>
+    stirlingTable (i + 1) == stirlingQuot (L.getD (2 * (i + 1)) 0) (i + 1)
+
+/-- Generic table-correctness lemma: any cutoff `K` whose certificate evaluates to
+`true` gives the Bernoulli formula for all entries `1..K`. -/
+lemma stirlingTable_eq_of_check {K : ℕ} (h : stirlingTableCheck K = true) {k : ℕ}
+    (h1 : 1 ≤ k) (hK : k ≤ K) : stirlingTable k = stirlingQuot (bernoulli (2 * k)) k := by
+  unfold stirlingTableCheck at h
+  rw [List.all_eq_true] at h
+  have := h (k - 1) (List.mem_range.mpr (by omega))
+  rw [beq_iff_eq, show k - 1 + 1 = k by omega, bernoulliList_getD _ _ (by omega)] at this
+  exact this
+
+/-- The concrete certificate for the 24-entry table (kernel evaluation). -/
+lemma stirlingTableCheck_24 : stirlingTableCheck 24 = true := by decide +kernel
+
+/-- Every coefficient used by the hybrid scheme is the Bernoulli quotient. -/
+lemma stirlingCoeff_eq (k : ℕ) (hk : 1 ≤ k) :
+    stirlingCoeff k = stirlingQuot (bernoulli (2 * k)) k := by
+  unfold stirlingCoeff
+  split_ifs with h
+  · exact stirlingTable_eq_of_check stirlingTableCheck_24 hk h
+  · unfold stirlingGen bernoulliQ
+    rw [bernoulliList_getD _ _ le_rfl]
+
+lemma stirlingCoeff_cast (k : ℕ) (hk : 1 ≤ k) :
+    (stirlingCoeff k : ℝ) = StirlingExpansion.bc k := by
+  rw [stirlingCoeff_eq k hk, StirlingExpansion.bc, stirlingQuot]
+  push_cast
+  ring
+
+/-- Stirling expansion of `log Γ` on `[8, ∞)` with explicit
+remainder bound, for every `N ≥ 1` (the real case of FLINT's
+`acb_gamma_stirling_bound`). -/
+theorem stirling_logGamma (z : ℝ) (hz : 8 ≤ z) (N : ℕ) (hN : 1 ≤ N) :
+    ∃ R : ℝ, Real.log (Real.Gamma z)
+        = (z - 1 / 2) * Real.log z - z + Real.log (Real.sqrt (2 * Real.pi))
+          + (∑ k ∈ Finset.range (N - 1), stirlingTerm z (k + 1)) + R
+      ∧ |R| ≤ 2 * |(stirlingCoeff N : ℝ)| / z ^ (2 * N - 1) := by
+  refine ⟨StirlingExpansion.E (N - 1) z, ?_, ?_⟩
+  · have hsum : (∑ k ∈ Finset.range (N - 1), stirlingTerm z (k + 1)) =
+        StirlingExpansion.P (N - 1) z := by
+      unfold StirlingExpansion.P stirlingTerm
+      refine Finset.sum_congr rfl fun k _ => ?_
+      rw [stirlingCoeff_cast _ (by omega), show 2 * (k + 1) - 1 = 2 * k + 1 by omega]
+    rw [hsum, StirlingExpansion.E, StirlingExpansion.S]
+    ring
+  · rw [stirlingCoeff_cast N hN]
+    exact StirlingExpansion.abs_E_le hN (by linarith)
+
+/-- the recurrence computes Bernoulli numbers. -/
+theorem bernoulliList_correct (n i : Nat) (hi : i ≤ n) :
+    (bernoulliList n).getD i 0 = bernoulli i := by
+  exact bernoulliList_getD n i hi
+
+/-- the table matches the Bernoulli formula on `1..24`. -/
+theorem stirlingTable_correct (k : Nat) (h1 : 1 ≤ k) (h24 : k ≤ 24) :
+    stirlingTable k
+      = bernoulli (2 * k) / (((2 * k : ℕ) : ℚ) * (((2 * k : ℕ) : ℚ) - 1)) := by
+  rw [stirlingTable_eq_of_check stirlingTableCheck_24 h1 h24, stirlingQuot]
+  push_cast
+  ring
+
+
 
 /-! ### Argument shift -/
 
@@ -197,24 +427,31 @@ theorem gamma_eq_gamma_add_div_rising (x : ℝ) (r : Nat) :
 
 /-! ### Stirling partial sums (Horner in `z⁻²`) -/
 
-/-- `c_{M-j} + W2 * (c_{M-j+1} + …)`: Horner accumulator, `j` levels. -/
-def stirlingAcc (w : Nat) (W2 : Ival) (M : Nat) : Nat → Ival
+/-- `c_{M-j} + W2 * (c_{M-j+1} + …)`: Horner accumulator, `j` levels.
+`B` is the shared Bernoulli list (`bernoulliList (2N)`); levels `k ≤ 24`
+use exact table literals, deeper levels the recurrence values in `B`. -/
+def stirlingAcc (w : Nat) (W2 : Ival) (B : List ℚ) (M : Nat) : Nat → Ival
   | 0 => Ival.zero
   | j + 1 =>
-    Ival.add w (Ival.ofRat w (stirlingCoeff (M - j)))
-      (Ival.mul w W2 (stirlingAcc w W2 M j))
+    Ival.add w (Ival.ofRat w (if M - j ≤ 24 then stirlingTable (M - j)
+      else stirlingQuot (B.getD (2 * (M - j)) 0) (M - j)))
+      (Ival.mul w W2 (stirlingAcc w W2 B M j))
 
 /-- real value of the accumulator. -/
 def stirlingAccReal (t : ℝ) (M j : Nat) : ℝ :=
   ∑ i ∈ Finset.range j, (stirlingCoeff (M - j + 1 + i) : ℝ) * t ^ i
 
-theorem mem_stirlingAcc {w : Nat} {W2 : Ival} {M j : Nat} {t : ℝ}
-    (ht : t ∈ W2) (hj : j ≤ M) : stirlingAccReal t M j ∈ stirlingAcc w W2 M j := by
+theorem mem_stirlingAcc {w : Nat} {W2 : Ival} {M N : Nat} {t : ℝ}
+    (ht : t ∈ W2) (hMN : M + 1 ≤ N) {j : Nat} (hj : j ≤ M) :
+    stirlingAccReal t M j ∈ stirlingAcc w W2 (bernoulliList (2 * N)) M j := by
   induction j with
   | zero => simpa [stirlingAccReal, stirlingAcc] using Ival.mem_zero
   | succ j ih =>
     have hj' : j ≤ M := by omega
-    have h0 : M - (j + 1) + 1 + 0 = M - j := by omega
+    have hk1 : 1 ≤ M - j := by omega
+    have hstab : (bernoulliList (2 * N)).getD (2 * (M - j)) (0 : ℚ)
+        = (bernoulliList (2 * (M - j))).getD (2 * (M - j)) (0 : ℚ) :=
+      bernoulliList_getD_stable le_rfl (by omega)
     have hXY : (∑ i ∈ Finset.range j, (stirlingCoeff (M - j + (i + 1)) : ℝ) * t ^ (i + 1))
         = ∑ i ∈ Finset.range j, t * ((stirlingCoeff (M - j + 1 + i) : ℝ) * t ^ i) := by
       apply Finset.sum_congr rfl
@@ -222,6 +459,7 @@ theorem mem_stirlingAcc {w : Nat} {W2 : Ival} {M j : Nat} {t : ℝ}
       have eix : M - j + (i + 1) = M - j + 1 + i := by omega
       rw [eix, pow_succ']
       ring
+    have h0 : M - (j + 1) + 1 + 0 = M - j := by omega
     have hS : stirlingAccReal t M (j + 1)
         = (stirlingCoeff (M - j) : ℝ) + t * stirlingAccReal t M j := by
       simp only [stirlingAccReal, Finset.sum_range_succ', h0, pow_zero, mul_one]
@@ -229,8 +467,17 @@ theorem mem_stirlingAcc {w : Nat} {W2 : Ival} {M j : Nat} {t : ℝ}
       exact add_comm _ _
     rw [hS]
     simp only [stirlingAcc]
-    exact Ival.mem_add (by simpa using Ival.mem_ofRat w (stirlingCoeff (M - j)))
-      (Ival.mem_mul ht (ih hj'))
+    by_cases h24 : M - j ≤ 24
+    · have eS : stirlingCoeff (M - j) = stirlingTable (M - j) := by
+        unfold stirlingCoeff; rw [ite_eq_left h24]
+      rw [eS, ite_eq_left h24]
+      exact Ival.mem_add (Ival.mem_ofRat _ _) (Ival.mem_mul ht (ih hj'))
+    · have eS : stirlingCoeff (M - j) = stirlingGen (M - j) := by
+        unfold stirlingCoeff; rw [ite_eq_right h24]
+      rw [eS]
+      unfold stirlingGen bernoulliQ
+      rw [ite_eq_right h24, hstab]
+      exact Ival.mem_add (Ival.mem_ofRat _ _) (Ival.mem_mul ht (ih hj'))
 
 /-- `z⁻¹ * (c * (z⁻¹ * z⁻¹)^i) = c * (z^(2i+1))⁻¹`. -/
 theorem zinv_sq_pow' (z c : ℝ) (i : Nat) :
@@ -250,7 +497,7 @@ theorem zinv_sq_pow' (z c : ℝ) (i : Nat) :
       conv_rhs => rw [pow_add, pow_two]
     rw [p2, p3]
 
-/-- the Horner value times `z⁻¹` is the axiom's partial sum. -/
+/-- the Horner value times `z⁻¹` is the theorem's partial sum. -/
 theorem stirling_sum_eq {z : ℝ} (N : Nat) :
     (∑ k ∈ Finset.range (N - 1), stirlingTerm z (k + 1))
       = z⁻¹ * stirlingAccReal (z⁻¹ * z⁻¹) (N - 1) (N - 1) := by
@@ -302,9 +549,13 @@ theorem mem_stirlingMain {c : Ctx} (hc : c.Valid) {z : ℝ} {Z : Ival} (hx : z �
   rw [eassoc]
   exact h
 
+/-- tail interval from an explicit coefficient (search fast path, no proofs). -/
+def stirlingTailIvalQ (w : Nat) (Z : Ival) (N : Nat) (cN : ℚ) : Ival :=
+  Ival.div w (Ival.ofRat w (2 * |cN|)) (Ival.npow w Z (2 * N - 1))
+
 /-- interval containing the real remainder bound `2|c_N| / z^(2N-1)`. -/
 def stirlingTailIval (w : Nat) (Z : Ival) (N : Nat) : Ival :=
-  Ival.div w (Ival.ofRat w (2 * |stirlingCoeff N|)) (Ival.npow w Z (2 * N - 1))
+  stirlingTailIvalQ w Z N (stirlingCoeff N)
 
 theorem mem_stirlingTailIval {w : Nat} {Z : Ival} {N : Nat} {z : ℝ}
     (hx : z ∈ Z) :
@@ -317,33 +568,37 @@ theorem mem_stirlingTailIval {w : Nat} {Z : Ival} {N : Nat} {z : ℝ}
   rw [hnum] at hmem
   exact Ival.mem_div hmem (Ival.mem_npow hx _)
 
-/-- `log Γ` on `Z ∋ z ≥ 8`: main + Horner sum widened by the tail. -/
-def logGammaIval (c : Ctx) (w : Nat) (Z : Ival) (N : Nat) : Ival :=
+/-- `log Γ` on `Z ∋ z ≥ 8`: main + Horner sum widened by the tail.
+`B` is the shared Bernoulli list (`bernoulliList (2N)`). -/
+def logGammaIval (c : Ctx) (w : Nat) (Z : Ival) (N : Nat) (B : List ℚ) : Ival :=
   let Zinv := Ival.inv w Z
   let W2 := Ival.mul w Zinv Zinv
-  let S := Ival.mul w Zinv (stirlingAcc w W2 (N - 1) (N - 1))
+  let S := Ival.mul w Zinv (stirlingAcc w W2 B (N - 1) (N - 1))
   let M := stirlingMain c w Z
   Ival.widenMag w (Ival.add w M S) (Ival.magHi (stirlingTailIval w Z N))
 
 theorem mem_logGammaIval {c : Ctx} (hc : c.Valid) {w : Nat} {Z : Ival} {N : Nat} {zz : ℝ}
-    (hx : zz ∈ Z) (hz : 8 ≤ zz) (hN1 : 1 ≤ N) (hN24 : N ≤ 24) :
-    Real.log (Real.Gamma zz) ∈ logGammaIval c w Z N := by
-  obtain ⟨R, hR, hRb⟩ := stirling_logGamma zz hz N hN1 hN24
+    (hx : zz ∈ Z) (hz : 8 ≤ zz) (hN1 : 1 ≤ N) :
+    Real.log (Real.Gamma zz) ∈ logGammaIval c w Z N (bernoulliList (2 * N)) := by
+  obtain ⟨R, hR, hRb⟩ := stirling_logGamma zz hz N hN1
+  have hMN : N - 1 + 1 ≤ N := by omega
   have hzi : zz⁻¹ ∈ Ival.inv w Z := Ival.mem_inv hx
   have hW2 : zz⁻¹ * zz⁻¹ ∈ Ival.mul w (Ival.inv w Z) (Ival.inv w Z) :=
     Ival.mem_mul hzi hzi
   have hS : (∑ k ∈ Finset.range (N - 1), stirlingTerm zz (k + 1))
       ∈ Ival.mul w (Ival.inv w Z)
-        (stirlingAcc w (Ival.mul w (Ival.inv w Z) (Ival.inv w Z)) (N - 1) (N - 1)) := by
+        (stirlingAcc w (Ival.mul w (Ival.inv w Z) (Ival.inv w Z))
+          (bernoulliList (2 * N)) (N - 1) (N - 1)) := by
     rw [stirling_sum_eq]
-    exact Ival.mem_mul hzi (mem_stirlingAcc hW2 le_rfl)
+    exact Ival.mem_mul hzi (mem_stirlingAcc hW2 hMN le_rfl)
   have hM : (zz - 1 / 2) * Real.log zz - zz + Real.log (Real.sqrt (2 * Real.pi))
       ∈ stirlingMain c w Z := mem_stirlingMain (c := c) (w := w) hc hx
   have hMS : ((zz - 1 / 2) * Real.log zz - zz + Real.log (Real.sqrt (2 * Real.pi)))
       + (∑ k ∈ Finset.range (N - 1), stirlingTerm zz (k + 1))
       ∈ Ival.add w (stirlingMain c w Z)
         (Ival.mul w (Ival.inv w Z)
-          (stirlingAcc w (Ival.mul w (Ival.inv w Z) (Ival.inv w Z)) (N - 1) (N - 1))) :=
+          (stirlingAcc w (Ival.mul w (Ival.inv w Z) (Ival.inv w Z))
+            (bernoulliList (2 * N)) (N - 1) (N - 1))) :=
     Ival.mem_add hM hS
   have hT : 2 * |(stirlingCoeff N : ℝ)| / zz ^ (2 * N - 1)
       ∈ stirlingTailIval w Z N := mem_stirlingTailIval (w := w) (N := N) hx
@@ -365,45 +620,33 @@ theorem mem_logGammaIval {c : Ctx} (hc : c.Valid) {w : Nat} {Z : Ival} {N : Nat}
 
 /-! ### Adaptive parameter choice (pure computation, no proofs needed) -/
 
-/-- is the tail bound at the threshold point already below `2^{-(w+8)}`? -/
-def tailSmall (w T N : Nat) : Bool :=
-  match Ival.magHi (stirlingTailIval w (Ival.pt (Dy.ofNat T)) N) with
+/-- is the tail bound at the threshold point already below `2^{-(w+8)}`?
+`cN` is the candidate coefficient value (from the threaded Bernoulli state). -/
+def tailSmallQ (w T N : Nat) (cN : ℚ) : Bool :=
+  match Ival.magHi (stirlingTailIvalQ w (Ival.pt (Dy.ofNat T)) N cN) with
   | some m => Dy.leB m ⟨1, -((w + 8 : Nat) : Int)⟩
   | none => false
 
-/-- smallest `N ∈ [1, 24]` with a small tail bound (`24` if none qualifies).
-Any `N` in range is sound; this just controls tightness. -/
-def chooseN (w T : Nat) : Nat := go (w + 64) 1
-where go : Nat → Nat → Nat
-  | 0, N => min N 24
-  | fuel + 1, N => if 24 ≤ N then 24 else if tailSmall w T N then N else go fuel (N + 1)
+/-- smallest `N ≥ 1` with a small tail bound (no cap — any `N` is sound).
+The Bernoulli state is threaded through so the whole search costs `O(N²)`
+instead of recomputing the recurrence per candidate. -/
+def chooseN (w T : Nat) : Nat := go (w + 64) 1 (bernState 2)
+where go : Nat → Nat → BernState → Nat
+  | 0, N, _ => N
+  | fuel + 1, N, st =>
+    if tailSmallQ w T N (stirlingQuot (st.vals.getD (2 * N) 0) N) then N
+    else go fuel (N + 1) (bernStep (bernStep st))
 
-theorem chooseN_go_ge_one {w T : Nat} : ∀ fuel N, 1 ≤ N → 1 ≤ chooseN.go w T fuel N
-  | 0, _, h => by simp [chooseN.go, h]
-  | fuel + 1, _, h => by
+theorem chooseN_go_ge_one {w T : Nat} : ∀ fuel N st, 1 ≤ N → 1 ≤ chooseN.go w T fuel N st
+  | 0, _, _, h => by simp [chooseN.go, h]
+  | fuel + 1, _, _, h => by
     unfold chooseN.go
     split
-    · omega
-    · split
-      · exact h
-      · exact chooseN_go_ge_one fuel _ (by omega)
-
-theorem chooseN_go_le {w T : Nat} : ∀ fuel N, chooseN.go w T fuel N ≤ 24
-  | 0, N => by simp [chooseN.go]
-  | fuel + 1, N => by
-    unfold chooseN.go
-    split
-    · rfl
-    · rename_i h24
-      split
-      · omega
-      · exact chooseN_go_le fuel _
+    · exact h
+    · exact chooseN_go_ge_one fuel _ _ (by omega)
 
 theorem chooseN_ge_one {w T : Nat} : 1 ≤ chooseN w T :=
-  chooseN_go_ge_one _ _ le_rfl
-
-theorem chooseN_le {w T : Nat} : chooseN w T ≤ 24 :=
-  chooseN_go_le _ _
+  chooseN_go_ge_one _ _ _ le_rfl
 
 /-! ### Positive side: shift + Stirling + rising -/
 
@@ -419,7 +662,7 @@ def gammaPosIval (c : Ctx) (X : Ival) : Ival :=
     let r := gammaShift a T
     let Z := Ival.add w X (Ival.pt (Dy.ofNat r))
     let N := chooseN w T
-    Ival.div w (expIval c (logGammaIval c w Z N)) (risingIval w X r)
+    Ival.div w (expIval c (logGammaIval c w Z N (bernoulliList (2 * N)))) (risingIval w X r)
 
 theorem mem_gammaPosIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival}
     (hx : x ∈ X) : Real.Gamma x ∈ gammaPosIval c X := by
@@ -443,11 +686,11 @@ theorem mem_gammaPosIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival}
     have hZ : x + ((r : ℕ) : ℝ) ∈ Ival.add w X (Ival.pt (Dy.ofNat r)) :=
       Ival.mem_add hx (Ival.mem_pt_nat r)
     have hL := mem_logGammaIval (w := w) (N := chooseN w T) hc hZ h8
-      chooseN_ge_one chooseN_le
+      chooseN_ge_one
     have hpos : 0 < Real.Gamma (x + ((r : ℕ) : ℝ)) :=
       Real.Gamma_pos_of_pos (by linarith)
     have hG : Real.Gamma (x + ((r : ℕ) : ℝ)) ∈ expIval c (logGammaIval c w
-        (Ival.add w X (Ival.pt (Dy.ofNat r))) N) := by
+        (Ival.add w X (Ival.pt (Dy.ofNat r))) N (bernoulliList (2 * N))) := by
       rw [← Real.exp_log hpos]
       exact mem_expIval c hL
     have hRr := mem_risingIval (w := w) hx r

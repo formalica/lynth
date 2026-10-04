@@ -4,6 +4,7 @@
 -- the qsort tie-break regression note).
 import Lynth
 
+set_option maxHeartbeats 325 in
 def valid9 (g : Fin 9 → Fin 9 → Fin 9) : Prop :=
   (∀ r : Fin 9, ∀ c1 : Fin 9, ∀ c2 : Fin 9,
     c1 ≠ c2 → g r c1 ≠ g r c2) ∧
@@ -19,6 +20,7 @@ def valid9 (g : Fin 9 → Fin 9 → Fin 9) : Prop :=
   List.Pairwise (· ≠ ·) [g 6 3, g 6 4, g 6 5, g 7 3, g 7 4, g 7 5, g 8 3, g 8 4, g 8 5] ∧
   List.Pairwise (· ≠ ·) [g 6 6, g 6 7, g 6 8, g 7 6, g 7 7, g 7 8, g 8 6, g 8 7, g 8 8]
 
+set_option maxHeartbeats 201 in
 def clues9 (g : Fin 9 → Fin 9 → Fin 9) : Prop :=
   g 0 0 = 5 ∧ g 0 1 = 3 ∧ g 0 4 = 7 ∧
   g 1 0 = 6 ∧ g 1 3 = 1 ∧ g 1 4 = 9 ∧ g 1 5 = 5 ∧
@@ -30,10 +32,11 @@ def clues9 (g : Fin 9 → Fin 9 → Fin 9) : Prop :=
   g 7 3 = 4 ∧ g 7 4 = 1 ∧ g 7 5 = 9 ∧ g 7 8 = 5 ∧
   g 8 4 = 8 ∧ g 8 7 = 7 ∧ g 8 8 = 9
 
+set_option maxHeartbeats 20293 in
 set_option maxHeartbeats 2000000 in
 def sudoku9 : { g : Fin 9 → Fin 9 → Fin 9 // valid9 g ∧ clues9 g } := by
   lynth
-
 /-- info: 'sudoku9' depends on axioms: [propext] -/
 #guard_msgs in
 #print axioms sudoku9
+

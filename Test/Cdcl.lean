@@ -4,6 +4,7 @@ import Lynth.Sat.Cdcl
 
 open Lynth.Sat
 
+set_option maxHeartbeats 58 in
 /-- Project a CDCL result to `Bool` (`none` = out of fuel). -/
 def proj (o : Cdcl.CdclOut) : Option Bool :=
   match o.result with
@@ -11,6 +12,7 @@ def proj (o : Cdcl.CdclOut) : Option Bool :=
   | some .unsat => some false
   | none => none
 
+set_option maxHeartbeats 29 in
 /-- Project a DPLL result to `Bool`. -/
 def projD : SatResult → Bool
   | .sat _ => true

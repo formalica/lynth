@@ -14,14 +14,19 @@ open Lynth.Interval
 -- Reflection: Gamma(-1/2) = -2*sqrt(pi)
 #eval (Fns.gammaIval (Ctx.make 64) (Ival.ofRat 64 (-1 / 2)))
 
+set_option maxHeartbeats 26834 in
 -- Closed bounds through `lynth`.
 theorem gamma_quarter_le : Real.Gamma (1 / 4) ≤ 37 / 10 := by lynth
+#print axioms gamma_quarter_le
+set_option maxHeartbeats 26927 in
 theorem gamma_third_ge : 13 / 5 ≤ Real.Gamma (1 / 3) := by lynth
+#print axioms gamma_third_ge
 
+set_option maxHeartbeats 27460 in
 def gamma_quarter_approx : { x : Rat // abs (Real.Gamma (1 / 4) - x) < (10 : ℝ) ^ (-5 : ℤ) } := by
   lynth
+#print axioms gamma_quarter_approx
 
 -- Axiom footprint: the standard three plus the temporary Stirling axiom
 -- (`Lynth/Interval/Fns/Gamma.lean`).
 #eval (Fns.gammaIval (Ctx.make 64) (Ival.ofRat 64 (-2)))
-#print axioms gamma_quarter_le

@@ -12,6 +12,7 @@ Ground truth: `arb/CERTIFICATES.md` (Arb, 256-bit, python-flint 0.9.0).
 namespace IntervalArith
 
 
+set_option maxHeartbeats 4023 in
 /-- **T01** — `cos (8 * pi / 17)` — the example from the request. An exact rational multiple of
 `pi`: the natural implementation reduces `pi` algebraically instead of evaluating an interval
 `pi`.
@@ -25,7 +26,11 @@ enclosure width 1e-20.
 
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 def cos_eight_pi_over_seventeen : { x : Rat // abs (Real.cos (Real.pi * 8 / 17) - x) < (10 : ℝ) ^ (-5 : ℤ) } := by lynth
+/-- info: 'IntervalArith.cos_eight_pi_over_seventeen' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms cos_eight_pi_over_seventeen
 
+set_option maxHeartbeats 3787 in
 /-- **T02** — `sin (8 * pi / 17)` with an **irrational tolerance** `pi / 100`: the tolerance itself
 is an interval quantity.
 
@@ -38,7 +43,11 @@ tolerance is irrational (pi/100).
 
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 def sin_eight_pi_over_seventeen : { x : Rat // abs (Real.sin (Real.pi * 8 / 17) - x) < Real.pi / 100 } := by lynth
+/-- info: 'IntervalArith.sin_eight_pi_over_seventeen' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sin_eight_pi_over_seventeen
 
+set_option maxHeartbeats 2169 in
 /-- **T03** — `exp 2` — the elementary transcendental value (compare `Test/Corpus.lean` style goals,
 now with a rational witness).
 
@@ -48,7 +57,11 @@ enclosure `7.389056098930650406941822; 7.389056098930650406941822`, witness
 
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 def exp_two : { x : Rat // abs (Real.exp 2 - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.exp_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms exp_two
 
+set_option maxHeartbeats 4237 in
 /-- **T04** — `log (pi / 100)` — negative value, irrational argument.
 
 enclosure `-3.460440300138690972175937; -3.460440300138690972175937`, witness
@@ -59,7 +72,11 @@ log of the irrational pi/100; enclosure [-3.4604403001386911938926, -3.460440300
 
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 def log_pi_over_hundred : { x : Rat // abs (Real.log (Real.pi / 100) - x) < 1 / 100000 } := by lynth
+/-- info: 'IntervalArith.log_pi_over_hundred' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms log_pi_over_hundred
 
+set_option maxHeartbeats 3558 in
 /-- **T05** — `2 ^ (1/3)` — real power (`Real.rpow`), i.e. Arb's `root 3` / `pow` path.
 
 enclosure `1.259921049894873190666544; 1.259921049894873190666544`, witness
@@ -71,7 +88,11 @@ two Arb paths agree: root(3) = [1.2599210498948731647672, 1.25992104989487316476
 
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 def rpow_two_one_third : { x : Rat // abs ((2 : ℝ) ^ ((1 : ℝ) / 3) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.rpow_two_one_third' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms rpow_two_one_third
 
+set_option maxHeartbeats 643 in
 /-- **T06** — `sqrt 2` — algebraic value, 10-digit tolerance, needs ~20 digits of working precision
 to place a rational witness.
 
@@ -81,26 +102,11 @@ enclosure `1.414213562373095145474622; 1.414213562373095145474622`, witness
 
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 def sqrt_two : { x : Rat // abs (Real.sqrt 2 - x) < (10 : ℝ) ^ (-10 : ℤ) } := by lynth
-
--- Axiom footprint checks.
-/-- info: 'IntervalArith.cos_eight_pi_over_seventeen' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms cos_eight_pi_over_seventeen
-/-- info: 'IntervalArith.sin_eight_pi_over_seventeen' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms sin_eight_pi_over_seventeen
-/-- info: 'IntervalArith.exp_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms exp_two
-/-- info: 'IntervalArith.log_pi_over_hundred' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms log_pi_over_hundred
-/-- info: 'IntervalArith.rpow_two_one_third' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms rpow_two_one_third
 /-- info: 'IntervalArith.sqrt_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms sqrt_two
+
+-- Axiom footprint checks.
 
 end IntervalArith
 

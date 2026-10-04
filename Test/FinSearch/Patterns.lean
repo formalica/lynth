@@ -7,6 +7,7 @@ import Lynth.FinSearch.Patterns
 open Lean Elab Tactic Meta
 open Lynth.FinSearch.Patterns
 
+set_option maxHeartbeats 355 in
 /-- Find a goal-local free variable by name. -/
 private def getFVar (n : Name) : TacticM FVarId := do
   let g ← getMainGoal
@@ -15,6 +16,7 @@ private def getFVar (n : Name) : TacticM FVarId := do
     | some d => pure d.fvarId
     | none => throwError "test fvar {n} not found"
 
+set_option maxHeartbeats 382 in
 /-- Expect `matchLenEq` to yield `want` on `conj`. -/
 private def checkLenEq (tgt : FVarId) (conj : Expr) (want : Option Nat) :
     TacticM Unit := do
@@ -23,6 +25,7 @@ private def checkLenEq (tgt : FVarId) (conj : Expr) (want : Option Nat) :
   unless got == want do
     throwError "matchLenEq mismatch: got {got}, want {want}"
 
+set_option maxHeartbeats 371 in
 /-- Expect `matchNodup` to yield `want` on `conj`. -/
 private def checkNodup (tgt : FVarId) (conj : Expr) (want : Option Nat) :
     TacticM Unit := do
@@ -31,6 +34,7 @@ private def checkNodup (tgt : FVarId) (conj : Expr) (want : Option Nat) :
   unless got == want do
     throwError "matchNodup mismatch: got {got}, want {want}"
 
+set_option maxHeartbeats 898 in
 example (l : List Nat) (m : Nat) (x : List Nat) : True := by
   run_tac do
     let g ← getMainGoal
@@ -55,6 +59,7 @@ example (l : List Nat) (m : Nat) (x : List Nat) : True := by
       checkLenEq tgt c5 none
   trivial
 
+set_option maxHeartbeats 515 in
 example (l : List (Fin 6)) (k : List Nat) (x : List (Fin 6)) : True := by
   run_tac do
     let g ← getMainGoal
@@ -73,6 +78,7 @@ example (l : List (Fin 6)) (k : List Nat) (x : List (Fin 6)) : True := by
       checkNodup tgt c3 none
   trivial
 
+set_option maxHeartbeats 138 in
 /-- Extension without modification: sum equations, defined wholly
 here (new pattern family + validator, zero changes to `Patterns`). -/
 private def seedSumEq : TacticM (Registry Unit) := do
@@ -81,6 +87,7 @@ private def seedSumEq : TacticM (Registry Unit) := do
   r ← r.register p "sum-eq" ()
   pure r
 
+set_option maxHeartbeats 931 in
 private def matchSumEq (reg : Registry Unit) (tgt : FVarId) (c : Expr) :
     MetaM (Option Nat) := do
   for _ in ← reg.lookup c do
@@ -106,6 +113,7 @@ private def matchSumEq (reg : Registry Unit) (tgt : FVarId) (c : Expr) :
     | _ => pure ()
   pure none
 
+set_option maxHeartbeats 851 in
 example (l : List Nat) : True := by
   run_tac do
     let g ← getMainGoal

@@ -18,43 +18,21 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: leanprover/lean-action@v1
-      - name: Run lynth tests (incl. `#print axioms` checks)
+      # `Test.lean` (module `Test`) imports every currently-passing test, and
+      # `lake build Test` compiles the whole `Test` library -- the per-directory
+      # aggregators (`Test/FinDomain.lean`, `Test/IntervalArith.lean`,
+      # `Test/Sat/Suite.lean`, ...) included.  This replaces a hardcoded
+      # per-file list, which went stale as tests moved into subdirectories and
+      # silently stopped checking most of the suite.
+      #
+      # Building the library rather than shelling out to `lake env lean` per file
+      # also matters: Lake only applies the package's `leanOptions` (including
+      # `weak.linter.mathlibStandardSet`, whose header linter can legitimately
+      # put a warning inside a `#guard_msgs`) to modules it builds itself.
+      #
+      # Failing tests live in `TestFailures/`, which is deliberately not a
+      # library; inspect those with `lake env lean TestFailures/<path>`.
+      - name: Run passing tests (incl. `#print axioms` checks)
         run: |
-          lake env lean Test/Sat.lean
-          lake env lean Test/Sat/SolveLoop.lean
-          lake env lean Test/Sat/GatesTest.lean
-          lake env lean Test/Sat/FinValDifferTest.lean
-          lake env lean Test/Sat/CompileTest.lean
-          lake env lean Test/Encode.lean
-          lake env lean Test/Tactics.lean
-          lake env lean Test/Witness.lean
-          lake env lean Test/Euf.lean
-          lake env lean Test/Arith.lean
-          lake env lean Test/ArithTactics.lean
-          lake env lean Test/Spec.lean
-          lake env lean Test/Robust.lean
-          lake env lean Test/Cdcl.lean
-          lake env lean Test/CdclFuzz.lean
-          lake env lean Test/Ring.lean
-          lake env lean Test/Corpus.lean
-          lake env lean Test/Simplex.lean
-          lake env lean Test/BranchBound.lean
-          lake env lean Test/Farkas.lean
-          lake env lean Test/Tseitin.lean
-          lake env lean Test/Readme.lean
-          lake env lean Test/FarkasSound.lean
-          lake env lean Test/Nlin.lean
-          lake env lean Test/Quant.lean
-          lake env lean Test/Arrays.lean
-          lake env lean Test/Datatypes.lean
-          lake env lean Test/BV.lean
-          lake env lean Test/BVBlast.lean
-          lake env lean Test/FinFuzz.lean
-          lake env lean Test/FinSearch.lean
-          lake env lean Test/FinSearchAlt.lean
-          lake env lean Test/FinSearch/Patterns.lean
-          lake env lean Test/StarBattle.lean
-          lake env lean Test/Sudoku9.lean
-          lake env lean Test/Sudoku9Partial.lean
-          lake env lean Test/Sudoku9Inkala.lean
+          lake build Test
       - uses: leanprover-community/docgen-action@v1

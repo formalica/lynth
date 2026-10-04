@@ -6,38 +6,44 @@
 -- TODO: failing until covering-style synthesis lands in the pipeline.
 import Lynth
 
+set_option maxHeartbeats 42 in
 /-- Item values. -/
 def items : List Nat := [4, 5, 6, 4, 5, 6]
 
+set_option maxHeartbeats 112 in
 /-- Sum of values labeled `b`. -/
 def groupSum (g : Fin 6 → Bool) (b : Bool) : Nat :=
   (List.finRange 6).foldl (fun acc i =>
     if g i == b then acc + (items[i.val]! : Nat) else acc) 0
 
+set_option maxHeartbeats 19 in
 /-- Valid labeling: both groups sum to 15. -/
 def coverValid (g : Fin 6 → Bool) : Prop :=
   groupSum g true = 15 ∧ groupSum g false = 15
 
+set_option maxHeartbeats 47 in
 /-- Computable check (mirrors `coverValid`). -/
 def coverCheck (g : Fin 6 → Bool) : Bool :=
   (groupSum g true == 15) && (groupSum g false == 15)
 
+set_option maxHeartbeats 676 in
 /-- The goal `lynth` must fill: the group labeling. -/
 def coverSol : { g : Fin 6 → Bool // coverValid g } := by
   lynth
+/-- info: 'coverSol' depends on axioms: [propext] -/
+#guard_msgs in
+#print axioms coverSol
 
+set_option maxHeartbeats 25 in
 /-- Etalon: indices {0,1,2} vs {3,4,5} — 4+5+6 = 15 each side. -/
-def etalon : Fin 6 → Bool := fun i => decide (i.val < 3)
+def exactCover_etalon : Fin 6 → Bool := fun i => decide (i.val < 3)
 
 -- The value computed by `lynth`:
 #eval (coverSol : Fin 6 → Bool)
 
--- The etalon group sums:
-#eval (groupSum etalon true, groupSum etalon false)
+-- The exactCover_etalon group sums:
+#eval (groupSum exactCover_etalon true, groupSum exactCover_etalon false)
 
 -- Runtime check: witness partitions into equal sums.
 #guard coverCheck (coverSol : Fin 6 → Bool)
 
-/-- info: 'coverSol' depends on axioms: [propext] -/
-#guard_msgs in
-#print axioms coverSol

@@ -3,34 +3,43 @@ import Mathlib.Data.Fintype.Card
 
 namespace FinDomain.Meta
 
+set_option maxHeartbeats 11 in
 def Board := Fin 9 → Fin 9 → Fin 9
 
+set_option maxHeartbeats 11 in
 def PartialBoard := Fin 9 → Fin 9 → Option (Fin 9)
 
+set_option maxHeartbeats 71 in
 def box_idx (r c : Fin 9) : Fin 9 :=
   (r / 3) * 3 + (c / 3)
 
+set_option maxHeartbeats 12 in
 def valid_rows (b : Board) : Prop :=
   ∀ r c₁ c₂, b r c₁ = b r c₂ → c₁ = c₂
 
+set_option maxHeartbeats 12 in
 def valid_cols (b : Board) : Prop :=
   ∀ c r₁ r₂, b r₁ c = b r₂ c → r₁ = r₂
 
+set_option maxHeartbeats 18 in
 def valid_boxes (b : Board) : Prop :=
   ∀ r₁ c₁ r₂ c₂,
     box_idx r₁ c₁ = box_idx r₂ c₂ →
     b r₁ c₁ = b r₂ c₂ →
     r₁ = r₂ ∧ c₁ = c₂
 
+set_option maxHeartbeats 16 in
 def matches_partial (p : PartialBoard) (b : Board) : Prop :=
   ∀ r c v, p r c = some v → b r c = v
 
+set_option maxHeartbeats 13 in
 def ValidSolution (p : PartialBoard) (b : Board) : Prop :=
   valid_rows b ∧
   valid_cols b ∧
   valid_boxes b ∧
   matches_partial p b
 
+set_option maxHeartbeats 35 in
 def CorrectSudokuSolver
     (solver : PartialBoard → Option Board) : Prop :=
   (∀ p b, solver p = some b → ValidSolution p b) ∧
@@ -39,13 +48,22 @@ def CorrectSudokuSolver
   (∀ p, solver p = none ↔
     ¬∃ b, ValidSolution p b)
 
+set_option maxHeartbeats 435 in
 set_option maxHeartbeats 10000000 in
 /-- Synthesize a solver function, not merely one completed board. -/
 def sudokuInkalaSolver :
     { solver : PartialBoard → Option Board //
       CorrectSudokuSolver solver } := by
   lynth
+/-- info: 'FinDomain.Meta.sudokuInkalaSolver' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Lynth.Sat.cdcl_correct,
+ Lynth.Sat.cdcl_fuel_suffices] -/
+#guard_msgs in
+#print axioms sudokuInkalaSolver
 
+set_option maxHeartbeats 611 in
 /-- Arto Inkala's 2012 Sudoku instance. -/
 def example_partial (r c : Fin 9) : Option (Fin 9) :=
   match r.val, c.val with
@@ -74,6 +92,7 @@ def example_partial (r c : Fin 9) : Option (Fin 9) :=
   | 8, 6 => some 7
   | _, _ => none
 
+set_option maxHeartbeats 75 in
 /-- An initial board with two equal values forced into the same row. -/
 def contradictoryPartial (r c : Fin 9) : Option (Fin 9) :=
   if r = 0 then
@@ -92,12 +111,5 @@ def contradictoryPartial (r c : Fin 9) : Option (Fin 9) :=
 -- Benchmark the synthesized solver on the unsatisfiable instance.
 #guard (sudokuInkalaSolver.1 contradictoryPartial).isNone
 
-/-- info: 'FinDomain.Meta.sudokuInkalaSolver' depends on axioms: [propext,
- Classical.choice,
- Quot.sound,
- Lynth.Sat.cdcl_correct,
- Lynth.Sat.cdcl_fuel_suffices] -/
-#guard_msgs in
-#print axioms sudokuInkalaSolver
 
 end FinDomain.Meta

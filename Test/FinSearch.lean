@@ -5,6 +5,7 @@ import Mathlib.Data.Fintype.Card
 
 open Lynth.FinSearch
 
+set_option maxHeartbeats 112 in
 /-- 4x4 Sudoku validity: rows/cols distinct, 2x2 boxes distinct. -/
 def miniValid (g : Fin 4 → Fin 4 → Fin 4) : Prop :=
   (∀ r : Fin 4, ∀ c1 : Fin 4, ∀ c2 : Fin 4,
@@ -16,18 +17,21 @@ def miniValid (g : Fin 4 → Fin 4 → Fin 4) : Prop :=
   List.Pairwise (· ≠ ·) [g 2 0, g 2 1, g 3 0, g 3 1] ∧
   List.Pairwise (· ≠ ·) [g 2 2, g 2 3, g 3 2, g 3 3]
 
+set_option maxHeartbeats 66 in
 /-- A solvable clue set (witnessed by rows 0123/2301/1032/3210). -/
 def miniClues (g : Fin 4 → Fin 4 → Fin 4) : Prop :=
   g 0 0 = 0 ∧ g 0 1 = 1 ∧ g 1 2 = 0 ∧ g 1 3 = 1 ∧
   g 2 0 = 1 ∧ g 2 3 = 2 ∧ g 3 1 = 2 ∧ g 3 2 = 1
 
+set_option maxHeartbeats 1976 in
 def miniSudoku : { g : Fin 4 → Fin 4 → Fin 4 // miniValid g ∧ miniClues g } := by
   lynth
-
 /-- info: 'miniSudoku' depends on axioms: [propext] -/
 #guard_msgs in
 #print axioms miniSudoku
 
+
+set_option maxHeartbeats 30 in
 /-- 4x4 Towers board: Latin rows/cols (heights 0..3, all different). -/
 def towersLatin (g : Fin 4 → Fin 4 → Fin 4) : Prop :=
   (∀ r : Fin 4, ∀ c1 : Fin 4, ∀ c2 : Fin 4,
@@ -35,6 +39,7 @@ def towersLatin (g : Fin 4 → Fin 4 → Fin 4) : Prop :=
   (∀ c : Fin 4, ∀ r1 : Fin 4, ∀ r2 : Fin 4,
     r1 ≠ r2 → g r1 c ≠ g r2 c)
 
+set_option maxHeartbeats 119 in
 /-- Towers clues: row 0 increases (4 visible from the left), row 3
 starts tallest (1 visible), column 0 increases top-down, column 3
 starts tallest, and row 1 shows exactly 2 from the left (counting
@@ -46,23 +51,29 @@ def towersClues (g : Fin 4 → Fin 4 → Fin 4) : Prop :=
   (g 1 3 < g 0 3 ∧ g 2 3 < g 0 3 ∧ g 3 3 < g 0 3) ∧
   Fintype.card { j : Fin 4 // ∀ i : Fin 4, i < j → g 1 i < g 1 j } = 2
 
+set_option maxHeartbeats 1987 in
 def towersSol : { g : Fin 4 → Fin 4 → Fin 4 // towersLatin g ∧ towersClues g } := by
   lynth
-
 /-- info: 'towersSol' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms towersSol
 
+
+set_option maxHeartbeats 29 in
 /-- Scalars still route to `Witness` (`finsearch` yields them). -/
 def scalarRoute : { n : Nat // n = 42 } := by
   lynth
-
 /-- info: 'scalarRoute' does not depend on any axioms -/
 #guard_msgs in
 #print axioms scalarRoute
 
+
+set_option maxHeartbeats 13 in
 -- Router lands on each side of the threshold.
 example : Detect.route true 16 = true := rfl
+set_option maxHeartbeats 13 in
 example : Detect.route true 16385 = false := rfl
+set_option maxHeartbeats 11 in
 example : Detect.route false 16 = false := rfl
+set_option maxHeartbeats 26 in
 example : Detect.estimate [4, 4] = 16 := rfl

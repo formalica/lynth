@@ -6,35 +6,39 @@
 -- TODO: failing until multi-property list synthesis lands in the pipeline.
 import Lynth
 
+set_option maxHeartbeats 590 in
 /-- Target property: even-count, odd-sum, element bound, nodup. -/
 def fpcValid (l : List Nat) : Prop :=
   (l.filter (· % 2 = 0)).length = 2 ∧
   (l.filter (· % 2 = 1)).sum = 8 ∧
   l.all (· < 6) ∧ l.Nodup
 
+set_option maxHeartbeats 714 in
 /-- Computable check (mirrors `fpcValid`). -/
 def fpcCheck (l : List Nat) : Bool :=
   decide ((l.filter (· % 2 = 0)).length = 2) &&
   decide ((l.filter (· % 2 = 1)).sum = 8) &&
   decide (l.all (· < 6)) && decide l.Nodup
 
+set_option maxHeartbeats 4791 in
 /-- The goal `lynth` must fill: the mixed list. -/
 def fpcSol : { l : List Nat // fpcValid l } := by
   lynth
+/-- info: 'fpcSol' depends on axioms: [propext] -/
+#guard_msgs in
+#print axioms fpcSol
 
+set_option maxHeartbeats 34 in
 /-- Etalon: [0, 2, 3, 5] — evens {0,2} (count 2), odds {3,5} (sum 8),
     all < 6, nodup. -/
-def etalon : List Nat := [0, 2, 3, 5]
+def filterPartitionCount_etalon : List Nat := [0, 2, 3, 5]
 
 -- The value computed by `lynth`:
 #eval (fpcSol : List Nat)
 
--- The etalon:
-#eval etalon
+-- The filterPartitionCount_etalon:
+#eval filterPartitionCount_etalon
 
 -- Runtime check: witness satisfies the filter-split properties.
 #guard fpcCheck (fpcSol : List Nat)
 
-/-- info: 'fpcSol' depends on axioms: [propext] -/
-#guard_msgs in
-#print axioms fpcSol

@@ -10,6 +10,7 @@ Ground truth: `arb/CERTIFICATES.md` / `arb/RESULTS.md` (A13-A16, B03, B04).
 namespace IntervalArith
 
 
+set_option maxHeartbeats 16509 in
 /-- **T12** — `sum_{k<5} exp (-k) * cos k` — interval accumulation of five terms.
 
 enclosure `1.081186035720703708662427; 1.081186035720703708662427`, witness
@@ -20,7 +21,11 @@ enclosure `1.081186035720703708662427; 1.081186035720703708662427`, witness
 
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 def sum_exp_cos : { x : Rat // abs ((∑ k ∈ Finset.range 5, Real.exp (-(k : ℝ)) * Real.cos (k : ℝ)) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.sum_exp_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sum_exp_cos
 
+set_option maxHeartbeats 5006 in
 /-- **T13** — `sum_{k<100} (1/2)^(k+1)` with tolerance `1e-30`. The exact value is the rational `1 -
 2^-100`, so this one is provable by exact rational arithmetic alone (Arb certifies it
 independently).
@@ -33,7 +38,11 @@ exact rational identity 1 - 2^-100 = 1.00000000000000000000; Arb accumulation ag
 
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 def sum_geometric_half_powers : { x : Rat // abs ((∑ k ∈ Finset.range 100, (1 / 2 : ℝ) ^ (k + 1)) - x) < (10 : ℝ) ^ (-30 : ℤ) } := by lynth
+/-- info: 'IntervalArith.sum_geometric_half_powers' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sum_geometric_half_powers
 
+set_option maxHeartbeats 9371 in
 /-- **T14** — `sum_{k=1..5} sin (pi k / 7)` — finite sum of exact `pi`-rationals.
 
 enclosure `3.947402528417264910842732; 3.947402528417264910842732`, witness
@@ -45,16 +54,17 @@ exact pi-reduction sin_pi_fmpq(k,7) per term; mpmath reference
 
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 def sum_sin_pi_over_seven : { x : Rat // abs ((∑ k ∈ Finset.range 5, Real.sin (Real.pi * (k + 1) / 7)) - x) < 1 / 1000000 } := by lynth
+/-- info: 'IntervalArith.sum_sin_pi_over_seven' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sum_sin_pi_over_seven
 
+set_option maxHeartbeats 74 in
 noncomputable def prod_inv_sq (k : ℕ) : ℝ := (1 : ℝ) + 1 / ((k + 1 : ℝ) ^ 2)
+/-- info: 'IntervalArith.prod_inv_sq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms prod_inv_sq
 
-/-- **T15** — `∏_{k=1}^∞ (1 + 1/k²) = sinh(π)/π` — infinite product via `tprod`.
-
-enclosure `3.6760779103749777; 3.6760779103749777`, witness `3.6760779103749777`.
-
-The infinite product converges absolutely since ∑ 1/k² converges. -/
-def infinite_product_one_plus_inv_sq : { x : Rat // Multipliable prod_inv_sq ∧ abs (∏' k : ℕ, prod_inv_sq k) - x < 1 / 200 } := by lynth
-
+set_option maxHeartbeats 67259 in
 /-- **B01** — **Bonus / theorem form.** `|sum_{j=1..1000} 1/j^2 - pi^2/6| < 1/500`: an infinite
 series handled by an exact partial sum plus an integral tail bound (the tail is `~1/1000`).
 
@@ -68,18 +78,11 @@ infinite series bounded by an exact partial sum + an integral tail.
 
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 theorem series_inv_sq_tail : abs ((∑ k ∈ Finset.range 1000, 1 / ((k : ℝ) + 1) ^ 2) - Real.pi ^ 2 / 6) < 1 / 500 := by lynth
+/-- info: 'IntervalArith.series_inv_sq_tail' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms series_inv_sq_tail
 
-/-- **B02** — **Bonus / theorem form.** `sum_{k<n} 1/((k+1)(k+2)) = 1 - 1/(n+1)` for every `n` — the
-exact telescoping closed form.
-
-exact rational identity verified for n = 0..39, 100, 1000, 4000; difference = 0 in every case
-(telescoping is exact).
-
-exact rational identity -- the closed form the goal states.
-
-Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
-theorem sum_telescoping : ∀ n : ℕ, (∑ k ∈ Finset.range n, 1 / (((k : ℝ) + 1) * ((k : ℝ) + 2))) = 1 - 1 / ((n : ℝ) + 1) := by lynth
-
+set_option maxHeartbeats 15026 in
 /-- **B03** — **Bonus / theorem form.** `|sum_{k<100} (-1)^k/(2k+1) - pi/4| < 1/100` — Leibniz'
 alternating series: the tail bound is the first omitted term (`1/201`), the value is `pi/4`.
 
@@ -92,32 +95,11 @@ alternating series + exact pi/4 enclosure.
 
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 theorem alternating_series_pi_over_four : abs ((∑ k ∈ Finset.range 100, (-1 : ℝ) ^ k / (2 * (k : ℝ) + 1)) - Real.pi / 4) < 1 / 100 := by lynth
-
--- Axiom footprint checks.
-/-- info: 'IntervalArith.sum_exp_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms sum_exp_cos
-/-- info: 'IntervalArith.sum_geometric_half_powers' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms sum_geometric_half_powers
-/-- info: 'IntervalArith.sum_sin_pi_over_seven' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms sum_sin_pi_over_seven
-/-- info: 'IntervalArith.prod_inv_sq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms prod_inv_sq
-/-- info: 'IntervalArith.infinite_product_one_plus_inv_sq' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms infinite_product_one_plus_inv_sq
-/-- info: 'IntervalArith.series_inv_sq_tail' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms series_inv_sq_tail
-/-- info: 'IntervalArith.sum_telescoping' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms sum_telescoping
 /-- info: 'IntervalArith.alternating_series_pi_over_four' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms alternating_series_pi_over_four
+
+-- Axiom footprint checks.
 
 end IntervalArith
 

@@ -6,11 +6,13 @@
 -- TODO: failing until comparator-list synthesis lands in the pipeline.
 import Lynth
 
+set_option maxHeartbeats 128 in
 /-- All 8 binary inputs. -/
 def allInputs : List (List Bool) :=
   [[false,false,false],[false,false,true],[false,true,false],[false,true,true],
    [true,false,false],[true,false,true],[true,true,false],[true,true,true]]
 
+set_option maxHeartbeats 107 in
 /-- Apply one comparator (i,j): sort the pair at those positions. -/
 def applyCmp (xs : List Bool) (c : Nat × Nat) : List Bool :=
   match xs[c.1]?, xs[c.2]? with
@@ -20,43 +22,49 @@ def applyCmp (xs : List Bool) (c : Nat × Nat) : List Bool :=
     ((xs.set c.1 lo).set c.2 hi)
   | _, _ => xs
 
+set_option maxHeartbeats 26 in
 /-- Run the whole network. -/
 def runNet (net : List (Nat × Nat)) (xs : List Bool) : List Bool :=
   net.foldl applyCmp xs
 
+set_option maxHeartbeats 104 in
 /-- Sorted (non-decreasing) check on 3 bits. -/
 def isSorted3 : List Bool → Bool
   | [a, b, c] => (!a || b) && (!b || c)
   | _ => false
 
+set_option maxHeartbeats 50 in
 /-- Network is correct: ≤ 3 comparators over wires 0..2, sorts all inputs. -/
 def netValid (net : List (Nat × Nat)) : Prop :=
   net.length ≤ 3 ∧
   (∀ c ∈ net, c.1 < 3 ∧ c.2 < 3 ∧ c.1 ≠ c.2) ∧
   (∀ xs ∈ allInputs, isSorted3 (runNet net xs) = true)
 
+set_option maxHeartbeats 160 in
 /-- Computable check (mirrors `netValid`). -/
 def netCheck (net : List (Nat × Nat)) : Bool :=
   decide (net.length ≤ 3) &&
   (net.all fun c => decide (c.1 < 3 ∧ c.2 < 3 ∧ c.1 ≠ c.2)) &&
   (allInputs.all fun xs => isSorted3 (runNet net xs))
 
+set_option maxHeartbeats 2795 in
 /-- The goal `lynth` must fill: the comparator list. -/
 def netSol : { net : List (Nat × Nat) // netValid net } := by
   lynth
+/-- info: 'netSol' depends on axioms: [propext] -/
+#guard_msgs in
+#print axioms netSol
 
+set_option maxHeartbeats 40 in
 /-- Etalon: classic 3-wire bubble network [(0,1),(1,2),(0,1)]. -/
-def etalon : List (Nat × Nat) := [(0, 1), (1, 2), (0, 1)]
+def sortingNetwork_etalon : List (Nat × Nat) := [(0, 1), (1, 2), (0, 1)]
 
 -- The value computed by `lynth`:
 #eval (netSol : List (Nat × Nat))
 
--- The etalon sorts every input:
-#eval allInputs.map (runNet etalon ·)
+-- The sortingNetwork_etalon sorts every input:
+#eval allInputs.map (runNet sortingNetwork_etalon ·)
 
 -- Runtime check: witness sorts all inputs within the bound.
 #guard netCheck (netSol : List (Nat × Nat))
 
-/-- info: 'netSol' depends on axioms: [propext] -/
-#guard_msgs in
-#print axioms netSol

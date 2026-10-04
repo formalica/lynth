@@ -7,23 +7,26 @@
 -- TODO: failing until `Answer` goals are recognized by the pipeline.
 import Lynth
 
+set_option maxHeartbeats 66 in
 /-- DAG edges: `u < v` (precedence). -/
 def edge (u v : Fin 6) : Prop :=
   (u = 0 ∧ v = 1) ∨ (u = 0 ∧ v = 2) ∨ (u = 1 ∧ v = 3) ∨
   (u = 2 ∧ v = 3) ∨ (u = 3 ∧ v = 4)
 
+set_option maxHeartbeats 24 in
 /-- A topological ranking: injective, and ranks increase along
 every edge. -/
 def topoValid (r : Fin 6 → Fin 6) : Prop :=
   (∀ u v : Fin 6, edge u v → r u < r v) ∧
   (∀ u v : Fin 6, u ≠ v → r u ≠ r v)
 
+set_option maxHeartbeats 1503 in
 /-- One `lynth` run decides: expect `.inl` (a topo order exists). -/
 def topoRank :
     let p := topoValid
     { w // p w } ⊕' (∀ x, ¬ p x) := by
   lynth
-
 /-- info: 'topoRank' depends on axioms: [propext] -/
 #guard_msgs in
 #print axioms topoRank
+

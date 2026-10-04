@@ -23,22 +23,24 @@ open Lynth.Sat
 #guard_msgs in
 #eval solveTotal [[1], [2]] 100 10 ∅
 
+set_option maxHeartbeats 49 in
 /-- Soundness corollary applies to any reported model. -/
 theorem sound_use (m : Assignment)
     (h : solveTotal [[1], [2]] 100 10 ∅ = .sat m) :
     checkSat [[1], [2]] m = true :=
   solveTotal_sound _ _ _ _ m h
+/-- info: 'sound_use' depends on axioms: [propext, Classical.choice, Quot.sound, cdcl_correct, cdcl_fuel_suffices] -/
+#guard_msgs in
+#print axioms sound_use
 
+set_option maxHeartbeats 57 in
 /-- Completeness corollary applies to any UNSAT report. -/
 theorem complete_use (a : Assignment)
     (h : solveTotal [[1], [-1]] 100 10 ∅ = .unsat) :
     checkSat [[1], [-1]] a = false :=
   solveTotal_complete _ _ _ _ a h
-
-/-- info: 'sound_use' depends on axioms: [propext, Classical.choice, Quot.sound, cdcl_correct, cdcl_fuel_suffices] -/
-#guard_msgs in
-#print axioms sound_use
-
 /-- info: 'complete_use' depends on axioms: [propext, Classical.choice, Quot.sound, cdcl_correct, cdcl_fuel_suffices] -/
 #guard_msgs in
 #print axioms complete_use
+
+

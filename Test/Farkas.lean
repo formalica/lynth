@@ -21,23 +21,26 @@ open Lynth.Arith.FarkasSound
 #eval !(checkCert [mkLe [1] (-1) 2 0] [1, 1])
 -- expect true
 
+set_option maxHeartbeats 56 in
 /-- Fuzz: `solve`'s certificates always validate. Returns violations. -/
-def lcg (s : Nat) : Nat := (1103515245 * s + 12345) % 2147483648
+def farkas_lcg (s : Nat) : Nat := (1103515245 * s + 12345) % 2147483648
 
+set_option maxHeartbeats 322 in
 def genLeC : Nat → Nat → Nat → List LeC × Nat
   | s, 0, _ => ([], s)
   | s, k + 1, idx =>
     let c : List Rat :=
-      (List.range 3).map fun j => ((lcg (s + j + k * 7) % 5 : Nat) : Rat) - 2
-    let c0 : Rat := ((lcg (s + 99 + k) % 7 : Nat) : Rat) - 3
-    let (rest, s') := genLeC (lcg (s + k)) k (idx + 1)
+      (List.range 3).map fun j => ((farkas_lcg (s + j + k * 7) % 5 : Nat) : Rat) - 2
+    let c0 : Rat := ((farkas_lcg (s + 99 + k) % 7 : Nat) : Rat) - 3
+    let (rest, s') := genLeC (farkas_lcg (s + k)) k (idx + 1)
     ((mkLe c c0 5 idx) :: rest, s')
 
-def checkSeed (i : Nat) : Bool :=
+set_option maxHeartbeats 78 in
+def farkas_checkSeed (i : Nat) : Bool :=
   let (sys, _) := genLeC (i + 1) 5 0
   match solve sys 128 with
   | some cert => checkCert sys cert
   | none => true
 
-#eval (List.range 80).foldl (fun n i => if checkSeed i then n else n + 1) 0
+#eval (List.range 80).foldl (fun n i => if farkas_checkSeed i then n else n + 1) 0
 -- expect 0

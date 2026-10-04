@@ -37,6 +37,7 @@ open Lynth.Arith.Explain
   | _ => false
 -- expect true
 
+set_option maxHeartbeats 149 in
 /-- Agreement between Simplex and FM on one system:
 UNSAT ⟺ UNSAT, Simplex models verify, Simplex explanations validate. -/
 def agree (sys : List (List Rat × Rat)) : Bool :=
@@ -48,16 +49,18 @@ def agree (sys : List (List Rat × Rat)) : Bool :=
   | .unsat _, none => false -- FM SAT but Simplex UNSAT: real disagreement
   | .unknown, _ => true -- Simplex out of fuel: inconclusive, skip
 
+set_option maxHeartbeats 56 in
 -- seeded random integral systems; mismatch count; expect 0
-def lcg (s : Nat) : Nat := (1103515245 * s + 12345) % 2147483648
+def simplex_lcg (s : Nat) : Nat := (1103515245 * s + 12345) % 2147483648
 
+set_option maxHeartbeats 313 in
 def genSys : Nat → Nat → List (List Rat × Rat) × Nat
   | s, 0 => ([], s)
   | s, k + 1 =>
     let c : List Rat :=
-      (List.range 3).map fun j => ((lcg (s + j + k * 7) % 5 : Nat) : Rat) - 2
-    let c0 : Rat := ((lcg (s + 99 + k) % 7 : Nat) : Rat) - 3
-    let (rest, s') := genSys (lcg (s + k)) k
+      (List.range 3).map fun j => ((simplex_lcg (s + j + k * 7) % 5 : Nat) : Rat) - 2
+    let c0 : Rat := ((simplex_lcg (s + 99 + k) % 7 : Nat) : Rat) - 3
+    let (rest, s') := genSys (simplex_lcg (s + k)) k
     ((c, c0) :: rest, s')
 
 #eval (List.range 60).foldl

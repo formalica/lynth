@@ -21,6 +21,7 @@ Ground truth: `arb/CERTIFICATES.md` (MD01-MD07).
 namespace IntervalArith
 
 
+set_option maxHeartbeats 6601 in
 /-- **MD01** — `floor_exp_two_add_sin_div_cos`: the floor of `exp, sin, cos` composed at `x = 2, 1`,
 returned as a `Nat`.
 
@@ -34,7 +35,12 @@ fourth.
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def floor_exp_two_add_sin_div_cos : { n : Nat // n = ⌊(Real.exp 2 + Real.sin 1) / Real.cos 1⌋₊ } := by lynth
+/-- info: 'IntervalArith.floor_exp_two_add_sin_div_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms floor_exp_two_add_sin_div_cos
 
+set_option maxHeartbeats 32285 in
+set_option maxHeartbeats 1000000 in
 /-- **MD02** — `floor_gamma_quarter_add_gamma_third`: the floor of `Gamma` composed at `x = 1/4,
 1/3`, returned as a `Nat`.
 
@@ -46,7 +52,11 @@ a strict enclosure between two consecutive integers decides the floor: .
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def floor_gamma_quarter_add_gamma_third : { n : Nat // n = ⌊Real.Gamma (1 / 4) + Real.Gamma (1 / 3)⌋₊ } := by lynth
+/-- info: 'IntervalArith.floor_gamma_quarter_add_gamma_third' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms floor_gamma_quarter_add_gamma_third
 
+set_option maxHeartbeats 4648 in
 /-- **MD03** — `floor_hundred_tanh_sqrt_two`: the floor of `tanh, sqrt` composed at `x = sqrt 2`,
 returned as a `Nat`.
 
@@ -58,7 +68,11 @@ a strict enclosure between two consecutive integers decides the floor: .
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def floor_hundred_tanh_sqrt_two : { n : Nat // n = ⌊100 * Real.tanh (Real.sqrt 2)⌋₊ } := by lynth
+/-- info: 'IntervalArith.floor_hundred_tanh_sqrt_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms floor_hundred_tanh_sqrt_two
 
+set_option maxHeartbeats 877 in
 /-- **MD04** — `floor_ten_sqrt_sum`: the floor of `sqrt` composed at `x = 2, 3, 5`, returned as a
 `Nat`.
 
@@ -71,7 +85,11 @@ the classic test for a summation-based interval engine.
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def floor_ten_sqrt_sum : { n : Nat // n = ⌊10 * (Real.sqrt 2 + Real.sqrt 3 + Real.sqrt 5)⌋₊ } := by lynth
+/-- info: 'IntervalArith.floor_ten_sqrt_sum' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms floor_ten_sqrt_sum
 
+set_option maxHeartbeats 69 in
 /-- **MD05** — `gcd_of_fib`: an exact integer identity over `Nat.gcd, Nat.fib` (inputs `n = 10,
 15`), returned as a `Nat`.
 
@@ -83,7 +101,11 @@ gcd(55, 610) = 5 -- the two Fibonacci numbers share the factor 5.
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def gcd_of_fib : { n : Nat // n = Nat.gcd (Nat.fib 10) (Nat.fib 15) } := by lynth
+/-- info: 'IntervalArith.gcd_of_fib' does not depend on any axioms -/
+#guard_msgs in
+#print axioms gcd_of_fib
 
+set_option maxHeartbeats 4080 in
 /-- **MD06** — `sign_exp_sub_cos`: the sign of `exp, cos` composed at `x = 1, 1/2`, returned as an
 `Int`.
 
@@ -95,7 +117,11 @@ transcendental values rather than a numerical value.
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def sign_exp_sub_cos : { s : ℤ // Real.sign (Real.exp (-1) - Real.cos (1 / 2)) = (s : ℝ) } := by lynth
+/-- info: 'IntervalArith.sign_exp_sub_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sign_exp_sub_cos
 
+set_option maxHeartbeats 5093 in
 /-- **MD07** — `ceil_ten_exp_cos`: the ceiling of `exp, cos` composed at `x = 1`, returned as a
 `Nat`.
 
@@ -108,29 +134,11 @@ of the floor tests: 10 * exp (cos 1) ~ 17.165 sits between the consecutive integ
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`, table
 `arb/compositions.py`). -/
 def ceil_ten_exp_cos : { n : Nat // n = ⌈10 * Real.exp (Real.cos 1)⌉₊ } := by lynth
-
--- Axiom footprint checks.
-/-- info: 'IntervalArith.floor_exp_two_add_sin_div_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms floor_exp_two_add_sin_div_cos
-/-- info: 'IntervalArith.floor_gamma_quarter_add_gamma_third' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms floor_gamma_quarter_add_gamma_third
-/-- info: 'IntervalArith.floor_hundred_tanh_sqrt_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms floor_hundred_tanh_sqrt_two
-/-- info: 'IntervalArith.floor_ten_sqrt_sum' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms floor_ten_sqrt_sum
-/-- info: 'IntervalArith.gcd_of_fib' does not depend on any axioms -/
-#guard_msgs in
-#print axioms gcd_of_fib
-/-- info: 'IntervalArith.sign_exp_sub_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms sign_exp_sub_cos
 /-- info: 'IntervalArith.ceil_ten_exp_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms ceil_ten_exp_cos
+
+-- Axiom footprint checks.
 
 end IntervalArith
 

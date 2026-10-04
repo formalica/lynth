@@ -8,31 +8,35 @@
 -- TODO: failing until list-based finite search lands in the pipeline.
 import Lynth
 
+set_option maxHeartbeats 47 in
 /-- The problem instance: a fixed list of numbers. -/
 def msInput : List Nat := [8, 3, 12, 5, 9, 4]
 
+set_option maxHeartbeats 11 in
 /-- Target threshold (strictly exceeded). -/
 def msTarget : Nat := 20
 
+set_option maxHeartbeats 1011 in
 /-- Goal: valid (subsequence, sum exceeds target) and minimal in length. -/
 def msSol : { l : List Nat //
     l.Sublist msInput ∧ msTarget < l.sum ∧
     ∀ m : List Nat, m.Sublist msInput → msTarget < m.sum → l.length ≤ m.length } := by
   lynth
+/-- info: 'msSol' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms msSol
 
+set_option maxHeartbeats 21 in
 /-- Etalon: [12, 9] — two elements summing to 21 > 20. -/
-def etalon : List Nat := [12, 9]
+def minSubsetExceed_etalon : List Nat := [12, 9]
 
 -- The value computed by `lynth`:
 #eval (msSol : List Nat)
 
--- The etalon:
-#eval etalon
+-- The minSubsetExceed_etalon:
+#eval minSubsetExceed_etalon
 
 -- Runtime checks: witness is valid and optimal.
 #guard (msSol : List Nat).Sublist msInput ∧ msTarget < (msSol : List Nat).sum
 #guard (msSol : List Nat).length = 2
 
-/-- info: 'msSol' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
-#print axioms msSol

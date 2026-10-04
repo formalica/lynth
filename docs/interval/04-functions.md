@@ -216,14 +216,17 @@ norm, re, im, conj, ofReal, I).
 
 ## 15. Deferred (registered later, `12-tests.md` "deferred")
 
-`riemannZeta`, `Real.eulerMascheroniConstant`,
+`riemannZeta`,
 `Complex.digamma`, `NNReal.agm`, hypergeometric functions, `Real.erf`.  The
 reifier must fail on them with a clear message ("no registry entry for
 …") so the tests report cleanly.  Recommended algorithms are kept in
 `13-progress.md §Deferred notes` (zeta: partial sums +
-integral tail; γ: `eulerMascheroniSeq` bounds; agm: `agmSequences` bounds).
+integral tail; agm: `agmSequences` bounds).
 
 `Real.Gamma` is **not** deferred anymore: see §17.
+`Real.eulerMascheroniConstant` is **not** deferred anymore either:
+registry `eulerR` uses the proved Brent–McMillan B3 evaluator
+(`Lynth/Interval/Fns/EulerGamma/Eval.lean`).
 
 ## 16. Performance targets (M3 acceptance)
 
@@ -238,20 +241,25 @@ from `13-progress.md §Deferred notes`, which needs 120+ `exp`/`log`
 evaluations per point and loses ~37 bits to cancellation at `X = 40`;
 Stirling needs ~60 interval ops and closes the Gamma tests at `prec = 64`).
 
-* `stirlingCoeff k = B_{2k}/(2k(2k-1))`, `k = 1..24`, as `ℚ` literals
-  (`decide` cannot evaluate Mathlib `bernoulli`: well-founded recursion).
+* `stirlingCoeff k = B_{2k}/(2k(2k-1))`, hybrid: `ℚ` literals for
+  `k ≤ 24` (`decide` cannot evaluate Mathlib `bernoulli`: well-founded
+  recursion), values from the structural recurrence `bernoulliList`
+  (binomial form, additive Pascal rows, one shared vector per evaluation)
+  beyond — no cap on `N`.
 * `gammaShift a T`: least `r` with `a + r ≥ T`, `T = max(10, w/8)`.
 * `risingIval`: `x(x+1)…(x+r-1)`; identity `Γ(x) = Γ(x+r)/rising` holds
   **universally** (division form: at poles both sides are `0` via Mathlib's
   `Γ = 0` at nonpositive integers and `_/0 = 0`).
 * `stirlingAcc`: Horner in `z⁻²` of `Σ_{k<N} c_k z^{-(2k-1)}`
-  (`N ≤ 24`, chosen adaptively by `chooseN` against `2^{-(w+8)}` —
-  pure computation, any `N` is sound).
+  (no cap on `N`, chosen adaptively by `chooseN` against `2^{-(w+8)}` —
+  pure computation, any `N` is sound; Bernoulli state threaded through
+  the search for `O(N²)` total instead of recomputing per candidate).
 * tail `2|c_N|/z^{2N-1}` via `npow`/`div`, `widenMag`/`magHi`.
 * `gammaPosIval`: shift + Stirling `log Γ` + `expIval` + rising division.
   Sound for **every** `X` (tight for positive/narrow); the Stirling
-  identity+remainder on `[8, ∞)` is the temporary axiom
-  `stirling_logGamma` (FLINT's real bound, constant `2`).
+  identity+remainder on `[8, ∞)` is the proved theorem
+  `stirling_logGamma` (FLINT's real bound, constant `2`; analysis in
+  `Fns/StirlingExpansion.lean`, Bernoulli/table correctness alongside it).
 * `gammaReflIval`: `Γ(x) = (π/sin(πx))/Γ(1-x)` for `hi < 1`
   (`Real.Gamma_mul_Gamma_one_sub`); division form fails at positive
   integers, hence the `hi < 1` restriction.
@@ -260,4 +268,5 @@ Stirling needs ~60 interval ops and closes the Gamma tests at `prec = 64`).
   wide positive intervals are sound but coarse (subdivision recovers
   them); all current Gamma tests are points.
 * Precision behavior: ~60 good bits at `prec = 64`, ~174 bits at
-  `prec = 256` (then the `N ≤ 24` table caps the tail, still sound).
+  `prec = 256`, unbounded above (term count grows with demand; verified
+  60-digit enclosure closing in kernel).

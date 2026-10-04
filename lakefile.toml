@@ -28,6 +28,75 @@ rev = "v4.34.0"
 name = "EquivCorpus"
 globs = ["Scripts.Test.Equiv.Nat.+", "Scripts.Test.Equiv.List.+"]
 
+# The test suite.  `Test.lean` (module `Test`) imports every currently-passing
+# test; each subdirectory is funnelled through its own aggregator
+# (`Test/FinDomain.lean`, `Test/IntervalArith.lean`, `Test/Sat/Suite.lean`, ...)
+# so a subtree can be built on its own.
+#
+# `Test/Grind/` is deliberately excluded: 293 vendored Mathlib regression files
+# that are not Lynth's tests.  That rules out a wildcard -- Lake's `*` spans
+# name separators, so `Test.*` would happily match `Test.Grind.Fast.grind_beta`
+# and pull the whole vendored suite in.  Instead every root-level module is
+# named explicitly and each top-level subdirectory contributes `<Dir>` plus
+# `<Dir>.+` ("that module and everything below it"), which reaches the nested
+# sub-aggregator (`Test.FinDomain.Meta`) without touching `Test.Grind`.
+#
+# The list is written by `Scripts/gen_test_aggregators.py`, which regenerates it
+# from the directory layout so the globs cannot drift from the files on disk.
+#
+# Failing tests live in `TestFailures/`, intentionally not a library: inspect
+# them with `lake env lean TestFailures/<path>`.
+[[lean_lib]]
+name = "Test"
+globs = [
+  "Test",
+  "Test.Arith",
+  "Test.ArithTactics",
+  "Test.Arrays",
+  "Test.BV",
+  "Test.BVBlast",
+  "Test.BranchBound",
+  "Test.Cdcl",
+  "Test.CdclFuzz",
+  "Test.Corpus",
+  "Test.Datatypes",
+  "Test.Encode",
+  "Test.Euf",
+  "Test.Farkas",
+  "Test.FarkasSound",
+  "Test.FinFuzz",
+  "Test.FinSearch",
+  "Test.FinSearchAlt",
+  "Test.Nlin",
+  "Test.Quant",
+  "Test.Readme",
+  "Test.Ring",
+  "Test.Robust",
+  "Test.Sat",
+  "Test.Simplex",
+  "Test.Spec",
+  "Test.StarBattle",
+  "Test.Tactics",
+  "Test.Tseitin",
+  "Test.Witness",
+  "Test.DiscMath",
+  "Test.DiscMath.+",
+  "Test.FinDomain",
+  "Test.FinDomain.+",
+  "Test.FinSearch.+",
+  "Test.Inductive",
+  "Test.Inductive.+",
+  "Test.Interval",
+  "Test.Interval.+",
+  "Test.IntervalArith",
+  "Test.IntervalArith.+",
+  "Test.Poly",
+  "Test.Poly.+",
+  "Test.ProgSynth",
+  "Test.ProgSynth.+",
+  "Test.Sat.+",
+]
+
 [[lean_lib]]
 name = "Lynth"
 # Native precompilation: tactic execution (notably the SAT solver hot

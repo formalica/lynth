@@ -56,7 +56,16 @@ The same code handles tolerances that are real expressions (`Real.pi / 100`,
 | `{n : ℕ // n = ⌈E⌉₊}` | `n := ⌈mid E⌉` | `Nat.ceil_eq_iff (hn : n ≠ 0) : ⌈a⌉₊ = n ↔ ↑(n - 1) < a ∧ a ≤ ↑n`; `n = 0` via `Nat.ceil_eq_zero` |
 | `{n : ℤ // n = ⌊E⌋}` / `⌈E⌉` | analogous | `Int.floor_eq_iff`, `Int.ceil_eq_iff` |
 | `{s : ℤ // Real.sign E = (s:ℝ)}` | sign of enclosure | `Real.sign_of_neg`, `Real.sign_of_pos` (zero only if `E` reifies to exact 0) |
+| `{s : ℤ // round E = s}` | `round` of midpoint | `Int.round_eq_iff : round x = n ↔ x ∈ Ico (n-1/2) (n+1/2)` |
 | `{n : ℕ // n = e}` with `e : ℕ` closed computable | evaluate `e` natively (`evalExpr ℕ`) | `⟨lit, by decide⟩` (`Nat.decEq`, kernel; keeps *zero axioms* as pinned for `gcd_of_fib`) |
+
+Nested `Nat.floor`/`Nat.ceil`/`Int.floor`/`Int.ceil`/`round` inside larger
+real expressions go through registry entries (`Fns/Floor.lean`: monotone
+endpoint lifts; `Int` outputs folded with their cast, like coq-interval's
+`IZR ∘ Zfloor` node).  Test-authoring rule: approx-goal anchors must
+elaborate at type `ℝ` (ascribe casts explicitly); a bare `↑F − ↑x` with `F`
+integer-valued unifies the whole proposition over `ℚ`, where no anchor is
+found.
 
 Orientation variants (`⌊E⌋₊ = n`) are normalized by `Eq.symm`.
 
