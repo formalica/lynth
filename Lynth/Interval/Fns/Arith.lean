@@ -224,6 +224,50 @@ open Lynth.Interval
       rw [NIval.eq_of_isPoint hb hb', NIval.eq_of_isPoint hn hn']; exact NIval.mem_pt _
     · exact NIval.mem_top _
 
+/-! ### Integers -/
+
+@[lynth_fn] def natCastI : Fn1 .nat .int where
+  name := "ℕ→ℤ"
+  graph n z := z = (n : ℤ)
+  exu := exu_eq _
+  ev _ N := ZIval.ofNatIval N
+  sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact ZIval.mem_ofNatIval hx
+
+@[lynth_fn] def intCastR : Fn1 .int .real where
+  name := "ℤ→ℝ"
+  graph z x := x = (z : ℝ)
+  exu := exu_eq _
+  ev _ Z := ZIval.toIval Z
+  sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact ZIval.mem_toIval hx
+
+@[lynth_fn] def addI : Fn2 .int .int .int where
+  name := "+ℤ"
+  graph x y z := z = x + y
+  exu := exu_eq₂ _
+  ev _ X Y := ZIval.add X Y
+  sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact ZIval.mem_add hx hy
+
+@[lynth_fn] def subI : Fn2 .int .int .int where
+  name := "-ℤ"
+  graph x y z := z = x - y
+  exu := exu_eq₂ _
+  ev _ X Y := ZIval.sub X Y
+  sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact ZIval.mem_sub hx hy
+
+@[lynth_fn] def mulI : Fn2 .int .int .int where
+  name := "*ℤ"
+  graph x y z := z = x * y
+  exu := exu_eq₂ _
+  ev _ X Y := ZIval.mul X Y
+  sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact ZIval.mem_mul hx hy
+
+@[lynth_fn] def negI : Fn1 .int .int where
+  name := "-ℤ"
+  graph x y := y = -x
+  exu := exu_eq _
+  ev _ X := ZIval.neg X
+  sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact ZIval.mem_neg hx
+
 /-! ### Complex numbers -/
 
 @[lynth_fn] def addC : Fn2 .cplx .cplx .cplx where

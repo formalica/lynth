@@ -63,24 +63,28 @@ def Holds (N : ℕ) (f : ℕ → ℕ) : NAsy → Prop
 
 end NAsy
 
-/-- AIA values by type (complex: no information yet) -/
+/-- AIA values by type (complex/int: no information yet) -/
 @[reducible] def Ty.Asy : Ty → Type
   | .nat => NAsy
+  | .int => Unit
   | .real => RAsy
   | .cplx => Unit
 
 def Ty.asyTop : (t : Ty) → t.Asy
   | .nat => NAsy.top
+  | .int => ()
   | .real => RAsy.top
   | .cplx => ()
 
 def Ty.AsyHolds : (t : Ty) → ℕ → (ℕ → t.Val) → t.Asy → Prop
   | .nat, N, f, A => NAsy.Holds N f A
+  | .int, _, _, _ => True
   | .real, N, f, A => RAsy.Holds N f A
   | .cplx, _, _, _ => True
 
 theorem Ty.asyHolds_top : (t : Ty) → (N : ℕ) → (f : ℕ → t.Val) → t.AsyHolds N f t.asyTop
   | .nat, _, _ => trivial
+  | .int, _, _ => trivial
   | .real, _, _ => trivial
   | .cplx, _, _ => trivial
 

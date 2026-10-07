@@ -48,6 +48,49 @@ def proveBySimp (goal : Lean.Expr) : TacticM (Option Lean.Expr) := do
     if gs.isEmpty then return some (← instantiateMVars m) else return none
   catch _ => return none
 
+/-- `ℕ` literal in kernel (`.lit`) or `OfNat` form -/
+def natLitVal? (e : Lean.Expr) : Option Nat :=
+  match e.nat?, e with
+  | some n, _ => some n
+  | _, .lit (.natVal n) => some n
+  | _, _ => none
+
+/-- read a closed `ℤ` literal (kernel normal form, depth ≤ 2, no recursion) -/
+def readIntVal (e : Lean.Expr) : Option Int :=
+  match e.getAppFnArgs with
+  | (``OfNat.ofNat, #[_, _, n]) => natLitVal? n |>.map Int.ofNat
+  | (``Int.ofNat, #[n]) => natLitVal? n |>.map Int.ofNat
+  | (``Int.negSucc, #[n]) => natLitVal? n |>.map (fun m => -((m : Int) + 1))
+  | (``Neg.neg, #[_, _, x]) =>
+    match x.getAppFnArgs with
+    | (``OfNat.ofNat, #[_, _, n]) => natLitVal? n |>.map (fun m => -(m : Int))
+    | (``Int.ofNat, #[n]) => natLitVal? n |>.map (fun m => -(m : Int))
+    | _ => none
+  | _ => none
+
+/-- `{n // E = n}` for closed `E : ℕ`/`ℤ`: whnf to a literal, proof by
+`decide`. Handles noncomputable-but-reducing definitions; yields on anything
+open or non-literal. -/
+def bareClosedWit (E : Lean.Expr) : TacticM (Option (Lean.Expr × Lean.Expr)) := do
+  let E ← instantiateMVars E
+  if E.hasFVar || E.hasMVar then return none
+  let ty ← whnfR (← inferType E)
+  try
+    if ty.isConstOf ``Nat then
+      let v ← whnf E
+      let some n := natLitVal? v | return none
+      let qE := toExpr n
+      if let some pf ← proveByDecide (← mkAppM ``Eq #[qE, E]) then
+        return some (qE, pf)
+    else if ty.isConstOf ``Int then
+      let v ← whnf E
+      let some z := readIntVal v | return none
+      let qE := toExpr z
+      if let some pf ← proveByDecide (← mkAppM ``Eq #[qE, E]) then
+        return some (qE, pf)
+    return none
+  catch _ => return none
+
 /-- `(n : ℝ)` OfNat literal -/
 def mkOfNatR (n : Nat) : MetaM Lean.Expr :=
   mkAppOptM ``OfNat.ofNat #[some (mkConst ``Real), some (toExpr n), none]
@@ -312,16 +355,21 @@ def proveDiscreteSubtype? (goalTy : Lean.Expr) : TacticM (Option Lean.Expr) := d
     let rstr := stripCast rhs
     let (E, flip, fhead) ←
       if lstr == x then
-        if isFloorHead rstr.getAppFn then pure (rstr.appArg!, true, rstr.getAppFn)
-        else return none
+        if isFloorHead rstr.getAppFn then pure (rstr.appArg!, true, some rstr.getAppFn)
+        else
+          -- bare `ℕ`/`ℤ`: closed non-variable side, no floor head
+          if (stripCast rstr) == x then return none
+          else pure (rstr, true, none)
       else if rstr == x then
-        if isFloorHead lstr.getAppFn then pure (lstr.appArg!, false, lstr.getAppFn)
-        else return none
+        if isFloorHead lstr.getAppFn then pure (lstr.appArg!, false, some lstr.getAppFn)
+        else
+          if (stripCast lstr) == x then return none
+          else pure (lstr, false, none)
       else return none
     if E.hasFVar || E.hasMVar then return none
     let worker : Lean.Expr → TacticM (Option (Lean.Expr × Lean.Expr)) :=
       match fhead with
-      | f =>
+      | some f =>
         if f.isConstOf ``Nat.floor then natFloorWit
         else if f.isConstOf ``Nat.ceil then natCeilWit
         else if f.isConstOf ``Int.floor then intFloorWit
@@ -329,6 +377,7 @@ def proveDiscreteSubtype? (goalTy : Lean.Expr) : TacticM (Option Lean.Expr) := d
         else if f.isConstOf ``round then intRoundWit
         else if f.isConstOf ``Real.sign then fun _ => intSignWit E
         else fun _ => return none
+      | none => fun E => bareClosedWit E
     let some (qE, pfFloor) ← worker E | return none
     -- pfFloor : `F = q` with `F` the stripped floor side.  If the goal wraps
     -- the floor side in a cast (`↑F`), lift by congruence; then orient.

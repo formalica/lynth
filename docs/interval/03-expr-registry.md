@@ -347,3 +347,81 @@ def Fn1.ofExpr (F : ℝ → ℝ) (body : Expr .real)   -- body uses var .real 0
 ```
 
 whose `ev` evaluates `body` and whose soundness is `Expr.eval_sound` + `h`.
+
+## 10. User-defined n-ary functions (`CFn`, `@[lynth_cfn]`)
+
+Fixed arities 0–2 (`Fn0/Fn1/Fn2`) cannot express user functions of arbitrary
+arity or mixed discrete/exact arguments.  N-ary functions use a separate
+record over argument/result codes (`Core/Expr.lean`):
+
+```lean
+inductive CTy | nat | int | rat | real
+def CTy.toTy : CTy → Ty            -- nat/int/rat/real ↦ nat/int/real/real
+def CTy.Val  : CTy → Type          -- ℕ / ℤ / ℚ / ℝ
+def CTy.Enc  : CTy → Type          -- NIval / ZIval / Option ℚ / Ival
+structure CFn (tys : List CTy) (r : CTy) where
+  name  : String
+  fn    : curriedType tys r        -- F : v₁ → … → vₙ → Val r
+  graph : CVal tys → Val r → Prop   -- exact-value relation (ℚ at `rat`)
+  exu   : ∀ xs, ∃! y, graph xs y
+  ev    : Ctx → CEnc tys → r.toTy.Enc
+  sound : ∀ c vs ds y' y X, c.Valid → graph vs y' → castOut r y' = y →
+    CEncHolds X ds → Agree vs ds → r.toTy.Mem (ev c X) y
+```
+
+Two constructors: `CFn.ofFn` (automatic; discrete results via
+`evOfNat`/`evOfInt`/`evOfRat` on `resolveExact`, `.real` results widen to
+`⊤`) and `CFn.manual` (user supplies `ev` + `sound` against the automatic
+`graphOf`; required whenever a result or argument needs real interval
+arithmetic).  Both fix `graph := graphOf`, so functionality is automatic.
+
+Calls live in the AST with heterogeneous argument lists:
+
+```lean
+| call {tys r t} (ht : t = r.toTy) (f : CFn tys r) (xs : CArg tys) : Expr t
+| callRat {tys} (f : CFn tys .rat) (xs : CArg tys)
+    (qf : CVal tys → ℚ) (hcorr : ∀ xs y', f.graph xs y' → qf xs = y') : Expr .real
+```
+
+`ht` is explicit because `CTy.toTy` is not injective (`.rat` and `.real`
+both map to `.real`), so no matching construct could otherwise split on
+`call` at a fixed result type — every fixed-`.real` match on `call` fails
+with an unsolvable `r.toTy = .real` equation.  With `ht` carried, `r` stays
+free and the equation is a hypothesis.  `evalRat` (exact-`ℚ` side channel)
+reads literals and `callRat` chains; `eval` widens a call to `⊤` through the
+central `allDiscreteResolved` guard whenever a discrete argument is
+unresolved.  Soundness (`eval_sound`, `evalCArgs_sound`, `evalRat_sound`) is
+proved once, by structural induction with explicit nested patterns — no
+measures, no axioms beyond the standard three.
+
+Registration (`Reify/Registry.lean`): `@[lynth_cfn]` on a `CFn tys r`
+definition builds an `NaryEntry` (`decl`, `tys`, `res`, the Lean function
+`F` extracted from `CFn.manual`/`CFn.ofFn`/`CFn.mk`, applicative pattern,
+`DiscrTree` keys, priority).  The attribute checks arity and domain types
+(`ℕ`/`ℤ`/`ℚ`/`ℝ` per `CTy`) and fails fast otherwise.
+
+Reification (`tryNary`, step 4 after `FnEntry`): match the pattern, reify
+each argument at `toTy`, then build `CArg`/`CVal` chains with proofs
+(`call_eq`, kernel-checked on the spot):
+- `.rat` positions take the `ℚ` argument term directly to `Expr.lit` and
+  require it closed (fail-fast `rat argument … must be a closed rational
+  literal or chain`); open exact rationals are rejected.
+- `.rat` results never reach `tryNary` (`F` is `ℚ`-valued, so no `.real`
+  target unifies); `↑q` with closed `q` reifies via `reifyRatCast?` to
+  `Expr.lit q` (sound by `rfl`).
+- The `evalExprVal` opaque transport needs no changes (`call` nodes are
+  data); `DiscrTree` matching works as for `FnEntry`.
+
+Discrete goals (`Goals/Discrete.lean`): the `interval` procedure now also
+fires on `ℕ`/`ℤ` subtype goals, and `proveDiscreteSubtype?` falls back (past
+floor/ceil/round/sign heads) to bare closed sides — candidate by kernel
+`whnf` + literal reading, proof by `decide`.
+
+Coercion trap: `↑q` with a `ℚ`-expected context elaborates to `q` (no cast
+inserted), so a test goal can be silently `ℚ`-typed and miss the procedure;
+pin casts with ascriptions (`((q : ℚ) : ℝ)`).
+
+Suite: `Test/Interval/Nary.lean` N1–N10 (2/3/4-ary over `Nat`/`Int`/`Rat`/
+`Real`, auto + manual, nesting, noncomputable with internal custom types;
+all standard axioms) plus the `Real → Real` manual reference
+`Test/Interval/CustomFn.lean` (`phi`).

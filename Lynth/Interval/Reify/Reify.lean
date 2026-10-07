@@ -33,7 +33,8 @@ structure RVar where
 structure RCtx where
   vars : Array RVar := #[]
   /-- the `SEnv` term the denotations refer to -/
-  senv : Lean.Expr := mkApp3 (mkConst ``SEnv.mk) (mkApp (mkConst ``List.nil [0]) (mkConst ``Nat))
+  senv : Lean.Expr := mkApp4 (mkConst ``SEnv.mk) (mkApp (mkConst ``List.nil [0]) (mkConst ``Nat))
+    (mkApp (mkConst ``List.nil [0]) (mkConst ``Int))
     (mkApp (mkConst ``List.nil [0]) (mkConst ``Real)) (mkApp (mkConst ``List.nil [0]) (mkConst ``Complex))
   /-- allow unknown subterms to become variables -/
   atoms : Bool := false
@@ -58,12 +59,14 @@ def RCtx.push (rc : RCtx) (term : Lean.Expr) (t : Ty) : RCtx :=
 /-- the Lean type of `Ty.Val t` -/
 def tyVal : Ty → Lean.Expr
   | .nat => mkConst ``Nat
+  | .int => mkConst ``Int
   | .real => mkConst ``Real
   | .cplx => mkConst ``Complex
 
 def tyOfType? (ty : Lean.Expr) : MetaM (Option Ty) := do
   let ty ← whnfR ty
   if ty.isConstOf ``Nat then return some .nat
+  if ty.isConstOf ``Int then return some .int
   if ty.isConstOf ``Real then return some .real
   if ty.isConstOf ``Complex then return some .cplx
   return none
@@ -159,6 +162,11 @@ def exact? (t : Ty) (e : Lean.Expr) (senv : Lean.Expr) : MetaM (Option Reified) 
         (fun q => if q.den == 1 && q.num ≥ 0 then some (mkNatLit q.num.toNat) else none)
       | return none
     return some ⟨.nat, mkApp (mkConst ``Expr.natLit) (mkNatLit q.num.toNat), pf⟩
+  | .int =>
+    let some (q, pf) ← ratEq? (α := q(ℤ)) e
+        (fun q => if q.den == 1 then some (toExpr q.num) else none)
+      | return none
+    return some ⟨.int, mkApp (mkConst ``Expr.intLit) (toExpr q.num), pf⟩
   | .cplx =>
     let some (q, pf) ← ratEq? (α := q(ℂ)) e (fun q => let qE : Q(ℚ) := toExpr q; some q(($qE : ℂ)))
       | return none
@@ -209,6 +217,9 @@ partial def reify (rc : RCtx) (e : Lean.Expr) : MetaM Reified := do
   -- 4. registry
   for cand in ← candidates e do
     if let some r ← tryEntry rc t cand e then return r
+  for cand in ← candidatesNary e do
+    if let some r ← tryNary rc t cand e then return r
+  if let some r ← reifyRatCast? rc t e then return r
   -- 5. unfold user definitions
   if rc.depth > 0 then
     if let some e' ← unfoldHead? e then
@@ -273,6 +284,82 @@ where
         return some ⟨t, ex, pf⟩
     catch _ =>
       s.restore; return none
+  /-- try one n-ary registry entry -/
+  tryNary (rc : RCtx) (t : Ty) (ent : NaryEntry) (e : Lean.Expr) : MetaM (Option Reified) := do
+    unless ent.res.toTy == t do return none
+    let s ← saveState
+    let (mvars, _, body) ← lambdaMetaTelescope ent.pattern
+    unless ← withTransparency .instances (isDefEq body e) do
+      s.restore; return none
+    let args ← mvars.mapM instantiateMVars
+    if args.any (·.hasMVar) then s.restore; return none
+    try
+      let n := ent.tys.size
+      let f := mkConst ent.decl
+      let ρ := rc.senv
+      let tysE := toExpr ent.tys.toList
+      let rE := toExpr ent.res
+      let tE := toExpr t
+      -- reified head per position; rat positions take closed ℚ directly to `lit`
+      let mut exs : Array Lean.Expr := #[]
+      let mut vs : Array Lean.Expr := #[]
+      let mut comps : Array Lean.Expr := #[]
+      for i in [0:n] do
+        let c := ent.tys[i]!
+        let a := args[i]!
+        match c with
+        | .rat =>
+          if a.hasFVar || a.hasMVar then
+            throwError ("lynth interval: rat argument {i} of `{ent.decl}` must be " ++
+              "a closed rational literal or chain")
+          let litE := mkApp (mkConst ``Expr.lit) a
+          exs := exs.push litE
+          vs := vs.push a
+          comps := comps.push (← mkEqRefl (mkDenote .real litE ρ))
+        | _ =>
+          let r ← reify rc a
+          unless r.ty == c.toTy do throw (Exception.error .missing "type mismatch")
+          exs := exs.push r.expr
+          vs := vs.push a
+          comps := comps.push r.proof
+      -- `CArg` / `CVal` chains (right-nested) and the `Agree` conjunction
+      let mut xsE := mkConst ``CArg.nil
+      let mut vsE := mkConst ``CVal.nil
+      let mut hagE := mkConst ``True.intro
+      for j in List.range n |>.reverse do
+        let cE := toExpr ent.tys[j]!
+        xsE ← mkAppOptM ``CArg.cons #[some cE, none, some exs[j]!, some xsE]
+        vsE ← mkAppOptM ``CVal.cons #[some cE, none, some vs[j]!, some vsE]
+        hagE := ← mkAppM ``And.intro #[comps[j]!, hagE]
+      let denE := mkAppN (mkConst ``Expr.CArg.denoteArgs) #[ρ, tysE, xsE]
+      let hdsE ← mkEqRefl denE
+      let hgE ← mkEqRefl e
+      let htE ← mkExpectedTypeHint (← mkEqRefl tE)
+        (← mkEq tE (mkApp (mkConst ``CTy.toTy) rE))
+      -- `rat` results cannot appear here (`F` is `ℚ`-valued, so no `.real`
+      -- target unifies); they flow through `reifyRatCast?` below instead.
+      unless ent.res matches .nat | .int | .real do
+        s.restore; return none
+      let ex ← mkAppOptM ``Expr.call #[none, none, none, some htE, some f, some xsE]
+      let pf := mkAppN (mkConst ``Expr.call_eq)
+        #[tysE, rE, tE, htE, f, xsE, ρ, vsE, denE, e, e, hdsE, hagE, hgE, ← mkEqRefl e]
+      check pf
+      return some ⟨t, ex, pf⟩
+    catch e =>
+      trace[lynth.interval] "nary `{ent.decl}` failed: {e.toMessageData}"
+      s.restore; return none
+  /-- `↑q : ℝ` for closed `q : ℚ` (covers rat-result custom calls, which plain
+  `exact?` cannot evaluate): reified as `Expr.lit q`, sound by `rfl`. -/
+  reifyRatCast? (rc : RCtx) (t : Ty) (e : Lean.Expr) : MetaM (Option Reified) := do
+    unless t == .real do return none
+    unless e.getAppFn.isConstOf ``Rat.cast do return none
+    let q := e.appArg!
+    let q ← instantiateMVars q
+    if q.hasFVar || q.hasMVar then
+      throwError "lynth interval: cast argument must be a closed rational literal or chain"
+    let ex := mkApp (mkConst ``Expr.lit) q
+    let pf ← mkExpectedTypeHint (← mkEqRefl e) (← mkEq e (mkDenote t ex rc.senv))
+    return some ⟨t, ex, pf⟩
 
 /-! ### Propositions -/
 

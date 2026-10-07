@@ -31,7 +31,8 @@ def findPrec (p : PropExpr) (σ : IEnv := {}) : CoreM (Option Nat) := do
   return none
 
 def emptyIEnvExpr : Lean.Expr :=
-  mkApp3 (mkConst ``IEnv.mk) (mkApp (mkConst ``List.nil [0]) (mkConst ``NIval))
+  mkApp4 (mkConst ``IEnv.mk) (mkApp (mkConst ``List.nil [0]) (mkConst ``NIval))
+    (mkApp (mkConst ``List.nil [0]) (mkConst ``ZIval))
     (mkApp (mkConst ``List.nil [0]) (mkConst ``Ival)) (mkApp (mkConst ``List.nil [0]) (mkConst ``CBox))
 
 /-- rough cost of checking at precision `prec` (kernel budget units) -/

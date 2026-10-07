@@ -12,6 +12,7 @@ namespace Lynth.Interval
 
 structure SEnv where
   n : List ℕ := []
+  z : List ℤ := []
   r : List ℝ := []
   c : List ℂ := []
 
@@ -19,11 +20,13 @@ namespace SEnv
 
 def get (ρ : SEnv) : (t : Ty) → ℕ → t.Val
   | .nat, i => ρ.n.getD i 0
+  | .int, i => ρ.z.getD i 0
   | .real, i => ρ.r.getD i 0
   | .cplx, i => ρ.c.getD i 0
 
 def push (ρ : SEnv) : (t : Ty) → t.Val → SEnv
   | .nat, v => { ρ with n := v :: ρ.n }
+  | .int, v => { ρ with z := v :: ρ.z }
   | .real, v => { ρ with r := v :: ρ.r }
   | .cplx, v => { ρ with c := v :: ρ.c }
 
@@ -31,6 +34,7 @@ end SEnv
 
 structure IEnv where
   n : List NIval := []
+  z : List ZIval := []
   r : List Ival := []
   c : List CBox := []
 deriving Inhabited
@@ -39,11 +43,13 @@ namespace IEnv
 
 def get (σ : IEnv) : (t : Ty) → ℕ → t.Enc
   | .nat, i => σ.n.getD i NIval.top
+  | .int, i => σ.z.getD i ZIval.top
   | .real, i => σ.r.getD i Ival.top
   | .cplx, i => σ.c.getD i CBox.top
 
 def push (σ : IEnv) : (t : Ty) → t.Enc → IEnv
   | .nat, v => { σ with n := v :: σ.n }
+  | .int, v => { σ with z := v :: σ.z }
   | .real, v => { σ with r := v :: σ.r }
   | .cplx, v => { σ with c := v :: σ.c }
 
@@ -63,6 +69,7 @@ theorem Holds.push {σ : IEnv} {ρ : SEnv} (h : σ.Holds ρ) {t : Ty} {X : t.Enc
   cases t <;> cases t' <;> first
     | exact h _ i
     | exact getD_mem (R := fun (I : NIval) n => n ∈ I) (NIval.mem_top 0) (h .nat) v X hv i
+    | exact getD_mem (R := fun (I : ZIval) z => z ∈ I) (ZIval.mem_top 0) (h .int) v X hv i
     | exact getD_mem (R := fun (I : Ival) x => x ∈ I) (Ival.mem_top 0) (h .real) v X hv i
     | exact getD_mem (R := fun (B : CBox) z => z ∈ B) (CBox.mem_top 0) (h .cplx) v X hv i
 
@@ -71,6 +78,7 @@ theorem holds_empty : (({} : IEnv)).Holds ({} : SEnv) := by
   intro t i
   cases t
   · exact NIval.mem_top _
+  · exact ZIval.mem_top _
   · exact Ival.mem_top _
   · exact CBox.mem_top _
 
