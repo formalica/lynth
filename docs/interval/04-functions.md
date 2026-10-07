@@ -270,3 +270,27 @@ Stirling needs ~60 interval ops and closes the Gamma tests at `prec = 64`).
 * Precision behavior: ~60 good bits at `prec = 64`, ~174 bits at
   `prec = 256`, unbounded above (term count grows with demand; verified
   60-digit enclosure closing in kernel).
+
+## 18. Riemann zeta, real line (`Fns/Zeta.lean`)
+
+FLINT's split (`arb/zeta_ui.c`), real line only, no integer fast paths:
+* integer points `n ≥ 6` → Euler product
+  `ζ(n) = ∏_{p ≤ P} (1-p⁻ⁿ)⁻¹` with tail `Π·P^{1-n}/(n-1)`
+  (`acb_dirichlet/euler_product_real_ui.c`; `P = 64 + 2·prec`).
+  Small integers `2–5` go through Euler–Maclaurin below instead of
+  Bernoulli/Borwein/Apéry (waived).
+* `0 < s ≠ 1` (non-integers and small integers uniformly) →
+  Euler–Maclaurin (`acb_poly/zeta_em_sum.c`, shift `a = 1`): `N` direct
+  `rpow` terms, `(N+1)^{1-s}/(s-1)`, half term, `M` Bernoulli corrections
+  `B_{2r}/(2r)!·rising(s,2r-1)/(N+1)^{s+2r-1}` with exact `bernoulliQ`
+  (`Fns/Gamma.lean`), `N = 16 + prec/2`, `M = 4 + prec/8`.
+* `s ≤ 0`, `s = 1`, unbounded or straddling enclosures → `⊤`.
+  No complex/Hurwitz/Riemann–Siegel.
+
+Entry `zetaR : Fn1 .real .real` (`y = zetaReal x`,
+`zetaReal s = (riemannZeta s).re`); dispatch reads point naturals and the
+`0 < · ≠ 1` guard off enclosure bounds.  Analytic identities + remainder
+bounds are `sorry`'d (handoff `/tmp/zeta_eulerprod_thm.lean`,
+`/tmp/zeta_em_thm.lean`, Mathlib-only, mirroring the statements);
+interval plumbing (folds, factor/correction membership, guard reasoning)
+is proved.  Tests `Test/Interval/Zeta.lean` Z1–Z10.
