@@ -283,14 +283,16 @@ FLINT's split (`arb/zeta_ui.c`), real line only, no integer fast paths:
   Euler–Maclaurin (`acb_poly/zeta_em_sum.c`, shift `a = 1`): `N` direct
   `rpow` terms, `(N+1)^{1-s}/(s-1)`, half term, `M` Bernoulli corrections
   `B_{2r}/(2r)!·rising(s,2r-1)/(N+1)^{s+2r-1}` with exact `bernoulliQ`
-  (`Fns/Gamma.lean`), `N = 16 + prec/2`, `M = 4 + prec/8`.
+  (`Fns/Gamma.lean`); `M = 4 + prec/8`, `N` adapts to the enclosure
+  (`(16 + prec/2) ⊔ (sHi + 2·M + 2)`, so `s + 2M + 2 ≤ N + 1` is provable).
 * `s ≤ 0`, `s = 1`, unbounded or straddling enclosures → `⊤`.
   No complex/Hurwitz/Riemann–Siegel.
 
 Entry `zetaR : Fn1 .real .real` (`y = zetaReal x`,
 `zetaReal s = (riemannZeta s).re`); dispatch reads point naturals and the
 `0 < · ≠ 1` guard off enclosure bounds.  Analytic identities + remainder
-bounds are `sorry`'d (handoff `/tmp/zeta_eulerprod_thm.lean`,
-`/tmp/zeta_em_thm.lean`, Mathlib-only, mirroring the statements);
-interval plumbing (folds, factor/correction membership, guard reasoning)
-is proved.  Tests `Test/Interval/Zeta.lean` Z1–Z10.
+bounds are proved in the ported modules `Fns/ZetaEulerProd.lean`,
+`Fns/ZetaEM.lean` (external prover, from the Mathlib-only `/tmp/zeta/`
+handoff); EM evaluation widens by the interval tail `±2·T_{M+1}`.
+`zetaEulerProd_sound`, `zetaEM_sound`, `zetaIval_sound` all close on the
+standard axioms.  Tests `Test/Interval/Zeta.lean` Z1–Z10.

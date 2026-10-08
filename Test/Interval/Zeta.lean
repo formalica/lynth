@@ -18,9 +18,9 @@ Ground truth from first-order Euler–Maclaurin in Python (`N = 10^5`,
 `ζ(6) = 1.017343061984449`, `ζ(7) = 1.008349277381923`,
 `ζ(8) = 1.004077356197944`, `ζ(1.5) = 2.612375348685449`,
 `ζ(2.5) = 1.341487257250917`, `ζ(0.5) = -1.460354510127246`.
-Analytic bounds are `sorry`'d (`Fns/Zeta.lean`, handoff
-`/tmp/zeta_eulerprod_thm.lean`, `/tmp/zeta_em_thm.lean`); `#eval!`
-(unsafe) is used since `#eval` refuses `sorryAx` proofs.
+Analytic bounds are proved (`Fns/ZetaEulerProd.lean`, `Fns/ZetaEM.lean`,
+ported from the Mathlib-only `/tmp/zeta/` prover handoff); `#eval!`
+(unsafe) is used since native trust adds per-declaration axioms.
 -/
 
 set_option maxHeartbeats 60000 in
