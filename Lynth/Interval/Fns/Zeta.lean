@@ -26,7 +26,7 @@ Bernoulli numbers reuse `bernoulliQ`/`bernoulliList_getD` (`Fns/Gamma.lean`).
 Analytic identities + remainder bounds live in the ported modules
 `Fns/ZetaEulerProd.lean`, `Fns/ZetaEM.lean` (proved by the external prover
 from Mathlib-only `/tmp/zeta_*_thm.lean` handoffs); the FE identity is
-`sorry`'d (handoff `/tmp/zeta_neg_thm.lean`).
+proved in-file (ported from the external prover via `/tmp/zeta_neg_thm.lean`).
 -/
 
 namespace Lynth.Interval.Fns
@@ -410,7 +410,7 @@ theorem zetaEM_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (S : Ival)
     refine Ival.mem_ofRats ?_ ?_ <;>
       (push_cast at habs h2Tle ⊢; linarith [habs.1, habs.2, h2Tle])
   · exact Ival.mem_top _
-/-- SORRY (handoff `/tmp/zeta_neg_thm.lean`): functional equation for
+/-- functional equation for (ported prover proof; handoff `/tmp/zeta_neg_thm.lean`)
 `s < 0`, in evaluator association (suggested route:
 `riemannZeta_one_sub` at `u = 1 - s`). -/
 theorem zeta_neg_fe (s : ℝ) (hs : s < 0) :
@@ -419,7 +419,39 @@ theorem zeta_neg_fe (s : ℝ) (hs : s < 0) :
         * Real.sin (Real.pi * s / 2))
         * Real.Gamma (1 - s))
         * (riemannZeta (((1 - s) : ℝ) : ℂ)).re := by
-  sorry
+  have hu : (1 : ℝ) < 1 - s := by linarith
+  have h1 : ∀ n : ℕ, (((1 - s : ℝ)) : ℂ) ≠ -n := by
+    intro n h
+    have := congrArg Complex.re h
+    simp at this
+    have : (0:ℝ) ≤ n := Nat.cast_nonneg n
+    linarith
+  have h2 : (((1 - s : ℝ)) : ℂ) ≠ 1 := by
+    intro h
+    have := congrArg Complex.re h
+    simp at this
+    linarith
+  have hfe := riemannZeta_one_sub h1 h2
+  have hs' : (1 : ℂ) - (((1 - s : ℝ)) : ℂ) = (s : ℂ) := by push_cast; ring
+  rw [hs'] at hfe
+  have hpow : (2 * (Real.pi : ℂ)) ^ (-(((1 - s : ℝ)) : ℂ)) = (((2 * Real.pi) ^ (s - 1) : ℝ) : ℂ) := by
+    rw [Complex.ofReal_cpow (by positivity)]
+    push_cast
+    ring_nf
+  have hcos : Complex.cos (Real.pi * (((1 - s : ℝ)) : ℂ) / 2) = ((Real.sin (Real.pi * s / 2) : ℝ) : ℂ) := by
+    rw [← Real.cos_pi_div_two_sub]
+    push_cast
+    ring_nf
+  rw [hfe, hpow, hcos, Complex.Gamma_ofReal]
+  have hfac : (2 : ℂ) * (((2 * Real.pi) ^ (s - 1) : ℝ) : ℂ) * ((Real.Gamma (1 - s) : ℝ) : ℂ)
+      * ((Real.sin (Real.pi * s / 2) : ℝ) : ℂ)
+      = ((((((2 : ℝ) ^ s * Real.pi ^ (s - 1)) * Real.sin (Real.pi * s / 2))
+        * Real.Gamma (1 - s)) : ℝ) : ℂ) := by
+    rw [Real.mul_rpow (by norm_num) Real.pi_pos.le,
+      show (2:ℝ) ^ s = 2 * 2 ^ (s - 1) by
+        rw [← Real.rpow_one_add' (by norm_num) (by linarith)]; ring_nf]
+    push_cast; ring
+  rw [hfac, Complex.re_ofReal_mul]
 
 /-- EM guard: `0 < s ≠ 1` enclosures → Euler–Maclaurin with adaptive `N`;
 everything else → `⊤`. -/

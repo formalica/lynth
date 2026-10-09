@@ -16,9 +16,9 @@ Ground truth from the recurrence `ψ(x+1) = ψ(x) + 1/x` and
 `ψ(1) = -0.5772156649`, `ψ(2) = 0.4227843351`, `ψ(3) = 0.9227843351`,
 `ψ(1/2) = -1.9635100260`, `ψ(2.5) = 0.7031566407`,
 `ψ(-1/2) = ψ(3/2) = 0.0364899740` (via `π·cot(-π/2) = 0`).
-Analytic bounds are `sorry`'d (`Fns/Digamma.lean`, handoff
-`/tmp/digamma_thm.lean`); `#eval!` (unsafe) is used since `#eval`
-refuses `sorryAx` proofs.
+Analytic bounds are proved (`Fns/Digamma.lean`, ported from handoff
+`/tmp/digamma_thm.lean`); `#eval!` (unsafe) is used since native trust
+adds per-declaration axioms.
 -/
 
 set_option maxHeartbeats 60000 in

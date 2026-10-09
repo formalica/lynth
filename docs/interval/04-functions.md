@@ -298,8 +298,8 @@ Entry `zetaR : Fn1 .real .real` (`y = zetaReal x`,
 `0 < · ≠ 1` guard off enclosure bounds.  Analytic identities + remainder
 bounds are proved in the ported modules `Fns/ZetaEulerProd.lean`,
 `Fns/ZetaEM.lean` (external prover, from the Mathlib-only `/tmp/zeta/`
-handoff); the FE identity is `sorry`'d (handoff `/tmp/zeta_neg_thm.lean`,
-Mathlib-only, in exact evaluator association).  EM evaluation widens by
+handoff); the FE identity is proved in `Fns/Zeta.lean` (ported from
+`/tmp/zeta_neg_thm.lean`).  EM evaluation widens by
 the interval tail `±2·T_{M+1}`.
 `zetaEulerProd_sound`, `zetaEM_sound`, `zetaIval_sound` all close on the
 standard axioms.  Tests `Test/Interval/Zeta.lean` Z1–Z10 (positive),
@@ -324,7 +324,6 @@ Z11–Z14 (negative: `ζ(-1)`, `ζ(-3)`, `ζ(-2) = 0`, `ζ(-1/2)`).
 
 Entry `digammaR : Fn1 .real .real` (`y = rdig x`,
 `rdig s = (Complex.digamma s).re`).  Analytic identities + remainder
-bounds are `sorry`'d (handoff `/tmp/digamma_thm.lean`, Mathlib-only, with
-the Bernoulli block vendored so the prover never re-proves `B_{2k}`;
-mirror statements byte-identical to the handoff).
+bounds are proved in `Fns/Digamma.lean` (ported from `/tmp/digamma_thm.lean`,
+whose Bernoulli block is vendored so the prover never re-proves `B_{2k}`).
 Tests `Test/Interval/Digamma.lean` D1–D6.
