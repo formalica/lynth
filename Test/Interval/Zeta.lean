@@ -102,3 +102,35 @@ def zeta_half : { x : Rat //
   lynth
 #print axioms zeta_half
 #eval! zeta_half.1
+
+set_option maxHeartbeats 60000 in
+-- Z11: ζ(-1) = -1/12 via functional equation. -0.0833333333
+def zeta_neg_one : { x : Rat //
+    abs (zetaReal (-1) - x) < 1 / 1000 } := by
+  lynth
+#print axioms zeta_neg_one
+#eval! zeta_neg_one.1
+
+set_option maxHeartbeats 60000 in
+-- Z12: ζ(-3) = 1/120 via functional equation. 0.0083333333
+def zeta_neg_three : { x : Rat //
+    abs (zetaReal (-3) - x) < 1 / 1000 } := by
+  lynth
+#print axioms zeta_neg_three
+#eval! zeta_neg_three.1
+
+set_option maxHeartbeats 60000 in
+-- Z13: ζ(-2) = 0 (trivial zero) via functional equation.
+def zeta_neg_two : { x : Rat //
+    abs (zetaReal (-2) - x) < 1 / 1000 } := by
+  lynth
+#print axioms zeta_neg_two
+#eval! zeta_neg_two.1
+
+set_option maxHeartbeats 60000 in
+-- Z14: ζ(-1/2) via functional equation. -0.207886224977
+def zeta_neg_half : { x : Rat //
+    abs (zetaReal (-1 / 2) - x) < 1 / 1000 } := by
+  lynth
+#print axioms zeta_neg_half
+#eval! zeta_neg_half.1

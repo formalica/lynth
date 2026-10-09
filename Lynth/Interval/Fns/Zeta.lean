@@ -1,6 +1,7 @@
 import Lynth.Interval.Fns.Gamma
 import Lynth.Interval.Fns.ZetaEulerProd
 import Lynth.Interval.Fns.ZetaEM
+import Lynth.Interval.Fns.Trig
 import Mathlib.NumberTheory.LSeries.RiemannZeta
 
 /-!
@@ -14,13 +15,18 @@ import Mathlib.NumberTheory.LSeries.RiemannZeta
 * `0 < s ≠ 1` (non-integers and small integers uniformly) →
   Euler–Maclaurin (`acb_poly/zeta_em_sum.c`): direct sum plus
   `(N+1)^{1-s}/(s-1)`, half term, and `M` Bernoulli corrections.
-* `s ≤ 0` or `s = 1` (or enclosures touching them) → `⊤` (no negative
-  case; the pole is indeterminate).  No complex/Hurwitz/Riemann–Siegel.
+* `s < 0` (strictly negative enclosures) → functional equation
+  (`acb_zeta` for `Re s < 0`):
+  `ζ(s) = 2^s·π^{s-1}·sin(πs/2)·Γ(1-s)·ζ(1-s)` with `1-s > 1`
+  through the non-recursive positive dispatch.
+* `s = 0` straddles, `s = 1` (or enclosures touching it) → `⊤`
+  (the pole is indeterminate).  No complex/Hurwitz/Riemann–Siegel.
 
 Bernoulli numbers reuse `bernoulliQ`/`bernoulliList_getD` (`Fns/Gamma.lean`).
 Analytic identities + remainder bounds live in the ported modules
 `Fns/ZetaEulerProd.lean`, `Fns/ZetaEM.lean` (proved by the external prover
-from Mathlib-only `/tmp/zeta_*_thm.lean` handoffs).
+from Mathlib-only `/tmp/zeta_*_thm.lean` handoffs); the FE identity is
+`sorry`'d (handoff `/tmp/zeta_neg_thm.lean`).
 -/
 
 namespace Lynth.Interval.Fns
@@ -404,6 +410,17 @@ theorem zetaEM_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (S : Ival)
     refine Ival.mem_ofRats ?_ ?_ <;>
       (push_cast at habs h2Tle ⊢; linarith [habs.1, habs.2, h2Tle])
   · exact Ival.mem_top _
+/-- SORRY (handoff `/tmp/zeta_neg_thm.lean`): functional equation for
+`s < 0`, in evaluator association (suggested route:
+`riemannZeta_one_sub` at `u = 1 - s`). -/
+theorem zeta_neg_fe (s : ℝ) (hs : s < 0) :
+    (riemannZeta (s : ℂ)).re
+      = ((((2 : ℝ) ^ s * Real.pi ^ (s - 1))
+        * Real.sin (Real.pi * s / 2))
+        * Real.Gamma (1 - s))
+        * (riemannZeta (((1 - s) : ℝ) : ℂ)).re := by
+  sorry
+
 /-- EM guard: `0 < s ≠ 1` enclosures → Euler–Maclaurin with adaptive `N`;
 everything else → `⊤`. -/
 def zetaEMGuard (c : Ctx) (X : Ival) (lo hi : Dy) : Ival :=
@@ -415,9 +432,10 @@ def zetaEMGuard (c : Ctx) (X : Ival) (lo hi : Dy) : Ival :=
     zetaEMIval c X N M
   else Ival.top
 
-/-- dispatcher: integer points `n ≥ 6` → Euler product; `0 < s ≠ 1`
-enclosures → Euler–Maclaurin; everything else → `⊤`. -/
-def zetaIval (c : Ctx) (X : Ival) : Ival :=
+/-- positive dispatch: integer points `n ≥ 6` → Euler product;
+`0 < s ≠ 1` enclosures → Euler–Maclaurin; everything else → `⊤`.
+Non-recursive (the negative branch reuses it for `1 - s > 1`). -/
+def zetaPosIval (c : Ctx) (X : Ival) : Ival :=
   match X.lo, X.hi with
   | some lo, some hi =>
     if _hpt : lo = hi then
@@ -427,17 +445,40 @@ def zetaIval (c : Ctx) (X : Ival) : Ival :=
     else zetaEMGuard c X lo hi
   | _, _ => Ival.top
 
-theorem zetaIval_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (X : Ival)
-    (hx : s ∈ X) : zetaReal s ∈ zetaIval c X := by
+/-- FE factor enclosure for `s < 0`:
+`2^s·π^{s-1}·sin(πs/2)·Γ(1-s)·ζ(1-s)` (inner `1-s > 1` reuses the
+proved positive dispatch; recursion depth exactly 1). -/
+def zetaNegIval (c : Ctx) (X : Ival) : Ival :=
+  let A := rpowIval c (Ival.ofRat c.prec 2) X
+  let B := rpowIval c c.pi (Ival.sub c.prec X (Ival.ofRat c.prec 1))
+  let C := sinIval c
+    (Ival.div c.prec (Ival.mul c.prec c.pi X) (Ival.ofRat c.prec 2))
+  let oneSub := Ival.sub c.prec (Ival.ofRat c.prec 1) X
+  let D := gammaIval c oneSub
+  let E := zetaPosIval c oneSub
+  Ival.mul c.prec (Ival.mul c.prec (Ival.mul c.prec (Ival.mul c.prec A B) C) D) E
+
+/-- dispatcher: integer points `n ≥ 6` → Euler product; strictly
+negative enclosures → functional equation; `0 < s ≠ 1` enclosures →
+Euler–Maclaurin; everything else → `⊤`. -/
+def zetaIval (c : Ctx) (X : Ival) : Ival :=
+  match X.lo, X.hi with
+  | some lo, some hi =>
+    if _hneg : hi.toRat < 0 then zetaNegIval c X
+    else zetaPosIval c X
+  | _, _ => Ival.top
+
+theorem zetaPosIval_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (X : Ival)
+    (hx : s ∈ X) : zetaReal s ∈ zetaPosIval c X := by
   obtain ⟨hxlo, hxhi⟩ := hx
   cases hlo : X.lo with
   | none =>
     cases hhi : X.hi with
-    | none => simp only [zetaIval, hlo, hhi]; exact Ival.mem_top _
-    | some hi => simp only [zetaIval, hlo, hhi]; exact Ival.mem_top _
+    | none => simp only [zetaPosIval, hlo, hhi]; exact Ival.mem_top _
+    | some hi => simp only [zetaPosIval, hlo, hhi]; exact Ival.mem_top _
   | some lo =>
     cases hhi : X.hi with
-    | none => simp only [zetaIval, hlo, hhi]; exact Ival.mem_top _
+    | none => simp only [zetaPosIval, hlo, hhi]; exact Ival.mem_top _
     | some hi =>
       have hloR : lo.toReal ≤ s := hxlo lo hlo
       have hhiR : s ≤ hi.toReal := hxhi hi hhi
@@ -533,7 +574,7 @@ theorem zetaIval_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (X : Ival)
           exact zetaEM_sound c hc s X hxM hs hs1 _ _ hN hM hNM
         · rename_i hnpos
           exact Ival.mem_top _
-      simp only [zetaIval, hlo, hhi]
+      simp only [zetaPosIval, hlo, hhi]
       split
       · rename_i hpt
         split
@@ -568,6 +609,63 @@ theorem zetaIval_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (X : Ival)
           exact hem
       · rename_i hpt
         exact hem
+
+theorem zetaNeg_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (X : Ival)
+    (hxMem : s ∈ X) (hsneg : s < 0) :
+    zetaReal s ∈ zetaNegIval c X := by
+  have h2 : (2 : ℝ) ∈ Ival.ofRat c.prec 2 := by
+    exact_mod_cast Ival.mem_ofRat c.prec (2 : ℚ)
+  have h1 : (1 : ℝ) ∈ Ival.ofRat c.prec 1 := by
+    exact_mod_cast Ival.mem_ofRat c.prec (1 : ℚ)
+  have hA : (2 : ℝ) ^ s ∈ rpowIval c (Ival.ofRat c.prec 2) X :=
+    mem_rpowIval hc h2 hxMem
+  have hB : Real.pi ^ (s - 1) ∈ rpowIval c c.pi
+      (Ival.sub c.prec X (Ival.ofRat c.prec 1)) :=
+    mem_rpowIval hc hc.pi_mem (Ival.mem_sub hxMem h1)
+  have hC0 : Real.pi * s / 2 ∈ Ival.div c.prec
+      (Ival.mul c.prec c.pi X) (Ival.ofRat c.prec 2) :=
+    Ival.mem_div (Ival.mem_mul hc.pi_mem hxMem) h2
+  have hC : Real.sin (Real.pi * s / 2) ∈ sinIval c
+      (Ival.div c.prec (Ival.mul c.prec c.pi X) (Ival.ofRat c.prec 2)) :=
+    mem_sinIval hc hC0
+  have h1sub : 1 - s ∈ Ival.sub c.prec (Ival.ofRat c.prec 1) X :=
+    Ival.mem_sub h1 hxMem
+  have hD : Real.Gamma (1 - s) ∈ gammaIval c
+      (Ival.sub c.prec (Ival.ofRat c.prec 1) X) :=
+    mem_gammaIval hc h1sub
+  have hE : (riemannZeta (((1 - s) : ℝ) : ℂ)).re ∈ zetaPosIval c
+      (Ival.sub c.prec (Ival.ofRat c.prec 1) X) :=
+    zetaPosIval_sound c hc (1 - s) _ h1sub
+  unfold zetaReal
+  rw [zeta_neg_fe s hsneg]
+  simp only [zetaNegIval]
+  exact Ival.mem_mul (Ival.mem_mul (Ival.mem_mul (Ival.mem_mul hA hB) hC) hD) hE
+
+theorem zetaIval_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (X : Ival)
+    (hx : s ∈ X) : zetaReal s ∈ zetaIval c X := by
+  obtain ⟨hxlo, hxhi⟩ := hx
+  cases hlo : X.lo with
+  | none =>
+    cases hhi : X.hi with
+    | none => simp only [zetaIval, hlo, hhi]; exact Ival.mem_top _
+    | some hi => simp only [zetaIval, hlo, hhi]; exact Ival.mem_top _
+  | some lo =>
+    cases hhi : X.hi with
+    | none => simp only [zetaIval, hlo, hhi]; exact Ival.mem_top _
+    | some hi =>
+      have hloR : lo.toReal ≤ s := hxlo lo hlo
+      have hhiR : s ≤ hi.toReal := hxhi hi hhi
+      rw [Dy.toReal_def] at hloR hhiR
+      simp only [zetaIval, hlo, hhi]
+      split
+      · rename_i hnegH
+        have hxM : s ∈ X := Ival.mem_def.mpr ⟨hxlo, hxhi⟩
+        have hsneg : s < 0 := by
+          have hhir : ((hi.toRat : ℚ) : ℝ) < 0 := by exact_mod_cast hnegH
+          linarith
+        exact zetaNeg_sound c hc s X hxM hsneg
+      · rename_i hnegH
+        exact zetaPosIval_sound c hc s X (Ival.mem_def.mpr ⟨hxlo, hxhi⟩)
 
 @[lynth_fn] def zetaR : Fn1 .real .real where
   name := "zeta"

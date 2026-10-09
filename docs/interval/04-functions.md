@@ -285,7 +285,12 @@ FLINT's split (`arb/zeta_ui.c`), real line only, no integer fast paths:
   `B_{2r}/(2r)!·rising(s,2r-1)/(N+1)^{s+2r-1}` with exact `bernoulliQ`
   (`Fns/Gamma.lean`); `M = 4 + prec/8`, `N` adapts to the enclosure
   (`(16 + prec/2) ⊔ (sHi + 2·M + 2)`, so `s + 2M + 2 ≤ N + 1` is provable).
-* `s ≤ 0`, `s = 1`, unbounded or straddling enclosures → `⊤`.
+* `s < 0` (strictly negative enclosures) → functional equation
+  `ζ(s) = 2^s·π^{s-1}·sin(πs/2)·Γ(1-s)·ζ(1-s)` (`riemannZeta_one_sub`
+  at `u = 1-s`); inner `1-s > 1` reuses the non-recursive positive
+  dispatch `zetaPosIval` (recursion depth exactly 1).  Trivial zeros
+  come out through the `sin` factor.  `s = 0` straddles, `s = 1`,
+  unbounded → `⊤`.
   No complex/Hurwitz/Riemann–Siegel.
 
 Entry `zetaR : Fn1 .real .real` (`y = zetaReal x`,
@@ -293,6 +298,33 @@ Entry `zetaR : Fn1 .real .real` (`y = zetaReal x`,
 `0 < · ≠ 1` guard off enclosure bounds.  Analytic identities + remainder
 bounds are proved in the ported modules `Fns/ZetaEulerProd.lean`,
 `Fns/ZetaEM.lean` (external prover, from the Mathlib-only `/tmp/zeta/`
-handoff); EM evaluation widens by the interval tail `±2·T_{M+1}`.
+handoff); the FE identity is `sorry`'d (handoff `/tmp/zeta_neg_thm.lean`,
+Mathlib-only, in exact evaluator association).  EM evaluation widens by
+the interval tail `±2·T_{M+1}`.
 `zetaEulerProd_sound`, `zetaEM_sound`, `zetaIval_sound` all close on the
-standard axioms.  Tests `Test/Interval/Zeta.lean` Z1–Z10.
+standard axioms.  Tests `Test/Interval/Zeta.lean` Z1–Z10 (positive),
+Z11–Z14 (negative: `ζ(-1)`, `ζ(-3)`, `ζ(-2) = 0`, `ζ(-1/2)`).
+
+## 19. Digamma, real line (`Fns/Digamma.lean`)
+
+`ψ(x) = Γ'(x)/Γ(x)` following FLINT/Arb (`arb/digamma.c`, real case):
+* `0 < lo` → shift up by `ψ(x+1) = ψ(x) + 1/x` (`digShiftNumQ`
+  overestimates `⌈X₀-lo⌉` by `< 1`; extra shifts are cheap reciprocals)
+  until `y = x+n ≥ X₀ = 20 + prec/2`, then Stirling
+  `ψ(y) ≈ ln y - 1/(2y) - Σ_{k=1}^{K} B_{2k}/(2k·y^{2k})`
+  (`K = 4 + prec/8`, `X₀ ≥ 4K+4`), widened by `±2·T_{K+1}`.
+  One Bernoulli list `bernoulliList (2*(K+1))` per point.
+* `hi < 0` pole-free → reflection `ψ(x) = ψ(1-x) - π·cot(πx)`
+  (`digamma_one_sub`); `1-x > 1` runs the positive path, `cot` via the
+  verified `sin`/`cos` kernels (`Ival.div` stays sound if the divisor
+  enclosure straddles `0`, just imprecise).
+* poles (nonpositive integer in the enclosure, decidable `digHasPole`
+  test off dyadic bounds), `0`-straddles, unbounded → `⊤`.
+  No integer fast paths (`ψ(n) = H_{n-1} - γ` waived).
+
+Entry `digammaR : Fn1 .real .real` (`y = rdig x`,
+`rdig s = (Complex.digamma s).re`).  Analytic identities + remainder
+bounds are `sorry`'d (handoff `/tmp/digamma_thm.lean`, Mathlib-only, with
+the Bernoulli block vendored so the prover never re-proves `B_{2k}`;
+mirror statements byte-identical to the handoff).
+Tests `Test/Interval/Digamma.lean` D1–D6.
