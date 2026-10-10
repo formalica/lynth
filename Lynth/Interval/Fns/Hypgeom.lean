@@ -1,4 +1,5 @@
 import Lynth.Interval.Fns.Zeta
+import Lynth.Hypergeometric
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 
 /-!
@@ -16,14 +17,15 @@ T_{k+1} = T_k · (Πᵢ(aᵢ+k))/(Πⱼ(bⱼ+k)) · z/(k+1),   pFq = Σ_k T_k.
 * `p ≤ q`: converges everywhere; `p = q+1`: needs `R < 1` (checked;
   fails past the disc); `p > q+1`: diverges → `⊤`.
 * Fixed term count `n = 64 + 2·prec` (any `n` is sound with a valid tail
-  bound; no float simulation needed); tail `|T_n|·R/(1-R)` with `R` the
-  uniform later-ratio bound (`pfq_bound_factor.c`, real-line form).
+  bound; no float simulation needed); the loop sums `n+1` terms and widens
+  by `|T_n|·R/(1-R)` with `R` the uniform later-ratio bound
+  (`pfq_bound_factor.c`, real-line form) — the corrected
+  `pfqTail_corrected_succ` (the `n`-term `R/(1-R)` form is false).
 * Per term: `p+q+3` muls + 1 div (no Bernoulli, no special functions).
 
-Analytic identities + tail bound are `sorry`'d here and mirrored in
-`/tmp/pfq_thm.lean` (Mathlib-only, for the external prover; the `HGFun`
-defs there are exact copies of `Lynth/Hypergeometric.lean`, drop on port).
-Shapes are per-`(p,q)` `CFn.manual` entries sharing one core.
+Analysis (recurrence, corrected tail bounds, termination) proved below,
+ported back from the Mathlib-only handoff `/tmp/pfq_thm_proof.lean`.
+Shapes are per-`(p,q)` `CFn.mk` entries sharing one core.
 -/
 
 namespace Lynth.Interval.Fns
@@ -51,30 +53,232 @@ noncomputable def pfqRatio (p q : Nat) (a b : ℕ → ℝ) (Z : ℝ) (n : ℕ) :
     / ((∏ j ∈ Finset.Ico p q, (b j + (n : ℝ))) * ((n : ℝ) + 1))
     * (if p = q + 1 then (|a q| + (n : ℝ) + 1) else 1)
 
-/-- SORRY (handoff `/tmp/pfq_thm.lean`): term recurrence. -/
+/-- term recurrence (field simp; needs bottom factors nonzero). -/
 theorem pfqTerm_succ (p q : Nat) (a b : ℕ → ℝ) (z : ℝ) (k : ℕ)
     (hB : ∀ j : Nat, j < q → b j + (k : ℝ) ≠ 0) :
     pfqTerm p q a b z (k + 1) = pfqTerm p q a b z k
       * ((∏ i ∈ Finset.range p, (a i + (k : ℝ)))
         / (∏ j ∈ Finset.range q, (b j + (k : ℝ))) * z / ((k : ℝ) + 1)) := by
-  sorry
+  simp only [pfqTerm, Finset.prod_range_succ, Finset.prod_mul_distrib, Nat.factorial_succ,
+    Nat.cast_mul, pow_succ]
+  push_cast
+  simp only [div_eq_mul_inv, mul_inv]
+  ring
 
-/-- SORRY (handoff `/tmp/pfq_thm.lean`): tail bound. -/
-theorem pfqTail (p q : Nat) (a b : ℕ → ℝ) (z : ℝ) (n : Nat)
+/-! ### Tail bound (proved in `/tmp/pfq_thm_proof.lean`, ported back).
+
+The originally stated `pfqTail` is **false**: the partial sum `∑_{k<n} T_k`
+omits `T_n` itself, so the remainder is `T_n + T_{n+1} + ⋯`, bounded by
+`|T_n|/(1-R)`, not `|T_n|·R/(1-R)` (counterexample `p = q = 0`, `z = 0`,
+`n = 0`; see `pfqTail_false`).  The evaluator sums `n+1` terms
+(`S + T_n`) and widens by `|T_n|·R/(1-R)`, which is exactly the corrected
+`pfqTail_corrected_succ`. -/
+
+lemma pfq_factor_le (x y : ℝ) (n k : ℕ) (hnk : n ≤ k) (hy : 0 < y + n) :
+    |x + k| / (y + k) ≤ |x - y| / (y + n) + 1 := by
+  have hk : (n:ℝ) ≤ k := by exact_mod_cast hnk
+  have hyk : 0 < y + k := by linarith
+  rw [div_le_iff₀ hyk]
+  have h1 : |x + k| ≤ |x - y| + (y + k) := by
+    calc |x + k| = |(x - y) + (y + k)| := by ring_nf
+      _ ≤ |x - y| + |y + k| := abs_add_le _ _
+      _ = _ := by rw [abs_of_pos hyk]
+  have h2 : |x - y| ≤ |x - y| / (y + n) * (y + k) := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ hy]
+    exact mul_le_mul_of_nonneg_left (by linarith) (abs_nonneg _)
+  nlinarith
+
+lemma pfq_ratio_le (p q : Nat) (a b : ℕ → ℝ) (z : ℝ) (n k : Nat) (hnk : n ≤ k)
+    (hpq : p ≤ q + 1)
+    (hBpos : ∀ j : Nat, j < q → 0 < b j + (n : ℝ)) :
+    |(∏ i ∈ Finset.range p, (a i + (k : ℝ)))
+        / (∏ j ∈ Finset.range q, (b j + (k : ℝ))) * z / ((k : ℝ) + 1)|
+      ≤ pfqRatio p q a b |z| n := by
+  have hk : (n:ℝ) ≤ k := by exact_mod_cast hnk
+  have hBk : ∀ j, j < q → 0 < b j + (k:ℝ) := fun j hj => by linarith [hBpos j hj]
+  have hP : ∀ m, m ≤ q →
+      |∏ i ∈ Finset.range m, (a i + (k:ℝ))| / (∏ i ∈ Finset.range m, (b i + (k:ℝ)))
+        ≤ ∏ i ∈ Finset.range m, (|a i - b i| / (b i + (n : ℝ)) + 1) := by
+    intro m hmq
+    rw [Finset.abs_prod, ← Finset.prod_div_distrib]
+    apply Finset.prod_le_prod₀
+    · intro i hi; exact div_nonneg (abs_nonneg _) (hBk i (by simp at hi; omega)).le
+    · intro i hi; exact pfq_factor_le _ _ n k hnk (hBpos i (by simp at hi; omega))
+  have hPpos : ∀ m, m ≤ q → 0 < ∏ i ∈ Finset.range m, (b i + (k:ℝ)) := fun m hm =>
+    Finset.prod_pos (fun i hi => hBk i (by simp at hi; omega))
+  have hPbnn : ∀ m, m ≤ q →
+      0 ≤ ∏ i ∈ Finset.range m, (|a i - b i| / (b i + (n : ℝ)) + 1) := fun m hm =>
+    Finset.prod_nonneg fun i hi =>
+      add_nonneg (div_nonneg (abs_nonneg _) (hBpos i (by simp at hi; omega)).le) zero_le_one
+  have hk1 : (0:ℝ) < k + 1 := by positivity
+  have hn1 : (0:ℝ) < n + 1 := by positivity
+  rcases Nat.lt_or_ge q p with hlt | hle
+  · have hp : p = q + 1 := by omega
+    subst hp
+    have hmin : min (q+1) q = q := by omega
+    simp only [pfqRatio, hmin, ite_true, Finset.Ico_eq_empty_of_le (Nat.le_succ q),
+      Finset.prod_empty, one_mul, Finset.prod_range_succ]
+    have hA : |a q + k| / (k + 1) ≤ (|a q| + n + 1) / (n + 1) := by
+      rw [div_le_div_iff₀ hk1 hn1]
+      have := abs_add_le (a q) (k:ℝ)
+      rw [abs_of_nonneg (by positivity : (0:ℝ) ≤ k)] at this
+      nlinarith [abs_nonneg (a q)]
+    have e : |(∏ i ∈ Finset.range q, (a i + (k:ℝ))) * (a q + k)
+        / (∏ j ∈ Finset.range q, (b j + (k : ℝ))) * z / ((k : ℝ) + 1)|
+        = |z| * (|∏ i ∈ Finset.range q, (a i + (k:ℝ))| / (∏ i ∈ Finset.range q, (b i + (k:ℝ))))
+          * (|a q + k| / (k + 1)) := by
+      rw [abs_div, abs_mul, abs_div, abs_mul, abs_of_pos (hPpos q le_rfl), abs_of_pos hk1]
+      ring
+    rw [e]
+    have := hP q le_rfl
+    calc _ ≤ |z| * (∏ i ∈ Finset.range q, (|a i - b i| / (b i + (n : ℝ)) + 1))
+          * ((|a q| + n + 1) / (n + 1)) := by
+          apply mul_le_mul (mul_le_mul_of_nonneg_left this (abs_nonneg _)) hA
+            (div_nonneg (abs_nonneg _) hk1.le) (mul_nonneg (abs_nonneg _) (hPbnn q le_rfl))
+      _ = _ := by ring
+  · have hmin : min p q = p := by omega
+    simp only [pfqRatio, hmin, show p ≠ q + 1 by omega, ite_false, mul_one]
+    rw [← Finset.prod_range_mul_prod_Ico _ hle]
+    have hD : ∀ m : ℕ, m ≥ n → 0 < ∏ j ∈ Finset.Ico p q, (b j + (m:ℝ)) := fun m hm =>
+      Finset.prod_pos (fun j hj => by
+        simp at hj
+        have : (n:ℝ) ≤ m := by exact_mod_cast hm
+        linarith [hBpos j hj.2])
+    have hDle : ∏ j ∈ Finset.Ico p q, (b j + (n:ℝ)) ≤ ∏ j ∈ Finset.Ico p q, (b j + (k:ℝ)) :=
+      Finset.prod_le_prod₀ (fun j hj => by simp at hj; exact (hBpos j hj.2).le)
+        (fun j hj => by linarith)
+    have e : |(∏ i ∈ Finset.range p, (a i + (k:ℝ)))
+        / ((∏ j ∈ Finset.range p, (b j + (k : ℝ))) * ∏ j ∈ Finset.Ico p q, (b j + (k : ℝ)))
+          * z / ((k : ℝ) + 1)|
+        = |z| * (|∏ i ∈ Finset.range p, (a i + (k:ℝ))| / (∏ i ∈ Finset.range p, (b i + (k:ℝ))))
+          / ((∏ j ∈ Finset.Ico p q, (b j + (k : ℝ))) * (k + 1)) := by
+      rw [abs_div, abs_mul, abs_div, abs_mul, abs_of_pos (hPpos p hle), abs_of_pos hk1,
+        abs_of_pos (hD k hnk)]
+      field_simp
+    rw [e]
+    apply div_le_div₀ (mul_nonneg (abs_nonneg _) (hPbnn p hle))
+      (mul_le_mul_of_nonneg_left (hP p hle) (abs_nonneg _))
+      (mul_pos (hD n le_rfl) hn1)
+    exact mul_le_mul hDle (by linarith) hn1.le (hD k hnk).le
+
+lemma pfq_geom_tail (T : ℕ → ℝ) (R : ℝ) (n : ℕ) (hR0 : 0 ≤ R) (hR : R < 1)
+    (h : ∀ k, n ≤ k → |T (k + 1)| ≤ R * |T k|) :
+    Summable T ∧ |∑' k, T k - ∑ k ∈ Finset.range n, T k| ≤ |T n| / (1 - R) := by
+  have hb : ∀ j, |T (j + n)| ≤ |T n| * R ^ j := by
+    intro j
+    induction j with
+    | zero => simp
+    | succ j ih =>
+      calc |T (j + 1 + n)| = |T ((j + n) + 1)| := by rw [Nat.add_right_comm]
+        _ ≤ R * |T (j + n)| := h _ (by omega)
+        _ ≤ R * (|T n| * R ^ j) := mul_le_mul_of_nonneg_left ih hR0
+        _ = |T n| * R ^ (j + 1) := by ring
+  have hg : Summable (fun j => |T n| * R ^ j) :=
+    (summable_geometric_of_lt_one hR0 hR).mul_left _
+  have hsn : Summable (fun j => |T (j + n)|) :=
+    Summable.of_nonneg_of_le (fun j => abs_nonneg _) hb hg
+  have hs' : Summable (fun j => T (j + n)) := hsn.of_abs
+  have hs : Summable T := (summable_nat_add_iff n).mp hs'
+  refine ⟨hs, ?_⟩
+  rw [← hs.sum_add_tsum_nat_add n, add_sub_cancel_left]
+  calc |∑' j, T (j + n)| ≤ ∑' j, |T (j + n)| := by
+        simpa [Real.norm_eq_abs] using norm_tsum_le_tsum_norm (f := fun j => T (j + n)) hsn
+    _ ≤ ∑' j, |T n| * R ^ j := hsn.tsum_le_tsum hb hg
+    _ = |T n| / (1 - R) := by
+        rw [tsum_mul_left, tsum_geometric_of_lt_one hR0 hR, div_eq_mul_inv]
+
+/-- One-step ratio bound for the actual terms, for all `k ≥ n`. -/
+lemma pfqTerm_ratio_step (p q : Nat) (a b : ℕ → ℝ) (z : ℝ) (n : Nat)
+    (hpq : p ≤ q + 1)
+    (hBpos : ∀ j : Nat, j < q → 0 < b j + (n : ℝ)) :
+    ∀ k, n ≤ k → |pfqTerm p q a b z (k + 1)| ≤ pfqRatio p q a b |z| n * |pfqTerm p q a b z k| := by
+  intro k hk
+  have hkr : (n:ℝ) ≤ k := by exact_mod_cast hk
+  rw [pfqTerm_succ p q a b z k (fun j hj => by linarith [hBpos j hj]), abs_mul, mul_comm]
+  exact mul_le_mul_of_nonneg_right (pfq_ratio_le p q a b z n k hk hpq hBpos) (abs_nonneg _)
+
+lemma pfqRatio_nonneg (p q : Nat) (a b : ℕ → ℝ) (z : ℝ) (n : Nat)
+    (hpq : p ≤ q + 1)
+    (hBpos : ∀ j : Nat, j < q → 0 < b j + (n : ℝ)) :
+    0 ≤ pfqRatio p q a b |z| n :=
+  (abs_nonneg _).trans (pfq_ratio_le p q a b z n n le_rfl hpq hBpos)
+
+/-- Under the dispatcher's conditions the series defining `pfqReal` converges. -/
+theorem pfqTail_summable (p q : Nat) (a b : ℕ → ℝ) (z : ℝ) (n : Nat)
     (hpq : p ≤ q + 1)
     (hBpos : ∀ j : Nat, j < q → 0 < b j + (n : ℝ))
-    (hBne : ∀ j : Nat, j < q → ∀ k : Nat, k < n → b j + (k : ℝ) ≠ 0)
     (hR : pfqRatio p q a b |z| n < 1) :
+    Summable (fun k => pfqTerm p q a b z k) :=
+  (pfq_geom_tail _ _ n (pfqRatio_nonneg p q a b z n hpq hBpos) hR
+    (pfqTerm_ratio_step p q a b z n hpq hBpos)).1
+
+/-- The original `pfqTail` statement is false (counterexample `p = q = 0`, `z = 0`, `n = 0`). -/
+theorem pfqTail_false : ¬ (∀ (p q : Nat) (a b : ℕ → ℝ) (z : ℝ) (n : Nat)
+    (_hpq : p ≤ q + 1)
+    (_hBpos : ∀ j : Nat, j < q → 0 < b j + (n : ℝ))
+    (_hBne : ∀ j : Nat, j < q → ∀ k : Nat, k < n → b j + (k : ℝ) ≠ 0)
+    (_hR : pfqRatio p q a b |z| n < 1),
     |pfqReal p q a b z - (Finset.range n).sum (fun k => pfqTerm p q a b z k)|
       ≤ |pfqTerm p q a b z n|
-        * (pfqRatio p q a b |z| n / (1 - pfqRatio p q a b |z| n)) := by
-  sorry
+        * (pfqRatio p q a b |z| n / (1 - pfqRatio p q a b |z| n))) := by
+  intro h
+  have hr : pfqRatio 0 0 0 0 |(0:ℝ)| 0 = 0 := by simp [pfqRatio]
+  have e : pfqReal 0 0 0 0 0 = 1 := by
+    unfold pfqReal
+    rw [tsum_eq_single 0]
+    · simp [pfqTerm]
+    · intro k hk; simp [pfqTerm, zero_pow hk]
+  have := h 0 0 0 0 0 0 (by norm_num) (by simp) (by simp) (by rw [hr]; norm_num)
+  rw [hr, e] at this
+  norm_num at this
 
-/-- SORRY (handoff `/tmp/pfq_thm.lean`): terminating tops. -/
+/-- CORRECTED tail bound: `|pFq − Σ_{k<n} T_k| ≤ |T_n| · (1/(1-R))`. -/
+theorem pfqTail_corrected (p q : Nat) (a b : ℕ → ℝ) (z : ℝ) (n : Nat)
+    (hpq : p ≤ q + 1)
+    (hBpos : ∀ j : Nat, j < q → 0 < b j + (n : ℝ))
+    (hR : pfqRatio p q a b |z| n < 1) :
+    |pfqReal p q a b z - (Finset.range n).sum (fun k => pfqTerm p q a b z k)|
+      ≤ |pfqTerm p q a b z n| * (1 / (1 - pfqRatio p q a b |z| n)) := by
+  rw [mul_one_div]
+  exact (pfq_geom_tail _ _ n (pfqRatio_nonneg p q a b z n hpq hBpos) hR
+    (pfqTerm_ratio_step p q a b z n hpq hBpos)).2
+
+/-- CORRECTED tail bound, original right-hand side: once `T_n` is included in the partial
+sum, `|pFq − Σ_{k<n+1} T_k| ≤ |T_n| · (R/(1-R))`. This is what the evaluator
+uses (`S + T_n` plus `|T_n|`-widening). -/
+theorem pfqTail_corrected_succ (p q : Nat) (a b : ℕ → ℝ) (z : ℝ) (n : Nat)
+    (hpq : p ≤ q + 1)
+    (hBpos : ∀ j : Nat, j < q → 0 < b j + (n : ℝ))
+    (hR : pfqRatio p q a b |z| n < 1) :
+    |pfqReal p q a b z - (Finset.range (n + 1)).sum (fun k => pfqTerm p q a b z k)|
+      ≤ |pfqTerm p q a b z n|
+        * (pfqRatio p q a b |z| n / (1 - pfqRatio p q a b |z| n)) := by
+  set R := pfqRatio p q a b |z| n with hRdef
+  have hR0 : 0 ≤ R := pfqRatio_nonneg p q a b z n hpq hBpos
+  have hstep := pfqTerm_ratio_step p q a b z n hpq hBpos
+  have h := (pfq_geom_tail (fun k => pfqTerm p q a b z k) R (n + 1) hR0 hR
+    (fun k hk => hstep k (by omega))).2
+  have h1 : 0 < 1 - R := by linarith
+  calc _ ≤ |pfqTerm p q a b z (n + 1)| / (1 - R) := h
+    _ ≤ (R * |pfqTerm p q a b z n|) / (1 - R) :=
+        div_le_div_of_nonneg_right (hstep n le_rfl) h1.le
+    _ = _ := by ring
+
+/-- terminating tops (`a i₀ = -m`) kill all terms past `m`,
+so the series is the exact prefix (no bottom hypotheses needed:
+`0/0 = 0` in Lean fields keeps vanishing unconditional). -/
 theorem pfqTerm_exact (p q : Nat) (a b : ℕ → ℝ) (z : ℝ) (m : Nat)
     (i₀ : Nat) (hi₀ : i₀ < p) (hterm : a i₀ = -(m : ℝ)) :
     pfqReal p q a b z = (Finset.range (m + 1)).sum (fun k => pfqTerm p q a b z k) := by
-  sorry
+  unfold pfqReal
+  apply tsum_eq_sum
+  intro k hk
+  simp only [Finset.mem_range, not_lt] at hk
+  have h0 : ∏ i ∈ Finset.range p, ∏ j ∈ Finset.range k, (a i + (j : ℝ)) = 0 := by
+    apply Finset.prod_eq_zero (Finset.mem_range.2 hi₀)
+    apply Finset.prod_eq_zero (i := m) (Finset.mem_range.2 (by omega))
+    rw [hterm]; ring
+  simp [pfqTerm, h0]
 
 /-! ### Local bridges -/
 
@@ -651,7 +855,10 @@ theorem pfqPairForall₂ (c : Ctx) (A B : List Ival) (a b : ℕ → ℝ) (n : Na
     exact Ival.mem_add (Ival.mem_div (Ival.mem_abs (Ival.mem_sub haM hbM)) hD)
       (by exact_mod_cast Ival.mem_ofRat c.prec (1 : ℚ))
 
-/-- core evaluator: finite prefix or sum + symmetric tail widening. -/
+/-- core evaluator: finite prefix or (`n+1` terms) + symmetric tail widening.
+The loop returns `(Σ_{k<n} T_k, T_n)`; the enclosure is centered at
+`Σ_{k<n+1} T_k = S + T_n` with radius `|T_n|·R/(1-R)`
+(`pfqTail_corrected_succ`). -/
 def pfqCoreIval (c : Ctx) (A B : List Ival) (Z : Ival) (n : Nat) : Ival :=
   match pfqFindTerm A 0 with
   | some (_, m) =>
@@ -661,18 +868,19 @@ def pfqCoreIval (c : Ctx) (A B : List Ival) (Z : Ival) (n : Nat) : Ival :=
     else if pfqGuard B n then
       let res := pfqLoop c A B A.length B.length Z n 0
         (Ival.ofRat c.prec 0) (Ival.ofRat c.prec 1)
+      let S := Ival.add c.prec res.1 res.2
       let p := A.length
       let q := B.length
       let W := Ival.mul c.prec (Ival.abs res.2)
         (pfqTailC c (pfqRIval c A B p q (Ival.abs Z)
           (Ival.abs (A.getD q Ival.top)) n))
       match W.hi with
-      | some h => Ival.add c.prec res.1 (Ival.ofRats c.prec (-h.toRat) h.toRat)
+      | some h => Ival.add c.prec S (Ival.ofRats c.prec (-h.toRat) h.toRat)
       | none => Ival.top
     else Ival.top
 
-/-- core soundness (statement; proof via loop invariant + tail/terminating
-sorries — filled after the handoff returns). -/
+/-- core soundness (statement; proof via loop invariant + `pfqTail_corrected_succ`/
+terminating path — the remaining assembly is sorry'd). -/
 theorem pfqCore_sound (c : Ctx) (hc : c.Valid)
     (p q : Nat) (a b : ℕ → ℝ) (A B : List Ival) (Z : Ival) (z : ℝ) (n : Nat)
     (hlenA : A.length = p) (hlenB : B.length = q)
@@ -878,3 +1086,60 @@ theorem pfq32_sound (c : Ctx) :
 
 
 end Lynth.Interval.Fns
+
+/-! ### Bridge to Mathlib's `Complex.regularizedHGFun` (ported from
+`/tmp/pfq_thm_proof.lean`). -/
+
+namespace Complex
+
+open BigOperators
+
+/-- The ascending Pochhammer symbol `(x)ₖ` as the product `∏_{j<k} (x+j)`. -/
+lemma ascPochhammer_eval_eq_prod_range (x : ℂ) (k : ℕ) :
+    (ascPochhammer ℂ k).eval x = ∏ j ∈ Finset.range k, (x + (j : ℂ)) := by
+  induction k with
+  | zero => simp
+  | succ k ih => simp [ascPochhammer_succ_right, Finset.prod_range_succ, ih]
+
+/-- BRIDGE (coefficients): at real parameters with no bottom parameter a nonpositive integer,
+the `k`-th term of the (Γ-normalized) series `HGFun` is the real mirror `pfqTerm`. -/
+theorem HGFunCoeff_mul_pow_ofReal (p q : Nat) (a b : ℕ → ℝ) (z : ℝ) (k : ℕ)
+    (hb : ∀ j : ℕ, j < q → ∀ m : ℕ, (b j : ℂ) ≠ -(m : ℂ)) :
+    HGFunCoeff ((Multiset.range p).map (fun i => (a i : ℂ)))
+        ((Multiset.range q).map (fun j => (b j : ℂ))) k * (z : ℂ) ^ k
+      = ((Lynth.Interval.Fns.pfqTerm p q a b z k : ℝ) : ℂ) := by
+  have hG : ∀ j ∈ Finset.range q, Complex.Gamma ((b j : ℂ) + k)
+      = Complex.Gamma (b j) * ∏ i ∈ Finset.range k, ((b j : ℂ) + (i : ℂ)) := by
+    intro j hj
+    have hj' := Finset.mem_range.1 hj
+    have hne : Complex.Gamma (b j) ≠ 0 := Complex.Gamma_ne_zero (hb j hj')
+    rw [← ascPochhammer_eval_eq_prod_range, ← Complex.Gamma_add_nat_div_Gamma_eq _ (hb j hj')]
+    field_simp
+  have hGne : ∏ j ∈ Finset.range q, Complex.Gamma (b j) ≠ 0 :=
+    Finset.prod_ne_zero_iff.2 fun j hj => Complex.Gamma_ne_zero (hb j (Finset.mem_range.1 hj))
+  have hm : ∀ {R : Type} [CommMonoid R] (n : ℕ) (f : ℕ → R),
+      ((Multiset.range n).map f).prod = ∏ i ∈ Finset.range n, f i := fun _ _ => rfl
+  unfold HGFunCoeff Complex.regularizedHGFunCoeff Lynth.Interval.Fns.pfqTerm
+  simp only [Multiset.map_map, Function.comp_def, hm]
+  rw [Finset.prod_congr rfl hG, Finset.prod_mul_distrib]
+  simp only [ascPochhammer_eval_eq_prod_range]
+  push_cast
+  field_simp
+
+/-- BRIDGE (function): at real parameters with no bottom parameter a nonpositive integer,
+`HGFun` (built from Mathlib's `Complex.regularizedHGFun`) agrees with the real mirror
+`pfqReal` at every real point `z`. No convergence hypothesis is needed: both sides are the
+same `tsum` (and both are `0` when the series diverges). -/
+theorem HGFun_ofReal_eq_pfqReal (p q : Nat) (a b : ℕ → ℝ) (z : ℝ)
+    (hb : ∀ j : ℕ, j < q → ∀ m : ℕ, (b j : ℂ) ≠ -(m : ℂ)) :
+    HGFun ((Multiset.range p).map (fun i => (a i : ℂ)))
+        ((Multiset.range q).map (fun j => (b j : ℂ))) (z : ℂ)
+      = ((Lynth.Interval.Fns.pfqReal p q a b z : ℝ) : ℂ) := by
+  unfold HGFun Complex.regularizedHGFun Complex.regularizedHGFunSeries Lynth.Interval.Fns.pfqReal
+  rw [← FormalMultilinearSeries.ofScalarsSum, FormalMultilinearSeries.ofScalars_sum_eq,
+    Complex.ofReal_tsum, ← tsum_mul_left]
+  refine tsum_congr fun k => ?_
+  rw [smul_eq_mul, ← mul_assoc]
+  exact HGFunCoeff_mul_pow_ofReal p q a b z k hb
+
+end Complex
