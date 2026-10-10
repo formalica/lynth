@@ -27,8 +27,12 @@ namespace Lynth.Interval.Fns
 
 open BigOperators
 
+namespace Real'
+
 /-- real digamma as a real-valued function (graph for the registry entry). -/
-noncomputable def rdig (s : ℝ) : ℝ := (Complex.digamma (s : ℂ)).re
+noncomputable def digamma (s : ℝ) : ℝ := (Complex.digamma (s : ℂ)).re
+
+end Real'
 
 /-- shift sum `Σ_{k<n} 1/(x+k)` (what the evaluator subtracts). -/
 noncomputable def digShiftSum (x : ℝ) (n : Nat) : ℝ :=
@@ -60,7 +64,7 @@ theorem digShiftSum_eq (x : ℝ) (n : Nat) :
 /-- shift identity (ported prover proof; handoff `/tmp/digamma_thm.lean`)
 `ψ(x) = ψ(x+n) - Σ_{k<n} 1/(x+k)` for `0 < x`. -/
 theorem dig_shift (x : ℝ) (hx : 0 < x) (n : Nat) :
-    rdig x = rdig (x + n) - digShiftSum x n := by
+    Real'.digamma x = Real'.digamma (x + n) - digShiftSum x n := by
   have hs : ∀ m : ℕ, (x : ℂ) ≠ -(m : ℂ) := by
     intro m h
     have := congrArg Complex.re h
@@ -68,7 +72,7 @@ theorem dig_shift (x : ℝ) (hx : 0 < x) (n : Nat) :
     have : (0:ℝ) ≤ m := Nat.cast_nonneg m
     linarith
   have h := Complex.digamma_apply_add_nat hs n
-  unfold rdig digShiftSum
+  unfold Real'.digamma digShiftSum
   rw [show ((x + n : ℝ) : ℂ) = (x : ℂ) + n by push_cast; ring, h, Complex.add_re,
     Complex.re_sum]
   have : ∀ k ∈ Finset.range n, ((x : ℂ) + k)⁻¹.re = 1 / (x + k) := by
@@ -341,8 +345,8 @@ lemma abs_sum_emR_le (k : ℕ) {y : ℝ} (hy : 0 < y) (N : ℕ) :
 
 /-! ### Asymptotics of the digamma function -/
 
-lemma rdig_hasDerivAt {x : ℝ} (hx : 0 < x) :
-    HasDerivAt (fun t => Real.log (Real.Gamma t)) (rdig x) x := by
+lemma digamma_hasDerivAt {x : ℝ} (hx : 0 < x) :
+    HasDerivAt (fun t => Real.log (Real.Gamma t)) (Real'.digamma x) x := by
   have hs : ∀ m : ℕ, (x : ℂ) ≠ -m := by
     intro m h
     have := congrArg Complex.re h
@@ -356,23 +360,23 @@ lemma rdig_hasDerivAt {x : ℝ} (hx : 0 < x) :
   rw [hG] at hr
   have h := hr.log (Real.Gamma_pos_of_pos hx).ne'
   convert h using 1
-  unfold rdig
+  unfold Real'.digamma
   rw [Complex.digamma_def, logDeriv_apply, Complex.Gamma_ofReal, Complex.div_ofReal_re]
 
-lemma rdig_le_log {x : ℝ} (hx : 0 < x) : rdig x ≤ Real.log x := by
+lemma digamma_le_log {x : ℝ} (hx : 0 < x) : Real'.digamma x ≤ Real.log x := by
   have h := Real.convexOn_log_Gamma.le_slope_of_hasDerivAt (y := x + 1) (Set.mem_Ioi.mpr hx)
-    (Set.mem_Ioi.mpr (by linarith)) (by linarith) (rdig_hasDerivAt hx)
+    (Set.mem_Ioi.mpr (by linarith)) (by linarith) (digamma_hasDerivAt hx)
   refine h.trans (le_of_eq ?_)
   rw [slope_def_field, show x + 1 - x = (1 : ℝ) by ring, div_one]
   simp only [Function.comp_apply]
   rw [Real.Gamma_add_one hx.ne', Real.log_mul hx.ne' (Real.Gamma_pos_of_pos hx).ne']
   ring
 
-lemma log_sub_one_le_rdig {x : ℝ} (hx : 1 < x) : Real.log (x - 1) ≤ rdig x := by
+lemma log_sub_one_le_digamma {x : ℝ} (hx : 1 < x) : Real.log (x - 1) ≤ Real'.digamma x := by
   have hx0 : 0 < x := by linarith
   have hx1 : 0 < x - 1 := by linarith
   have h := Real.convexOn_log_Gamma.slope_le_of_hasDerivAt (x := x - 1) (Set.mem_Ioi.mpr hx1)
-    (Set.mem_Ioi.mpr hx0) (by linarith) (rdig_hasDerivAt hx0)
+    (Set.mem_Ioi.mpr hx0) (by linarith) (digamma_hasDerivAt hx0)
   refine (le_of_eq ?_).trans h
   rw [slope_def_field, show x - (x - 1) = (1 : ℝ) by ring, div_one]
   simp only [Function.comp_apply]
@@ -380,11 +384,11 @@ lemma log_sub_one_le_rdig {x : ℝ} (hx : 1 < x) : Real.log (x - 1) ≤ rdig x :
   rw [Real.Gamma_add_one hx1.ne', Real.log_mul hx1.ne' (Real.Gamma_pos_of_pos hx1).ne']
   ring_nf
 
-lemma abs_rdig_sub_log_le {x : ℝ} (hx : 1 < x) : |rdig x - Real.log x| ≤ (x - 1)⁻¹ := by
+lemma abs_digamma_sub_log_le {x : ℝ} (hx : 1 < x) : |Real'.digamma x - Real.log x| ≤ (x - 1)⁻¹ := by
   have hx0 : 0 < x := by linarith
   have hx1 : 0 < x - 1 := by linarith
-  have h1 := rdig_le_log hx0
-  have h2 := log_sub_one_le_rdig hx
+  have h1 := digamma_le_log hx0
+  have h2 := log_sub_one_le_digamma hx
   have h3 : Real.log x - Real.log (x - 1) ≤ (x - 1)⁻¹ := by
     rw [← Real.log_div hx0.ne' hx1.ne']
     refine (Real.log_le_sub_one_of_pos (by positivity)).trans (le_of_eq ?_)
@@ -393,8 +397,8 @@ lemma abs_rdig_sub_log_le {x : ℝ} (hx : 1 < x) : |rdig x - Real.log x| ≤ (x 
   rw [abs_le]
   constructor <;> linarith
 
-lemma tendsto_rdig_sub_log (y : ℝ) :
-    Filter.Tendsto (fun N : ℕ => Real.log (y + N) - rdig (y + N)) Filter.atTop (nhds 0) := by
+lemma tendsto_digamma_sub_log (y : ℝ) :
+    Filter.Tendsto (fun N : ℕ => Real.log (y + N) - Real'.digamma (y + N)) Filter.atTop (nhds 0) := by
   have hlim : Filter.Tendsto (fun N : ℕ => (y - 1 + N)⁻¹) Filter.atTop (nhds 0) :=
     (Filter.tendsto_atTop_add_const_left _ _ tendsto_natCast_atTop_atTop).inv_tendsto_atTop
   refine squeeze_zero_norm' ?_ hlim
@@ -404,7 +408,7 @@ lemma tendsto_rdig_sub_log (y : ℝ) :
     exact lt_of_lt_of_le hn (by exact_mod_cast hN)
   filter_upwards [hev] with N hN
   rw [Real.norm_eq_abs, abs_sub_comm, show y - 1 + (N : ℝ) = y + N - 1 by ring]
-  exact abs_rdig_sub_log_le (by linarith)
+  exact abs_digamma_sub_log_le (by linarith)
 
 lemma tendsto_g (j : ℕ) (y : ℝ) : Filter.Tendsto (fun N : ℕ => g j (y + N)) Filter.atTop (nhds 0) := by
   have h1 : Filter.Tendsto (fun N : ℕ => y + (N : ℝ)) Filter.atTop Filter.atTop :=
@@ -455,8 +459,8 @@ lemma abs_digCorrR_eq (k : ℕ) {y : ℝ} (hy : 0 < y) :
 /-- the shifted Euler–Maclaurin identity relating `ψ` to the partial remainders. -/
 lemma sum_emR_eq (K : ℕ) {y : ℝ} (hy : 0 < y) (N : ℕ) :
     ∑ i ∈ Finset.range N, emR K (y + i)
-      = (rdig y - digStirling y K)
-        + (Real.log (y + N) - rdig (y + N) - g 0 (y + N) / 2
+      = (Real'.digamma y - digStirling y K)
+        + (Real.log (y + N) - Real'.digamma (y + N) - g 0 (y + N) / 2
           + ∑ r ∈ Finset.range K, bp (2 * r + 2) 0 * g (2 * r + 1) (y + N)) := by
   rw [emR_sum]
   have hs := dig_shift y hy N
@@ -474,13 +478,13 @@ lemma sum_emR_eq (K : ℕ) {y : ℝ} (hy : 0 < y) (N : ℕ) :
   linarith
 
 /-- the Stirling remainder with `k + 1` corrections is at most the first omitted term. -/
-lemma abs_rdig_sub_digStirling_succ_le (k : ℕ) {y : ℝ} (hy : 0 < y) :
-    |rdig y - digStirling y (k + 1)| ≤ digTailScale y k := by
-  set D := rdig y - digStirling y (k + 1)
-  set E : ℕ → ℝ := fun N => Real.log (y + N) - rdig (y + N) - g 0 (y + N) / 2
+lemma abs_digamma_sub_digStirling_succ_le (k : ℕ) {y : ℝ} (hy : 0 < y) :
+    |Real'.digamma y - digStirling y (k + 1)| ≤ digTailScale y k := by
+  set D := Real'.digamma y - digStirling y (k + 1)
+  set E : ℕ → ℝ := fun N => Real.log (y + N) - Real'.digamma (y + N) - g 0 (y + N) / 2
     + ∑ r ∈ Finset.range (k + 1), bp (2 * r + 2) 0 * g (2 * r + 1) (y + N)
   have hE : Filter.Tendsto E Filter.atTop (nhds 0) := by
-    have := ((tendsto_rdig_sub_log y).sub ((tendsto_g 0 y).div_const 2)).add
+    have := ((tendsto_digamma_sub_log y).sub ((tendsto_g 0 y).div_const 2)).add
       (tendsto_finsetSum (Finset.range (k + 1))
         (fun r _ => (tendsto_g (2 * r + 1) y).const_mul (bp (2 * r + 2) 0)))
     simpa [E] using this
@@ -503,25 +507,25 @@ remainder. For `0 < y`, `1 ≤ K`, `4*K+4 ≤ y`:
 
 theorem dig_stirling_bound (y : ℝ) (hy : 0 < y) (K : Nat)
     (hK : 1 ≤ K) (hY : 4 * (K : ℝ) + 4 ≤ y) :
-    |rdig y - digStirling y K| ≤ 2 * digTailScale y K := by
+    |Real'.digamma y - digStirling y K| ≤ 2 * digTailScale y K := by
   -- The proof only uses `0 < y`; `hK` and `hY` are kept so the statement stays
   -- byte-identical, but the bound holds for every `K` and every `y > 0`.
-  have h1 := DigammaStirling.abs_rdig_sub_digStirling_succ_le K hy
+  have h1 := DigammaStirling.abs_digamma_sub_digStirling_succ_le K hy
   have h2 := DigammaStirling.abs_digCorrR_eq K hy
   have hsplit : digStirling y (K + 1) = digStirling y K + digCorrR y (K + 1) := by
     simp only [digStirling, Finset.sum_range_succ]
     ring
   rw [hsplit] at h1
-  calc |rdig y - digStirling y K|
-      = |(rdig y - (digStirling y K + digCorrR y (K + 1))) + digCorrR y (K + 1)| := by ring_nf
-    _ ≤ |rdig y - (digStirling y K + digCorrR y (K + 1))| + |digCorrR y (K + 1)| :=
+  calc |Real'.digamma y - digStirling y K|
+      = |(Real'.digamma y - (digStirling y K + digCorrR y (K + 1))) + digCorrR y (K + 1)| := by ring_nf
+    _ ≤ |Real'.digamma y - (digStirling y K + digCorrR y (K + 1))| + |digCorrR y (K + 1)| :=
         abs_add_le _ _
     _ ≤ 2 * digTailScale y K := by linarith
 
 /-- reflection (ported prover proof; handoff `/tmp/digamma_thm.lean`)
 `ψ(x) = ψ(1-x) - π·cos(πx)/sin(πx)` for `x < 0` non-integer. -/
 theorem dig_refl (x : ℝ) (hx : x < 0) (hN : ∀ m : ℕ, x ≠ -(m : ℝ)) :
-    rdig x = rdig (1 - x)
+    Real'.digamma x = Real'.digamma (1 - x)
       - Real.pi * (Real.cos (Real.pi * x) / Real.sin (Real.pi * x)) := by
   have hs : ∀ n : ℤ, (x : ℂ) ≠ n := by
     intro n h
@@ -533,7 +537,7 @@ theorem dig_refl (x : ℝ) (hx : x < 0) (hN : ∀ m : ℕ, x ≠ -(m : ℝ)) :
       rw [h', Nat.cast_natAbs, abs_of_neg hn]
       push_cast; ring
   have h := Complex.digamma_one_sub hs
-  unfold rdig
+  unfold Real'.digamma
   rw [show ((1 - x : ℝ) : ℂ) = 1 - (x : ℂ) by push_cast; ring, h, Complex.add_re,
     show (Real.pi : ℂ) * (x : ℂ) = ((Real.pi * x : ℝ) : ℂ) by push_cast; ring,
     ← Complex.ofReal_cot, ← Complex.ofReal_mul, Complex.ofReal_re, Real.cot_eq_cos_div_sin]
@@ -702,7 +706,7 @@ theorem digammaPos_sound (c : Ctx) (hc : c.Valid) (x : ℝ) (X : Ival)
     (L : List ℚ) (hxMem : x ∈ X) (hx : 0 < x) (n K : Nat)
     (hL : ∀ i : Nat, i ≤ 2 * (K + 1) → (L.getD i 0 : ℚ) = bernoulli i)
     (hK : 1 ≤ K) (hY : 4 * (K : ℝ) + 4 ≤ x + (n : ℝ)) :
-    rdig x ∈ digammaPosIval c X L n K := by
+    Real'.digamma x ∈ digammaPosIval c X L n K := by
   -- shifted enclosure membership
   have hnR : (((n : Nat) : ℚ) : ℝ) ∈ Ival.ofRat c.prec (n : ℚ) :=
     Ival.mem_ofRat _ _
@@ -858,15 +862,15 @@ theorem digammaPos_sound (c : Ctx) (hc : c.Valid) (x : ℝ) (X : Ival)
     rw [Dy.toReal_def] at h2Tle
     have habs := abs_le.mp hmaster
     simp only [digStirling] at habs
-    have heq : rdig x
+    have heq : Real'.digamma x
         = ((digStirling (x + (n : ℝ)) K
-          + (rdig (x + (n : ℝ)) - digStirling (x + (n : ℝ)) K))
+          + (Real'.digamma (x + (n : ℝ)) - digStirling (x + (n : ℝ)) K))
           - (Finset.range n).sum (fun k => 1 / (x + ((k : Nat) : ℝ)))) := by
       have hsh := dig_shift x hx n
       rw [digShiftSum_eq] at hsh
       rw [hsh]
       ring
-    have hRmem : rdig (x + (n : ℝ))
+    have hRmem : Real'.digamma (x + (n : ℝ))
         - (Real.log (x + (n : ℝ)) - 1 / (2 * (x + (n : ℝ)))
           + (Finset.range K).sum (fun k => digCorrR (x + (n : ℝ)) (k + 1)))
         ∈ Ival.ofRats c.prec (-h.toRat) h.toRat := by
@@ -882,7 +886,7 @@ theorem digammaRefl_sound (c : Ctx) (hc : c.Valid) (x : ℝ) (X : Ival)
     (hN : ∀ m : ℕ, x ≠ -(m : ℝ)) (n K : Nat)
     (hL : ∀ i : Nat, i ≤ 2 * (K + 1) → (L.getD i 0 : ℚ) = bernoulli i)
     (hK : 1 ≤ K) (hY : 4 * (K : ℝ) + 4 ≤ (1 - x) + (n : ℝ)) :
-    rdig x ∈ digammaReflIval c X L n K := by
+    Real'.digamma x ∈ digammaReflIval c X L n K := by
   have h1R : (1 : ℝ) ∈ Ival.ofRat c.prec 1 := by
     exact_mod_cast Ival.mem_ofRat c.prec (1 : ℚ)
   have h1x : 1 - x ∈ Ival.sub c.prec (Ival.ofRat c.prec 1) X :=
@@ -911,7 +915,7 @@ theorem digammaRefl_sound (c : Ctx) (hc : c.Valid) (x : ℝ) (X : Ival)
   exact Ival.mem_sub hpos hpicot
 
 theorem digammaIval_sound (c : Ctx) (hc : c.Valid) (x : ℝ) (X : Ival)
-    (hx : x ∈ X) : rdig x ∈ digammaIval c X := by
+    (hx : x ∈ X) : Real'.digamma x ∈ digammaIval c X := by
   obtain ⟨hxlo, hxhi⟩ := hx
   cases hlo : X.lo with
   | none =>
@@ -936,7 +940,7 @@ theorem digammaIval_sound (c : Ctx) (hc : c.Valid) (x : ℝ) (X : Ival)
           digHasPole_false hpoleF x hloR hhiR m
         split
         · rename_i hpos
-          show rdig x ∈ digammaPosIval c X
+          show Real'.digamma x ∈ digammaPosIval c X
             (bernoulliList (2 * ((4 + c.prec / 8) + 1)))
             (digShiftNumQ (20 + c.prec / 2) lo.toRat) (4 + c.prec / 8)
           have hx0 : 0 < x := by
@@ -960,7 +964,7 @@ theorem digammaIval_sound (c : Ctx) (hc : c.Valid) (x : ℝ) (X : Ival)
         · rename_i hnpos
           split
           · rename_i hneg
-            show rdig x ∈ digammaReflIval c X
+            show Real'.digamma x ∈ digammaReflIval c X
               (bernoulliList (2 * ((4 + c.prec / 8) + 1)))
               (digShiftNumQ (20 + c.prec / 2) (1 - hi.toRat)) (4 + c.prec / 8)
             have hxneg : x < 0 := by
@@ -988,7 +992,7 @@ theorem digammaIval_sound (c : Ctx) (hc : c.Valid) (x : ℝ) (X : Ival)
 
 @[lynth_cfn] def digammaR : Fn1 .real .real where
   name := "digamma"
-  graph x y := y = rdig x
+  graph x y := y = Real'.digamma x
   exu := exu_eq _
   ev c X := digammaIval c X
   sound := fun c x _ X hc hy hx => by
@@ -997,3 +1001,4 @@ theorem digammaIval_sound (c : Ctx) (hc : c.Valid) (x : ℝ) (X : Ival)
   cost := 800
 
 end Lynth.Interval.Fns
+

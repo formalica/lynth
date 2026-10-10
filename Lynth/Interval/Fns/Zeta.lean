@@ -33,8 +33,12 @@ namespace Lynth.Interval.Fns
 
 open BigOperators
 
+namespace Real'
+
 /-- real zeta as a real-valued function (graph for the registry entry). -/
-noncomputable def zetaReal (s : ℝ) : ℝ := (riemannZeta (s : ℂ)).re
+noncomputable def zeta (s : ℝ) : ℝ := (riemannZeta (s : ℂ)).re
+
+end Real'
 
 /-- fold `Ival.add` over interval summands. -/
 def isum (c : Ctx) : List Ival → Ival
@@ -91,7 +95,7 @@ def zetaEulerProdIval (c : Ctx) (n P : Nat) : Ival :=
 
 theorem zetaEulerProd_sound (c : Ctx) (hc : c.Valid) (n P : Nat) (hn : 2 ≤ n)
     (hP : 2 ≤ P) :
-    zetaReal n ∈ zetaEulerProdIval c n P := by
+    Real'.zeta n ∈ zetaEulerProdIval c n P := by
   have hmap : List.Forall₂ (fun x I => x ∈ I)
       ((eulerPrimes P).map fun p => (1 : ℝ) / (1 - 1 / (p ^ n : ℝ)))
       ((eulerPrimes P).map fun p => eulerFactor c n p) := by
@@ -116,7 +120,7 @@ theorem zetaEulerProd_sound (c : Ctx) (hc : c.Valid) (n P : Nat) (hn : 2 ≤ n)
     have hlo2 : lo.toReal ≤ eulerProd n P := hlo'
     have hhi2 : eulerProd n P ≤ hi.toReal := hhi'
     have habs := abs_le.mp htail
-    unfold zetaReal
+    unfold Real'.zeta
     rw [Dy.toReal_def] at hlo2 hhi2
     push_cast at hlo2 hhi2 habs hE ⊢
     refine Ival.mem_ofRats ?_ ?_ <;>
@@ -199,7 +203,7 @@ theorem bernoulliQ_cast (r : Nat) :
 theorem zetaEM_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (S : Ival)
     (hsMem : s ∈ S) (hs : 0 < s) (hs1 : s ≠ 1) (N M : Nat)
     (hN : 1 ≤ N) (hM : 1 ≤ M) (hNM : s + 2 * M + 2 ≤ (N + 1 : Nat)) :
-    zetaReal s ∈ zetaEMIval c S N M := by
+    Real'.zeta s ∈ zetaEMIval c S N M := by
   -- per-term real values in analytic form
   have hterm : ∀ k : Nat,
       ((k + 1 : Nat) : ℝ) ^ (-s) ∈ Ival.div c.prec (Ival.ofRat c.prec 1)
@@ -393,7 +397,7 @@ theorem zetaEM_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (S : Ival)
       exact h2.2
     rw [emDirect_eq] at hmaster
     have habs := abs_le.mp hmaster
-    have heq : zetaReal s
+    have heq : Real'.zeta s
         = ((Finset.range N).sum (fun k => ((k + 1 : Nat) : ℝ) ^ (-s))
           + ((N + 1 : Nat) : ℝ) ^ (1 - s) / (s - 1)
           + ((N + 1 : Nat) : ℝ) ^ (-s) / 2
@@ -403,7 +407,7 @@ theorem zetaEM_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (S : Ival)
               + ((N + 1 : Nat) : ℝ) ^ (1 - s) / (s - 1)
               + ((N + 1 : Nat) : ℝ) ^ (-s) / 2
               + (Finset.range M).sum (fun r => emCorr s N (r + 1)))) := by
-      unfold zetaReal; ring
+      unfold Real'.zeta; ring
     rw [heq]
     rw [Dy.toReal_def] at h2Tle
     refine Ival.mem_add hsumM ?_
@@ -501,7 +505,7 @@ def zetaIval (c : Ctx) (X : Ival) : Ival :=
   | _, _ => Ival.top
 
 theorem zetaPosIval_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (X : Ival)
-    (hx : s ∈ X) : zetaReal s ∈ zetaPosIval c X := by
+    (hx : s ∈ X) : Real'.zeta s ∈ zetaPosIval c X := by
   obtain ⟨hxlo, hxhi⟩ := hx
   cases hlo : X.lo with
   | none =>
@@ -516,11 +520,11 @@ theorem zetaPosIval_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (X : Ival)
       have hhiR : s ≤ hi.toReal := hxhi hi hhi
       rw [Dy.toReal_def] at hloR hhiR
       -- shared EM-guard correctness
-      have hem : zetaReal s ∈ zetaEMGuard c X lo hi := by
+      have hem : Real'.zeta s ∈ zetaEMGuard c X lo hi := by
         simp only [zetaEMGuard]
         split
         · rename_i hpos
-          show zetaReal s ∈ zetaEMIval c X
+          show Real'.zeta s ∈ zetaEMIval c X
             ((16 + c.prec / 2) ⊔ (hi.toRat.num.toNat + 2 * (4 + c.prec / 8) + 2))
             (4 + c.prec / 8)
           have hlor : (0 : ℝ) < (lo.toRat : ℝ) := by exact_mod_cast hpos.1
@@ -644,7 +648,7 @@ theorem zetaPosIval_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (X : Ival)
 
 theorem zetaNeg_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (X : Ival)
     (hxMem : s ∈ X) (hsneg : s < 0) :
-    zetaReal s ∈ zetaNegIval c X := by
+    Real'.zeta s ∈ zetaNegIval c X := by
   have h2 : (2 : ℝ) ∈ Ival.ofRat c.prec 2 := by
     exact_mod_cast Ival.mem_ofRat c.prec (2 : ℚ)
   have h1 : (1 : ℝ) ∈ Ival.ofRat c.prec 1 := by
@@ -668,13 +672,13 @@ theorem zetaNeg_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (X : Ival)
   have hE : (riemannZeta (((1 - s) : ℝ) : ℂ)).re ∈ zetaPosIval c
       (Ival.sub c.prec (Ival.ofRat c.prec 1) X) :=
     zetaPosIval_sound c hc (1 - s) _ h1sub
-  unfold zetaReal
+  unfold Real'.zeta
   rw [zeta_neg_fe s hsneg]
   simp only [zetaNegIval]
   exact Ival.mem_mul (Ival.mem_mul (Ival.mem_mul (Ival.mem_mul hA hB) hC) hD) hE
 
 theorem zetaIval_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (X : Ival)
-    (hx : s ∈ X) : zetaReal s ∈ zetaIval c X := by
+    (hx : s ∈ X) : Real'.zeta s ∈ zetaIval c X := by
   obtain ⟨hxlo, hxhi⟩ := hx
   cases hlo : X.lo with
   | none =>
@@ -701,7 +705,7 @@ theorem zetaIval_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (X : Ival)
 
 @[lynth_cfn] def zetaR : Fn1 .real .real where
   name := "zeta"
-  graph x y := y = zetaReal x
+  graph x y := y = Real'.zeta x
   exu := exu_eq _
   ev c X := zetaIval c X
   sound := fun c x _ X hc hy hx => by
@@ -710,3 +714,4 @@ theorem zetaIval_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (X : Ival)
   cost := 400
 
 end Lynth.Interval.Fns
+

@@ -24,7 +24,7 @@ adds per-declaration axioms.
 set_option maxHeartbeats 60000 in
 -- D1: ψ(1) = -γ. -0.5772156649
 def dig_one : { x : Rat //
-    abs (rdig 1 - x) < 1 / 1000000 } := by
+    abs (Real'.digamma 1 - x) < 1 / 1000000 } := by
   lynth
 #print axioms dig_one
 #eval! dig_one.1
@@ -32,7 +32,7 @@ def dig_one : { x : Rat //
 set_option maxHeartbeats 60000 in
 -- D2: ψ(2) = 1-γ. 0.4227843351
 def dig_two : { x : Rat //
-    abs (rdig 2 - x) < 1 / 1000000 } := by
+    abs (Real'.digamma 2 - x) < 1 / 1000000 } := by
   lynth
 #print axioms dig_two
 #eval! dig_two.1
@@ -40,7 +40,7 @@ def dig_two : { x : Rat //
 set_option maxHeartbeats 60000 in
 -- D3: ψ(1/2) = -γ-2ln2. -1.9635100260
 def dig_half : { x : Rat //
-    abs (rdig (1 / 2) - x) < 1 / 1000000 } := by
+    abs (Real'.digamma (1 / 2) - x) < 1 / 1000000 } := by
   lynth
 #print axioms dig_half
 #eval! dig_half.1
@@ -48,7 +48,7 @@ def dig_half : { x : Rat //
 set_option maxHeartbeats 60000 in
 -- D4: ψ(2.5) via shifts. 0.7031566407
 def dig_five_halves : { x : Rat //
-    abs (rdig (5 / 2) - x) < 1 / 1000000 } := by
+    abs (Real'.digamma (5 / 2) - x) < 1 / 1000000 } := by
   lynth
 #print axioms dig_five_halves
 #eval! dig_five_halves.1
@@ -56,7 +56,7 @@ def dig_five_halves : { x : Rat //
 set_option maxHeartbeats 60000 in
 -- D5: ψ(-1/2) via reflection. 0.0364899740
 def dig_neg_half : { x : Rat //
-    abs (rdig (-1 / 2) - x) < 1 / 1000 } := by
+    abs (Real'.digamma (-1 / 2) - x) < 1 / 1000 } := by
   lynth
 #print axioms dig_neg_half
 #eval! dig_neg_half.1
@@ -64,7 +64,7 @@ def dig_neg_half : { x : Rat //
 set_option maxHeartbeats 60000 in
 -- D6: ψ(3) = 3/2-γ. 0.9227843351
 def dig_three : { x : Rat //
-    abs (rdig 3 - x) < 1 / 1000000 } := by
+    abs (Real'.digamma 3 - x) < 1 / 1000000 } := by
   lynth
 #print axioms dig_three
 #eval! dig_three.1

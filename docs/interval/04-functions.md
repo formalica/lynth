@@ -293,8 +293,8 @@ FLINT's split (`arb/zeta_ui.c`), real line only, no integer fast paths:
   unbounded → `⊤`.
   No complex/Hurwitz/Riemann–Siegel.
 
-Entry `zetaR : Fn1 .real .real` (`y = zetaReal x`,
-`zetaReal s = (riemannZeta s).re`); dispatch reads point naturals and the
+Entry `zetaR : Fn1 .real .real` (`y = Real'.zeta x`,
+`Real'.zeta s = (riemannZeta s).re`); dispatch reads point naturals and the
 `0 < · ≠ 1` guard off enclosure bounds.  Analytic identities + remainder
 bounds are proved in the ported modules `Fns/ZetaEulerProd.lean`,
 `Fns/ZetaEM.lean` (external prover, from the Mathlib-only `/tmp/zeta/`
@@ -322,8 +322,8 @@ Z11–Z14 (negative: `ζ(-1)`, `ζ(-3)`, `ζ(-2) = 0`, `ζ(-1/2)`).
   test off dyadic bounds), `0`-straddles, unbounded → `⊤`.
   No integer fast paths (`ψ(n) = H_{n-1} - γ` waived).
 
-Entry `digammaR : Fn1 .real .real` (`y = rdig x`,
-`rdig s = (Complex.digamma s).re`).  Analytic identities + remainder
+Entry `digammaR : Fn1 .real .real` (`y = Real'.digamma x`,
+`Real'.digamma s = (Complex.digamma s).re`).  Analytic identities + remainder
 bounds are proved in `Fns/Digamma.lean` (ported from `/tmp/digamma_thm.lean`,
 whose Bernoulli block is vendored so the prover never re-proves `B_{2k}`).
 Tests `Test/Interval/Digamma.lean` D1–D6.
