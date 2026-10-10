@@ -38,3 +38,4 @@ import Lynth.Witness
 import Lynth.Interval
 import Lynth.Frontend
 import Lynth.Basic
+import Lynth.HyperGeomIdentities

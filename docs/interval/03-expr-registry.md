@@ -400,6 +400,15 @@ definition builds an `NaryEntry` (`decl`, `tys`, `res`, the Lean function
 `DiscrTree` keys, priority).  The attribute checks arity and domain types
 (`ℕ`/`ℤ`/`ℚ`/`ℝ` per `CTy`) and fails fast otherwise.
 
+Noncomputable mirrors: `CFn.manual`/`CFn.ofFn` store `F` in the `fn` data
+field, so a noncomputable `F` (any `∑'`/tsum mirror, e.g. `Fns/Hypgeom.lean`)
+makes the whole entry noncomputable and `evalExprVal` cannot evaluate it.
+Write such entries as `CFn.mk` literals instead, with the real mirror only
+in `graph`/`exu`/`sound` (`Prop`) and a computable dummy `fn` (never
+applied: denote uses `fn'` from `graph`, eval uses `ev`); `cfnFunOf?`
+reads `F` from `graph` (`CFn.graphOf tys r F`) first, falling back to `fn`.
+This is the n-ary analogue of the `Fn.lean` rule (function inside `graph`).
+
 Reification (`tryNary`, step 4 after `FnEntry`): match the pattern, reify
 each argument at `toTy`, then build `CArg`/`CVal` chains with proofs
 (`call_eq`, kernel-checked on the spot):

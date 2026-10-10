@@ -161,15 +161,25 @@ initialize naryExt : SimpleScopedEnvExtension NaryEntry (DiscrTree NaryEntry) �
     addEntry := fun d e => d.insertKeyValue e.keys e
   }
 
-/-- the `F` argument of a `CFn.manual` / `CFn.ofFn` / `CFn.mk` application -/
+/-- the `F` argument of a `CFn.manual` / `CFn.ofFn` / `CFn.mk` application.
+For `CFn.mk` literals, `F` is read from `graph` (`CFn.graphOf tys r F`)
+first, so entries can keep a computable `fn` placeholder while the real
+(noncomputable) mirror lives only in `Prop` fields — the `Fn.lean` pattern.
+Falls back to the `fn` field for hand-written graphs. -/
 def cfnFunOf? (v : Lean.Expr) : MetaM (Option Lean.Expr) := do
+  let graphFun? (g : Lean.Expr) : Option Lean.Expr :=
+    let gfn := g.getAppFn
+    let gargs := g.getAppArgs
+    if gfn.isConstOf ``CFn.graphOf && 2 < gargs.size then some gargs[2]! else none
   let go (v : Lean.Expr) : MetaM (Option Lean.Expr) := do
     let fn := v.getAppFn
     let args := v.getAppArgs
     if fn.isConstOf ``CFn.manual || fn.isConstOf ``CFn.ofFn then
       if 2 < args.size then return some args[2]! else return none
     else if fn.isConstOf ``CFn.mk then
-      -- `mk` takes explicit `tys r` then fields `name fn …`
+      -- `mk` takes explicit `tys r` then fields `name fn graph …`
+      if 4 < args.size then
+        if let some f := graphFun? args[4]! then return some f
       if 3 < args.size then return some args[3]! else return none
     else return none
   if let some f ← go v then return some f
