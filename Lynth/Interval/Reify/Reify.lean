@@ -33,9 +33,12 @@ structure RVar where
 structure RCtx where
   vars : Array RVar := #[]
   /-- the `SEnv` term the denotations refer to -/
-  senv : Lean.Expr := mkApp4 (mkConst ``SEnv.mk) (mkApp (mkConst ``List.nil [0]) (mkConst ``Nat))
-    (mkApp (mkConst ``List.nil [0]) (mkConst ``Int))
-    (mkApp (mkConst ``List.nil [0]) (mkConst ``Real)) (mkApp (mkConst ``List.nil [0]) (mkConst ``Complex))
+  senv : Lean.Expr := mkAppN (mkConst ``SEnv.mk)
+    #[mkApp (mkConst ``List.nil [0]) (mkConst ``Nat),
+      mkApp (mkConst ``List.nil [0]) (mkConst ``Int),
+      mkApp (mkConst ``List.nil [0]) (mkConst ``Real),
+      mkApp (mkConst ``List.nil [0]) (mkConst ``Complex),
+      mkApp (mkConst ``List.nil [0]) (mkConst ``Rat)]
   /-- allow unknown subterms to become variables -/
   atoms : Bool := false
   /-- unfolding budget -/
@@ -56,20 +59,22 @@ def RCtx.push (rc : RCtx) (term : Lean.Expr) (t : Ty) : RCtx :=
     vars := rc.vars.push { term, ty := t, level := rc.count t }
     senv := mkApp3 (mkConst ``SEnv.push) rc.senv (toExpr t) term }
 
-/-- the Lean type of `Ty.Val t` -/
-def tyVal : Ty → Lean.Expr
-  | .nat => mkConst ``Nat
-  | .int => mkConst ``Int
-  | .real => mkConst ``Real
-  | .cplx => mkConst ``Complex
-
-def tyOfType? (ty : Lean.Expr) : MetaM (Option Ty) := do
-  let ty ← whnfR ty
-  if ty.isConstOf ``Nat then return some .nat
-  if ty.isConstOf ``Int then return some .int
-  if ty.isConstOf ``Real then return some .real
-  if ty.isConstOf ``Complex then return some .cplx
-  return none
+def tyOfType? (ty : Lean.Expr) : MetaM (Option Ty) := go 8 ty
+where
+  go : Nat → Lean.Expr → MetaM (Option Ty)
+    | 0, _ => return none
+    | fuel + 1, ty => do
+      let ty ← whnfR ty
+      if ty.isConstOf ``Nat then return some .nat
+      if ty.isConstOf ``Int then return some .int
+      if ty.isConstOf ``Real then return some .real
+      if ty.isConstOf ``Complex then return some .cplx
+      if ty.isConstOf ``Rat then return some .rat
+      if ty.getAppFn.isConstOf ``List then
+        let args := ty.getAppArgs
+        if 0 < args.size then
+          if let some t ← go fuel args[0]! then return some (.list t)
+      return none
 
 def mkDenote (t : Ty) (e senv : Lean.Expr) : Lean.Expr :=
   mkApp3 (mkConst ``Expr.denote) (toExpr t) e senv
@@ -180,6 +185,11 @@ def exact? (t : Ty) (e : Lean.Expr) (senv : Lean.Expr) : MetaM (Option Reified) 
     let pf := mkAppN (mkConst ``Expr.c1_eq)
       #[toExpr Ty.real, toExpr Ty.cplx, mkConst ``Fns.ofRealC, lit, senv, X, e, ← mkEqRefl X, pf]
     return some ⟨.cplx, ex, pf⟩
+  | .rat =>
+    let some (q, pf) ← ratEq? (α := q(ℚ)) e (fun q => some (toExpr q))
+      | return none
+    return some ⟨.rat, mkApp (mkConst ``Expr.rlit) (toExpr q), pf⟩
+  | .list _ => return none
 
 /-! ### Unfolding -/
 
@@ -212,6 +222,8 @@ partial def reify (rc : RCtx) (e : Lean.Expr) : MetaM Reified := do
   -- 2. exact numerals
   if let some r ← exact? t e rc.senv then
     return { r with proof := ← mkExpectedTypeHint r.proof (← mkEq e (mkDenote t r.expr rc.senv)) }
+  -- 2b. list literals (closed spines, elementwise)
+  if let some r ← reifyListLit? rc t e then return r
   -- 3. finite sums
   if let some r ← reifySum? rc t e then return r
   -- 4. registry
@@ -247,6 +259,38 @@ where
       let ex := mkApp3 (mkConst ``Expr.sum) (toExpr t) rn.expr rb.expr
       let pf ← mkExpectedTypeHint pf (← mkEq e (mkDenote t ex rc.senv))
       return some ⟨t, ex, pf⟩
+  /-- closed `List.cons`/`List.nil` spine at element type `t`, elementwise -/
+  reifyListLit? (rc : RCtx) (t : Ty) (e : Lean.Expr) : MetaM (Option Reified) := do
+    let te ← match t with | .list te => pure te | _ => return none
+    let e ← instantiateMVars e
+    if e.hasFVar || e.hasMVar then return none
+    let rc' : RCtx := { senv := rc.senv }
+    let rec go (fuel : Nat) (e : Lean.Expr) :
+        MetaM (Option (Lean.Expr × Lean.Expr)) :=
+      match fuel with
+      | 0 => return none
+      | fuel + 1 => do
+        let e ← instantiateMVars e
+        match e.getAppFn with
+        | .const ``List.nil _ =>
+          let ex ← mkAppOptM ``ExprList.nil #[some (toExpr te)]
+          return some (ex, ← mkEqRefl e)
+        | .const ``List.cons _ =>
+          let args := e.getAppArgs
+          if args.size < 3 then return none
+          let r ← reify rc' args[1]!
+          unless r.ty == te do return none
+          let some (exs, pfs) ← go fuel args[2]! | return none
+          let ex ← mkAppOptM ``ExprList.cons #[some (toExpr te), some r.expr, some exs]
+          let α ← inferType args[1]!
+          let consF := mkApp (mkConst ``List.cons [0]) α
+          let pf ← mkAppM ``congrArg₂ #[consF, r.proof, pfs]
+          return some (ex, pf)
+        | _ => return none
+    let some (exs, pfTail) ← go 64 e | return none
+    let ex ← mkAppOptM ``Expr.clist #[some (toExpr te), some exs]
+    let pf ← mkExpectedTypeHint pfTail (← mkEq e (mkDenote (.list te) ex rc.senv))
+    return some ⟨.list te, ex, pf⟩
   /-- try one registry entry -/
   tryEntry (rc : RCtx) (t : Ty) (ent : FnEntry) (e : Lean.Expr) : MetaM (Option Reified) := do
     unless ent.resTy == t do return none
@@ -286,7 +330,7 @@ where
       s.restore; return none
   /-- try one n-ary registry entry -/
   tryNary (rc : RCtx) (t : Ty) (ent : NaryEntry) (e : Lean.Expr) : MetaM (Option Reified) := do
-    unless ent.res.toTy == t do return none
+    unless ent.res == t do return none
     let s ← saveState
     let (mvars, _, body) ← lambdaMetaTelescope ent.pattern
     unless ← withTransparency .instances (isDefEq body e) do
@@ -299,8 +343,7 @@ where
       let ρ := rc.senv
       let tysE := toExpr ent.tys.toList
       let rE := toExpr ent.res
-      let tE := toExpr t
-      -- reified head per position; rat positions take closed ℚ directly to `lit`
+      -- reified head per position; rat positions take closed ℚ directly to `rlit`
       let mut exs : Array Lean.Expr := #[]
       let mut vs : Array Lean.Expr := #[]
       let mut comps : Array Lean.Expr := #[]
@@ -312,13 +355,13 @@ where
           if a.hasFVar || a.hasMVar then
             throwError ("lynth interval: rat argument {i} of `{ent.decl}` must be " ++
               "a closed rational literal or chain")
-          let litE := mkApp (mkConst ``Expr.lit) a
+          let litE := mkApp (mkConst ``Expr.rlit) a
           exs := exs.push litE
           vs := vs.push a
-          comps := comps.push (← mkEqRefl (mkDenote .real litE ρ))
+          comps := comps.push (← mkEqRefl (mkDenote .rat litE ρ))
         | _ =>
           let r ← reify rc a
-          unless r.ty == c.toTy do throw (Exception.error .missing "type mismatch")
+          unless r.ty == c do throw (Exception.error .missing "type mismatch")
           exs := exs.push r.expr
           vs := vs.push a
           comps := comps.push r.proof
@@ -334,15 +377,13 @@ where
       let denE := mkAppN (mkConst ``Expr.CArg.denoteArgs) #[ρ, tysE, xsE]
       let hdsE ← mkEqRefl denE
       let hgE ← mkEqRefl e
-      let htE ← mkExpectedTypeHint (← mkEqRefl tE)
-        (← mkEq tE (mkApp (mkConst ``CTy.toTy) rE))
-      -- `rat` results cannot appear here (`F` is `ℚ`-valued, so no `.real`
-      -- target unifies); they flow through `reifyRatCast?` below instead.
-      unless ent.res matches .nat | .int | .real do
+      -- `rat` results cannot appear here (no node form for them); they flow
+      -- through `reifyRatCast?` below instead.
+      if ent.res == .rat then
         s.restore; return none
-      let ex ← mkAppOptM ``Expr.call #[none, none, none, some htE, some f, some xsE]
+      let ex ← mkAppOptM ``Expr.call #[none, none, some f, some xsE]
       let pf := mkAppN (mkConst ``Expr.call_eq)
-        #[tysE, rE, tE, htE, f, xsE, ρ, vsE, denE, e, e, hdsE, hagE, hgE, ← mkEqRefl e]
+        #[tysE, rE, f, xsE, ρ, vsE, denE, e, hdsE, hagE, hgE]
       check pf
       return some ⟨t, ex, pf⟩
     catch e =>

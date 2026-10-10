@@ -900,10 +900,9 @@ def pfq01_ev (c : Ctx) : CEnc [.real, .real] → Ival
     pfqCoreIval c [] [B] Z (64 + 2 * c.prec)
 
 theorem pfq01_sound (c : Ctx) :
-    ∀ (vs : CVal [.real, .real]) (ds : CDen [.real, .real]) (y' y : ℝ)
+    ∀ (vs : CVal [.real, .real]) (ds : CDen [.real, .real]) (y : ℝ)
       (X : CEnc [.real, .real]) (hc : c.Valid)
-      (hg : y' = applyCurried [.real, .real] .real pfq01 vs)
-      (hout : castOut .real y' = y)
+      (hg : y = applyCurried [.real, .real] .real pfq01 vs)
       (hh : CEncHolds X ds) (hag : Agree vs ds),
     Ival.Mem (pfq01_ev c X) y := by
   sorry
@@ -932,10 +931,9 @@ def pfq11_ev (c : Ctx) : CEnc [.real, .real, .real] → Ival
     pfqCoreIval c [A] [B] Z (64 + 2 * c.prec)
 
 theorem pfq11_sound (c : Ctx) :
-    ∀ (vs : CVal [.real, .real, .real]) (ds : CDen [.real, .real, .real]) (y' y : ℝ)
+    ∀ (vs : CVal [.real, .real, .real]) (ds : CDen [.real, .real, .real]) (y : ℝ)
       (X : CEnc [.real, .real, .real]) (hc : c.Valid)
-      (hg : y' = applyCurried [.real, .real, .real] .real pfq11 vs)
-      (hout : castOut .real y' = y)
+      (hg : y = applyCurried [.real, .real, .real] .real pfq11 vs)
       (hh : CEncHolds X ds) (hag : Agree vs ds),
     Ival.Mem (pfq11_ev c X) y := by
   sorry
@@ -959,10 +957,9 @@ def pfq21_ev (c : Ctx) : CEnc [.real, .real, .real, .real] → Ival
     pfqCoreIval c [A1, A2] [B] Z (64 + 2 * c.prec)
 
 theorem pfq21_sound (c : Ctx) :
-    ∀ (vs : CVal [.real, .real, .real, .real]) (ds : CDen [.real, .real, .real, .real]) (y' y : ℝ)
+    ∀ (vs : CVal [.real, .real, .real, .real]) (ds : CDen [.real, .real, .real, .real]) (y : ℝ)
       (X : CEnc [.real, .real, .real, .real]) (hc : c.Valid)
-      (hg : y' = applyCurried [.real, .real, .real, .real] .real pfq21 vs)
-      (hout : castOut .real y' = y)
+      (hg : y = applyCurried [.real, .real, .real, .real] .real pfq21 vs)
       (hh : CEncHolds X ds) (hag : Agree vs ds),
     Ival.Mem (pfq21_ev c X) y := by
   sorry
@@ -986,10 +983,9 @@ def pfq02_ev (c : Ctx) : CEnc [.real, .real, .real] → Ival
     pfqCoreIval c [] [B1, B2] Z (64 + 2 * c.prec)
 
 theorem pfq02_sound (c : Ctx) :
-    ∀ (vs : CVal [.real, .real, .real]) (ds : CDen [.real, .real, .real]) (y' y : ℝ)
+    ∀ (vs : CVal [.real, .real, .real]) (ds : CDen [.real, .real, .real]) (y : ℝ)
       (X : CEnc [.real, .real, .real]) (hc : c.Valid)
-      (hg : y' = applyCurried [.real, .real, .real] .real pfq02 vs)
-      (hout : castOut .real y' = y)
+      (hg : y = applyCurried [.real, .real, .real] .real pfq02 vs)
       (hh : CEncHolds X ds) (hag : Agree vs ds),
     Ival.Mem (pfq02_ev c X) y := by
   sorry
@@ -1013,10 +1009,9 @@ def pfq12_ev (c : Ctx) : CEnc [.real, .real, .real, .real] → Ival
     pfqCoreIval c [A] [B1, B2] Z (64 + 2 * c.prec)
 
 theorem pfq12_sound (c : Ctx) :
-    ∀ (vs : CVal [.real, .real, .real, .real]) (ds : CDen [.real, .real, .real, .real]) (y' y : ℝ)
+    ∀ (vs : CVal [.real, .real, .real, .real]) (ds : CDen [.real, .real, .real, .real]) (y : ℝ)
       (X : CEnc [.real, .real, .real, .real]) (hc : c.Valid)
-      (hg : y' = applyCurried [.real, .real, .real, .real] .real pfq12 vs)
-      (hout : castOut .real y' = y)
+      (hg : y = applyCurried [.real, .real, .real, .real] .real pfq12 vs)
       (hh : CEncHolds X ds) (hag : Agree vs ds),
     Ival.Mem (pfq12_ev c X) y := by
   sorry
@@ -1040,10 +1035,9 @@ def pfq22_ev (c : Ctx) : CEnc [.real, .real, .real, .real, .real] → Ival
     pfqCoreIval c [A1, A2] [B1, B2] Z (64 + 2 * c.prec)
 
 theorem pfq22_sound (c : Ctx) :
-    ∀ (vs : CVal [.real, .real, .real, .real, .real]) (ds : CDen [.real, .real, .real, .real, .real]) (y' y : ℝ)
+    ∀ (vs : CVal [.real, .real, .real, .real, .real]) (ds : CDen [.real, .real, .real, .real, .real]) (y : ℝ)
       (X : CEnc [.real, .real, .real, .real, .real]) (hc : c.Valid)
-      (hg : y' = applyCurried [.real, .real, .real, .real, .real] .real pfq22 vs)
-      (hout : castOut .real y' = y)
+      (hg : y = applyCurried [.real, .real, .real, .real, .real] .real pfq22 vs)
       (hh : CEncHolds X ds) (hag : Agree vs ds),
     Ival.Mem (pfq22_ev c X) y := by
   sorry
@@ -1067,10 +1061,9 @@ def pfq32_ev (c : Ctx) : CEnc [.real, .real, .real, .real, .real, .real] → Iva
     pfqCoreIval c [A1, A2, A3] [B1, B2] Z (64 + 2 * c.prec)
 
 theorem pfq32_sound (c : Ctx) :
-    ∀ (vs : CVal [.real, .real, .real, .real, .real, .real]) (ds : CDen [.real, .real, .real, .real, .real, .real]) (y' y : ℝ)
+    ∀ (vs : CVal [.real, .real, .real, .real, .real, .real]) (ds : CDen [.real, .real, .real, .real, .real, .real]) (y : ℝ)
       (X : CEnc [.real, .real, .real, .real, .real, .real]) (hc : c.Valid)
-      (hg : y' = applyCurried [.real, .real, .real, .real, .real, .real] .real pfq32 vs)
-      (hout : castOut .real y' = y)
+      (hg : y = applyCurried [.real, .real, .real, .real, .real, .real] .real pfq32 vs)
       (hh : CEncHolds X ds) (hag : Agree vs ds),
     Ival.Mem (pfq32_ev c X) y := by
   sorry

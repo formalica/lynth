@@ -35,21 +35,35 @@ initialize fnExt : SimpleScopedEnvExtension FnEntry (DiscrTree FnEntry) ←
     addEntry := fun d e => d.insertKeyValue e.keys e
   }
 
-/-- read a `Ty` constructor constant -/
-def tyOfExpr? (e : Lean.Expr) : MetaM (Option Ty) := do
-  let e ← whnfD e
-  match e with
-  | .const ``Ty.nat _ => return some .nat
-  | .const ``Ty.int _ => return some .int
-  | .const ``Ty.real _ => return some .real
-  | .const ``Ty.cplx _ => return some .cplx
-  | _ => return none
+/-- read a `Ty` constructor constant (or `Ty.list` application) -/
+def tyOfExpr? (e : Lean.Expr) : MetaM (Option Ty) := go 8 e
+where
+  go : Nat → Lean.Expr → MetaM (Option Ty)
+    | 0, _ => return none
+    | fuel + 1, e => do
+      let e ← whnfD e
+      match e with
+      | .const ``Ty.nat _ => return some .nat
+      | .const ``Ty.int _ => return some .int
+      | .const ``Ty.real _ => return some .real
+      | .const ``Ty.cplx _ => return some .cplx
+      | .const ``Ty.rat _ => return some .rat
+      | _ =>
+        if e.getAppFn.isConstOf ``Ty.list then
+          let args := e.getAppArgs
+          if 0 < args.size then
+            let some t ← go fuel args[0]! | return none
+            return some (.list t)
+          else return none
+        else return none
 
 def tyToExpr : Ty → Lean.Expr
   | .nat => mkConst ``Ty.nat
   | .int => mkConst ``Ty.int
   | .real => mkConst ``Ty.real
   | .cplx => mkConst ``Ty.cplx
+  | .rat => mkConst ``Ty.rat
+  | .list t => mkApp (mkConst ``Ty.list) (tyToExpr t)
 
 instance : ToExpr Ty where
   toExpr := tyToExpr
@@ -104,19 +118,32 @@ initialize registerBuiltinAttribute {
     fnExt.add entry kind
 }
 
-/-- read a `CTy` constructor constant -/
-def ctyOfExpr? (e : Lean.Expr) : MetaM (Option CTy) := do
-  let e ← whnfD e
-  match e with
-  | .const ``CTy.nat _ => return some .nat
-  | .const ``CTy.int _ => return some .int
-  | .const ``CTy.rat _ => return some .rat
-  | .const ``CTy.real _ => return some .real
-  | _ => return none
+/-- the Lean type expected at one `Ty` position of a curried function -/
+def tyValConst : Ty → Lean.Expr
+  | .nat => mkConst ``Nat
+  | .int => mkConst ``Int
+  | .rat => mkConst ``Rat
+  | .real => mkConst ``Real
+  | .cplx => mkConst ``Complex
+  | .list t => mkApp (mkConst ``List) (tyValConst t)
 
-/-- read a closed `List CTy` term (fuel-bounded; arities are tiny) -/
-def ctyListOfExpr? (e : Lean.Expr) : MetaM (Option (Array CTy)) := do
-  let mut out : Array CTy := #[]
+/-- One registered n-ary custom function (`CFn tys r`). -/
+structure NaryEntry where
+  /-- constant of type `CFn tys r` -/
+  decl : Name
+  tys : Array Ty
+  res : Ty
+  /-- the curried Lean function `F : curriedType tys r` (for patterns) -/
+  fn : Lean.Expr
+  /-- `F` applied to argument metavariables -/
+  pattern : Lean.Expr
+  keys : Array DiscrTree.Key
+  prio : Nat := 1000
+  deriving Inhabited
+
+/-- read a closed `List Ty` term (fuel-bounded; arities are tiny) -/
+def tyListOfExpr? (e : Lean.Expr) : MetaM (Option (Array Ty)) := do
+  let mut out : Array Ty := #[]
   let mut cur ← whnfD e
   for _ in [0:64] do
     match cur.getAppFn with
@@ -126,32 +153,11 @@ def ctyListOfExpr? (e : Lean.Expr) : MetaM (Option (Array CTy)) := do
       unless 2 ≤ args.size do return none
       let head := args[args.size - 2]!
       let tail := args[args.size - 1]!
-      let some t ← ctyOfExpr? head | return none
+      let some t ← tyOfExpr? head | return none
       out := out.push t
       cur ← whnfD tail
     | _ => return none
   return none
-
-/-- the Lean type expected at one `CTy` position of a curried function -/
-def ctyValConst : CTy → Name
-  | .nat => ``Nat
-  | .int => ``Int
-  | .rat => ``Rat
-  | .real => ``Real
-
-/-- One registered n-ary custom function (`CFn tys r`). -/
-structure NaryEntry where
-  /-- constant of type `CFn tys r` -/
-  decl : Name
-  tys : Array CTy
-  res : CTy
-  /-- the curried Lean function `F : curriedType tys r` (for patterns) -/
-  fn : Lean.Expr
-  /-- `F` applied to argument metavariables -/
-  pattern : Lean.Expr
-  keys : Array DiscrTree.Key
-  prio : Nat := 1000
-  deriving Inhabited
 
 instance : BEq NaryEntry := ⟨fun a b => a.decl == b.decl⟩
 
@@ -193,9 +199,9 @@ def mkNaryEntry (decl : Name) (prio : Nat) : MetaM NaryEntry := do
   let args := ty.getAppArgs
   unless fn.isConstOf ``CFn && args.size == 2 do
     throwError "@[lynth_cfn]: `{decl}` must have type `CFn tys r`, got {ty}"
-  let some tys ← ctyListOfExpr? args[0]!
+  let some tys ← tyListOfExpr? args[0]!
     | throwError "@[lynth_cfn]: cannot read `tys` argument of `{decl}`"
-  let some res ← ctyOfExpr? args[1]!
+  let some res ← tyOfExpr? args[1]!
     | throwError "@[lynth_cfn]: cannot read `r` argument of `{decl}`"
   let some v := info.value?
     | throwError "@[lynth_cfn]: `{decl}` must be a definition (need its `F`)"
@@ -210,10 +216,10 @@ def mkNaryEntry (decl : Name) (prio : Nat) : MetaM NaryEntry := do
   for i in [0:tys.size] do
     let d ← inferType pis[i]!
     let d ← whnfR d
-    let want := ctyValConst tys[i]!
-    unless d.isConstOf want do
+    let want := tyValConst tys[i]!
+    unless ← isDefEq d want do
       throwError "@[lynth_cfn]: `{decl}` argument {i} has type {d}, expected {want}"
-  let mvars ← tys.mapM fun t => mkFreshExprMVar (mkConst (ctyValConst t))
+  let mvars ← tys.mapM fun t => mkFreshExprMVar (tyValConst t)
   let pattern ← mkLambdaFVars mvars (mkAppN F mvars)
   let keys ← withReducible do
     let (_, _, body) ← lambdaMetaTelescope pattern

@@ -52,17 +52,14 @@ def mysqadd_ev (c : Ctx) : CEnc [.real, .real] → Ival
     Ival.add c.prec (Ival.mul c.prec X X) (Ival.mul c.prec Y Y)
 
 theorem mysqadd_sound (c : Ctx) :
-    ∀ (vs : CVal [.real, .real]) (ds : CDen [.real, .real]) (y' : ℝ) (y : ℝ)
+    ∀ (vs : CVal [.real, .real]) (ds : CDen [.real, .real]) (y : ℝ)
       (X : CEnc [.real, .real]) (hc : c.Valid)
-      (hg : y' = applyCurried [.real, .real] .real mysqadd vs)
-      (hout : castOut .real y' = y)
+      (hg : y = applyCurried [.real, .real] .real mysqadd vs)
       (hh : CEncHolds X ds) (hag : Agree vs ds),
     Ival.Mem (mysqadd_ev c X) y
   | .cons .real x (.cons .real y .nil),
-    .cons .real dx (.cons .real dy .nil), _, _,
-    .cons .real IX (.cons .real IY .nil), _, hg, hout, hh, hag => by
-    simp only [castOut] at hout
-    subst hout
+    .cons .real dx (.cons .real dy .nil), _,
+    .cons .real IX (.cons .real IY .nil), _, hg, hh, hag => by
     have hxM := hh.1; have hyM := hh.2.1
     have hxE := hag.1; have hyE := hag.2.1
     simp only [mysqadd_ev]
@@ -93,26 +90,22 @@ def myratmul_ev (c : Ctx) : CEnc [.rat, .real] → Ival
     | none => Ival.top
 
 theorem myratmul_sound (c : Ctx) :
-    ∀ (vs : CVal [.rat, .real]) (ds : CDen [.rat, .real]) (y' y : ℝ)
+    ∀ (vs : CVal [.rat, .real]) (ds : CDen [.rat, .real]) (y : ℝ)
       (X : CEnc [.rat, .real]) (hc : c.Valid)
-      (hg : y' = applyCurried [.rat, .real] .real myratmul vs)
-      (hout : castOut .real y' = y)
+      (hg : y = applyCurried [.rat, .real] .real myratmul vs)
       (hh : CEncHolds X ds) (hag : Agree vs ds),
     Ival.Mem (myratmul_ev c X) y
   | .cons .rat v (.cons .real x .nil),
-    .cons .rat d (.cons .real dx .nil), _, _,
-    .cons .rat o (.cons .real Y .nil), _, hg, hout, hh, hag => by
-    simp only [castOut] at hout
-    subst hout
+    .cons .rat d (.cons .real dx .nil), _,
+    .cons .rat o (.cons .real Y .nil), _, hg, hh, hag => by
     have hm := hh.1; have hrest := hh.2
     have hag1 := hag.1; have hag2 := hag.2
     have hyM := hrest.1; have hxE := hag2.1
     match hq : o with
     | some q =>
       simp only [myratmul_ev]
-      have hd : d = (q : ℝ) := hm _ rfl
-      simp only [ratOut] at hag1
-      have hqv : q = v := Rat.cast_injective (hd.symm.trans hag1)
+      have hd : d = q := hm _ rfl
+      have hqv : q = v := hd.symm.trans hag1.symm
       subst hqv; subst hxE
       simp only [applyCurried] at hg
       subst hg
@@ -139,26 +132,22 @@ def myqmul_ev (c : Ctx) : CEnc [.rat, .real] → Ival
     | none => Ival.top
 
 theorem myqmul_sound (c : Ctx) :
-    ∀ (vs : CVal [.rat, .real]) (ds : CDen [.rat, .real]) (y' y : ℝ)
+    ∀ (vs : CVal [.rat, .real]) (ds : CDen [.rat, .real]) (y : ℝ)
       (X : CEnc [.rat, .real]) (hc : c.Valid)
-      (hg : y' = applyCurried [.rat, .real] .real myqmul vs)
-      (hout : castOut .real y' = y)
+      (hg : y = applyCurried [.rat, .real] .real myqmul vs)
       (hh : CEncHolds X ds) (hag : Agree vs ds),
     Ival.Mem (myqmul_ev c X) y
   | .cons .rat v (.cons .real x .nil),
-    .cons .rat d (.cons .real dx .nil), _, _,
-    .cons .rat o (.cons .real Y .nil), _, hg, hout, hh, hag => by
-    simp only [castOut] at hout
-    subst hout
+    .cons .rat d (.cons .real dx .nil), _,
+    .cons .rat o (.cons .real Y .nil), _, hg, hh, hag => by
     have hm := hh.1; have hrest := hh.2
     have hag1 := hag.1; have hag2 := hag.2
     have hyM := hrest.1; have hxE := hag2.1
     match hq : o with
     | some q =>
       simp only [myqmul_ev]
-      have hd : d = (q : ℝ) := hm _ rfl
-      simp only [ratOut] at hag1
-      have hqv : q = v := Rat.cast_injective (hd.symm.trans hag1)
+      have hd : d = q := hm _ rfl
+      have hqv : q = v := hd.symm.trans hag1.symm
       subst hqv; subst hxE
       simp only [applyCurried] at hg
       subst hg
@@ -240,17 +229,14 @@ def myall_ev (c : Ctx) : CEnc [.nat, .int, .rat, .real] → Ival
 
 theorem myall_sound (c : Ctx) :
     ∀ (vs : CVal [.nat, .int, .rat, .real]) (ds : CDen [.nat, .int, .rat, .real])
-      (y' y : ℝ) (X : CEnc [.nat, .int, .rat, .real]) (hc : c.Valid)
-      (hg : y' = applyCurried [.nat, .int, .rat, .real] .real myall vs)
-      (hout : castOut .real y' = y)
+      (y : ℝ) (X : CEnc [.nat, .int, .rat, .real]) (hc : c.Valid)
+      (hg : y = applyCurried [.nat, .int, .rat, .real] .real myall vs)
       (hh : CEncHolds X ds) (hag : Agree vs ds),
     Ival.Mem (myall_ev c X) y
   | .cons .nat a (.cons .int z (.cons .rat v (.cons .real x .nil))),
-    .cons .nat da (.cons .int dz (.cons .rat d (.cons .real dx .nil))), _, _,
+    .cons .nat da (.cons .int dz (.cons .rat d (.cons .real dx .nil))), _,
     .cons .nat A (.cons .int Z (.cons .rat o (.cons .real Y .nil))),
-    _, hg, hout, hh, hag => by
-    simp only [castOut] at hout
-    subst hout
+    _, hg, hh, hag => by
     have hAM := hh.1; have hrest1 := hh.2
     have hZM := hrest1.1; have hrest2 := hrest1.2
     have hm := hrest2.1; have hyM := hrest2.2.1
@@ -260,9 +246,8 @@ theorem myall_sound (c : Ctx) :
     match hq : o with
     | some q =>
       simp only [myall_ev]
-      have hd : d = (q : ℝ) := hm _ rfl
-      simp only [ratOut] at hag1
-      have hqv : q = v := Rat.cast_injective (hd.symm.trans hag1)
+      have hd : d = q := hm _ rfl
+      have hqv : q = v := hd.symm.trans hag1.symm
       subst hqv; subst haE; subst hzE; subst hxE
       simp only [applyCurried] at hg
       subst hg
