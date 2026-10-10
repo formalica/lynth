@@ -386,7 +386,7 @@ theorem mem_cosIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X)
       simp only [this]; exact Ival.mem_neg hS
   · exact mem_unitIval (Real.neg_one_le_cos _) (Real.cos_le_one _)
 
-@[lynth_fn] def sinR : Fn1 .real .real where
+@[lynth_cfn] def sinR : Fn1 .real .real where
   name := "sin"
   graph x y := y = Real.sin x
   exu := exu_eq _
@@ -394,7 +394,7 @@ theorem mem_cosIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X)
   sound := fun _ _ _ _ hc hy hx => by obtain rfl := hy; exact mem_sinIval hc hx
   cost := 50
 
-@[lynth_fn] def cosR : Fn1 .real .real where
+@[lynth_cfn] def cosR : Fn1 .real .real where
   name := "cos"
   graph x y := y = Real.cos x
   exu := exu_eq _
@@ -402,7 +402,7 @@ theorem mem_cosIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X)
   sound := fun _ _ _ _ hc hy hx => by obtain rfl := hy; exact mem_cosIval hc hx
   cost := 50
 
-@[lynth_fn] def tanR : Fn1 .real .real where
+@[lynth_cfn] def tanR : Fn1 .real .real where
   name := "tan"
   graph x y := y = Real.tan x
   exu := exu_eq _
@@ -412,7 +412,7 @@ theorem mem_cosIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X)
     exact Ival.mem_div (mem_sinIval hc hx) (mem_cosIval hc hx)
   cost := 100
 
-@[lynth_fn] def cotR : Fn1 .real .real where
+@[lynth_cfn] def cotR : Fn1 .real .real where
   name := "cot"
   graph x y := y = Real.cot x
   exu := exu_eq _
@@ -422,7 +422,7 @@ theorem mem_cosIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X)
     exact Ival.mem_div (mem_cosIval hc hx) (mem_sinIval hc hx)
   cost := 100
 
-@[lynth_fn] def piR : Fn0 .real where
+@[lynth_cfn] def piR : Fn0 .real where
   name := "π"
   graph y := y = Real.pi
   exu := exu_eq₀ _

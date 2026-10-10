@@ -11,7 +11,7 @@ structure literals with the function inside `graph` (passing `Real.exp` to a
 helper *function* would make the record noncomputable):
 
 ```lean
-@[lynth_fn] def expFn : Fn1 .real .real where
+@[lynth_cfn] def expFn : Fn1 .real .real where
   name := "exp"
   graph x y := y = Real.exp x
   exu := exu_eq _

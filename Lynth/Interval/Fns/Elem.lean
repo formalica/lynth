@@ -132,7 +132,7 @@ theorem mem_atanIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X
       | some h => simp only [Option.getD_some]; exact le_trans hxb ((mem_atanPt hc _ b).2 h hh)
     · simp [toReal_def]; linarith [(abs_le.1 hb).2]
 
-@[lynth_fn] def arctanR : Fn1 .real .real where
+@[lynth_cfn] def arctanR : Fn1 .real .real where
   name := "arctan"
   graph x y := y = Real.arctan x
   exu := exu_eq _
@@ -203,7 +203,7 @@ theorem mem_asinIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X
       | some h => simp only [Option.getD_some]; exact le_trans hxb ((mem_asinPt hc _ b).2 h hh)
     · simp [toReal_def]; linarith [(abs_le.1 hb).2]
 
-@[lynth_fn] def arcsinR : Fn1 .real .real where
+@[lynth_cfn] def arcsinR : Fn1 .real .real where
   name := "arcsin"
   graph x y := y = Real.arcsin x
   exu := exu_eq _
@@ -211,7 +211,7 @@ theorem mem_asinIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X
   sound := fun _ _ _ _ hc hy hx => by obtain rfl := hy; exact mem_asinIval hc hx
   cost := 80
 
-@[lynth_fn] def arccosR : Fn1 .real .real where
+@[lynth_cfn] def arccosR : Fn1 .real .real where
   name := "arccos"
   graph x y := y = Real.arccos x
   exu := exu_eq _
@@ -241,7 +241,7 @@ theorem mem_coshIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) : Real.cosh x
     (Ival.mem_add (p := c.prec + 8) (mem_expIval c hx) (mem_expIval c (Ival.mem_neg hx))) (n := 2) (by norm_num)
   unfold coshIval; simpa using this
 
-@[lynth_fn] def sinhR : Fn1 .real .real where
+@[lynth_cfn] def sinhR : Fn1 .real .real where
   name := "sinh"
   graph x y := y = Real.sinh x
   exu := exu_eq _
@@ -249,7 +249,7 @@ theorem mem_coshIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) : Real.cosh x
   sound := fun c _ _ _ _ hy hx => by obtain rfl := hy; exact mem_sinhIval c hx
   cost := 80
 
-@[lynth_fn] def coshR : Fn1 .real .real where
+@[lynth_cfn] def coshR : Fn1 .real .real where
   name := "cosh"
   graph x y := y = Real.cosh x
   exu := exu_eq _
@@ -257,7 +257,7 @@ theorem mem_coshIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) : Real.cosh x
   sound := fun c _ _ _ _ hy hx => by obtain rfl := hy; exact mem_coshIval c hx
   cost := 80
 
-@[lynth_fn] def tanhR : Fn1 .real .real where
+@[lynth_cfn] def tanhR : Fn1 .real .real where
   name := "tanh"
   graph x y := y = Real.tanh x
   exu := exu_eq _
@@ -267,7 +267,7 @@ theorem mem_coshIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) : Real.cosh x
     exact Ival.mem_div (mem_sinhIval c hx) (mem_coshIval c hx)
   cost := 160
 
-@[lynth_fn] def arsinhR : Fn1 .real .real where
+@[lynth_cfn] def arsinhR : Fn1 .real .real where
   name := "arsinh"
   graph x y := y = Real.arsinh x
   exu := exu_eq _
@@ -278,7 +278,7 @@ theorem mem_coshIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) : Real.cosh x
     exact mem_logIval hc (Ival.mem_add hx (Ival.mem_sqrt (Ival.mem_add Ival.mem_one (Ival.mem_sq hx))))
   cost := 80
 
-@[lynth_fn] def arcoshR : Fn1 .real .real where
+@[lynth_cfn] def arcoshR : Fn1 .real .real where
   name := "arcosh"
   graph x y := y = Real.arcosh x
   exu := exu_eq _
@@ -289,7 +289,7 @@ theorem mem_coshIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) : Real.cosh x
     exact mem_logIval hc (Ival.mem_add hx (Ival.mem_sqrt (Ival.mem_sub (Ival.mem_sq hx) Ival.mem_one)))
   cost := 80
 
-@[lynth_fn] def artanhR : Fn1 .real .real where
+@[lynth_cfn] def artanhR : Fn1 .real .real where
   name := "artanh"
   graph x y := y = Real.artanh x
   exu := exu_eq _
@@ -303,7 +303,7 @@ theorem mem_coshIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) : Real.cosh x
 
 /-! ### logb, rpow, sinc -/
 
-@[lynth_fn] def logbR : Fn2 .real .real .real where
+@[lynth_cfn] def logbR : Fn2 .real .real .real where
   name := "logb"
   graph b x y := y = Real.logb b x
   exu := exu_eq₂ _
@@ -411,7 +411,7 @@ theorem rpowAsy_holds {c : Ctx} (hc : c.Valid) {N : ℕ} {A B : RAsy} {f g : ℕ
     | _ => trivial
   | _ => trivial
 
-@[lynth_fn] def rpowR : Fn2 .real .real .real where
+@[lynth_cfn] def rpowR : Fn2 .real .real .real where
   name := "rpow"
   graph x y z := z = x ^ y
   exu := exu_eq₂ _
@@ -427,7 +427,7 @@ def sincIval (c : Ctx) (X : Ival) : Ival :=
   if X.pos || X.negv then Ival.div (c.prec + 8) (sinIval c X) X
   else unitIval
 
-@[lynth_fn] def sincR : Fn1 .real .real where
+@[lynth_cfn] def sincR : Fn1 .real .real where
   name := "sinc"
   graph x y := y = Real.sinc x
   exu := exu_eq _

@@ -699,7 +699,7 @@ theorem zetaIval_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (X : Ival)
       · rename_i hnegH
         exact zetaPosIval_sound c hc s X (Ival.mem_def.mpr ⟨hxlo, hxhi⟩)
 
-@[lynth_fn] def zetaR : Fn1 .real .real where
+@[lynth_cfn] def zetaR : Fn1 .real .real where
   name := "zeta"
   graph x y := y = zetaReal x
   exu := exu_eq _

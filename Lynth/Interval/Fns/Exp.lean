@@ -143,7 +143,7 @@ theorem mem_expIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) : Real.exp x �
       exact le_trans hxb (hm.2 h hh)
     · simp
 
-@[lynth_fn] def expR : Fn1 .real .real where
+@[lynth_cfn] def expR : Fn1 .real .real where
   name := "exp"
   graph x y := y = Real.exp x
   exu := exu_eq _

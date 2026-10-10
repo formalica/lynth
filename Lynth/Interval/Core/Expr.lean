@@ -119,9 +119,6 @@ inductive Expr : Ty → Type where
   | clist {t : Ty} (xs : ExprList t) : Expr (.list t)
   /-- de Bruijn variable of the given type -/
   | var (t : Ty) (i : ℕ) : Expr t
-  | c0 {r : Ty} (f : Fn0 r) : Expr r
-  | c1 {a r : Ty} (f : Fn1 a r) (x : Expr a) : Expr r
-  | c2 {a b r : Ty} (f : Fn2 a b r) (x : Expr a) (y : Expr b) : Expr r
   /-- n-ary custom function call -/
   | call {tys : List Ty} {r : Ty} (f : CFn tys r) (xs : CArg tys) : Expr r
   /-- `∑ k ∈ Finset.range n, body`; `body` binds a `.nat` variable (index 0) -/
@@ -378,6 +375,54 @@ def CFn.manual (tys : List Ty) (r : Ty) (F : curriedType tys r)
   { name, fn := F, graph := CFn.graphOf tys r F, exu := CFn.exuOf r F,
     ev, sound, cost }
 
+/-- lift a nullary record to a `CFn` (unified registry; `fn` is a dummy) -/
+def CFn.ofFn0 {r : Ty} (f : Fn0 r) : CFn [] r :=
+  { name := f.name,
+    fn := r.defaultVal,
+    graph := CFn.graphOf [] r f.val,
+    exu := CFn.exuOf (tys := []) r f.val,
+    ev := fun c _ => f.ev c,
+    sound := fun c vs ds y X hc hg _ _ =>
+      match vs, ds, X with
+      | .nil, .nil, .nil => f.sound c _ hc (hg.symm ▸ f.val_spec),
+    cost := f.cost,
+    asy := fun _ _ _ => r.asyTop,
+    asy_sound := fun _ _ _ _ _ => Ty.asyHolds_top _ _ _ }
+
+/-- lift a unary record to a `CFn` -/
+def CFn.ofFn1 {a r : Ty} (f : Fn1 a r) : CFn [a] r :=
+  { name := f.name,
+    fn := fun _ => r.defaultVal,
+    graph := CFn.graphOf [a] r f.fn,
+    exu := CFn.exuOf (tys := [a]) r f.fn,
+    ev := fun c X => match X with | .cons _ x _ => f.ev c x,
+    sound := fun c vs ds y X hc hg hh hag =>
+      match vs, ds, X with
+      | .cons _ x .nil, .cons _ _ .nil, .cons _ X' .nil =>
+        have hfx : f.fn x = y := hg.symm
+        f.sound c x y X' hc (hfx ▸ f.fn_spec x) (hag.1.symm ▸ hh.1),
+    cost := f.cost,
+    asy := fun _ _ _ => r.asyTop,
+    asy_sound := fun _ _ _ _ _ => Ty.asyHolds_top _ _ _ }
+
+/-- lift a binary record to a `CFn` -/
+def CFn.ofFn2 {a b r : Ty} (f : Fn2 a b r) : CFn [a, b] r :=
+  { name := f.name,
+    fn := fun _ _ => r.defaultVal,
+    graph := CFn.graphOf [a, b] r f.fn,
+    exu := CFn.exuOf (tys := [a, b]) r f.fn,
+    ev := fun c X => match X with | .cons _ x (.cons _ y' _) => f.ev c x y',
+    sound := fun c vs ds y X hc hg hh hag =>
+      match vs, ds, X with
+      | .cons _ x (.cons _ y' .nil), .cons _ d (.cons _ d' .nil),
+        .cons _ X' (.cons _ Y' .nil) =>
+        have hfxy : f.fn x y' = y := hg.symm
+        f.sound c x y' y X' Y' hc (hfxy ▸ f.fn_spec x y')
+          (hag.1.symm ▸ hh.1) (hag.2.1.symm ▸ hh.2.1),
+    cost := f.cost,
+    asy := fun _ _ _ => r.asyTop,
+    asy_sound := fun _ _ _ _ _ => Ty.asyHolds_top _ _ _ }
+
 namespace Expr
 
 mutual
@@ -389,9 +434,6 @@ noncomputable def denote : {t : Ty} → Expr t → SEnv → t.Val
   | _, .intLit z, _ => z
   | _, .clist xs, ρ => denoteList xs ρ
   | _, .var t i, ρ => ρ.get t i
-  | _, .c0 f, _ => f.val
-  | _, .c1 f x, ρ => f.fn (x.denote ρ)
-  | _, .c2 f x y, ρ => f.fn (x.denote ρ) (y.denote ρ)
   | _, @Expr.call tys r f xs, ρ => f.fn' (toVal (CArg.denoteArgs ρ xs))
   | _, .sum t n body, ρ => ∑ k ∈ Finset.range (n.denote ρ), body.denote (ρ.push .nat k)
 
@@ -643,9 +685,6 @@ def eval (c : Ctx) : {t : Ty} → Expr t → IEnv → t.Enc
   | _, .intLit z, _ => ZIval.pt z
   | _, .clist xs, σ => some (evalList c σ xs)
   | _, .var t i, σ => σ.get t i
-  | _, .c0 f, _ => f.ev c
-  | _, .c1 f x, σ => f.ev c (x.eval c σ)
-  | _, .c2 f x y, σ => f.ev c (x.eval c σ) (y.eval c σ)
   | _, @Expr.call tys r f xs, σ =>
     let X := evalCArgs c σ xs
     if allDiscreteResolved X then f.ev c X else r.top
@@ -713,15 +752,6 @@ theorem eval_sound {c : Ctx} (hc : c.Valid) :
   | _, .var t i, _, _, h => by
     simp only [eval, denote, Ty.Mem]
     exact h t i
-  | _, .c0 f, _, _, _ => by
-    simp only [eval, denote, Ty.Mem]
-    exact f.sound c _ hc f.val_spec
-  | _, .c1 f x, _, _, h => by
-    simp only [eval, denote, Ty.Mem]
-    exact f.sound c _ _ _ hc (f.fn_spec _) (eval_sound hc x h)
-  | _, .c2 f x y, _, _, h => by
-    simp only [eval, denote, Ty.Mem]
-    exact f.sound c _ _ _ _ _ hc (f.fn_spec _ _) (eval_sound hc x h) (eval_sound hc y h)
   | _, .sum t n body, ρ, σ, h => by
     simp only [eval, denote]
     show t.Mem (match NIval.isPoint (n.eval c σ) with
@@ -789,19 +819,6 @@ theorem call_eq {tys : List Ty} {r : Ty}
   exact f.eq_fn hg
 
 /-! ### Reification lemmas (used to build `orig = e.denote ρ` proofs) -/
-
-theorem c0_eq {r : Ty} (f : Fn0 r) (ρ : SEnv) {Y : r.Val} (hY : f.graph Y) :
-    Y = (Expr.c0 f).denote ρ := f.eq_val hY
-
-theorem c1_eq {a r : Ty} (f : Fn1 a r) (x : Expr a) (ρ : SEnv) {X : a.Val} {Y : r.Val}
-    (hX : X = x.denote ρ) (hY : f.graph X Y) : Y = (Expr.c1 f x).denote ρ := by
-  subst hX; exact f.eq_fn hY
-
-theorem c2_eq {a b r : Ty} (f : Fn2 a b r) (x : Expr a) (y : Expr b) (ρ : SEnv)
-    {X : a.Val} {Y : b.Val} {Z : r.Val}
-    (hX : X = x.denote ρ) (hY : Y = y.denote ρ) (hZ : f.graph X Y Z) :
-    Z = (Expr.c2 f x y).denote ρ := by
-  subst hX; subst hY; exact f.eq_fn hZ
 
 theorem lit_eq (q : ℚ) (ρ : SEnv) {X : ℝ} (h : X = (q : ℝ)) : X = (Expr.lit q).denote ρ := h
 

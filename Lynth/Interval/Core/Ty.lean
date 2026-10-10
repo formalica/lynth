@@ -127,6 +127,16 @@ def listAddCommMonoid (t : Ty) (F : t.Val → t.Val → t.Val)
       = t.listAdd F (t.listNsmul F n xs) xs
     rfl
 
+/-- dummy value (for `CFn.fn` placeholders, which are never applied:
+denotation uses `fn'`, evaluation uses `ev`) -/
+def defaultVal : (t : Ty) → t.Val
+  | .nat => 0
+  | .int => 0
+  | .real => 0
+  | .cplx => 0
+  | .rat => 0
+  | .list _ => []
+
 instance instAddCommMonoid : (t : Ty) → AddCommMonoid t.Val
   | .nat => inferInstanceAs (AddCommMonoid ℕ)
   | .int => inferInstanceAs (AddCommMonoid ℤ)

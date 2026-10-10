@@ -8,7 +8,7 @@ open Lynth.Interval
 Registration path for a user-defined function: golden-ratio power
 `phi x = φ ^ x` with `φ = (1 + √5) / 2`.  The evaluator composes existing
 sound interval ops, so the only new proofs are the composition steps.
-Once registered with `@[lynth_fn]`, the reifier tries the entry before
+Once registered with `@[lynth_cfn]`, the reifier tries the entry before
 unfolding the definition (`Reify.reify` step 4 vs step 5).
 -/
 
@@ -32,7 +32,7 @@ theorem mem_phiBase {c : Ctx} : ((1 + Real.sqrt 5) / 2 : ℝ) ∈ phiBase c := b
   exact Ival.mem_div
     (Ival.mem_add Ival.mem_one (Ival.mem_sqrt h5)) h2
 
-@[lynth_fn] def phiR : Fn1 .real .real where
+@[lynth_cfn] def phiR : Fn1 .real .real where
   name := "phi"
   graph x y := y = phi x
   exu := exu_eq _

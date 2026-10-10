@@ -986,7 +986,7 @@ theorem digammaIval_sound (c : Ctx) (hc : c.Valid) (x : ℝ) (X : Ival)
           · rename_i hneg2
             exact Ival.mem_top _
 
-@[lynth_fn] def digammaR : Fn1 .real .real where
+@[lynth_cfn] def digammaR : Fn1 .real .real where
   name := "digamma"
   graph x y := y = rdig x
   exu := exu_eq _

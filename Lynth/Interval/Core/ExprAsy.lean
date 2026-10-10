@@ -63,9 +63,6 @@ def asy (c : Ctx) (N : ℕ) : {t : Ty} → Expr t → t.Asy
   | _, .intLit _ => ()
   | _, .clist _ => ()
   | _, .var t i => varAsy t i
-  | _, .c0 f => encAsy _ (f.ev c)
-  | _, .c1 f x => f.asy c N (x.asy c N)
-  | _, .c2 f x y => f.asy c N (x.asy c N) (y.asy c N)
   | _, @Expr.call tys r f xs => f.asy c N (asyArgs c N xs)
   | _, .sum t _ _ => t.asyTop
 end
@@ -89,11 +86,6 @@ theorem asy_sound {c : Ctx} (hc : c.Valid) (N : ℕ) (ρ : SEnv) :
   | _, .intLit _ => trivial
   | _, .clist _ => trivial
   | _, .var t i => varAsy_holds N ρ t i
-  | _, .c0 f => encAsy_holds (f.sound c _ hc f.val_spec)
-  | _, .c1 f x =>
-    f.asy_sound c N _ _ _ hc (fun _ => f.fn_spec _) (asy_sound hc N ρ x)
-  | _, .c2 f x y =>
-    f.asy_sound c N _ _ _ _ _ hc (fun _ => f.fn_spec _ _) (asy_sound hc N ρ x) (asy_sound hc N ρ y)
   | _, @Expr.call tys r f xs => f.asy_sound c N _ _ hc
   | _, .sum t _ _ => Ty.asyHolds_top t _ _
 

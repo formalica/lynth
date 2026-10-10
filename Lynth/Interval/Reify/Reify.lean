@@ -172,19 +172,7 @@ def exact? (t : Ty) (e : Lean.Expr) (senv : Lean.Expr) : MetaM (Option Reified) 
         (fun q => if q.den == 1 then some (toExpr q.num) else none)
       | return none
     return some ⟨.int, mkApp (mkConst ``Expr.intLit) (toExpr q.num), pf⟩
-  | .cplx =>
-    let some (q, pf) ← ratEq? (α := q(ℂ)) e (fun q => let qE : Q(ℚ) := toExpr q; some q(($qE : ℂ)))
-      | return none
-    let qE : Q(ℚ) := toExpr q
-    -- `(q : ℂ) = ((q : ℝ) : ℂ)`
-    let pf2 : Lean.Expr := q((Complex.ofReal_ratCast $qE).symm)
-    let pf ← mkEqTrans pf pf2
-    let lit := mkApp (mkConst ``Expr.lit) qE
-    let ex := mkApp4 (mkConst ``Expr.c1) (toExpr Ty.real) (toExpr Ty.cplx) (mkConst ``Fns.ofRealC) lit
-    let X : Q(ℝ) := q(($qE : ℝ))
-    let pf := mkAppN (mkConst ``Expr.c1_eq)
-      #[toExpr Ty.real, toExpr Ty.cplx, mkConst ``Fns.ofRealC, lit, senv, X, e, ← mkEqRefl X, pf]
-    return some ⟨.cplx, ex, pf⟩
+  | .cplx => return none
   | .rat =>
     let some (q, pf) ← ratEq? (α := q(ℚ)) e (fun q => some (toExpr q))
       | return none
@@ -224,11 +212,11 @@ partial def reify (rc : RCtx) (e : Lean.Expr) : MetaM Reified := do
     return { r with proof := ← mkExpectedTypeHint r.proof (← mkEq e (mkDenote t r.expr rc.senv)) }
   -- 2b. list literals (closed spines, elementwise)
   if let some r ← reifyListLit? rc t e then return r
+  -- 2c. complex literals (normalize + delegate to `ofRealC`)
+  if let some r ← reifyCplxLit? rc t e then return r
   -- 3. finite sums
   if let some r ← reifySum? rc t e then return r
-  -- 4. registry
-  for cand in ← candidates e do
-    if let some r ← tryEntry rc t cand e then return r
+  -- 4. registry (single unified table)
   for cand in ← candidatesNary e do
     if let some r ← tryNary rc t cand e then return r
   if let some r ← reifyRatCast? rc t e then return r
@@ -291,44 +279,25 @@ where
     let ex ← mkAppOptM ``Expr.clist #[some (toExpr te), some exs]
     let pf ← mkExpectedTypeHint pfTail (← mkEq e (mkDenote (.list te) ex rc.senv))
     return some ⟨.list te, ex, pf⟩
-  /-- try one registry entry -/
-  tryEntry (rc : RCtx) (t : Ty) (ent : FnEntry) (e : Lean.Expr) : MetaM (Option Reified) := do
-    unless ent.resTy == t do return none
-    let s ← saveState
-    let (mvars, _, body) ← lambdaMetaTelescope ent.pattern
-    unless ← withTransparency .instances (isDefEq body e) do
-      s.restore; return none
-    let args ← mvars.mapM instantiateMVars
-    if args.any (·.hasMVar) then s.restore; return none
-    try
-      let rs ← args.mapM (reify rc)
-      for i in [0:rs.size] do
-        unless rs[i]!.ty == ent.argTys[i]! do throw (Exception.error .missing "type mismatch")
-      let f := mkConst ent.decl
-      let ρ := rc.senv
-      let hY ← mkEqRefl e
-      match ent.arity with
-      | 0 =>
-        let ex := mkApp2 (mkConst ``Expr.c0) (toExpr t) f
-        let pf := mkAppN (mkConst ``Expr.c0_eq) #[toExpr t, f, ρ, e, hY]
-        return some ⟨t, ex, pf⟩
-      | 1 =>
-        let a := ent.argTys[0]!
-        let ex := mkApp4 (mkConst ``Expr.c1) (toExpr a) (toExpr t) f rs[0]!.expr
-        let pf := mkAppN (mkConst ``Expr.c1_eq)
-          #[toExpr a, toExpr t, f, rs[0]!.expr, ρ, args[0]!, e, rs[0]!.proof, hY]
-        return some ⟨t, ex, pf⟩
-      | _ =>
-        let a := ent.argTys[0]!
-        let b := ent.argTys[1]!
-        let ex := mkAppN (mkConst ``Expr.c2) #[toExpr a, toExpr b, toExpr t, f, rs[0]!.expr, rs[1]!.expr]
-        let pf := mkAppN (mkConst ``Expr.c2_eq)
-          #[toExpr a, toExpr b, toExpr t, f, rs[0]!.expr, rs[1]!.expr, ρ, args[0]!, args[1]!, e,
-            rs[0]!.proof, rs[1]!.proof, hY]
-        return some ⟨t, ex, pf⟩
-    catch _ =>
-      s.restore; return none
-  /-- try one n-ary registry entry -/
+  /-- complex literals: normalize `q : ℂ` to `Complex.ofReal ↑q` and
+  delegate to the `ofRealC` entry -/
+  reifyCplxLit? (rc : RCtx) (t : Ty) (e : Lean.Expr) : MetaM (Option Reified) := do
+    unless t == .cplx do return none
+    if e.hasFVar || e.hasMVar || isTranscendentalHead e || hasBigRange e then return none
+    let some (q, pf) ← ratEq? (α := q(ℂ)) e
+        (fun q => let qE : Q(ℚ) := toExpr q; some q(($qE : ℂ)))
+      | return none
+    let qE : Q(ℚ) := toExpr q
+    let X : Q(ℝ) := q(($qE : ℝ))
+    let e' : Lean.Expr := mkApp (mkConst ``Complex.ofReal) X
+    let pf2 : Lean.Expr := q((Complex.ofReal_ratCast $qE).symm)
+    let hnorm ← mkEqTrans pf pf2
+    let rc' : RCtx := { senv := rc.senv }
+    for cand in ← candidatesNary e' do
+      if let some r ← tryNary rc' .cplx cand e' then
+        return some ⟨.cplx, r.expr, ← mkEqTrans hnorm r.proof⟩
+    return none
+  /-- try one registry entry (unified `CFn`/`Fn` table) -/
   tryNary (rc : RCtx) (t : Ty) (ent : NaryEntry) (e : Lean.Expr) : MetaM (Option Reified) := do
     unless ent.res == t do return none
     let s ← saveState
@@ -339,7 +308,7 @@ where
     if args.any (·.hasMVar) then s.restore; return none
     try
       let n := ent.tys.size
-      let f := mkConst ent.decl
+      let f := ent.cfn
       let ρ := rc.senv
       let tysE := toExpr ent.tys.toList
       let rE := toExpr ent.res

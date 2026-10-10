@@ -55,7 +55,7 @@ def eulerIval (c : Ctx) : Ival := eulerIvalN c 128
 theorem mem_eulerIval {c : Ctx} (hc : c.Valid) : Real.eulerMascheroniConstant ∈ eulerIval c :=
   mem_eulerIvalN hc (by decide)
 
-@[lynth_fn] def eulerR : Fn0 .real where
+@[lynth_cfn] def eulerR : Fn0 .real where
   name := "eulerMascheroni"
   graph y := y = Real.eulerMascheroniConstant
   exu := exu_eq₀ _

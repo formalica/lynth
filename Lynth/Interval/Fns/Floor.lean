@@ -210,7 +210,7 @@ theorem mem_natFloor {x : ℝ} {X : Ival} (hx : x ∈ X) : ⌊x⌋₊ ∈ natFlo
   unfold natFloorIval
   exact mem_monoNIval (fun a => Dy.floor_nat a) Nat.floor_mono hx
 
-@[lynth_fn] def natFloorR : Fn1 .real .nat where
+@[lynth_cfn] def natFloorR : Fn1 .real .nat where
   name := "⌊·⌋₊"
   graph x n := n = ⌊x⌋₊
   exu := exu_eq _
@@ -227,7 +227,7 @@ theorem mem_natCeil {x : ℝ} {X : Ival} (hx : x ∈ X) : ⌈x⌉₊ ∈ natCeil
   unfold natCeilIval
   exact mem_monoNIval (fun a => Dy.ceil_nat a) Nat.ceil_mono hx
 
-@[lynth_fn] def natCeilR : Fn1 .real .nat where
+@[lynth_cfn] def natCeilR : Fn1 .real .nat where
   name := "⌈·⌉₊"
   graph x n := n = ⌈x⌉₊
   exu := exu_eq _
@@ -253,7 +253,7 @@ theorem mem_intFloor {x : ℝ} {X : Ival} (hx : x ∈ X) :
     exact_mod_cast Int.floor_mono h
   exact mem_monoIval hpt hmono hx
 
-@[lynth_fn] def intFloorR : Fn1 .real .real where
+@[lynth_cfn] def intFloorR : Fn1 .real .real where
   name := "⌊·⌋"
   graph x y := y = ((⌊x⌋ : ℤ) : ℝ)
   exu := exu_eq _
@@ -279,7 +279,7 @@ theorem mem_intCeil {x : ℝ} {X : Ival} (hx : x ∈ X) :
     exact_mod_cast Int.ceil_mono h
   exact mem_monoIval hpt hmono hx
 
-@[lynth_fn] def intCeilR : Fn1 .real .real where
+@[lynth_cfn] def intCeilR : Fn1 .real .real where
   name := "⌈·⌉"
   graph x y := y = ((⌈x⌉ : ℤ) : ℝ)
   exu := exu_eq _
@@ -308,7 +308,7 @@ theorem mem_intRound {x : ℝ} {X : Ival} (hx : x ∈ X) :
     rw [e, ← Dy.round_real a]
   exact mem_monoIval hpt round_mono' hx
 
-@[lynth_fn] def intRoundR : Fn1 .real .real where
+@[lynth_cfn] def intRoundR : Fn1 .real .real where
   name := "round"
   graph x y := y = ((round x : ℤ) : ℝ)
   exu := exu_eq _

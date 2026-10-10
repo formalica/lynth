@@ -89,7 +89,7 @@ theorem mem_logIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X)
     · exact Ival.mem_top _
   · exact Ival.mem_top _
 
-@[lynth_fn] def logR : Fn1 .real .real where
+@[lynth_cfn] def logR : Fn1 .real .real where
   name := "log"
   graph x y := y = Real.log x
   exu := exu_eq _

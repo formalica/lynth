@@ -15,7 +15,7 @@ open Lynth.Interval
 
 /-! ### Real field operations -/
 
-@[lynth_fn] def addR : Fn2 .real .real .real where
+@[lynth_cfn] def addR : Fn2 .real .real .real where
   name := "+"
   graph x y z := z = x + y
   exu := exu_eq₂ _
@@ -26,7 +26,7 @@ open Lynth.Interval
     obtain rfl : h = fun k => f k + g k := funext fun k => hg k
     exact RAsy.add_holds hA hB
 
-@[lynth_fn] def subR : Fn2 .real .real .real where
+@[lynth_cfn] def subR : Fn2 .real .real .real where
   name := "-"
   graph x y z := z = x - y
   exu := exu_eq₂ _
@@ -37,7 +37,7 @@ open Lynth.Interval
     obtain rfl : h = fun k => f k + -g k := funext fun k => (hg k).trans (sub_eq_add_neg _ _)
     exact RAsy.add_holds hA (RAsy.neg_holds hB)
 
-@[lynth_fn] def mulR : Fn2 .real .real .real where
+@[lynth_cfn] def mulR : Fn2 .real .real .real where
   name := "*"
   graph x y z := z = x * y
   exu := exu_eq₂ _
@@ -48,7 +48,7 @@ open Lynth.Interval
     obtain rfl : h = fun k => f k * g k := funext fun k => hg k
     exact RAsy.mul_holds hA hB
 
-@[lynth_fn] def divR : Fn2 .real .real .real where
+@[lynth_cfn] def divR : Fn2 .real .real .real where
   name := "/"
   graph x y z := z = x / y
   exu := exu_eq₂ _
@@ -59,7 +59,7 @@ open Lynth.Interval
     obtain rfl : h = fun k => f k * (g k)⁻¹ := funext fun k => (hg k).trans (div_eq_mul_inv _ _)
     exact RAsy.mul_holds hA (RAsy.inv_holds hB)
 
-@[lynth_fn] def negR : Fn1 .real .real where
+@[lynth_cfn] def negR : Fn1 .real .real where
   name := "neg"
   graph x y := y = -x
   exu := exu_eq _
@@ -70,7 +70,7 @@ open Lynth.Interval
     obtain rfl : g = fun k => -f k := funext fun k => hg k
     exact RAsy.neg_holds hA
 
-@[lynth_fn] def invR : Fn1 .real .real where
+@[lynth_cfn] def invR : Fn1 .real .real where
   name := "inv"
   graph x y := y = x⁻¹
   exu := exu_eq _
@@ -81,7 +81,7 @@ open Lynth.Interval
     obtain rfl : g = fun k => (f k)⁻¹ := funext fun k => hg k
     exact RAsy.inv_holds hA
 
-@[lynth_fn] def npowR : Fn2 .real .nat .real where
+@[lynth_cfn] def npowR : Fn2 .real .nat .real where
   name := "^ℕ"
   graph x n z := z = x ^ n
   exu := exu_eq₂ _
@@ -113,7 +113,7 @@ open Lynth.Interval
     | grow => trivial
     | top => trivial
 
-@[lynth_fn] def absR : Fn1 .real .real where
+@[lynth_cfn] def absR : Fn1 .real .real where
   name := "abs"
   graph x y := y = |x|
   exu := exu_eq _
@@ -124,21 +124,21 @@ open Lynth.Interval
     obtain rfl : g = fun k => |f k| := funext fun k => hg k
     exact RAsy.abs_holds hA
 
-@[lynth_fn] def maxR : Fn2 .real .real .real where
+@[lynth_cfn] def maxR : Fn2 .real .real .real where
   name := "max"
   graph x y z := z = max x y
   exu := exu_eq₂ _
   ev _ X Y := Ival.max X Y
   sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact Ival.mem_max hx hy
 
-@[lynth_fn] def minR : Fn2 .real .real .real where
+@[lynth_cfn] def minR : Fn2 .real .real .real where
   name := "min"
   graph x y z := z = min x y
   exu := exu_eq₂ _
   ev _ X Y := Ival.min X Y
   sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact Ival.mem_min hx hy
 
-@[lynth_fn] def sqrtR : Fn1 .real .real where
+@[lynth_cfn] def sqrtR : Fn1 .real .real where
   name := "sqrt"
   graph x y := y = Real.sqrt x
   exu := exu_eq _
@@ -147,7 +147,7 @@ open Lynth.Interval
 
 /-! ### Natural numbers -/
 
-@[lynth_fn] def natCastR : Fn1 .nat .real where
+@[lynth_cfn] def natCastR : Fn1 .nat .real where
   name := "ℕ→ℝ"
   graph n x := x = (n : ℝ)
   exu := exu_eq _
@@ -158,7 +158,7 @@ open Lynth.Interval
     obtain rfl : g = fun k => (f k : ℝ) := funext fun k => hg k
     exact RAsy.natCast_holds hA
 
-@[lynth_fn] def addN : Fn2 .nat .nat .nat where
+@[lynth_cfn] def addN : Fn2 .nat .nat .nat where
   name := "+ℕ"
   graph x y z := z = x + y
   exu := exu_eq₂ _
@@ -169,21 +169,21 @@ open Lynth.Interval
     obtain rfl : h = fun k => f k + g k := funext fun k => hg k
     exact NAsy.add_holds hA hB
 
-@[lynth_fn] def mulN : Fn2 .nat .nat .nat where
+@[lynth_cfn] def mulN : Fn2 .nat .nat .nat where
   name := "*ℕ"
   graph x y z := z = x * y
   exu := exu_eq₂ _
   ev _ X Y := NIval.mul X Y
   sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact NIval.mem_mul hx hy
 
-@[lynth_fn] def subN : Fn2 .nat .nat .nat where
+@[lynth_cfn] def subN : Fn2 .nat .nat .nat where
   name := "-ℕ"
   graph x y z := z = x - y
   exu := exu_eq₂ _
   ev _ X Y := NIval.sub X Y
   sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact NIval.mem_sub hx hy
 
-@[lynth_fn] def factorialN : Fn1 .nat .nat where
+@[lynth_cfn] def factorialN : Fn1 .nat .nat where
   name := "factorial"
   graph n m := m = Nat.factorial n
   exu := exu_eq _
@@ -195,7 +195,7 @@ open Lynth.Interval
     obtain rfl : g = fun k => (f k).factorial := funext fun k => hg k
     exact NAsy.factorial_holds hA
 
-@[lynth_fn] def fibN : Fn1 .nat .nat where
+@[lynth_cfn] def fibN : Fn1 .nat .nat where
   name := "fib"
   graph n m := m = Nat.fib n
   exu := exu_eq _
@@ -207,7 +207,7 @@ open Lynth.Interval
     obtain rfl : g = fun k => Nat.fib (f k) := funext fun k => hg k
     exact NAsy.fib_holds hA
 
-@[lynth_fn] def powN : Fn2 .nat .nat .nat where
+@[lynth_cfn] def powN : Fn2 .nat .nat .nat where
   name := "^ℕℕ"
   graph b n m := m = b ^ n
   exu := exu_eq₂ _
@@ -226,42 +226,42 @@ open Lynth.Interval
 
 /-! ### Integers -/
 
-@[lynth_fn] def natCastI : Fn1 .nat .int where
+@[lynth_cfn] def natCastI : Fn1 .nat .int where
   name := "ℕ→ℤ"
   graph n z := z = (n : ℤ)
   exu := exu_eq _
   ev _ N := ZIval.ofNatIval N
   sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact ZIval.mem_ofNatIval hx
 
-@[lynth_fn] def intCastR : Fn1 .int .real where
+@[lynth_cfn] def intCastR : Fn1 .int .real where
   name := "ℤ→ℝ"
   graph z x := x = (z : ℝ)
   exu := exu_eq _
   ev _ Z := ZIval.toIval Z
   sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact ZIval.mem_toIval hx
 
-@[lynth_fn] def addI : Fn2 .int .int .int where
+@[lynth_cfn] def addI : Fn2 .int .int .int where
   name := "+ℤ"
   graph x y z := z = x + y
   exu := exu_eq₂ _
   ev _ X Y := ZIval.add X Y
   sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact ZIval.mem_add hx hy
 
-@[lynth_fn] def subI : Fn2 .int .int .int where
+@[lynth_cfn] def subI : Fn2 .int .int .int where
   name := "-ℤ"
   graph x y z := z = x - y
   exu := exu_eq₂ _
   ev _ X Y := ZIval.sub X Y
   sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact ZIval.mem_sub hx hy
 
-@[lynth_fn] def mulI : Fn2 .int .int .int where
+@[lynth_cfn] def mulI : Fn2 .int .int .int where
   name := "*ℤ"
   graph x y z := z = x * y
   exu := exu_eq₂ _
   ev _ X Y := ZIval.mul X Y
   sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact ZIval.mem_mul hx hy
 
-@[lynth_fn] def negI : Fn1 .int .int where
+@[lynth_cfn] def negI : Fn1 .int .int where
   name := "-ℤ"
   graph x y := y = -x
   exu := exu_eq _
@@ -270,49 +270,49 @@ open Lynth.Interval
 
 /-! ### Complex numbers -/
 
-@[lynth_fn] def addC : Fn2 .cplx .cplx .cplx where
+@[lynth_cfn] def addC : Fn2 .cplx .cplx .cplx where
   name := "+ℂ"
   graph x y z := z = x + y
   exu := exu_eq₂ _
   ev c X Y := CBox.add c.prec X Y
   sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact CBox.mem_add hx hy
 
-@[lynth_fn] def subC : Fn2 .cplx .cplx .cplx where
+@[lynth_cfn] def subC : Fn2 .cplx .cplx .cplx where
   name := "-ℂ"
   graph x y z := z = x - y
   exu := exu_eq₂ _
   ev c X Y := CBox.sub c.prec X Y
   sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact CBox.mem_sub hx hy
 
-@[lynth_fn] def mulC : Fn2 .cplx .cplx .cplx where
+@[lynth_cfn] def mulC : Fn2 .cplx .cplx .cplx where
   name := "*ℂ"
   graph x y z := z = x * y
   exu := exu_eq₂ _
   ev c X Y := CBox.mul c.prec X Y
   sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact CBox.mem_mul hx hy
 
-@[lynth_fn] def divC : Fn2 .cplx .cplx .cplx where
+@[lynth_cfn] def divC : Fn2 .cplx .cplx .cplx where
   name := "/ℂ"
   graph x y z := z = x / y
   exu := exu_eq₂ _
   ev c X Y := CBox.div c.prec X Y
   sound := fun _ _ _ _ _ _ _ hz hx hy => by obtain rfl := hz; exact CBox.mem_div hx hy
 
-@[lynth_fn] def negC : Fn1 .cplx .cplx where
+@[lynth_cfn] def negC : Fn1 .cplx .cplx where
   name := "negℂ"
   graph x y := y = -x
   exu := exu_eq _
   ev _ X := CBox.neg X
   sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact CBox.mem_neg hx
 
-@[lynth_fn] def invC : Fn1 .cplx .cplx where
+@[lynth_cfn] def invC : Fn1 .cplx .cplx where
   name := "invℂ"
   graph x y := y = x⁻¹
   exu := exu_eq _
   ev c X := CBox.inv c.prec X
   sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact CBox.mem_inv hx
 
-@[lynth_fn] def npowC : Fn2 .cplx .nat .cplx where
+@[lynth_cfn] def npowC : Fn2 .cplx .nat .cplx where
   name := "^ℕℂ"
   graph x n z := z = x ^ n
   exu := exu_eq₂ _
@@ -329,14 +329,14 @@ open Lynth.Interval
       rw [NIval.eq_of_isPoint hn hm]; exact CBox.mem_npow hx m
     · exact CBox.mem_top _
 
-@[lynth_fn] def ofRealC : Fn1 .real .cplx where
+@[lynth_cfn] def ofRealC : Fn1 .real .cplx where
   name := "ℝ→ℂ"
   graph x z := z = (x : ℂ)
   exu := exu_eq _
   ev _ X := CBox.ofReal X
   sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact CBox.mem_ofReal hx
 
-@[lynth_fn] def natCastC : Fn1 .nat .cplx where
+@[lynth_cfn] def natCastC : Fn1 .nat .cplx where
   name := "ℕ→ℂ"
   graph n z := z = (n : ℂ)
   exu := exu_eq _
@@ -347,35 +347,35 @@ open Lynth.Interval
     rw [Complex.ofReal_natCast] at this
     exact this
 
-@[lynth_fn] def iC : Fn0 .cplx where
+@[lynth_cfn] def iC : Fn0 .cplx where
   name := "I"
   graph z := z = Complex.I
   exu := exu_eq₀ _
   ev _ := CBox.iI
   sound := fun _ _ _ hy => by obtain rfl := hy; exact CBox.mem_I
 
-@[lynth_fn] def reC : Fn1 .cplx .real where
+@[lynth_cfn] def reC : Fn1 .cplx .real where
   name := "re"
   graph z x := x = z.re
   exu := exu_eq _
   ev _ X := X.re
   sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact hx.1
 
-@[lynth_fn] def imC : Fn1 .cplx .real where
+@[lynth_cfn] def imC : Fn1 .cplx .real where
   name := "im"
   graph z x := x = z.im
   exu := exu_eq _
   ev _ X := X.im
   sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact hx.2
 
-@[lynth_fn] def normC : Fn1 .cplx .real where
+@[lynth_cfn] def normC : Fn1 .cplx .real where
   name := "norm"
   graph z x := x = ‖z‖
   exu := exu_eq _
   ev c X := CBox.norm c.prec X
   sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact CBox.mem_norm hx
 
-@[lynth_fn] def conjC : Fn1 .cplx .cplx where
+@[lynth_cfn] def conjC : Fn1 .cplx .cplx where
   name := "conj"
   graph z w := w = (starRingEnd ℂ) z
   exu := exu_eq _

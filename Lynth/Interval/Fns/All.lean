@@ -13,5 +13,5 @@ import Lynth.Interval.Fns.Digamma
 
 /-!
 All registry entries.  Every `Lynth/Interval/Fns/*.lean` file must be imported
-here so that its `@[lynth_fn]` records are visible to the reifier.
+here so that its `@[lynth_cfn]` records are visible to the reifier.
 -/

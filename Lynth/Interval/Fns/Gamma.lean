@@ -807,7 +807,7 @@ theorem mem_gammaIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival}
         exact Ival.mem_hull_left (mem_gammaReflIval hc (mem_negPart hx hx0) hne)
       · exact Ival.mem_hull_right (mem_gammaPosIval hc (mem_posPart hx h0x))
 
-@[lynth_fn] def gammaR : Fn1 .real .real where
+@[lynth_cfn] def gammaR : Fn1 .real .real where
   name := "gamma"
   graph x y := y = Real.Gamma x
   exu := exu_eq _
