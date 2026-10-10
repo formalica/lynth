@@ -25,7 +25,8 @@ T_{k+1} = T_k · (Πᵢ(aᵢ+k))/(Πⱼ(bⱼ+k)) · z/(k+1),   pFq = Σ_k T_k.
 
 Analysis (recurrence, corrected tail bounds, termination) proved below,
 ported back from the Mathlib-only handoff `/tmp/pfq_thm_proof.lean`.
-Shapes are per-`(p,q)` `CFn.mk` entries sharing one core.
+One `HGFunL` registry entry serves all shapes: goals write multiset
+`Complex.HGFun`, normalized to lists by the reifier.
 -/
 
 namespace Lynth.Interval.Fns
@@ -890,191 +891,49 @@ theorem pfqCore_sound (c : Ctx) (hc : c.Valid)
     pfqReal p q a b z ∈ pfqCoreIval c A B Z n := by
   sorry
 
+/-! ### List-based `HGFun` mirror (single registry entry).
 
-/-- 0F1 mirror (general engine, 2 args). -/
-noncomputable def pfq01 (b z : ℝ) : ℝ :=
-  pfqReal 0 1 (fun _ => 0) (fun _ => b) z
+Users write `Complex.HGFun` over multisets in goals; the reifier
+(`reifyMultisetHGFun?`) normalizes literal spines to lists and targets
+`HGFunL` below. The evaluator extracts real parts (imaginary parts must
+be exactly zero) and runs the general `pfqCoreIval` core at any lengths. -/
 
-def pfq01_ev (c : Ctx) : CEnc [.real, .real] → Ival
-  | (.cons .real B (.cons .real Z .nil)) =>
-    pfqCoreIval c [] [B] Z (64 + 2 * c.prec)
+/-- list-based `HGFun` mirror (registry vocabulary). -/
+noncomputable def HGFunL (a b : List ℂ) (z : ℂ) : ℂ :=
+  Complex.HGFun ↑a ↑b z
 
-theorem pfq01_sound (c : Ctx) :
-    ∀ (vs : CVal [.real, .real]) (ds : CDen [.real, .real]) (y : ℝ)
-      (X : CEnc [.real, .real]) (hc : c.Valid)
-      (hg : y = applyCurried [.real, .real] .real pfq01 vs)
+/-- real part of a complex enclosure with exactly-zero imaginary part. -/
+def CBox.realOfZeroIm (B : CBox) : Option Ival :=
+  match B.im.lo, B.im.hi with
+  | some lo, some hi => if lo = hi ∧ lo.toRat = 0 then some B.re else none
+  | _, _ => none
+
+def HGFunL_ev (c : Ctx) : CEnc [.list .cplx, .list .cplx, .cplx] → CBox
+  | .cons _ (some A) (.cons _ (some B) (.cons _ Z .nil)) =>
+    match A.mapM CBox.realOfZeroIm, B.mapM CBox.realOfZeroIm,
+        CBox.realOfZeroIm Z with
+    | some Ar, some Br, some Zr =>
+      let R := pfqCoreIval c Ar Br Zr (64 + 2 * c.prec)
+      ⟨R, Ival.ofRat c.prec 0⟩
+    | _, _, _ => CBox.top
+  | _ => CBox.top
+
+theorem HGFunL_sound (c : Ctx) :
+    ∀ (vs : CVal [.list .cplx, .list .cplx, .cplx])
+      (ds : CDen [.list .cplx, .list .cplx, .cplx]) (y : ℂ)
+      (X : CEnc [.list .cplx, .list .cplx, .cplx]) (hc : c.Valid)
+      (hg : y = applyCurried [.list .cplx, .list .cplx, .cplx] .cplx HGFunL vs)
       (hh : CEncHolds X ds) (hag : Agree vs ds),
-    Ival.Mem (pfq01_ev c X) y := by
+    y ∈ HGFunL_ev c X := by
   sorry
 
-/-- entries are `CFn.mk` literals (not `CFn.manual`): the real mirror lives
-only in `graph`/`exu`/`sound` (`Prop`), while `fn` is a computable dummy
-(never applied: denote uses `fn'` from `graph`, eval uses `ev`). This keeps
-the entry computable so `evalExprVal` can evaluate it; the registry reads `F`
-from `graph`. -/
-@[lynth_cfn] def pfq01R : CFn [.real, .real] .real :=
-  { name := "pfq01",
-    fn := fun _ _ => (0 : ℝ),
-    graph := CFn.graphOf [.real, .real] .real pfq01,
-    exu := CFn.exuOf (tys := [.real, .real]) .real pfq01,
-    ev := pfq01_ev,
-    sound := pfq01_sound,
-    cost := 1500 }
-
-
-/-- 1F1 mirror (general engine, 3 args). -/
-noncomputable def pfq11 (a b z : ℝ) : ℝ :=
-  pfqReal 1 1 (fun _ => a) (fun _ => b) z
-
-def pfq11_ev (c : Ctx) : CEnc [.real, .real, .real] → Ival
-  | (.cons .real A (.cons .real B (.cons .real Z .nil))) =>
-    pfqCoreIval c [A] [B] Z (64 + 2 * c.prec)
-
-theorem pfq11_sound (c : Ctx) :
-    ∀ (vs : CVal [.real, .real, .real]) (ds : CDen [.real, .real, .real]) (y : ℝ)
-      (X : CEnc [.real, .real, .real]) (hc : c.Valid)
-      (hg : y = applyCurried [.real, .real, .real] .real pfq11 vs)
-      (hh : CEncHolds X ds) (hag : Agree vs ds),
-    Ival.Mem (pfq11_ev c X) y := by
-  sorry
-
-@[lynth_cfn] def pfq11R : CFn [.real, .real, .real] .real :=
-  { name := "pfq11",
-    fn := fun _ _ _ => (0 : ℝ),
-    graph := CFn.graphOf [.real, .real, .real] .real pfq11,
-    exu := CFn.exuOf (tys := [.real, .real, .real]) .real pfq11,
-    ev := pfq11_ev,
-    sound := pfq11_sound,
-    cost := 1500 }
-
-
-/-- 2F1 mirror (general engine, 4 args). -/
-noncomputable def pfq21 (a1 a2 b z : ℝ) : ℝ :=
-  pfqReal 2 1 (fun i => if i = 0 then a1 else a2) (fun _ => b) z
-
-def pfq21_ev (c : Ctx) : CEnc [.real, .real, .real, .real] → Ival
-  | (.cons .real A1 (.cons .real A2 (.cons .real B (.cons .real Z .nil)))) =>
-    pfqCoreIval c [A1, A2] [B] Z (64 + 2 * c.prec)
-
-theorem pfq21_sound (c : Ctx) :
-    ∀ (vs : CVal [.real, .real, .real, .real]) (ds : CDen [.real, .real, .real, .real]) (y : ℝ)
-      (X : CEnc [.real, .real, .real, .real]) (hc : c.Valid)
-      (hg : y = applyCurried [.real, .real, .real, .real] .real pfq21 vs)
-      (hh : CEncHolds X ds) (hag : Agree vs ds),
-    Ival.Mem (pfq21_ev c X) y := by
-  sorry
-
-@[lynth_cfn] def pfq21R : CFn [.real, .real, .real, .real] .real :=
-  { name := "pfq21",
-    fn := fun _ _ _ _ => (0 : ℝ),
-    graph := CFn.graphOf [.real, .real, .real, .real] .real pfq21,
-    exu := CFn.exuOf (tys := [.real, .real, .real, .real]) .real pfq21,
-    ev := pfq21_ev,
-    sound := pfq21_sound,
-    cost := 1500 }
-
-
-/-- 0F2 mirror (general engine, 3 args). -/
-noncomputable def pfq02 (b1 b2 z : ℝ) : ℝ :=
-  pfqReal 0 2 (fun _ => 0) (fun j => if j = 0 then b1 else b2) z
-
-def pfq02_ev (c : Ctx) : CEnc [.real, .real, .real] → Ival
-  | (.cons .real B1 (.cons .real B2 (.cons .real Z .nil))) =>
-    pfqCoreIval c [] [B1, B2] Z (64 + 2 * c.prec)
-
-theorem pfq02_sound (c : Ctx) :
-    ∀ (vs : CVal [.real, .real, .real]) (ds : CDen [.real, .real, .real]) (y : ℝ)
-      (X : CEnc [.real, .real, .real]) (hc : c.Valid)
-      (hg : y = applyCurried [.real, .real, .real] .real pfq02 vs)
-      (hh : CEncHolds X ds) (hag : Agree vs ds),
-    Ival.Mem (pfq02_ev c X) y := by
-  sorry
-
-@[lynth_cfn] def pfq02R : CFn [.real, .real, .real] .real :=
-  { name := "pfq02",
-    fn := fun _ _ _ => (0 : ℝ),
-    graph := CFn.graphOf [.real, .real, .real] .real pfq02,
-    exu := CFn.exuOf (tys := [.real, .real, .real]) .real pfq02,
-    ev := pfq02_ev,
-    sound := pfq02_sound,
-    cost := 1500 }
-
-
-/-- 1F2 mirror (general engine, 4 args). -/
-noncomputable def pfq12 (a b1 b2 z : ℝ) : ℝ :=
-  pfqReal 1 2 (fun _ => a) (fun j => if j = 0 then b1 else b2) z
-
-def pfq12_ev (c : Ctx) : CEnc [.real, .real, .real, .real] → Ival
-  | (.cons .real A (.cons .real B1 (.cons .real B2 (.cons .real Z .nil)))) =>
-    pfqCoreIval c [A] [B1, B2] Z (64 + 2 * c.prec)
-
-theorem pfq12_sound (c : Ctx) :
-    ∀ (vs : CVal [.real, .real, .real, .real]) (ds : CDen [.real, .real, .real, .real]) (y : ℝ)
-      (X : CEnc [.real, .real, .real, .real]) (hc : c.Valid)
-      (hg : y = applyCurried [.real, .real, .real, .real] .real pfq12 vs)
-      (hh : CEncHolds X ds) (hag : Agree vs ds),
-    Ival.Mem (pfq12_ev c X) y := by
-  sorry
-
-@[lynth_cfn] def pfq12R : CFn [.real, .real, .real, .real] .real :=
-  { name := "pfq12",
-    fn := fun _ _ _ _ => (0 : ℝ),
-    graph := CFn.graphOf [.real, .real, .real, .real] .real pfq12,
-    exu := CFn.exuOf (tys := [.real, .real, .real, .real]) .real pfq12,
-    ev := pfq12_ev,
-    sound := pfq12_sound,
-    cost := 1500 }
-
-
-/-- 2F2 mirror (general engine, 5 args). -/
-noncomputable def pfq22 (a1 a2 b1 b2 z : ℝ) : ℝ :=
-  pfqReal 2 2 (fun i => if i = 0 then a1 else a2) (fun j => if j = 0 then b1 else b2) z
-
-def pfq22_ev (c : Ctx) : CEnc [.real, .real, .real, .real, .real] → Ival
-  | (.cons .real A1 (.cons .real A2 (.cons .real B1 (.cons .real B2 (.cons .real Z .nil))))) =>
-    pfqCoreIval c [A1, A2] [B1, B2] Z (64 + 2 * c.prec)
-
-theorem pfq22_sound (c : Ctx) :
-    ∀ (vs : CVal [.real, .real, .real, .real, .real]) (ds : CDen [.real, .real, .real, .real, .real]) (y : ℝ)
-      (X : CEnc [.real, .real, .real, .real, .real]) (hc : c.Valid)
-      (hg : y = applyCurried [.real, .real, .real, .real, .real] .real pfq22 vs)
-      (hh : CEncHolds X ds) (hag : Agree vs ds),
-    Ival.Mem (pfq22_ev c X) y := by
-  sorry
-
-@[lynth_cfn] def pfq22R : CFn [.real, .real, .real, .real, .real] .real :=
-  { name := "pfq22",
-    fn := fun _ _ _ _ _ => (0 : ℝ),
-    graph := CFn.graphOf [.real, .real, .real, .real, .real] .real pfq22,
-    exu := CFn.exuOf (tys := [.real, .real, .real, .real, .real]) .real pfq22,
-    ev := pfq22_ev,
-    sound := pfq22_sound,
-    cost := 1500 }
-
-
-/-- 3F2 mirror (general engine, 6 args). -/
-noncomputable def pfq32 (a1 a2 a3 b1 b2 z : ℝ) : ℝ :=
-  pfqReal 3 2 (fun i => if i = 0 then a1 else if i = 1 then a2 else a3) (fun j => if j = 0 then b1 else b2) z
-
-def pfq32_ev (c : Ctx) : CEnc [.real, .real, .real, .real, .real, .real] → Ival
-  | (.cons .real A1 (.cons .real A2 (.cons .real A3 (.cons .real B1 (.cons .real B2 (.cons .real Z .nil)))))) =>
-    pfqCoreIval c [A1, A2, A3] [B1, B2] Z (64 + 2 * c.prec)
-
-theorem pfq32_sound (c : Ctx) :
-    ∀ (vs : CVal [.real, .real, .real, .real, .real, .real]) (ds : CDen [.real, .real, .real, .real, .real, .real]) (y : ℝ)
-      (X : CEnc [.real, .real, .real, .real, .real, .real]) (hc : c.Valid)
-      (hg : y = applyCurried [.real, .real, .real, .real, .real, .real] .real pfq32 vs)
-      (hh : CEncHolds X ds) (hag : Agree vs ds),
-    Ival.Mem (pfq32_ev c X) y := by
-  sorry
-
-@[lynth_cfn] def pfq32R : CFn [.real, .real, .real, .real, .real, .real] .real :=
-  { name := "pfq32",
-    fn := fun _ _ _ _ _ _ => (0 : ℝ),
-    graph := CFn.graphOf [.real, .real, .real, .real, .real, .real] .real pfq32,
-    exu := CFn.exuOf (tys := [.real, .real, .real, .real, .real, .real]) .real pfq32,
-    ev := pfq32_ev,
-    sound := pfq32_sound,
+@[lynth_cfn] def HGFunLR : CFn [.list .cplx, .list .cplx, .cplx] .cplx :=
+  { name := "HGFun",
+    fn := fun _ _ _ => (0 : ℂ),
+    graph := CFn.graphOf [.list .cplx, .list .cplx, .cplx] .cplx HGFunL,
+    exu := CFn.exuOf (tys := [.list .cplx, .list .cplx, .cplx]) .cplx HGFunL,
+    ev := HGFunL_ev,
+    sound := HGFunL_sound,
     cost := 1500 }
 
 

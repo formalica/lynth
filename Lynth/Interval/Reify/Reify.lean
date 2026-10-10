@@ -59,23 +59,6 @@ def RCtx.push (rc : RCtx) (term : Lean.Expr) (t : Ty) : RCtx :=
     vars := rc.vars.push { term, ty := t, level := rc.count t }
     senv := mkApp3 (mkConst ``SEnv.push) rc.senv (toExpr t) term }
 
-def tyOfType? (ty : Lean.Expr) : MetaM (Option Ty) := go 8 ty
-where
-  go : Nat → Lean.Expr → MetaM (Option Ty)
-    | 0, _ => return none
-    | fuel + 1, ty => do
-      let ty ← whnfR ty
-      if ty.isConstOf ``Nat then return some .nat
-      if ty.isConstOf ``Int then return some .int
-      if ty.isConstOf ``Real then return some .real
-      if ty.isConstOf ``Complex then return some .cplx
-      if ty.isConstOf ``Rat then return some .rat
-      if ty.getAppFn.isConstOf ``List then
-        let args := ty.getAppArgs
-        if 0 < args.size then
-          if let some t ← go fuel args[0]! then return some (.list t)
-      return none
-
 def mkDenote (t : Ty) (e senv : Lean.Expr) : Lean.Expr :=
   mkApp3 (mkConst ``Expr.denote) (toExpr t) e senv
 
@@ -197,6 +180,78 @@ def unfoldHead? (e : Lean.Expr) : MetaM (Option Lean.Expr) := do
   let some e' ← delta? e (fun m => m == n) | return none
   return some e'.headBeta
 
+/-- names referenced without imports (resolved at tactic-run time, so the
+reifier stays decoupled from `Fns`/`Mathlib` leaves) -/
+def nInsertInsert : Name := .str (.str .anonymous "Insert") "insert"
+def nMultisetInsert : Name := .str (.str .anonymous "Multiset") "insert"
+def nSingletonSingleton : Name := .str (.str .anonymous "Singleton") "singleton"
+def nMultisetSingleton : Name := .str (.str .anonymous "Multiset") "singleton"
+def nMultisetEmpty : Name := .str (.str .anonymous "Multiset") "empty"
+def nEmptyCollection : Name := .str (.str .anonymous "EmptyCollection") "emptyCollection"
+def nMultisetOfList : Name := .str (.str .anonymous "Multiset") "ofList"
+def nQuotMk : Name := .str (.str .anonymous "Quot") "mk"
+def nComplexHGFun : Name := .str (.str .anonymous "Complex") "HGFun"
+def nFnsHGFunL : Name :=
+  .str (.str (.str (.str .anonymous "Lynth") "Interval") "Fns") "HGFunL"
+
+/-- element type of a `Multiset _` term -/
+def msElemTy? (ms : Lean.Expr) : MetaM (Option Lean.Expr) := do
+  let ty ← whnfR (← inferType ms)
+  if ty.getAppFn.isConstOf ``Multiset then
+    let args := ty.getAppArgs
+    if 0 < args.size then return some args[0]! else return none
+  else return none
+
+/-- multiset literal term → (list term, `ms = ↑list`); supports `∅`,
+`insert`/`singleton` spines and list coercions (fuel-bounded). Equalities
+are kernel-checked `rfl`s, so unsupported shapes fail loudly. -/
+def msToList? : Nat → Lean.Expr → MetaM (Option (Lean.Expr × Lean.Expr))
+  | 0, _ => return none
+  | fuel + 1, ms => do
+    let f := ms.getAppFn
+    let args := ms.getAppArgs
+    -- insert spine (raw or instance-projected heads)
+    if f.isConstOf nInsertInsert || f.isConstOf nMultisetInsert then
+      if args.size < 2 then return none
+      let x := args[args.size - 2]!
+      let s := args[args.size - 1]!
+      let some (ns, _) ← msToList? fuel s | return none
+      let nl ← mkAppM ``List.cons #[x, ns]
+      let some α ← msElemTy? ms | return none
+      let coe := mkAppN (mkConst nMultisetOfList) #[α, nl]
+      let pf ← mkExpectedTypeHint (← mkEqRefl ms) (← mkEq ms coe)
+      return some (nl, pf)
+    else if f.isConstOf nSingletonSingleton || f.isConstOf nMultisetSingleton then
+      if args.size < 1 then return none
+      let x := args[args.size - 1]!
+      let α ← inferType x
+      let nil ← mkAppOptM ``List.nil #[some α]
+      let nl ← mkAppM ``List.cons #[x, nil]
+      let some α ← msElemTy? ms | return none
+      let coe := mkAppN (mkConst nMultisetOfList) #[α, nl]
+      let pf ← mkExpectedTypeHint (← mkEqRefl ms) (← mkEq ms coe)
+      return some (nl, pf)
+    else
+      let ms' ← whnfD ms
+      let f' := ms'.getAppFn
+      let args' := ms'.getAppArgs
+      -- empty
+      if f'.isConstOf nMultisetEmpty || f'.isConstOf nEmptyCollection then
+        let some α ← msElemTy? ms | return none
+        let nil ← mkAppOptM ``List.nil #[some α]
+        let coe := mkAppN (mkConst nMultisetOfList) #[α, nil]
+        let pf ← mkExpectedTypeHint (← mkEqRefl ms) (← mkEq ms coe)
+        return some (nil, pf)
+      -- list coercion / quotient constructor: take the list directly
+      else if f'.isConstOf nMultisetOfList || f'.isConstOf nQuotMk then
+        if args'.size < 1 then return none
+        let nl := args'[args'.size - 1]!
+        let some α ← msElemTy? ms | return none
+        let coe := mkAppN (mkConst nMultisetOfList) #[α, nl]
+        let pf ← mkExpectedTypeHint (← mkEqRefl ms) (← mkEq ms coe)
+        return some (nl, pf)
+      else return none
+
 /-! ### Main reifier -/
 
 partial def reify (rc : RCtx) (e : Lean.Expr) : MetaM Reified := do
@@ -214,6 +269,8 @@ partial def reify (rc : RCtx) (e : Lean.Expr) : MetaM Reified := do
   if let some r ← reifyListLit? rc t e then return r
   -- 2c. complex literals (normalize + delegate to `ofRealC`)
   if let some r ← reifyCplxLit? rc t e then return r
+  -- 2d. multiset `HGFun` (normalize args to `HGFunL` lists)
+  if let some r ← reifyMultisetHGFun? rc t e then return r
   -- 3. finite sums
   if let some r ← reifySum? rc t e then return r
   -- 4. registry (single unified table)
@@ -279,6 +336,25 @@ where
     let ex ← mkAppOptM ``Expr.clist #[some (toExpr te), some exs]
     let pf ← mkExpectedTypeHint pfTail (← mkEq e (mkDenote (.list te) ex rc.senv))
     return some ⟨.list te, ex, pf⟩
+  /-- `Complex.HGFun` over multiset literals: normalize both parameter
+  multisets to lists and delegate to the `HGFunL` entry. The bridge
+  `HGFun a b z = HGFunL na nb z` is definitional (checked on the spot). -/
+  reifyMultisetHGFun? (rc : RCtx) (t : Ty) (e : Lean.Expr) : MetaM (Option Reified) := do
+    unless t == .cplx do return none
+    let fn := e.getAppFn
+    unless fn.isConstOf nComplexHGFun do return none
+    let args := e.getAppArgs
+    if args.size < 3 then return none
+    let a := args[args.size - 3]!
+    let b := args[args.size - 2]!
+    let z := args[args.size - 1]!
+    let some (na, _) ← msToList? 64 a | return none
+    let some (nb, _) ← msToList? 64 b | return none
+    let eL := mkAppN (mkConst nFnsHGFunL) #[na, nb, z]
+    let r ← reify rc eL
+    unless r.ty == .cplx do return none
+    let heq ← mkExpectedTypeHint (← mkEqRefl e) (← mkEq e eL)
+    return some ⟨.cplx, r.expr, ← mkEqTrans heq r.proof⟩
   /-- complex literals: normalize `q : ℂ` to `Complex.ofReal ↑q` and
   delegate to the `ofRealC` entry -/
   reifyCplxLit? (rc : RCtx) (t : Ty) (e : Lean.Expr) : MetaM (Option Reified) := do

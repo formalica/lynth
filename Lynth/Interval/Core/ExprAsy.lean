@@ -77,6 +77,7 @@ theorem varAsy_holds (N : ℕ) (ρ : SEnv) : ∀ (t : Ty) (i : ℕ),
   | .rat, _ => trivial
   | .list _, _ => trivial
 
+mutual
 /-- **Soundness** of AIA evaluation. -/
 theorem asy_sound {c : Ctx} (hc : c.Valid) (N : ℕ) (ρ : SEnv) :
     ∀ {t : Ty} (e : Expr t), t.AsyHolds N (fun k => e.denote (ρ.push .nat k)) (e.asy c N)
@@ -86,8 +87,36 @@ theorem asy_sound {c : Ctx} (hc : c.Valid) (N : ℕ) (ρ : SEnv) :
   | _, .intLit _ => trivial
   | _, .clist _ => trivial
   | _, .var t i => varAsy_holds N ρ t i
-  | _, @Expr.call tys r f xs => f.asy_sound c N _ _ hc
+  | _, @Expr.call tys r f xs =>
+    f.asy_sound c N _ (fun k => toVal (CArg.denoteArgs ((ρ.push .nat k)) xs)) _
+      hc (fun k => f.fn_spec _) (asyArgs_sound hc N ρ xs)
   | _, .sum t _ _ => Ty.asyHolds_top t _ _
+
+theorem asyArgs_sound {c : Ctx} (hc : c.Valid) (N : ℕ) (ρ : SEnv) :
+    ∀ {tys : List Ty} (xs : CArg tys),
+    CAsyHolds N (fun k => toVal (CArg.denoteArgs ((ρ.push .nat k)) xs)) (asyArgs c N xs)
+  | _, .nil => trivial
+  | (.nat :: _), .cons .nat x xs => by
+    show _ ∧ _
+    refine ⟨?_, asyArgs_sound hc N ρ xs⟩
+    exact asy_sound hc N ρ x
+  | (.real :: _), .cons .real x xs => by
+    show _ ∧ _
+    refine ⟨?_, asyArgs_sound hc N ρ xs⟩
+    exact asy_sound hc N ρ x
+  | (.int :: _), .cons .int _ xs => by
+    show _ ∧ _
+    exact ⟨trivial, asyArgs_sound hc N ρ xs⟩
+  | (.cplx :: _), .cons .cplx _ xs => by
+    show _ ∧ _
+    exact ⟨trivial, asyArgs_sound hc N ρ xs⟩
+  | (.rat :: _), .cons .rat _ xs => by
+    show _ ∧ _
+    exact ⟨trivial, asyArgs_sound hc N ρ xs⟩
+  | (.list _ :: _), .cons _ _ xs => by
+    show _ ∧ _
+    exact ⟨trivial, asyArgs_sound hc N ρ xs⟩
+end
 
 end Expr
 

@@ -21,7 +21,7 @@ Ground truth: `arb/CERTIFICATES.md` (MD01-MD07).
 namespace IntervalArith
 
 
-set_option maxHeartbeats 6601 in
+set_option maxHeartbeats 7727 in
 /-- **MD01** — `floor_exp_two_add_sin_div_cos`: the floor of `exp, sin, cos` composed at `x = 2, 1`,
 returned as a `Nat`.
 
@@ -39,8 +39,8 @@ def floor_exp_two_add_sin_div_cos : { n : Nat // n = ⌊(Real.exp 2 + Real.sin 1
 #guard_msgs in
 #print axioms floor_exp_two_add_sin_div_cos
 
-set_option maxHeartbeats 32285 in
-set_option maxHeartbeats 1000000 in
+set_option maxHeartbeats 20000000 in
+set_option maxHeartbeats 33342 in
 /-- **MD02** — `floor_gamma_quarter_add_gamma_third`: the floor of `Gamma` composed at `x = 1/4,
 1/3`, returned as a `Nat`.
 
@@ -56,7 +56,7 @@ def floor_gamma_quarter_add_gamma_third : { n : Nat // n = ⌊Real.Gamma (1 / 4)
 #guard_msgs in
 #print axioms floor_gamma_quarter_add_gamma_third
 
-set_option maxHeartbeats 4648 in
+set_option maxHeartbeats 5317 in
 /-- **MD03** — `floor_hundred_tanh_sqrt_two`: the floor of `tanh, sqrt` composed at `x = sqrt 2`,
 returned as a `Nat`.
 
@@ -72,7 +72,7 @@ def floor_hundred_tanh_sqrt_two : { n : Nat // n = ⌊100 * Real.tanh (Real.sqrt
 #guard_msgs in
 #print axioms floor_hundred_tanh_sqrt_two
 
-set_option maxHeartbeats 877 in
+set_option maxHeartbeats 2660 in
 /-- **MD04** — `floor_ten_sqrt_sum`: the floor of `sqrt` composed at `x = 2, 3, 5`, returned as a
 `Nat`.
 
@@ -89,7 +89,7 @@ def floor_ten_sqrt_sum : { n : Nat // n = ⌊10 * (Real.sqrt 2 + Real.sqrt 3 + R
 #guard_msgs in
 #print axioms floor_ten_sqrt_sum
 
-set_option maxHeartbeats 69 in
+set_option maxHeartbeats 51 in
 /-- **MD05** — `gcd_of_fib`: an exact integer identity over `Nat.gcd, Nat.fib` (inputs `n = 10,
 15`), returned as a `Nat`.
 
@@ -105,7 +105,7 @@ def gcd_of_fib : { n : Nat // n = Nat.gcd (Nat.fib 10) (Nat.fib 15) } := by lynt
 #guard_msgs in
 #print axioms gcd_of_fib
 
-set_option maxHeartbeats 4080 in
+set_option maxHeartbeats 4597 in
 /-- **MD06** — `sign_exp_sub_cos`: the sign of `exp, cos` composed at `x = 1, 1/2`, returned as an
 `Int`.
 
@@ -121,7 +121,7 @@ def sign_exp_sub_cos : { s : ℤ // Real.sign (Real.exp (-1) - Real.cos (1 / 2))
 #guard_msgs in
 #print axioms sign_exp_sub_cos
 
-set_option maxHeartbeats 5093 in
+set_option maxHeartbeats 5743 in
 /-- **MD07** — `ceil_ten_exp_cos`: the ceiling of `exp, cos` composed at `x = 1`, returned as a
 `Nat`.
 

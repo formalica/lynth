@@ -4,17 +4,22 @@
 
 ```lean
 namespace Lynth.Interval
-inductive Ty | nat | real | cplx
+inductive Ty | nat | int | real | cplx | rat | list (t : Ty)
 deriving Repr, DecidableEq, Inhabited
 
 /-- semantic carrier -/
 @[reducible] def Ty.Val : Ty → Type
-  | .nat => ℕ | .real => ℝ | .cplx => ℂ
+  | .nat => ℕ | .int => ℤ | .real => ℝ | .cplx => ℂ
+  | .rat => ℚ | .list t => List t.Val
 /-- computational enclosure type -/
 @[reducible] def Ty.Enc : Ty → Type
-  | .nat => NIval | .real => Ival | .cplx => CBox
+  | .nat => NIval | .int => ZIval | .real => Ival | .cplx => CBox
+  | .rat => Option ℚ | .list t => Option (List t.Enc)
 def Ty.Mem : (t : Ty) → t.Enc → t.Val → Prop
   | .nat, I, n => n ∈ I | .real, I, x => x ∈ I | .cplx, B, z => z ∈ B
+  | .rat, o, v => ∀ q, o = some q → v = q
+  | .list _, none, _ => True
+  | .list t, some X, v => List.Forall₂ (Ty.Mem t) X v
 def Ty.top : (t : Ty) → t.Enc               -- ⊤ enclosure, `Ty.mem_top`
 def Ty.isFinite : (t : Ty) → t.Enc → Bool
 -- additive structure needed by the generic `sum` node
@@ -22,13 +27,14 @@ def Ty.zeroE : (t : Ty) → t.Enc                 -- exact 0
 def Ty.addE  : (t : Ty) → Nat → t.Enc → t.Enc → t.Enc
 instance Ty.addCommMonoid : (t : Ty) → AddCommMonoid t.Val   -- by cases
 theorem Ty.mem_zero, Ty.mem_add
--- topology / measurability, by cases (used by capabilities)
-def Ty.topo : (t : Ty) → TopologicalSpace t.Val
-def Ty.meas : (t : Ty) → MeasurableSpace t.Val
 ```
 
+`Ty` is the single type index: custom-function positions are typed by `Ty`
+directly (there is no separate `CTy`). `.rat` positions carry exact values
+(`Option ℚ`, unresolved is `none`) and are reified from closed rational
+terms; `.list t` positions carry pointwise enclosures (`none` is top).
 `Ty.Val`/`Ty.Enc` must reduce by `whnfR` on constructor arguments (they are
-reducible matchers), so `Fn1 .real .real` elaborates with `ℝ → ℝ → Prop`.
+reducible matchers).
 
 ## 2. Evaluation context (`Core/Ctx.lean`)
 
@@ -142,13 +148,15 @@ theorem SEnv.MemI.push : σ ∋ ρ → t.Mem X v → (σ.push t X) ∋ (ρ.push 
 ```lean
 inductive Expr : Ty → Type where
   | lit    (q : ℚ) : Expr .real                     -- exact rational constant
+  | rlit   (q : ℚ) : Expr .rat                      -- exact rational (`.rat` positions)
   | natLit (n : ℕ) : Expr .nat
+  | intLit (z : ℤ) : Expr .int
+  | clist  {t : Ty} (xs : ExprList t) : Expr (.list t)  -- list literal
   | var    (t : Ty) (i : ℕ) : Expr t
-  | c0     {r} (f : Fn0 r) : Expr r
-  | c1     {a r} (f : Fn1 a r) (x : Expr a) : Expr r
-  | c2     {a b r} (f : Fn2 a b r) (x : Expr a) (y : Expr b) : Expr r
+  | call   {tys : List Ty} {r : Ty} (f : CFn tys r) (xs : CArg tys) : Expr r
   /-- `∑ k ∈ Finset.range n, body` ; body binds a `.nat` variable (index 0) -/
   | sum    (t : Ty) (n : Expr .nat) (body : Expr t) : Expr t
+```
   /-- `∫ y in a..b, body` ; body binds a `.real` variable (index 0); t ∈ {real, cplx} -/
   | integral (t : Ty) (a b : Expr .real) (body : Expr t) (cfg : QuadCfg) : Expr t
 ```
@@ -228,29 +236,27 @@ Real-valued comparisons of complex data are expressed through real-valued
 ## 7. Registry (`Reify/Registry.lean`)
 
 ```lean
-structure FnEntry where
-  decl    : Name         -- constant of type Fn0 r / Fn1 a r / Fn2 a b r
-  arity   : Nat          -- 0,1,2
-  argTys  : Array Ty
-  resTy   : Ty
-  pattern : Lean.Expr    -- term with loose bvars #0..#(arity-1) = arguments
+structure NaryEntry where
+  decl    : Name         -- constant of type `CFn tys r` (or `Fn0`/`Fn1`/`Fn2`)
+  tys     : Array Ty
+  res     : Ty
+  cfn     : Lean.Expr    -- `CFn` value term for call nodes
+  pattern : Lean.Expr    -- applicative pattern for `DiscrTree` matching
+  keys    : Array DiscrTree.Key
   prio    : Nat := 1000
-initialize fnExt : SimpleScopedEnvExtension FnEntry (DiscrTree FnEntry)
-syntax (name := lynthFnAttr) "lynth_fn" (ppSpace num)? (ppSpace term)? : attr
+initialize naryExt : SimpleScopedEnvExtension NaryEntry (DiscrTree NaryEntry)
+syntax (name := lynthCfnAttr) "lynth_cfn" (ppSpace num)? : attr
 ```
 
-Attribute handler:
-1. Infer arity/types from the declaration type (`Fn1 .real .real` → `whnfD` the
-   `Ty` args to constructors).
-2. If an explicit pattern term is given (`@[lynth_fn (Real.cosh ?x)]`) use it.
-   Otherwise **derive it from `graph`**: unfold `decl.graph` (`whnfD`,
-   `Fn1.ofFun` unfolds), `lambdaTelescope` it to `fun x₁ … y => y = P`,
-   check the body is `Eq y P`, and abstract `x₁…` in `P`.
-3. Insert into the DiscrTree with keys `DiscrTree.mkPath P'` where `P'` has
-   fresh mvars for the arguments (reducible transparency, `instances` for
-   instance arguments, so `@HAdd.hAdd ℝ ℝ ℝ instHAdd x y` matches).
-4. Several entries may match a term (e.g. `x ^ (n:ℕ)` vs `x ^ (y:ℝ)`): try in
-   descending `prio`, first successful reification wins.
+One unified table. `@[lynth_cfn]` accepts a `CFn tys r` definition
+(pattern from the Lean function `F`, read from `graph` first so entries
+can keep a computable `fn` placeholder while a noncomputable mirror lives
+only in `Prop` fields) or an `Fn0`/`Fn1`/`Fn2` record (pattern from the
+`graph` RHS, call nodes via the `CFn.ofFn0`/`ofFn1`/`ofFn2` lift, whose
+`fn` is a dummy — denotation uses `fn'`, evaluation uses `ev`).
+Domain checks read each position as a `Ty` (structural, incl. `.list`).
+Priorities order candidates; first successful reification wins.
+
 
 ## 8. Reifier (`Reify/Reify.lean`)
 
@@ -271,42 +277,36 @@ Steps for a term `e` expected at type `t` (first success wins):
 
 1. **Variable**: `e` is (syntactically, after `instantiateMVars`) one of
    `rc.vars` → `var t i`, proof `rfl`.
-2. **Exact constant** (`Reify/Exact.lean`): if `e` has no fvars/mvars and its
-   head is arithmetic/cast/ℕ-function (not a registered transcendental), try
-   `Mathlib.Meta.NormNum.derive` (plus the `lynth_exact` simp set for
-   polynomial evaluations: Chebyshev `T/U`, `Polynomial.bernoulli`,
-   `ascPochhammer`, `bernoulli`, `Nat.bell`); success → `lit q` (or `natLit n`)
-   with proof of `e = ((q:ℚ):ℝ)` produced by the `norm_num` result
-   (`Result.toRawEq` + `Rat.cast` normalization).  Complex closed rationals
-   → `c1 ofRealFn (lit q)`.
+2. **Exact constant**: if `e` has no fvars/mvars and its head is not a
+   registered transcendental, try `Mathlib.Meta.NormNum.derive` (plus the
+   `lynth_exact` simp set); success → `lit q` / `natLit n` / `intLit z` /
+   `rlit q` with proof of the value equation.  Complex closed rationals
+   normalize to `Complex.ofReal ↑q` and delegate to the `ofRealC` entry.
+   2b. **List literals**: closed `List.cons`/`List.nil` spines reify
+   elementwise into `Expr.clist` (via `ExprList`), proofs folded with
+   `clist_nil_eq`/`clist_cons_eq`.
+   2c. **Multiset `HGFun`**: `Complex.HGFun a b z` over literal spines
+   normalizes both multisets to lists (`msToList?`, kernel-checked `rfl`s)
+   and delegates to the single `HGFunL` entry; bridge proof by `rfl`.
 3. **Binders**: `Finset.sum (Finset.range n) (fun k => b)` → reify `n` at
    `.nat`, then `withLocalDecl k`, push `(k, .nat)` into vars (shifting nat
-   indices), reify `b`; proof via
-   `Finset.sum_congr (congrArg _ hn) (fun k _ => hb k)` (`hb` is a lambda
-   proof over the local `k`).  Integrals analogous (07).
-4. **Registry**: `DiscrTree.getMatch e` → for each candidate: instantiate the
-   pattern with fresh mvars, `isDefEq` (reducible + instances), reify the
-   arguments at `argTys`, build the node.  Proof uses
-
-   ```lean
-   theorem Expr.c1_eq (f : Fn1 a r) (x : Expr a) (ρ : SEnv) {X : a.Val} {Y : r.Val}
-       (hX : X = x.denote ρ) (hY : f.graph X Y) : Y = (Expr.c1 f x).denote ρ
-   ```
-
-   with `hY := Eq.refl Y` (accepted because `f.graph X Y` unfolds to `Y = F X`
-   and `Y` *is* `F X` syntactically).  Same for `c0`, `c2`.
+   indices), reify `b`.
+4. **Registry** (single unified table): `DiscrTree.getMatch e` → for each
+   candidate: instantiate the pattern with fresh mvars, `isDefEq`
+   (reducible + instances), reify each argument at its position type
+   (`.rat` positions take the closed `ℚ` term directly to `Expr.rlit`),
+   build `CArg`/`CVal` chains with proofs (`call_eq`, kernel-checked on
+   the spot). `.rat` results never reach `tryNary`; `↑q` with closed `q`
+   reifies via `reifyRatCast?` to `Expr.lit q` (sound by `rfl`).
 5. **Unfold**: if the head is a constant with a definition that is not in the
-   registry (user definitions such as `quinticResidual`, `rangeSup`,
-   `extremaTolerance`), `delta`-unfold once (`unfoldDefinition?`), `headBeta`,
-   and retry (budget `rc.depth`).  Never unfold `Real.exp` & co (they are in
-   the registry and matched in step 4 first).
-6. **Atom**: if `rc.atoms`, any remaining term of type ℝ/ℂ/ℕ becomes a fresh
-   variable (the caller must supply its enclosure, e.g. from hypotheses).
+   registry, `delta`-unfold once and retry (budget `rc.depth`).
+6. **Atom**: if `rc.atoms`, any remaining term becomes a fresh variable.
 7. Otherwise fail with a message naming the unsupported head.
 
 The reifier also returns the **runtime value** of the reified expression when
-needed: `evalExpr (Expr t) (mkApp (Expr) (toExpr t)) r.expr` (function records
-are compiled constants, so this is fast and native).
+needed: `evalExprVal` (entries must be computable — noncomputable mirrors
+live only in `Prop` fields, per the `Fn.lean` rule).
+
 
 ## 9. How to add a new function (the only thing contributors touch)
 
@@ -348,89 +348,42 @@ def Fn1.ofExpr (F : ℝ → ℝ) (body : Expr .real)   -- body uses var .real 0
 
 whose `ev` evaluates `body` and whose soundness is `Expr.eval_sound` + `h`.
 
-## 10. User-defined n-ary functions (`CFn`, `@[lynth_cfn]`)
+## 10. Custom functions (`CFn`, `@[lynth_cfn]`) and multiset `HGFun`
 
-Fixed arities 0–2 (`Fn0/Fn1/Fn2`) cannot express user functions of arbitrary
-arity or mixed discrete/exact arguments.  N-ary functions use a separate
-record over argument/result codes (`Core/Expr.lean`):
+All functions — built-in `Fn0`/`Fn1`/`Fn2` records and n-ary customs —
+register through the single `@[lynth_cfn]` attribute as `CFn tys r` entries
+(`tys : List Ty`, arbitrary length and mixed positions). `Fn` records lift
+via `CFn.ofFn0`/`ofFn1`/`ofFn2` (graph/exu/ev/sound preserved; `fn` is a
+dummy — denotation uses `fn'`, evaluation uses `ev`; asymptotics default
+to `⊤`).
 
 ```lean
-inductive CTy | nat | int | rat | real
-def CTy.toTy : CTy → Ty            -- nat/int/rat/real ↦ nat/int/real/real
-def CTy.Val  : CTy → Type          -- ℕ / ℤ / ℚ / ℝ
-def CTy.Enc  : CTy → Type          -- NIval / ZIval / Option ℚ / Ival
-structure CFn (tys : List CTy) (r : CTy) where
+structure CFn (tys : List Ty) (r : Ty) where
   name  : String
-  fn    : curriedType tys r        -- F : v₁ → … → vₙ → Val r
-  graph : CVal tys → Val r → Prop   -- exact-value relation (ℚ at `rat`)
+  fn    : curriedType tys r        -- placeholder (never applied)
+  graph : CVal tys → r.Val → Prop   -- exact-value relation
   exu   : ∀ xs, ∃! y, graph xs y
-  ev    : Ctx → CEnc tys → r.toTy.Enc
-  sound : ∀ c vs ds y' y X, c.Valid → graph vs y' → castOut r y' = y →
-    CEncHolds X ds → Agree vs ds → r.toTy.Mem (ev c X) y
+  ev    : Ctx → CEnc tys → r.Enc
+  sound : ∀ c vs ds y X, c.Valid → graph vs y →
+    CEncHolds X ds → Agree vs ds → r.Mem (ev c X) y
 ```
 
 Two constructors: `CFn.ofFn` (automatic; discrete results via
-`evOfNat`/`evOfInt`/`evOfRat` on `resolveExact`, `.real` results widen to
+`evOfNat`/`evOfInt`/`evOfRat` on `resolveExact`, other results widen to
 `⊤`) and `CFn.manual` (user supplies `ev` + `sound` against the automatic
-`graphOf`; required whenever a result or argument needs real interval
-arithmetic).  Both fix `graph := graphOf`, so functionality is automatic.
+`graphOf`). Both fix `graph := graphOf`, so functionality is automatic.
 
-Calls live in the AST with heterogeneous argument lists:
+Noncomputable mirrors: keep the real function only in `graph`/`exu`/`sound`
+(`Prop`) with a computable dummy `fn`; the registry reads `F` from `graph`
+(`CFn.graphOf tys r F`) first. Entries must stay computable or
+`evalExprVal` cannot evaluate them.
 
-```lean
-| call {tys r t} (ht : t = r.toTy) (f : CFn tys r) (xs : CArg tys) : Expr t
-| callRat {tys} (f : CFn tys .rat) (xs : CArg tys)
-    (qf : CVal tys → ℚ) (hcorr : ∀ xs y', f.graph xs y' → qf xs = y') : Expr .real
-```
+Generalized hypergeometric: goals write multiset `Complex.HGFun`; one
+`HGFunL : List ℂ → List ℂ → ℂ → ℂ` entry (`Fns/Hypgeom.lean`, FLINT
+`pfq_direct` core) serves all shapes. Multiset literals normalize to lists
+(`msToList?`); the bridge `HGFun a b z = HGFunL na nb z` is definitional.
+Analytic bounds live in `/tmp/pfq_thm_proof.lean` (Mathlib-only handoff).
 
-`ht` is explicit because `CTy.toTy` is not injective (`.rat` and `.real`
-both map to `.real`), so no matching construct could otherwise split on
-`call` at a fixed result type — every fixed-`.real` match on `call` fails
-with an unsolvable `r.toTy = .real` equation.  With `ht` carried, `r` stays
-free and the equation is a hypothesis.  `evalRat` (exact-`ℚ` side channel)
-reads literals and `callRat` chains; `eval` widens a call to `⊤` through the
-central `allDiscreteResolved` guard whenever a discrete argument is
-unresolved.  Soundness (`eval_sound`, `evalCArgs_sound`, `evalRat_sound`) is
-proved once, by structural induction with explicit nested patterns — no
-measures, no axioms beyond the standard three.
-
-Registration (`Reify/Registry.lean`): `@[lynth_cfn]` on a `CFn tys r`
-definition builds an `NaryEntry` (`decl`, `tys`, `res`, the Lean function
-`F` extracted from `CFn.manual`/`CFn.ofFn`/`CFn.mk`, applicative pattern,
-`DiscrTree` keys, priority).  The attribute checks arity and domain types
-(`ℕ`/`ℤ`/`ℚ`/`ℝ` per `CTy`) and fails fast otherwise.
-
-Noncomputable mirrors: `CFn.manual`/`CFn.ofFn` store `F` in the `fn` data
-field, so a noncomputable `F` (any `∑'`/tsum mirror, e.g. `Fns/Hypgeom.lean`)
-makes the whole entry noncomputable and `evalExprVal` cannot evaluate it.
-Write such entries as `CFn.mk` literals instead, with the real mirror only
-in `graph`/`exu`/`sound` (`Prop`) and a computable dummy `fn` (never
-applied: denote uses `fn'` from `graph`, eval uses `ev`); `cfnFunOf?`
-reads `F` from `graph` (`CFn.graphOf tys r F`) first, falling back to `fn`.
-This is the n-ary analogue of the `Fn.lean` rule (function inside `graph`).
-
-Reification (`tryNary`, step 4 after `FnEntry`): match the pattern, reify
-each argument at `toTy`, then build `CArg`/`CVal` chains with proofs
-(`call_eq`, kernel-checked on the spot):
-- `.rat` positions take the `ℚ` argument term directly to `Expr.lit` and
-  require it closed (fail-fast `rat argument … must be a closed rational
-  literal or chain`); open exact rationals are rejected.
-- `.rat` results never reach `tryNary` (`F` is `ℚ`-valued, so no `.real`
-  target unifies); `↑q` with closed `q` reifies via `reifyRatCast?` to
-  `Expr.lit q` (sound by `rfl`).
-- The `evalExprVal` opaque transport needs no changes (`call` nodes are
-  data); `DiscrTree` matching works as for `FnEntry`.
-
-Discrete goals (`Goals/Discrete.lean`): the `interval` procedure now also
-fires on `ℕ`/`ℤ` subtype goals, and `proveDiscreteSubtype?` falls back (past
-floor/ceil/round/sign heads) to bare closed sides — candidate by kernel
-`whnf` + literal reading, proof by `decide`.
-
-Coercion trap: `↑q` with a `ℚ`-expected context elaborates to `q` (no cast
-inserted), so a test goal can be silently `ℚ`-typed and miss the procedure;
-pin casts with ascriptions (`((q : ℚ) : ℝ)`).
-
-Suite: `Test/Interval/Nary.lean` N1–N10 (2/3/4-ary over `Nat`/`Int`/`Rat`/
-`Real`, auto + manual, nesting, noncomputable with internal custom types;
-all standard axioms) plus the `Real → Real` manual reference
-`Test/Interval/CustomFn.lean` (`phi`).
+Suite: `Test/Interval/Nary.lean` N1–N10 plus `Test/Interval/Hypgeom.lean`
+H1–H14 (multiset `HGFun` goals, native trust, per-test `maxHeartbeats`
+caps at measured +5%).

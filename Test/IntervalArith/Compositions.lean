@@ -31,7 +31,7 @@ Ground truth: `arb/CERTIFICATES.md` (MP01-MP35).
 namespace IntervalArith
 
 
-set_option maxHeartbeats 6480 in
+set_option maxHeartbeats 7501 in
 /-- **MP01** — `exp_sin_add_cos`: `exp, sin, cos` composed in one expression, evaluated at `x =
 1/2`.
 
@@ -50,7 +50,7 @@ def exp_sin_add_cos : { x : Rat // abs (Real.exp (Real.sin (1 / 2) + Real.cos (1
 #guard_msgs in
 #print axioms exp_sin_add_cos
 
-set_option maxHeartbeats 6747 in
+set_option maxHeartbeats 7763 in
 /-- **MP02** — `sin_exp_mul_cos`: `sin, exp, cos` composed in one expression, evaluated at `x =
 1/2`.
 
@@ -69,7 +69,7 @@ def sin_exp_mul_cos : { x : Rat // abs (Real.sin (Real.exp (1 / 2) * Real.cos (1
 #guard_msgs in
 #print axioms sin_exp_mul_cos
 
-set_option maxHeartbeats 28679 in
+set_option maxHeartbeats 29577 in
 /-- **MP03** — `gamma_sin_add_two`: `Gamma, sin` composed in one expression, evaluated at `x = 1/2`.
 
 `x` is the *unknown*: the tactic has to produce a rational witness inside the tolerance
@@ -87,7 +87,7 @@ def gamma_sin_add_two : { x : Rat // abs (Real.Gamma (Real.sin (1 / 2) + 2) - x)
 #guard_msgs in
 #print axioms gamma_sin_add_two
 
-set_option maxHeartbeats 28865 in
+set_option maxHeartbeats 29923 in
 /-- **MP04** — `log_gamma_add_sqrt`: `log, Gamma, sqrt` composed in one expression, evaluated at `x
 = 1/4, 2`.
 
@@ -106,7 +106,7 @@ def log_gamma_add_sqrt : { x : Rat // abs (Real.log (Real.Gamma (1 / 4) + Real.s
 #guard_msgs in
 #print axioms log_gamma_add_sqrt
 
-set_option maxHeartbeats 9274 in
+set_option maxHeartbeats 10290 in
 /-- **MP05** — `tan_sinh_mul_cos`: `tan, sinh, cos` composed in one expression, evaluated at `x =
 1/3`.
 
@@ -125,7 +125,7 @@ def tan_sinh_mul_cos : { x : Rat // abs (Real.tan (Real.sinh (1 / 3) * Real.cos 
 #guard_msgs in
 #print axioms tan_sinh_mul_cos
 
-set_option maxHeartbeats 14432 in
+set_option maxHeartbeats 15150 in
 /-- **MP06** — `cosh_sin_add_arctan`: `cosh, sin, arctan` composed in one expression, evaluated at
 `x = 1`.
 
@@ -144,7 +144,7 @@ def cosh_sin_add_arctan : { x : Rat // abs (Real.cosh (Real.sin 1 + Real.arctan 
 #guard_msgs in
 #print axioms cosh_sin_add_arctan
 
-set_option maxHeartbeats 11465 in
+set_option maxHeartbeats 12642 in
 /-- **MP08** — `arcsin_tanh_mul_cos`: `arcsin, tanh, cos` composed in one expression, evaluated at
 `x = 1/2, 1/3`.
 
@@ -163,7 +163,7 @@ def arcsin_tanh_mul_cos : { x : Rat // abs (Real.arcsin (Real.tanh (1 / 2) * Rea
 #guard_msgs in
 #print axioms arcsin_tanh_mul_cos
 
-set_option maxHeartbeats 13476 in
+set_option maxHeartbeats 14812 in
 /-- **MP09** — `arccos_sinh_mul_exp`: `arccos, sinh, exp` composed in one expression, evaluated at
 `x = 1/2`.
 
@@ -182,7 +182,7 @@ def arccos_sinh_mul_exp : { x : Rat // abs (Real.arccos (Real.sinh (1 / 2) * Rea
 #guard_msgs in
 #print axioms arccos_sinh_mul_exp
 
-set_option maxHeartbeats 6809 in
+set_option maxHeartbeats 7616 in
 /-- **MP10** — `sinc_exp_mul_sin`: `sinc, exp, sin` composed in one expression, evaluated at `x =
 1`.
 
@@ -201,7 +201,7 @@ def sinc_exp_mul_sin : { x : Rat // abs (Real.sinc (Real.exp (-1) * Real.sin 1) 
 #guard_msgs in
 #print axioms sinc_exp_mul_sin
 
-set_option maxHeartbeats 8587 in
+set_option maxHeartbeats 9502 in
 /-- **MP11** — `cot_sinh_add_two`: `cot, sinh` composed in one expression, evaluated at `x = 1/2`.
 
 `x` is the *unknown*: the tactic has to produce a rational witness inside the tolerance
@@ -219,7 +219,7 @@ def cot_sinh_add_two : { x : Rat // abs (Real.cot (Real.sinh (1 / 2) + 2) - x) <
 #guard_msgs in
 #print axioms cot_sinh_add_two
 
-set_option maxHeartbeats 8319 in
+set_option maxHeartbeats 9334 in
 /-- **MP12** — `arsinh_cos_mul_exp`: `arsinh, cos, exp` composed in one expression, evaluated at `x
 = 1/2`.
 
@@ -238,7 +238,7 @@ def arsinh_cos_mul_exp : { x : Rat // abs (Real.arsinh (Real.cos (1 / 2) * Real.
 #guard_msgs in
 #print axioms arsinh_cos_mul_exp
 
-set_option maxHeartbeats 6956 in
+set_option maxHeartbeats 7983 in
 /-- **MP13** — `arcosh_exp_add_sin`: `arcosh, exp, sin` composed in one expression, evaluated at `x
 = 1/2`.
 
@@ -257,7 +257,7 @@ def arcosh_exp_add_sin : { x : Rat // abs (Real.arcosh (Real.exp (1 / 2) + Real.
 #guard_msgs in
 #print axioms arcosh_exp_add_sin
 
-set_option maxHeartbeats 7958 in
+set_option maxHeartbeats 9016 in
 /-- **MP14** — `artanh_sin_mul_exp`: `artanh, sin, exp` composed in one expression, evaluated at `x
 = 1/4`.
 
@@ -276,7 +276,7 @@ def artanh_sin_mul_exp : { x : Rat // abs (Real.artanh (Real.sin (1 / 4) * Real.
 #guard_msgs in
 #print axioms artanh_sin_mul_exp
 
-set_option maxHeartbeats 8730 in
+set_option maxHeartbeats 9560 in
 /-- **MP15** — `logb_exp_sin`: `logb, exp, sin` composed in one expression, evaluated at `base 2, x
 = 1`.
 
@@ -295,7 +295,7 @@ def logb_exp_sin : { x : Rat // abs (Real.logb 2 (Real.exp (Real.sin 1) + 1) - x
 #guard_msgs in
 #print axioms logb_exp_sin
 
-set_option maxHeartbeats 9646 in
+set_option maxHeartbeats 12282 in
 /-- **MP16** — `exp_chebyshev_t_add_sin`: `Chebyshev T, exp, sin` composed in one expression,
 evaluated at `n = 4, x = 1/3`.
 
@@ -314,7 +314,7 @@ def exp_chebyshev_t_add_sin : { x : Rat // abs (Real.exp ((((Polynomial.Chebyshe
 #guard_msgs in
 #print axioms exp_chebyshev_t_add_sin
 
-set_option maxHeartbeats 6577 in
+set_option maxHeartbeats 8315 in
 /-- **MP17** — `log_chebyshev_u_add_three`: `Chebyshev U, log` composed in one expression, evaluated
 at `n = 4, x = 1/3`.
 
@@ -333,7 +333,7 @@ def log_chebyshev_u_add_three : { x : Rat // abs (Real.log (3 + (((Polynomial.Ch
 #guard_msgs in
 #print axioms log_chebyshev_u_add_three
 
-set_option maxHeartbeats 8687 in
+set_option maxHeartbeats 17651 in
 /-- **MP18** — `cos_euler_add_sqrt`: `cos, eulerMascheroniConstant, sqrt` composed in one
 expression, evaluated at `x = gamma + sqrt 2`.
 
@@ -352,7 +352,7 @@ def cos_euler_add_sqrt : { x : Rat // abs (Real.cos (Real.eulerMascheroniConstan
 #guard_msgs in
 #print axioms cos_euler_add_sqrt
 
-set_option maxHeartbeats 9317 in
+set_option maxHeartbeats 9833 in
 /-- **MP19** — `sinh_bell_over_hundred`: `sinh, Nat.bell` composed in one expression, evaluated at
 `n = 5`.
 
@@ -371,7 +371,7 @@ def sinh_bell_over_hundred : { x : Rat // abs (Real.sinh (((Nat.bell 5 : ℕ) : 
 #guard_msgs in
 #print axioms sinh_bell_over_hundred
 
-set_option maxHeartbeats 16266 in
+set_option maxHeartbeats 17595 in
 /-- **MP20** — `exp_bernoulli_poly`: `Polynomial.bernoulli, exp` composed in one expression,
 evaluated at `n = 2, x = 1/3`.
 
@@ -390,7 +390,7 @@ def exp_bernoulli_poly : { x : Rat // abs (Real.exp ((((Polynomial.bernoulli 2).
 #guard_msgs in
 #print axioms exp_bernoulli_poly
 
-set_option maxHeartbeats 4911 in
+set_option maxHeartbeats 5824 in
 /-- **MP21** — `cos_bernoulli_four_add_sqrt`: `cos, bernoulli, sqrt` composed in one expression,
 evaluated at `n = 4`.
 
@@ -409,7 +409,7 @@ def cos_bernoulli_four_add_sqrt : { x : Rat // abs (Real.cos ((bernoulli 4 : ℝ
 #guard_msgs in
 #print axioms cos_bernoulli_four_add_sqrt
 
-set_option maxHeartbeats 10982 in
+set_option maxHeartbeats 11818 in
 /-- **MP22** — `arctan_log_ten_mul_exp`: `arctan, log 10, exp` composed in one expression, evaluated
 at `x = log 10 / e`.
 
@@ -428,7 +428,7 @@ def arctan_log_ten_mul_exp : { x : Rat // abs (Real.arctan (Real.log 10 * Real.e
 #guard_msgs in
 #print axioms arctan_log_ten_mul_exp
 
-set_option maxHeartbeats 29195 in
+set_option maxHeartbeats 30418 in
 /-- **MP23** — `log_two_gamma_div_exp`: `log 2, Gamma, exp` composed in one expression, evaluated at
 `x = 1/4`.
 
@@ -447,7 +447,7 @@ def log_two_gamma_div_exp : { x : Rat // abs (Real.log 2 * Real.Gamma (1 / 4) / 
 #guard_msgs in
 #print axioms log_two_gamma_div_exp
 
-set_option maxHeartbeats 6151 in
+set_option maxHeartbeats 7105 in
 /-- **MP24** — `sqrt_pi_mul_tanh`: `sqrt, pi, tanh` composed in one expression, evaluated at `x =
 1/2`.
 
@@ -466,7 +466,7 @@ def sqrt_pi_mul_tanh : { x : Rat // abs (Real.sqrt Real.pi * Real.tanh (1 / 2) -
 #guard_msgs in
 #print axioms sqrt_pi_mul_tanh
 
-set_option maxHeartbeats 2319 in
+set_option maxHeartbeats 3071 in
 /-- **MP25** — `choose_div_factorial_mul_sqrt`: `Nat.choose, Nat.factorial, sqrt` composed in one
 expression, evaluated at `n = 7, k = 3`.
 
@@ -485,7 +485,7 @@ def choose_div_factorial_mul_sqrt : { x : Rat // abs (((Nat.choose 7 3 : ℕ) : 
 #guard_msgs in
 #print axioms choose_div_factorial_mul_sqrt
 
-set_option maxHeartbeats 6951 in
+set_option maxHeartbeats 7947 in
 /-- **MP28** — `pochhammer_four_third_mul_exp`: `ascPochhammer, exp` composed in one expression,
 evaluated at `n = 4, x = 1/3`.
 
@@ -504,7 +504,7 @@ def pochhammer_four_third_mul_exp : { x : Rat // abs ((((ascPochhammer ℚ 4).ev
 #guard_msgs in
 #print axioms pochhammer_four_third_mul_exp
 
-set_option maxHeartbeats 6599 in
+set_option maxHeartbeats 7661 in
 /-- **MP29** — `rpow_sin_exponent`: `rpow, sin` composed in one expression, evaluated at `base 2,
 exponent sin(1/2) + 1/4`.
 

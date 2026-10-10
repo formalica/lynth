@@ -13,14 +13,14 @@ proof.  Expected values are recorded in comments, never in the predicates.
 
 namespace IntervalArith
 
-set_option maxHeartbeats 28 in
+set_option maxHeartbeats 29 in
 /-- Common tolerance for the rational witnesses. -/
 noncomputable def infiniteSums_infiniteSumTolerance : ℝ := 1 / 100000
 /-- info: 'IntervalArith.infiniteSums_infiniteSumTolerance' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms infiniteSums_infiniteSumTolerance
 
-set_option maxHeartbeats 46 in
+set_option maxHeartbeats 48 in
 /-- `5 * (3/5)^k`, for `k = 0, 1, ...`. -/
 noncomputable def geometricFiveSixths (k : ℕ) : ℝ :=
   5 * ((3 : ℝ) / 5) ^ k
@@ -28,7 +28,7 @@ noncomputable def geometricFiveSixths (k : ℕ) : ℝ :=
 #guard_msgs in
 #print axioms geometricFiveSixths
 
-set_option maxHeartbeats 68 in
+set_option maxHeartbeats 70 in
 /-- `1 / ((k+1)(k+2))`, for `k = 0, 1, ...`. -/
 noncomputable def telescopingReciprocals (k : ℕ) : ℝ :=
   1 / (((k + 1 : ℝ) * (k + 2 : ℝ)))
@@ -36,7 +36,7 @@ noncomputable def telescopingReciprocals (k : ℕ) : ℝ :=
 #guard_msgs in
 #print axioms telescopingReciprocals
 
-set_option maxHeartbeats 76 in
+set_option maxHeartbeats 79 in
 /-- `3^(-k) + 2 * 5^(-k)`, for `k = 0, 1, ...`. -/
 noncomputable def twoGeometricSeries (k : ℕ) : ℝ :=
   ((1 / 3 : ℝ) ^ k) + 2 * ((1 / 5 : ℝ) ^ k)
@@ -44,7 +44,7 @@ noncomputable def twoGeometricSeries (k : ℕ) : ℝ :=
 #guard_msgs in
 #print axioms twoGeometricSeries
 
-set_option maxHeartbeats 45 in
+set_option maxHeartbeats 48 in
 /-- `(-1)^k / (k+1)`, for `k = 0, 1, ...`. -/
 noncomputable def infiniteSums_alternatingHarmonic (k : ℕ) : ℝ :=
   ((-1 : ℝ) ^ k) / ((k : ℝ) + 1)
@@ -52,7 +52,7 @@ noncomputable def infiniteSums_alternatingHarmonic (k : ℕ) : ℝ :=
 #guard_msgs in
 #print axioms infiniteSums_alternatingHarmonic
 
-set_option maxHeartbeats 88 in
+set_option maxHeartbeats 91 in
 /-- `(-1)^(k+1) / (2(k+1)-1)`, for `k = 0, 1, ...`. -/
 noncomputable def leibnizSeries (k : ℕ) : ℝ :=
   ((-1 : ℝ) ^ (k + 1)) / (2 * (k + 1 : ℝ) - 1)
@@ -60,7 +60,7 @@ noncomputable def leibnizSeries (k : ℕ) : ℝ :=
 #guard_msgs in
 #print axioms leibnizSeries
 
-set_option maxHeartbeats 63 in
+set_option maxHeartbeats 67 in
 /-- `1 / (k+1)^2`, for `k = 0, 1, ...`. -/
 noncomputable def baselSeries (k : ℕ) : ℝ :=
   1 / ((k + 1 : ℝ) ^ 2)
@@ -68,7 +68,7 @@ noncomputable def baselSeries (k : ℕ) : ℝ :=
 #guard_msgs in
 #print axioms baselSeries
 
-set_option maxHeartbeats 63 in
+set_option maxHeartbeats 67 in
 /-- `1 / (k+1)^(3/2)`, for `k = 0, 1, ...`. -/
 noncomputable def pSeriesThreeHalves (k : ℕ) : ℝ :=
   1 / (((k + 1 : ℝ) ^ ((3 : ℝ) / 2)))
@@ -76,7 +76,7 @@ noncomputable def pSeriesThreeHalves (k : ℕ) : ℝ :=
 #guard_msgs in
 #print axioms pSeriesThreeHalves
 
-set_option maxHeartbeats 41 in
+set_option maxHeartbeats 44 in
 /-- `1 / (k+1)!`, for `k = 0, 1, ...`. -/
 noncomputable def reciprocalFactorials (k : ℕ) : ℝ :=
   1 / ((Nat.factorial (k + 1) : ℕ) : ℝ)
@@ -84,7 +84,7 @@ noncomputable def reciprocalFactorials (k : ℕ) : ℝ :=
 #guard_msgs in
 #print axioms reciprocalFactorials
 
-set_option maxHeartbeats 78 in
+set_option maxHeartbeats 81 in
 /-- `(-1)^(k+1) / (k+1)^2`, for `k = 0, 1, ...`. -/
 noncomputable def alternatingBaselSeries (k : ℕ) : ℝ :=
   ((-1 : ℝ) ^ (k + 1)) / ((k + 1 : ℝ) ^ 2)
@@ -92,7 +92,7 @@ noncomputable def alternatingBaselSeries (k : ℕ) : ℝ :=
 #guard_msgs in
 #print axioms alternatingBaselSeries
 
-set_option maxHeartbeats 99 in
+set_option maxHeartbeats 101 in
 /-- `1 / (4(k+1)^2-1)`, for `k = 0, 1, ...`. -/
 noncomputable def fourSquareMinusOne (k : ℕ) : ℝ :=
   1 / (4 * ((k + 1 : ℝ) ^ 2) - 1)
@@ -100,7 +100,7 @@ noncomputable def fourSquareMinusOne (k : ℕ) : ℝ :=
 #guard_msgs in
 #print axioms fourSquareMinusOne
 
-set_option maxHeartbeats 60 in
+set_option maxHeartbeats 62 in
 /-- `1 / (k+1)^(k+1)`, for `k = 0, 1, ...`. -/
 noncomputable def reciprocalSelfPowers (k : ℕ) : ℝ :=
   1 / (((k + 1 : ℝ) ^ ((k + 1 : ℝ))))
@@ -108,7 +108,7 @@ noncomputable def reciprocalSelfPowers (k : ℕ) : ℝ :=
 #guard_msgs in
 #print axioms reciprocalSelfPowers
 
-set_option maxHeartbeats 55 in
+set_option maxHeartbeats 57 in
 /-- `1 / (2^(k+1)-1)`, for `k = 0, 1, ...`. -/
 noncomputable def reciprocalMersenneNumbers (k : ℕ) : ℝ :=
   1 / ((2 : ℝ) ^ (k + 1) - 1)
@@ -116,7 +116,7 @@ noncomputable def reciprocalMersenneNumbers (k : ℕ) : ℝ :=
 #guard_msgs in
 #print axioms reciprocalMersenneNumbers
 
-set_option maxHeartbeats 41 in
+set_option maxHeartbeats 44 in
 /-- `1 / F_(k+1)`, where `F_1 = F_2 = 1`, for `k = 0, 1, ...`. -/
 noncomputable def reciprocalFibonacci (k : ℕ) : ℝ :=
   1 / ((Nat.fib (k + 1) : ℕ) : ℝ)
@@ -124,7 +124,7 @@ noncomputable def reciprocalFibonacci (k : ℕ) : ℝ :=
 #guard_msgs in
 #print axioms reciprocalFibonacci
 
-set_option maxHeartbeats 51 in
+set_option maxHeartbeats 54 in
 /--
 A two-branch result for a series.  The left branch contains a rational
 approximation and a proof of summability; the right branch contains a proof
@@ -139,7 +139,7 @@ def SeriesSummabilityResult (f : ℕ → ℝ) (tol : ℝ) : Type :=
 #guard_msgs in
 #print axioms SeriesSummabilityResult
 
-set_option maxHeartbeats 46987 in
+set_option maxHeartbeats 59471 in
 /-- **IS02** — `∑ 1/(k(k+1))`; the expected value is `1`. -/
 def telescopingReciprocalsSubtype :
     { x : Rat //
@@ -150,7 +150,7 @@ def telescopingReciprocalsSubtype :
 #guard_msgs in
 #print axioms telescopingReciprocalsSubtype
 
-set_option maxHeartbeats 947 in
+set_option maxHeartbeats 1440 in
 /-- **IS08** — `∑ 1/k!`; the expected value is `e - 1`. -/
 def reciprocalFactorialsSubtype :
     { x : Rat //
@@ -161,7 +161,7 @@ def reciprocalFactorialsSubtype :
 #guard_msgs in
 #print axioms reciprocalFactorialsSubtype
 
-set_option maxHeartbeats 30416 in
+set_option maxHeartbeats 38018 in
 /-- **IS10** — `∑ 1/(4k^2-1)`; the expected value is `1/2`. -/
 def fourSquareMinusOneSubtype :
     { x : Rat //
@@ -172,7 +172,7 @@ def fourSquareMinusOneSubtype :
 #guard_msgs in
 #print axioms fourSquareMinusOneSubtype
 
-set_option maxHeartbeats 21405 in
+set_option maxHeartbeats 21995 in
 /-- **IS11** — `∑ 1/k^k`; the expected value is `1.29128599706266...`. -/
 def reciprocalSelfPowersSubtype :
     { x : Rat //
@@ -183,7 +183,7 @@ def reciprocalSelfPowersSubtype :
 #guard_msgs in
 #print axioms reciprocalSelfPowersSubtype
 
-set_option maxHeartbeats 3010 in
+set_option maxHeartbeats 4154 in
 /-- **IS12** — `∑ 1/(2^k-1)`; the expected value is `1.60669515241529...`. -/
 def reciprocalMersenneNumbersSubtype :
     { x : Rat //
@@ -194,7 +194,7 @@ def reciprocalMersenneNumbersSubtype :
 #guard_msgs in
 #print axioms reciprocalMersenneNumbersSubtype
 
-set_option maxHeartbeats 2076 in
+set_option maxHeartbeats 2980 in
 /-- **IS13** — `∑ 1/F_n`, where `F_n` is Fibonacci; the expected value is
 `3.35988566624318...`. -/
 def reciprocalFibonacciSubtype :

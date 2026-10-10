@@ -48,6 +48,24 @@ instance : ToExpr Ty where
   toExpr := tyToExpr
   toTypeExpr := mkConst ``Ty
 
+/-- read a Lean type as a `Ty` (`List` applications recurse) -/
+def tyOfType? (ty : Lean.Expr) : MetaM (Option Ty) := go 8 ty
+where
+  go : Nat → Lean.Expr → MetaM (Option Ty)
+    | 0, _ => return none
+    | fuel + 1, ty => do
+      let ty ← whnfR ty
+      if ty.isConstOf ``Nat then return some .nat
+      if ty.isConstOf ``Int then return some .int
+      if ty.isConstOf ``Real then return some .real
+      if ty.isConstOf ``Complex then return some .cplx
+      if ty.isConstOf ``Rat then return some .rat
+      if ty.getAppFn.isConstOf ``List then
+        let args := ty.getAppArgs
+        if 0 < args.size then
+          if let some t ← go fuel args[0]! then return some (.list t)
+      return none
+
 /-- the Lean type expected at one `Ty` position of a curried function -/
 def tyValConst : Ty → Lean.Expr
   | .nat => mkConst ``Nat
@@ -55,7 +73,7 @@ def tyValConst : Ty → Lean.Expr
   | .rat => mkConst ``Rat
   | .real => mkConst ``Real
   | .cplx => mkConst ``Complex
-  | .list t => mkApp (mkConst ``List) (tyValConst t)
+  | .list t => mkApp (mkConst ``List [Lean.levelZero]) (tyValConst t)
 
 /-- One registered function (`CFn tys r`, or an `Fn0`/`Fn1`/`Fn2` record
 lifted via `CFn.ofFn0`/`ofFn1`/`ofFn2`). -/
@@ -154,10 +172,10 @@ where
       throwError "@[lynth_cfn]: `{decl}` function takes {pis.size} arguments, `tys` has {tys.size}"
     for i in [0:tys.size] do
       let d ← inferType pis[i]!
-      let d ← whnfR d
-      let want := tyValConst tys[i]!
-      unless ← isDefEq d want do
-        throwError "@[lynth_cfn]: `{decl}` argument {i} has type {d}, expected {want}"
+      let some dt ← tyOfType? d
+        | throwError "@[lynth_cfn]: `{decl}` argument {i} has non-Ty type {d}"
+      unless dt == tys[i]! do
+        throwError "@[lynth_cfn]: `{decl}` argument {i} has type {d}, expected {(tyValConst tys[i]!)}"
     let mvars ← tys.mapM fun t => mkFreshExprMVar (tyValConst t)
     let pattern ← mkLambdaFVars mvars (mkAppN F mvars)
     let keys ← withReducible do
@@ -197,7 +215,11 @@ where
     let keys ← withReducible do
       let (_, _, body) ← lambdaMetaTelescope pattern
       DiscrTree.mkPath body
-    let cfn := mkApp (mkConst convName) (mkConst decl (info.levelParams.map mkLevelParam))
+    let declE := mkConst decl (info.levelParams.map mkLevelParam)
+    let cfn ← match arity with
+      | 0 => mkAppOptM convName #[none, some declE]
+      | 1 => mkAppOptM convName #[none, none, some declE]
+      | _ => mkAppOptM convName #[none, none, none, some declE]
     return { decl, tys := argTys, res := resTy, cfn, pattern, keys, prio }
 
 syntax (name := lynthCfnAttr) "lynth_cfn" (ppSpace num)? : attr

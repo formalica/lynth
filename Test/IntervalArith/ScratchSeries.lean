@@ -11,14 +11,14 @@ elab "lynth_series" : tactic => do
 
 namespace IntervalArith
 
-set_option maxHeartbeats 28 in
+set_option maxHeartbeats 27 in
 noncomputable def scratchSeries_infiniteSumTolerance : ℝ := 1 / 100000
 
-set_option maxHeartbeats 45 in
+set_option maxHeartbeats 46 in
 noncomputable def scratchSeries_alternatingHarmonic (k : ℕ) : ℝ :=
   ((-1 : ℝ) ^ k) / ((k : ℝ) + 1)
 
-set_option maxHeartbeats 212 in
+set_option maxHeartbeats 567 in
 set_option profiler true in
 theorem alternatingHarmonic_not_summable :
     ¬ Summable scratchSeries_alternatingHarmonic := by

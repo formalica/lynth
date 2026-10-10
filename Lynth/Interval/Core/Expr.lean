@@ -21,6 +21,14 @@ inductive CVal : List Ty → Type where
   | nil : CVal []
   | cons (t : Ty) {ts : List Ty} : t.Val → CVal ts → CVal (t :: ts)
 
+/-- head of a nonempty value list -/
+def CVal.head : {t : Ty} → {ts : List Ty} → CVal (t :: ts) → t.Val
+  | _, _, .cons _ v _ => v
+
+/-- tail of a value list with at least one element -/
+def CVal.tail : {t : Ty} → {ts : List Ty} → CVal (t :: ts) → CVal ts
+  | _, _, .cons _ _ vs => vs
+
 /-- heterogeneous denotation list (what `Expr`s denote to) -/
 inductive CDen : List Ty → Type where
   | nil : CDen []
@@ -58,6 +66,43 @@ def Agree : {tys : List Ty} → CVal tys → CDen tys → Prop
   | _, .nil, .nil => True
   | (_ :: _), .cons _ v vs, .cons _ d ds => v = d ∧ Agree vs ds
 
+/-- sequence-level enclosure correctness over asymptotic values
+(only `nat`/`real` positions carry information) -/
+def CAsyHolds (N : ℕ) : {tys : List Ty} → (ℕ → CVal tys) → CAsy tys → Prop
+  | _, _, .nil => True
+  | (.nat :: _), vs, .cons _ A As =>
+    NAsy.Holds N (fun k => CVal.head (vs k)) A ∧
+    CAsyHolds N (fun k => CVal.tail (vs k)) As
+  | (.real :: _), vs, .cons _ A As =>
+    RAsy.Holds N (fun k => CVal.head (vs k)) A ∧
+    CAsyHolds N (fun k => CVal.tail (vs k)) As
+  | (_ :: _), vs, .cons _ _ As => True ∧ CAsyHolds N (fun k => CVal.tail (vs k)) As
+
+theorem CAsyHolds_head : ∀ {t : Ty} {ts : List Ty} {vs : ℕ → CVal (t :: ts)}
+    {A : t.Asy} {As : CAsy ts} {N : ℕ},
+    CAsyHolds N vs (CAsy.cons t A As) → t.AsyHolds N (fun k => CVal.head (vs k)) A := by
+  intro t ts vs A As N h
+  match t with
+  | .nat => exact h.1
+  | .real => exact h.1
+  | .int => exact h.1
+  | .cplx => exact h.1
+  | .rat => exact h.1
+  | .list _ => exact h.1
+
+theorem CAsyHolds_tail : ∀ {t : Ty} {ts : List Ty} {vs : ℕ → CVal (t :: ts)}
+    {A : t.Asy} {As : CAsy ts} {N : ℕ},
+    CAsyHolds N vs (CAsy.cons t A As) →
+    CAsyHolds N (fun k => CVal.tail (vs k)) As := by
+  intro t ts vs A As N h
+  match t with
+  | .nat => exact h.2
+  | .real => exact h.2
+  | .int => exact h.2
+  | .cplx => exact h.2
+  | .rat => exact h.2
+  | .list _ => exact h.2
+
 /-- n-ary custom function record. `graph` is over exact values; `ev`
 evaluates enclosures; `sound` connects them. -/
 structure CFn (tys : List Ty) (r : Ty) where
@@ -71,8 +116,9 @@ structure CFn (tys : List Ty) (r : Ty) where
     CEncHolds X ds → Agree vs ds → r.Mem (ev c X) y
   cost : Nat := 1
   asy : Ctx → ℕ → CAsy tys → r.Asy := fun _ _ _ => r.asyTop
-  asy_sound : ∀ (c : Ctx) (N : ℕ) (A : CAsy tys) (g : ℕ → r.Val),
-    c.Valid → r.AsyHolds N g (asy c N A) := by
+  asy_sound : ∀ (c : Ctx) (N : ℕ) (A : CAsy tys) (vs : ℕ → CVal tys) (g : ℕ → r.Val),
+    c.Valid → (∀ k, graph (vs k) (g k)) → CAsyHolds N vs A →
+    r.AsyHolds N g (asy c N A) := by
     intros; exact Ty.asyHolds_top _ _ _
 
 namespace CFn
@@ -379,49 +425,72 @@ def CFn.manual (tys : List Ty) (r : Ty) (F : curriedType tys r)
 def CFn.ofFn0 {r : Ty} (f : Fn0 r) : CFn [] r :=
   { name := f.name,
     fn := r.defaultVal,
-    graph := CFn.graphOf [] r f.val,
-    exu := CFn.exuOf (tys := []) r f.val,
+    graph := fun xs y => match xs with | .nil => f.graph y,
+    exu := fun xs => match xs with | .nil => f.exu,
     ev := fun c _ => f.ev c,
     sound := fun c vs ds y X hc hg _ _ =>
       match vs, ds, X with
-      | .nil, .nil, .nil => f.sound c _ hc (hg.symm ▸ f.val_spec),
+      | .nil, .nil, .nil => f.sound c _ hc hg,
     cost := f.cost,
     asy := fun _ _ _ => r.asyTop,
-    asy_sound := fun _ _ _ _ _ => Ty.asyHolds_top _ _ _ }
+    asy_sound := fun _ _ _ _ _ _ _ _ => Ty.asyHolds_top _ _ _ }
 
 /-- lift a unary record to a `CFn` -/
 def CFn.ofFn1 {a r : Ty} (f : Fn1 a r) : CFn [a] r :=
   { name := f.name,
     fn := fun _ => r.defaultVal,
-    graph := CFn.graphOf [a] r f.fn,
-    exu := CFn.exuOf (tys := [a]) r f.fn,
+    graph := fun xs y => match xs with | .cons _ x .nil => f.graph x y,
+    exu := fun xs => match xs with | .cons _ x .nil => f.exu x,
     ev := fun c X => match X with | .cons _ x _ => f.ev c x,
     sound := fun c vs ds y X hc hg hh hag =>
       match vs, ds, X with
       | .cons _ x .nil, .cons _ _ .nil, .cons _ X' .nil =>
-        have hfx : f.fn x = y := hg.symm
-        f.sound c x y X' hc (hfx ▸ f.fn_spec x) (hag.1.symm ▸ hh.1),
+        have hxm : a.Mem X' x := hag.1.symm ▸ hh.1
+        f.sound c _ _ _ hc hg hxm,
     cost := f.cost,
-    asy := fun _ _ _ => r.asyTop,
-    asy_sound := fun _ _ _ _ _ => Ty.asyHolds_top _ _ _ }
+    asy := fun c N A => match A with | .cons _ a _ => f.asy c N a,
+    asy_sound := fun c N A vs g hc hg hA => by
+      match A with
+      | .cons _ a _ =>
+        have hg' : ∀ k, f.graph (CVal.head (vs k)) (g k) := by
+          intro k
+          match h : vs k with
+          | .cons _ x .nil =>
+            have h1 := hg k
+            simp only [h, CVal.head] at h1 ⊢
+            exact h1
+        have hA' := CAsyHolds_head hA
+        exact f.asy_sound c N _ _ _ hc hg' hA' }
 
 /-- lift a binary record to a `CFn` -/
 def CFn.ofFn2 {a b r : Ty} (f : Fn2 a b r) : CFn [a, b] r :=
   { name := f.name,
     fn := fun _ _ => r.defaultVal,
-    graph := CFn.graphOf [a, b] r f.fn,
-    exu := CFn.exuOf (tys := [a, b]) r f.fn,
+    graph := fun xs y => match xs with | .cons _ x (.cons _ y' .nil) => f.graph x y' y,
+    exu := fun xs => match xs with | .cons _ x (.cons _ y' .nil) => f.exu x y',
     ev := fun c X => match X with | .cons _ x (.cons _ y' _) => f.ev c x y',
     sound := fun c vs ds y X hc hg hh hag =>
       match vs, ds, X with
       | .cons _ x (.cons _ y' .nil), .cons _ d (.cons _ d' .nil),
         .cons _ X' (.cons _ Y' .nil) =>
-        have hfxy : f.fn x y' = y := hg.symm
-        f.sound c x y' y X' Y' hc (hfxy ▸ f.fn_spec x y')
-          (hag.1.symm ▸ hh.1) (hag.2.1.symm ▸ hh.2.1),
+        have hxm : a.Mem X' x := hag.1.symm ▸ hh.1
+        have hym : b.Mem Y' y' := hag.2.1.symm ▸ hh.2.1
+        f.sound c _ _ _ _ _ hc hg hxm hym,
     cost := f.cost,
-    asy := fun _ _ _ => r.asyTop,
-    asy_sound := fun _ _ _ _ _ => Ty.asyHolds_top _ _ _ }
+    asy := fun c N A => match A with | .cons _ a (.cons _ b _) => f.asy c N a b,
+    asy_sound := fun c N A vs g hc hg hA => by
+      match A with
+      | .cons _ a (.cons _ b _) =>
+        have hg' : ∀ k, f.graph (CVal.head (vs k)) (CVal.head (CVal.tail (vs k))) (g k) := by
+          intro k
+          match h : vs k with
+          | .cons _ x (.cons _ y .nil) =>
+            have h1 := hg k
+            simp only [h, CVal.head] at h1 ⊢
+            exact h1
+        have hA' := CAsyHolds_head hA
+        have hB' := CAsyHolds_head (CAsyHolds_tail hA)
+        exact f.asy_sound c N _ _ _ _ _ hc hg' hA' hB' }
 
 namespace Expr
 

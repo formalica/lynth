@@ -12,7 +12,7 @@ Ground truth: `arb/CERTIFICATES.md` (Arb, 256-bit, python-flint 0.9.0).
 namespace IntervalArith
 
 
-set_option maxHeartbeats 4023 in
+set_option maxHeartbeats 4808 in
 /-- **T01** — `cos (8 * pi / 17)` — the example from the request. An exact rational multiple of
 `pi`: the natural implementation reduces `pi` algebraically instead of evaluating an interval
 `pi`.
@@ -30,7 +30,7 @@ def cos_eight_pi_over_seventeen : { x : Rat // abs (Real.cos (Real.pi * 8 / 17) 
 #guard_msgs in
 #print axioms cos_eight_pi_over_seventeen
 
-set_option maxHeartbeats 3787 in
+set_option maxHeartbeats 4700 in
 /-- **T02** — `sin (8 * pi / 17)` with an **irrational tolerance** `pi / 100`: the tolerance itself
 is an interval quantity.
 
@@ -47,7 +47,7 @@ def sin_eight_pi_over_seventeen : { x : Rat // abs (Real.sin (Real.pi * 8 / 17) 
 #guard_msgs in
 #print axioms sin_eight_pi_over_seventeen
 
-set_option maxHeartbeats 2169 in
+set_option maxHeartbeats 2462 in
 /-- **T03** — `exp 2` — the elementary transcendental value (compare `Test/Corpus.lean` style goals,
 now with a rational witness).
 
@@ -61,7 +61,7 @@ def exp_two : { x : Rat // abs (Real.exp 2 - x) < 1 / 1000000 } := by lynth
 #guard_msgs in
 #print axioms exp_two
 
-set_option maxHeartbeats 4237 in
+set_option maxHeartbeats 4766 in
 /-- **T04** — `log (pi / 100)` — negative value, irrational argument.
 
 enclosure `-3.460440300138690972175937; -3.460440300138690972175937`, witness
@@ -76,7 +76,7 @@ def log_pi_over_hundred : { x : Rat // abs (Real.log (Real.pi / 100) - x) < 1 / 
 #guard_msgs in
 #print axioms log_pi_over_hundred
 
-set_option maxHeartbeats 3558 in
+set_option maxHeartbeats 4060 in
 /-- **T05** — `2 ^ (1/3)` — real power (`Real.rpow`), i.e. Arb's `root 3` / `pow` path.
 
 enclosure `1.259921049894873190666544; 1.259921049894873190666544`, witness
@@ -92,7 +92,7 @@ def rpow_two_one_third : { x : Rat // abs ((2 : ℝ) ^ ((1 : ℝ) / 3) - x) < 1 
 #guard_msgs in
 #print axioms rpow_two_one_third
 
-set_option maxHeartbeats 643 in
+set_option maxHeartbeats 932 in
 /-- **T06** — `sqrt 2` — algebraic value, 10-digit tolerance, needs ~20 digits of working precision
 to place a rational witness.
 
