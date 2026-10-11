@@ -603,6 +603,17 @@ theorem mem_negHalfI (c : Ctx) : (-Complex.I / 2 : ℂ) ∈ negHalfI c := by
         (CBox.mem_add h1c hXI) (CBox.mem_sub h1c hXI)))
   cost := 200
 
+@[lynth_cfn] def cotC : Fn1 .cplx .cplx where
+  name := "Complex.cot"
+  graph x y := y = Complex.cot x
+  exu := exu_eq _
+  ev c B := CBox.div c.prec (cosBox c B) (sinBox c B)
+  sound := fun c x _ _ hc hy hx => by
+    obtain rfl := hy
+    show Complex.cos x / Complex.sin x ∈ _
+    exact CBox.mem_div (mem_cosBox c hc hx) (mem_sinBox c hc hx)
+  cost := 100
+
 @[lynth_cfn] def piC : Fn0 .cplx where
   name := "Complex.pi"
   graph y := y = (Real.pi : ℂ)

@@ -44,3 +44,13 @@ def cx_arctan_one_add_I : { p : Rat × Rat //
 #guard_msgs in
 #print axioms cx_arctan_one_add_I
 #eval! cx_arctan_one_add_I.1
+
+set_option maxHeartbeats 1698 in
+-- CC3: `cot 1 = 0.6420926159`. (0.642093, 0)
+def cx_cot_one : { p : Rat × Rat //
+    ‖Complex.cot 1 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
+  lynth
+/-- info: 'cx_cot_one' depends on axioms: [propext, Classical.choice, Quot.sound, cx_cot_one._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms cx_cot_one
+#eval! cx_cot_one.1
