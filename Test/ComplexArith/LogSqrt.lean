@@ -91,3 +91,14 @@ def cx_euler_const : { p : Rat × Rat //
 #guard_msgs in
 #print axioms cx_euler_const
 #eval! cx_euler_const.1
+
+set_option maxHeartbeats 1476 in
+-- CL3 (own, pure-imaginary arg): `log I = π/2·I`. (0, 1.570796)
+def cx_log_I : { p : Rat × Rat //
+    ‖Complex.log Complex.I - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
+      < 1 / 1000000 } := by
+  lynth
+/-- info: 'cx_log_I' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, cx_log_I._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms cx_log_I
+#eval! cx_log_I.1

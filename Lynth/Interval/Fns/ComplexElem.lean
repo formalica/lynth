@@ -139,6 +139,20 @@ theorem arg_of_neg_neg {z : ℂ} (hx : z.re < 0) (hy : z.im < 0) :
     z.arg = Real.arctan (z.im / z.re) - Real.pi := by
   sorry
 
+/-- ARG, pure imaginary positive axis. -/
+theorem arg_of_zero_pos {y : ℝ} (hy : 0 < y) : (⟨0, y⟩ : ℂ).arg = Real.pi / 2 := by
+  have e : (⟨0, y⟩ : ℂ) = (y : ℂ) * Complex.I := by
+    apply Complex.ext <;> simp
+  rw [e]
+  exact (Complex.arg_real_mul _ hy).trans Complex.arg_I
+
+/-- ARG, pure imaginary negative axis. -/
+theorem arg_of_zero_neg {y : ℝ} (hy : y < 0) : (⟨0, y⟩ : ℂ).arg = -(Real.pi / 2) := by
+  have e : (⟨0, y⟩ : ℂ) = ((-y : ℝ) : ℂ) * (-Complex.I) := by
+    apply Complex.ext <;> simp
+  rw [e]
+  exact (Complex.arg_real_mul _ (by linarith)).trans Complex.arg_neg_I
+
 /-- SQRT, right half-plane interior, division form matching `sqrtBox`
 (mirror for the prover). -/
 theorem sqrt_components_of_pos {z : ℂ} (hx : 0 < z.re) :
@@ -310,6 +324,10 @@ def argBox (c : Ctx) (X Y : Ival) : Ival :=
           Ival.add c.prec (atanIval c (Ival.div c.prec Y X)) c.pi
         else if xh.toRat < 0 ∧ yh.toRat < 0 then
           Ival.sub c.prec (atanIval c (Ival.div c.prec Y X)) c.pi
+        else if xl.toRat = 0 ∧ xh.toRat = 0 ∧ 0 < yl.toRat then
+          Ival.divNat c.prec c.pi 2
+        else if xl.toRat = 0 ∧ xh.toRat = 0 ∧ yh.toRat < 0 then
+          Ival.neg (Ival.divNat c.prec c.pi 2)
         else Ival.top
       | _, _, _ => Ival.top
   | _, _ => Ival.top
@@ -376,9 +394,56 @@ theorem mem_argBox (c : Ctx) (hc : c.Valid) {z : ℂ} {X Y : Ival}
                   linarith
                 rw [Complex.arg_of_neg_neg hxr hyi]
                 exact Ival.mem_sub (mem_atanIval hc (Ival.mem_div hy hx)) hc.pi_mem
-              · have hev : argBox c X Y = Ival.top := by
-                  simp [argBox, hlo, hpos, hhi, hyl, hyh, hneg, eq_true hneg2]
-                rw [hev]; exact Ival.mem_top _
+              · by_cases hzpos : xl.toRat = 0 ∧ xh.toRat = 0 ∧ 0 < yl.toRat
+                · have hev : argBox c X Y = Ival.divNat c.prec c.pi 2 := by
+                    simp [argBox, hlo, hpos, hhi, hyl, hyh, hneg, hneg2, eq_true hzpos]
+                  rw [hev]
+                  have hx0 : z.re = 0 := by
+                    have h1 := mem_lo_le hx hlo
+                    have h2 := mem_le_hi hx hhi
+                    rw [hzpos.1] at h1
+                    rw [hzpos.2.1] at h2
+                    simp only [Rat.cast_zero] at h1 h2
+                    exact le_antisymm h2 h1
+                  have ez : z = (⟨0, z.im⟩ : ℂ) := by
+                    apply Complex.ext
+                    · show z.re = (0 : ℝ)
+                      exact hx0
+                    · rfl
+                  have hypos : 0 < z.im := by
+                    have h1 := mem_lo_le hy hyl
+                    have h2 : (0 : ℝ) < ((yl.toRat : ℚ) : ℝ) := by
+                      exact_mod_cast hzpos.2.2
+                    linarith
+                  rw [ez, Complex.arg_of_zero_pos hypos]
+                  exact Ival.mem_divNat (p := c.prec) hc.pi_mem (n := 2) (by norm_num)
+                · by_cases hzneg : xl.toRat = 0 ∧ xh.toRat = 0 ∧ yh.toRat < 0
+                  · have hev : argBox c X Y = Ival.neg (Ival.divNat c.prec c.pi 2) := by
+                      simp [argBox, hlo, hpos, hhi, hyl, hyh, hneg, hneg2, hzpos, eq_true hzneg]
+                    rw [hev]
+                    have hx0 : z.re = 0 := by
+                      have h1 := mem_lo_le hx hlo
+                      have h2 := mem_le_hi hx hhi
+                      rw [hzneg.1] at h1
+                      rw [hzneg.2.1] at h2
+                      simp only [Rat.cast_zero] at h1 h2
+                      exact le_antisymm h2 h1
+                    have ez : z = (⟨0, z.im⟩ : ℂ) := by
+                      apply Complex.ext
+                      · show z.re = (0 : ℝ)
+                        exact hx0
+                      · rfl
+                    have hyneg : z.im < 0 := by
+                      have h1 := mem_le_hi hy hyh
+                      have h2 : ((yh.toRat : ℚ) : ℝ) < 0 := by
+                        exact_mod_cast hzneg.2.2
+                      linarith
+                    rw [ez, Complex.arg_of_zero_neg hyneg]
+                    exact Ival.mem_neg (Ival.mem_divNat (p := c.prec) hc.pi_mem
+                      (n := 2) (by norm_num))
+                  · have hev : argBox c X Y = Ival.top := by
+                      simp [argBox, hlo, hpos, hhi, hyl, hyh, hneg, hneg2, hzpos, hzneg]
+                    rw [hev]; exact Ival.mem_top _
 
 /-- `log` on rectangles (unconditional: `logIval`/`argBox` both widen to `⊤`). -/
 def logBox (c : Ctx) (B : CBox) : CBox :=
@@ -502,6 +567,40 @@ theorem mem_sqrtBox (c : Ctx) (hc : c.Valid) {z : ℂ} {B : CBox} (hx : z ∈ B)
       · simp only [hpos, ite_false]
         show Complex.cpow x y ∈ CBox.top
         exact CBox.mem_top _
+  cost := 200
+
+/-- the constant `-I/2` box. -/
+def negHalfI (c : Ctx) : CBox := ⟨Ival.zero, Ival.ofRat c.prec (-1 / 2)⟩
+
+theorem mem_negHalfI (c : Ctx) : (-Complex.I / 2 : ℂ) ∈ negHalfI c := by
+  have hre : (-Complex.I / 2 : ℂ).re = 0 := by simp
+  have him : (-Complex.I / 2 : ℂ).im = (-1 : ℝ) / 2 := by simp
+  have h0 : (0 : ℝ) ∈ Ival.zero := Ival.mem_zero
+  have h1 : ((-1 : ℝ) / 2) ∈ Ival.ofRat c.prec (-1 / 2) := by
+    exact_mod_cast Ival.mem_ofRat c.prec (-1 / 2 : ℚ)
+  rw [CBox.mem_def, hre, him]
+  exact ⟨h0, h1⟩
+
+@[lynth_cfn] def arctanC : Fn1 .cplx .cplx where
+  name := "Complex.arctan"
+  graph x y := y = Complex.arctan x
+  exu := exu_eq _
+  ev c X :=
+    CBox.mul c.prec (negHalfI c)
+      (logBox c (CBox.div c.prec
+        (CBox.add c.prec (CBox.ofReal Ival.one) (CBox.mul c.prec X CBox.iI))
+        (CBox.sub c.prec (CBox.ofReal Ival.one) (CBox.mul c.prec X CBox.iI))))
+  sound := fun c x _ X hc hy hx => by
+    obtain rfl := hy
+    show (-Complex.I / 2 * Complex.log ((1 + x * Complex.I) / (1 - x * Complex.I))) ∈ _
+    have h1c : (1 : ℂ) ∈ CBox.ofReal Ival.one := by
+      rw [← Complex.ofReal_one]
+      exact CBox.mem_ofReal Ival.mem_one
+    have hXI : x * Complex.I ∈ CBox.mul c.prec X CBox.iI :=
+      CBox.mem_mul hx CBox.mem_I
+    exact CBox.mem_mul (mem_negHalfI c)
+      (mem_logBox c hc (CBox.mem_div
+        (CBox.mem_add h1c hXI) (CBox.mem_sub h1c hXI)))
   cost := 200
 
 @[lynth_cfn] def piC : Fn0 .cplx where
