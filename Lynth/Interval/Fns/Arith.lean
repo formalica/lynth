@@ -347,6 +347,17 @@ open Lynth.Interval
     rw [Complex.ofReal_natCast] at this
     exact this
 
+@[lynth_cfn] def intCastC : Fn1 .int .cplx where
+  name := "ℤ→ℂ"
+  graph z w := w = (z : ℂ)
+  exu := exu_eq _
+  ev _ Z := CBox.ofReal (ZIval.toIval Z)
+  sound := fun _ _ _ _ _ hy hx => by
+    obtain rfl := hy
+    have := CBox.mem_ofReal (ZIval.mem_toIval hx)
+    rw [Complex.ofReal_intCast] at this
+    exact this
+
 @[lynth_cfn] def iC : Fn0 .cplx where
   name := "I"
   graph z := z = Complex.I

@@ -8,3 +8,4 @@
 import Test.ComplexArith.Exp
 import Test.ComplexArith.LogSqrt
 import Test.ComplexArith.Trig
+import Test.ComplexArith.Cast
