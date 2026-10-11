@@ -23,11 +23,7 @@ set_option maxHeartbeats 2872 in
 def hyp_2f1_neg : { x : Rat //
     abs ((Complex.HGFun {1, 1} {2} (-1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
-/-- info: 'hyp_2f1_neg' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- hyp_2f1_neg._native.native_decide.ax_1] -/
+/-- info: 'hyp_2f1_neg' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_2f1_neg._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms hyp_2f1_neg
 #eval! hyp_2f1_neg.1
@@ -37,11 +33,7 @@ set_option maxHeartbeats 2725 in
 def hyp_2f1_pos : { x : Rat //
     abs ((Complex.HGFun {1, 1} {2} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
-/-- info: 'hyp_2f1_pos' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- hyp_2f1_pos._native.native_decide.ax_1] -/
+/-- info: 'hyp_2f1_pos' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_2f1_pos._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms hyp_2f1_pos
 #eval! hyp_2f1_pos.1
@@ -51,11 +43,7 @@ set_option maxHeartbeats 2822 in
 def hyp_2f1_term : { x : Rat //
     abs ((Complex.HGFun {-2, 1} {2} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
-/-- info: 'hyp_2f1_term' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- hyp_2f1_term._native.native_decide.ax_1] -/
+/-- info: 'hyp_2f1_term' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_2f1_term._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms hyp_2f1_term
 #eval! hyp_2f1_term.1
@@ -65,11 +53,7 @@ set_option maxHeartbeats 2402 in
 def hyp_2f1_zero : { x : Rat //
     abs ((Complex.HGFun {1, 2} {3} (0 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
-/-- info: 'hyp_2f1_zero' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- hyp_2f1_zero._native.native_decide.ax_1] -/
+/-- info: 'hyp_2f1_zero' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_2f1_zero._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms hyp_2f1_zero
 #eval! hyp_2f1_zero.1
@@ -79,7 +63,7 @@ set_option maxHeartbeats 2601 in
 def hyp_1f1 : { x : Rat //
     abs ((Complex.HGFun {1} {2} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
-/-- info: 'hyp_1f1' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, hyp_1f1._native.native_decide.ax_1] -/
+/-- info: 'hyp_1f1' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_1f1._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms hyp_1f1
 #eval! hyp_1f1.1
@@ -89,7 +73,7 @@ set_option maxHeartbeats 2589 in
 def hyp_0f1 : { x : Rat //
     abs ((Complex.HGFun {} {(1 / 2 : ℂ)} (1 / 4 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
-/-- info: 'hyp_0f1' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, hyp_0f1._native.native_decide.ax_1] -/
+/-- info: 'hyp_0f1' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_0f1._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms hyp_0f1
 #eval! hyp_0f1.1
@@ -99,11 +83,7 @@ set_option maxHeartbeats 3026 in
 def hyp_2f2_cancel : { x : Rat //
     abs ((Complex.HGFun {1, 3} {2, 3} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
-/-- info: 'hyp_2f2_cancel' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- hyp_2f2_cancel._native.native_decide.ax_1] -/
+/-- info: 'hyp_2f2_cancel' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_2f2_cancel._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms hyp_2f2_cancel
 #eval! hyp_2f2_cancel.1
@@ -113,11 +93,7 @@ set_option maxHeartbeats 2952 in
 def hyp_3f2_cancel : { x : Rat //
     abs ((Complex.HGFun {1, 1, 2} {2, 2} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
-/-- info: 'hyp_3f2_cancel' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- hyp_3f2_cancel._native.native_decide.ax_1] -/
+/-- info: 'hyp_3f2_cancel' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_3f2_cancel._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms hyp_3f2_cancel
 #eval! hyp_3f2_cancel.1
@@ -127,11 +103,7 @@ set_option maxHeartbeats 3561 in
 def hyp_3f2_direct : { x : Rat //
     abs ((Complex.HGFun {(-1 / 2 : ℂ), 1, 1} {2, 2} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
-/-- info: 'hyp_3f2_direct' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- hyp_3f2_direct._native.native_decide.ax_1] -/
+/-- info: 'hyp_3f2_direct' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_3f2_direct._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms hyp_3f2_direct
 #eval! hyp_3f2_direct.1
@@ -141,11 +113,7 @@ set_option maxHeartbeats 3017 in
 def hyp_3f2_term : { x : Rat //
     abs ((Complex.HGFun {-2, 1, 1} {2, 2} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
-/-- info: 'hyp_3f2_term' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- hyp_3f2_term._native.native_decide.ax_1] -/
+/-- info: 'hyp_3f2_term' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_3f2_term._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms hyp_3f2_term
 #eval! hyp_3f2_term.1
@@ -155,7 +123,7 @@ set_option maxHeartbeats 2649 in
 def hyp_0f2 : { x : Rat //
     abs ((Complex.HGFun {} {1, 3} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
-/-- info: 'hyp_0f2' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, hyp_0f2._native.native_decide.ax_1] -/
+/-- info: 'hyp_0f2' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_0f2._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms hyp_0f2
 #eval! hyp_0f2.1
@@ -165,7 +133,7 @@ set_option maxHeartbeats 2919 in
 def hyp_1f2 : { x : Rat //
     abs ((Complex.HGFun {1} {2, 3} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
-/-- info: 'hyp_1f2' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, hyp_1f2._native.native_decide.ax_1] -/
+/-- info: 'hyp_1f2' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_1f2._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms hyp_1f2
 #eval! hyp_1f2.1
@@ -175,11 +143,7 @@ set_option maxHeartbeats 3237 in
 def hyp_2f2_direct : { x : Rat //
     abs ((Complex.HGFun {1, 2} {3, 4} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
-/-- info: 'hyp_2f2_direct' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- hyp_2f2_direct._native.native_decide.ax_1] -/
+/-- info: 'hyp_2f2_direct' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_2f2_direct._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms hyp_2f2_direct
 #eval! hyp_2f2_direct.1
@@ -189,11 +153,7 @@ set_option maxHeartbeats 2108 in
 def hyp_1f1_two : { x : Rat //
     abs ((Complex.HGFun {2} {3} (1 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
-/-- info: 'hyp_1f1_two' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- hyp_1f1_two._native.native_decide.ax_1] -/
+/-- info: 'hyp_1f1_two' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_1f1_two._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms hyp_1f1_two
 #eval! hyp_1f1_two.1

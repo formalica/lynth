@@ -281,6 +281,22 @@ theorem pfqTerm_exact (p q : Nat) (a b : ℕ → ℝ) (z : ℝ) (m : Nat)
     rw [hterm]; ring
   simp [pfqTerm, h0]
 
+/-- PACKAGED CORE ENCLOSURE (ported from `/tmp/pfq_thm_proof.lean`).
+Terminating tops give the exact prefix; the convergent case gives the
+`(n+1)`-term partial sum plus `|T_n|·R/(1-R)`.  Consumed by `pfqCore_sound`. -/
+theorem pfqCore_enclosure (p q : Nat) (a b : ℕ → ℝ) (z : ℝ) (n : Nat)
+    (h : (∃ i₀ : Nat, ∃ m : Nat, i₀ < p ∧ a i₀ = -(m : ℝ))
+       ∨ ((p ≤ q + 1) ∧ (∀ j : Nat, j < q → 0 < b j + (n : ℝ))
+           ∧ pfqRatio p q a b |z| n < 1)) :
+    (∃ m : Nat, pfqReal p q a b z
+       = (Finset.range (m + 1)).sum (fun k => pfqTerm p q a b z k))
+    ∨ (|pfqReal p q a b z - (Finset.range (n + 1)).sum (fun k => pfqTerm p q a b z k)|
+       ≤ |pfqTerm p q a b z n|
+         * (pfqRatio p q a b |z| n / (1 - pfqRatio p q a b |z| n))) := by
+  rcases h with ⟨i₀, m, hi₀, hterm⟩ | ⟨hpq, hBpos, hR⟩
+  · exact Or.inl ⟨m, pfqTerm_exact p q a b z m i₀ hi₀ hterm⟩
+  · exact Or.inr (pfqTail_corrected_succ p q a b z n hpq hBpos hR)
+
 /-! ### Local bridges -/
 
 /-- list product over a mapped range is the finset product. -/
@@ -604,14 +620,6 @@ def pfqRIval (c : Ctx) (A B : List Ival) (p q : Nat) (Zabs : Ival)
       (Ival.add c.prec aq (Ival.ofRat c.prec (((n : Nat) : ℚ) + 1)))
   else base
 
-/-- tail scale `C = R/(1-R)` interval, `⊤` unless `R < 1`. -/
-def pfqTailC (c : Ctx) (R : Ival) : Ival :=
-  match R.hi with
-  | some h => if h.toRat < 1 then
-      Ival.div c.prec R (Ival.sub c.prec (Ival.ofRat c.prec 1) R)
-    else Ival.top
-  | none => Ival.top
-
 /-- closed-form term `T_k` as interval arithmetic. -/
 def pfqTermIval (c : Ctx) (A B : List Ival) (p q : Nat) (Z : Ival) (k : Nat) : Ival :=
   Ival.div c.prec
@@ -804,12 +812,15 @@ theorem pfqRDenAux_eq (b : ℕ → ℝ) (p f n : Nat) :
   induction f with
   | zero => simp
   | succ f ih =>
-    sorry
+    have h1 : p + (f + 1) = (p + f) + 1 := by omega
+    simp only [List.range_succ, List.map_append, List.map_cons, List.map_nil,
+      List.prod_append, List.prod_cons, List.prod_nil, mul_one, h1]
+    rw [Finset.prod_Ico_succ_top (by omega : p ≤ p + f), ih]
 
 /-- extras interval membership (fuel induction). -/
 theorem pfqRDenForall₂ (c : Ctx) (B : List Ival) (b : ℕ → ℝ) (n p : Nat)
     (hmB : ∀ i : Nat, i < B.length → b i ∈ B.getD i Ival.top) :
-    ∀ f : Nat, p + f ≤ B.length → List.Forall₂ (fun x I => x ∈ I)
+    ∀ f : Nat, (∀ t : Nat, t < f → p + t < B.length) → List.Forall₂ (fun x I => x ∈ I)
       ((List.range f).map fun t => b (p + t) + (n : ℝ))
       (pfqRDenAux c B n p f) := by
   intro f
@@ -822,9 +833,9 @@ theorem pfqRDenForall₂ (c : Ctx) (B : List Ival) (b : ℕ → ℝ) (n p : Nat)
       (pfqRDenAux c B n p f
         ++ [Ival.add c.prec (B.getD (p + f) Ival.top)
           (Ival.ofRat c.prec ((n : Nat) : ℚ))])
-    refine List.rel_append (ih (by omega)) ?_
+    refine List.rel_append (ih (fun t ht => hle t (by omega))) ?_
     refine List.Forall₂.cons ?_ List.Forall₂.nil
-    have hmem : b (p + f) ∈ B.getD (p + f) Ival.top := hmB (p + f) (by omega)
+    have hmem : b (p + f) ∈ B.getD (p + f) Ival.top := hmB (p + f) (hle f (Nat.lt_succ_self f))
     have hnR : ((n : Nat) : ℝ) ∈ Ival.ofRat c.prec ((n : Nat) : ℚ) := by
       exact_mod_cast Ival.mem_ofRat c.prec ((n : Nat) : ℚ)
     exact Ival.mem_add hmem hnR
@@ -856,51 +867,69 @@ theorem pfqPairForall₂ (c : Ctx) (A B : List Ival) (a b : ℕ → ℝ) (n : Na
     exact Ival.mem_add (Ival.mem_div (Ival.mem_abs (Ival.mem_sub haM hbM)) hD)
       (by exact_mod_cast Ival.mem_ofRat c.prec (1 : ℚ))
 
-/-- core evaluator: finite prefix or (`n+1` terms) + symmetric tail widening.
-The loop returns `(Σ_{k<n} T_k, T_n)`; the enclosure is centered at
-`Σ_{k<n+1} T_k = S + T_n` with radius `|T_n|·R/(1-R)`
-(`pfqTail_corrected_succ`). -/
-def pfqCoreIval (c : Ctx) (A B : List Ival) (Z : Ival) (n : Nat) : Ival :=
-  match pfqFindTerm A 0 with
-  | some (_, m) =>
-    pfqFiniteIval c A B A.length B.length Z m
-  | none =>
-    if A.length > B.length + 1 then Ival.top
-    else if pfqGuard B n then
-      let res := pfqLoop c A B A.length B.length Z n 0
-        (Ival.ofRat c.prec 0) (Ival.ofRat c.prec 1)
-      let S := Ival.add c.prec res.1 res.2
-      let p := A.length
-      let q := B.length
-      let W := Ival.mul c.prec (Ival.abs res.2)
-        (pfqTailC c (pfqRIval c A B p q (Ival.abs Z)
-          (Ival.abs (A.getD q Ival.top)) n))
-      match W.hi with
-      | some h => Ival.add c.prec S (Ival.ofRats c.prec (-h.toRat) h.toRat)
-      | none => Ival.top
-    else Ival.top
+/-- denominator extras over `[p, p + (q-p))` agree with `[p, q)` (`p ≤ q+1`). -/
+theorem pfqExtras_eq (p q : Nat) (hpq : p ≤ q + 1) (b : ℕ → ℝ) (n : Nat) :
+    ∏ j ∈ Finset.Ico p (p + (q - p)), (b j + (n : ℝ))
+      = ∏ j ∈ Finset.Ico p q, (b j + (n : ℝ)) := by
+  by_cases h : p = q + 1
+  · subst h
+    have e0 : q - (q + 1) = 0 := by omega
+    rw [e0, add_zero, Finset.Ico_eq_empty_of_le (le_refl (q + 1)),
+      Finset.Ico_eq_empty_of_le (show q ≤ q + 1 by omega)]
+  · have hle : p ≤ q := by omega
+    rw [Nat.add_sub_cancel' hle]
 
-/-- core soundness (statement; proof via loop invariant + `pfqTail_corrected_succ`/
-terminating path — the remaining assembly is sorry'd). -/
-theorem pfqCore_sound (c : Ctx) (hc : c.Valid)
-    (p q : Nat) (a b : ℕ → ℝ) (A B : List Ival) (Z : Ival) (z : ℝ) (n : Nat)
+/-- `R`-enclosure: the exact ratio bound lies in `pfqRIval`
+(no positivity needed: `Ival.mem_div` is unconditional). -/
+theorem mem_pfqRIval (c : Ctx) (hc : c.Valid)
+    (a b : ℕ → ℝ) (A B : List Ival) (p q : Nat) (Z : Ival) (z : ℝ) (n : Nat)
     (hlenA : A.length = p) (hlenB : B.length = q)
     (hmA : ∀ i : Nat, i < A.length → a i ∈ A.getD i Ival.top)
     (hmB : ∀ i : Nat, i < B.length → b i ∈ B.getD i Ival.top)
-    (hmZ : z ∈ Z) :
-    pfqReal p q a b z ∈ pfqCoreIval c A B Z n := by
-  sorry
-
-/-! ### List-based `HGFun` mirror (single registry entry).
-
-Users write `Complex.HGFun` over multisets in goals; the reifier
-(`reifyMultisetHGFun?`) normalizes literal spines to lists and targets
-`HGFunL` below. The evaluator extracts real parts (imaginary parts must
-be exactly zero) and runs the general `pfqCoreIval` core at any lengths. -/
-
-/-- list-based `HGFun` mirror (registry vocabulary). -/
-noncomputable def HGFunL (a b : List ℂ) (z : ℂ) : ℂ :=
-  Complex.HGFun ↑a ↑b z
+    (hmZ : z ∈ Z)
+    (hpq : p ≤ q + 1) :
+    pfqRatio p q a b |z| n ∈ pfqRIval c A B p q (Ival.abs Z)
+      (Ival.abs (A.getD q Ival.top)) n := by
+  have hZabs : |z| ∈ Ival.abs Z := Ival.mem_abs hmZ
+  have hN := mem_iprod c hc _ _
+    (pfqPairForall₂ c A B a b n hmA hmB (min p q) (by omega))
+  rw [list_prod_map_range] at hN
+  have hD := mem_iprod c hc _ _
+    (pfqRDenForall₂ c B b n p hmB (q - p) (fun t ht => by omega))
+  rw [pfqRDenAux_eq, pfqExtras_eq p q hpq b n] at hD
+  have hN1 : ((n : ℝ) + 1) ∈ Ival.ofRat c.prec (((n : Nat) : ℚ) + 1) := by
+    exact_mod_cast Ival.mem_ofRat c.prec (((n : Nat) : ℚ) + 1)
+  have hDen : (∏ j ∈ Finset.Ico p q, (b j + (n : ℝ))) * ((n : ℝ) + 1)
+      ∈ Ival.mul c.prec (iprod c (pfqRDenAux c B n p (q - p)))
+        (Ival.ofRat c.prec (((n : Nat) : ℚ) + 1)) :=
+    Ival.mem_mul hD hN1
+  by_cases hpq1 : p = q + 1
+  · have hAq : |a q| ∈ Ival.abs (A.getD q Ival.top) :=
+      Ival.mem_abs (hmA q (by omega))
+    have hTop : |a q| + ((n : ℝ) + 1)
+        ∈ Ival.add c.prec (Ival.abs (A.getD q Ival.top))
+          (Ival.ofRat c.prec (((n : Nat) : ℚ) + 1)) :=
+      Ival.mem_add hAq hN1
+    have hval : pfqRatio p q a b |z| n
+        = (|z| * (∏ i ∈ Finset.range (min p q), (|a i - b i| / (b i + (n : ℝ)) + 1))
+          / ((∏ j ∈ Finset.Ico p q, (b j + (n : ℝ))) * ((n : ℝ) + 1)))
+          * (|a q| + ((n : ℝ) + 1)) := by
+      unfold pfqRatio
+      rw [ite_eq_left hpq1]
+      ring
+    rw [hval]
+    simp only [pfqRIval, ite_eq_left hpq1]
+    exact Ival.mem_mul
+      (Ival.mem_div (Ival.mem_mul hZabs hN) hDen) hTop
+  · have hbase : pfqRatio p q a b |z| n
+        = |z| * (∏ i ∈ Finset.range (min p q), (|a i - b i| / (b i + (n : ℝ)) + 1))
+          / ((∏ j ∈ Finset.Ico p q, (b j + (n : ℝ))) * ((n : ℝ) + 1)) := by
+      unfold pfqRatio
+      rw [ite_eq_right hpq1]
+      ring
+    rw [hbase]
+    simp only [pfqRIval, ite_eq_right hpq1]
+    exact Ival.mem_div (Ival.mem_mul hZabs hN) hDen
 
 /-- real part of a complex enclosure with exactly-zero imaginary part. -/
 def CBox.realOfZeroIm (B : CBox) : Option Ival :=
@@ -908,40 +937,327 @@ def CBox.realOfZeroIm (B : CBox) : Option Ival :=
   | some lo, some hi => if lo = hi ∧ lo.toRat = 0 then some B.re else none
   | _, _ => none
 
-def HGFunL_ev (c : Ctx) : CEnc [.list .cplx, .list .cplx, .cplx] → CBox
-  | .cons _ (some A) (.cons _ (some B) (.cons _ Z .nil)) =>
-    match A.mapM CBox.realOfZeroIm, B.mapM CBox.realOfZeroIm,
-        CBox.realOfZeroIm Z with
-    | some Ar, some Br, some Zr =>
-      let R := pfqCoreIval c Ar Br Zr (64 + 2 * c.prec)
-      ⟨R, Ival.ofRat c.prec 0⟩
-    | _, _, _ => CBox.top
-  | _ => CBox.top
+/-- guard facts give the bridge hypothesis: bottoms avoid nonpositive integers. -/
+theorem hb_of_guard (b : ℕ → ℝ) (q n : Nat)
+    (hpos : ∀ j : Nat, j < q → 0 < b j + (n : ℝ))
+    (hne : ∀ j : Nat, j < q → ∀ k : Nat, k < n → b j + (k : ℝ) ≠ 0) :
+    ∀ j : Nat, j < q → ∀ m : ℕ, (b j : ℂ) ≠ -(m : ℂ) := by
+  intro j hj m heq
+  have hr : b j = -((m : Nat) : ℝ) := by
+    apply Complex.ofReal_injective
+    rw [heq]
+    simp
+  by_cases hm : m < n
+  · exact hne j hj m hm (by linarith)
+  · exfalso
+    have hle : (n : ℝ) ≤ (m : ℝ) := by exact_mod_cast (by omega : n ≤ m)
+    have h0 : b j + (n : ℝ) ≤ 0 := by linarith
+    linarith [hpos j hj]
 
-theorem HGFunL_sound (c : Ctx) :
-    ∀ (vs : CVal [.list .cplx, .list .cplx, .cplx])
-      (ds : CDen [.list .cplx, .list .cplx, .cplx]) (y : ℂ)
-      (X : CEnc [.list .cplx, .list .cplx, .cplx]) (hc : c.Valid)
-      (hg : y = applyCurried [.list .cplx, .list .cplx, .cplx] .cplx HGFunL vs)
-      (hh : CEncHolds X ds) (hag : Agree vs ds),
-    y ∈ HGFunL_ev c X := by
-  sorry
+/-- a complex number with zero imaginary part is the coercion of its real part. -/
+theorem ofReal_of_re {z : ℂ} (h : z.im = 0) : ((z.re : ℝ) : ℂ) = z := by
+  apply Complex.ext
+  · exact Complex.ofReal_re _
+  · rw [Complex.ofReal_im]; exact h.symm
 
-@[lynth_cfn] def HGFunLR : CFn [.list .cplx, .list .cplx, .cplx] .cplx :=
-  { name := "HGFun",
-    fn := fun _ _ _ => (0 : ℂ),
-    graph := CFn.graphOf [.list .cplx, .list .cplx, .cplx] .cplx HGFunL,
-    exu := CFn.exuOf (tys := [.list .cplx, .list .cplx, .cplx]) .cplx HGFunL,
-    ev := HGFunL_ev,
-    sound := HGFunL_sound,
-    cost := 1500 }
+/-- zero-imaginary projection is correct on members. -/
+theorem realOfZeroIm_ok (B : CBox) (R : Ival) (z : ℂ)
+    (hR : CBox.realOfZeroIm B = some R) (hm : z ∈ B) :
+    z.re ∈ R ∧ z.im = 0 := by
+  cases hlo : B.im.lo with
+  | none => simp [CBox.realOfZeroIm, hlo] at hR
+  | some lo =>
+    cases hhi : B.im.hi with
+    | none => simp [CBox.realOfZeroIm, hlo, hhi] at hR
+    | some hi =>
+      simp only [CBox.realOfZeroIm, hlo, hhi] at hR
+      by_cases hc : lo = hi ∧ lo.toRat = 0
+      · rw [ite_eq_left hc] at hR
+        have hReq : B.re = R := Option.some_inj.mp hR
+        have him0 : z.im = 0 := by
+          have hhi' : B.im.hi = some lo := by rw [← hc.1] at hhi; exact hhi
+          have hpt := dyPointMem (X := B.im) hm.2 hlo hhi'
+          rw [hc.2] at hpt
+          exact_mod_cast hpt
+        refine ⟨?_, him0⟩
+        rw [← hReq]; exact hm.1
+      · rw [ite_eq_right hc] at hR
+        exact absurd hR (by simp)
 
+/-- `getD` agrees with `getElem` in bounds. -/
+theorem getD_of_lt {α : Type} (l : List α) (d : α) (i : Nat) (h : i < l.length) :
+    l.getD i d = l[i] := by
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h, Option.getD_some]
 
-end Lynth.Interval.Fns
+/-- extract real parameters from successful zero-imaginary projections. -/
+theorem extract_real_params (A : List CBox) :
+    ∀ (Ar : List Ival) (a d : List ℂ),
+    a = d →
+    List.Forall₂ (Ty.Mem .cplx) A d →
+    List.Forall₂ (fun B R => CBox.realOfZeroIm B = some R) A Ar →
+    Ar.length = A.length ∧ a.length = A.length ∧
+    ∀ i : Nat, i < A.length →
+      (a.getD i 0).re ∈ Ar.getD i Ival.top ∧ (a.getD i 0).im = 0 := by
+  induction A with
+  | nil =>
+    intro Ar a d had hHd hEx
+    cases hHd with
+    | nil =>
+      cases hEx with
+      | nil =>
+        cases had
+        refine ⟨rfl, rfl, fun i hi => by simp at hi⟩
+  | cons B Bs ih =>
+    intro Ar a d had hHd hEx
+    cases hHd with
+    | cons hHd1 hHd2 =>
+      cases hEx with
+      | cons hEx1 hEx2 =>
+        cases had
+        have hmemB : _ ∈ B := hHd1
+        obtain ⟨hAr, ha, hmem⟩ := ih _ _ _ rfl hHd2 hEx2
+        refine ⟨by exact congrArg (· + 1) hAr, by exact congrArg (· + 1) ha, fun i hi => ?_⟩
+        cases i with
+        | zero => exact realOfZeroIm_ok B _ _ hEx1 hmemB
+        | succ i =>
+          have hi' : i < Bs.length := by simp only [List.length_cons] at hi; omega
+          exact hmem i hi'
+
+/-- core evaluator: finite prefix or (`n+1` terms) + symmetric tail widening.
+The loop returns `(Σ_{k<n} T_k, T_n)`; the enclosure is centered at
+`Σ_{k<n+1} T_k = S + T_n` with radius `|T_n|·R/(1-R)`
+(`pfqTail_corrected_succ`). -/
+def pfqCoreIval (c : Ctx) (A B : List Ival) (Z : Ival) (n : Nat) : Ival :=
+  match pfqFindTerm A 0 with
+  | some (_, m) =>
+    -- finite path needs bottom cleanliness too: the `HGFun` bridge only holds
+    -- away from bottom poles (e.g. ₂F₁(-1;0;z) is `0` in Mathlib, `1` as a sum).
+    if pfqGuard B n then pfqFiniteIval c A B A.length B.length Z m else Ival.top
+  | none =>
+    if A.length > B.length + 1 then Ival.top
+    else if pfqGuard B n then
+      let R := pfqRIval c A B A.length B.length (Ival.abs Z)
+        (Ival.abs (A.getD (B.length) Ival.top)) n
+      match R.hi with
+      | none => Ival.top
+      | some hR =>
+        if hR.toRat < 1 then
+          let res := pfqLoop c A B A.length B.length Z n 0
+            (Ival.ofRat c.prec 0) (Ival.ofRat c.prec 1)
+          let S := Ival.add c.prec res.1 res.2
+          let W := Ival.mul c.prec (Ival.abs res.2)
+            (Ival.div c.prec R
+              (Ival.sub c.prec (Ival.ofRat c.prec 1) R))
+          match W.hi with
+          | some h => Ival.add c.prec S (Ival.ofRats c.prec (-h.toRat) h.toRat)
+          | none => Ival.top
+        else Ival.top
+    else Ival.top
+
+/-- core soundness (via loop invariant + `pfqTail_corrected_succ` / terminating path). -/
+theorem pfqCore_sound (c : Ctx) (hc : c.Valid)
+    (p q : Nat) (a b : ℕ → ℝ) (A B : List Ival) (Z : Ival) (z : ℝ) (n : Nat)
+    (hlenA : A.length = p) (hlenB : B.length = q)
+    (hmA : ∀ i : Nat, i < A.length → a i ∈ A.getD i Ival.top)
+    (hmB : ∀ i : Nat, i < B.length → b i ∈ B.getD i Ival.top)
+    (hmZ : z ∈ Z) :
+    pfqReal p q a b z ∈ pfqCoreIval c A B Z n := by
+  unfold pfqCoreIval
+  cases hft : pfqFindTerm A 0 with
+  | none =>
+    show pfqReal p q a b z ∈
+      (if A.length > B.length + 1 then Ival.top
+        else if pfqGuard B n then
+          let R := pfqRIval c A B A.length B.length (Ival.abs Z)
+            (Ival.abs (A.getD (B.length) Ival.top)) n
+          match R.hi with
+          | none => Ival.top
+          | some hR =>
+            if hR.toRat < 1 then
+              let res := pfqLoop c A B A.length B.length Z n 0
+                (Ival.ofRat c.prec 0) (Ival.ofRat c.prec 1)
+              let S := Ival.add c.prec res.1 res.2
+              let W := Ival.mul c.prec (Ival.abs res.2)
+                (Ival.div c.prec R
+                  (Ival.sub c.prec (Ival.ofRat c.prec 1) R))
+              match W.hi with
+              | some h => Ival.add c.prec S (Ival.ofRats c.prec (-h.toRat) h.toRat)
+              | none => Ival.top
+            else Ival.top
+        else Ival.top)
+    by_cases hlen : A.length > B.length + 1
+    · rw [ite_eq_left hlen]
+      exact Ival.mem_top _
+    · rw [ite_eq_right hlen]
+      cases hguard : pfqGuard B n with
+      | false =>
+        show pfqReal p q a b z ∈ Ival.top
+        exact Ival.mem_top _
+      | true =>
+        set resI := pfqLoop c A B A.length B.length Z n 0
+          (Ival.ofRat c.prec 0) (Ival.ofRat c.prec 1) with hresI
+        set SI := Ival.add c.prec resI.1 resI.2 with hSI
+        set RIV := pfqRIval c A B A.length B.length (Ival.abs Z)
+          (Ival.abs (A.getD (B.length) Ival.top)) n with hRIV
+        set W := Ival.mul c.prec (Ival.abs resI.2)
+          (Ival.div c.prec RIV (Ival.sub c.prec (Ival.ofRat c.prec 1) RIV)) with hWdef
+        show pfqReal p q a b z ∈
+          (match RIV.hi with
+          | none => Ival.top
+          | some hR =>
+            if hR.toRat < 1 then
+              match W.hi with
+              | some h => Ival.add c.prec SI (Ival.ofRats c.prec (-h.toRat) h.toRat)
+              | none => Ival.top
+            else Ival.top)
+        rw [← hlenA, ← hlenB]
+        -- guard facts (offset form)
+        have hmB' : ∀ i : Nat, i < B.length → b (0 + i) ∈ B.getD i Ival.top := by
+          intro i hi
+          rw [Nat.zero_add]
+          exact hmB i hi
+        have hG := pfqGuard_ok b B 0 n hmB' hguard
+        obtain ⟨hpos, hne⟩ := hG
+        have hpq' : A.length ≤ B.length + 1 := by omega
+        have hBpos' : ∀ j : Nat, j < B.length → 0 < b j + (n : ℝ) := by
+          intro j hj
+          have h1 := hpos j hj
+          rw [Nat.zero_add] at h1
+          linarith
+        have hBne : ∀ j : Nat, j < B.length → ∀ k : Nat, k < n → b j + (k : ℝ) ≠ 0 := by
+          intro j hj k hk
+          have h1 := hne j hj k hk
+          rw [Nat.zero_add] at h1
+          exact h1
+        -- loop: prefix sum + last term
+        have hS0 : (0 : ℝ) ∈ Ival.ofRat c.prec 0 := by
+          exact_mod_cast Ival.mem_ofRat c.prec (0 : ℚ)
+        have hT0 : (1 : ℝ) ∈ Ival.ofRat c.prec 1 := by
+          exact_mod_cast Ival.mem_ofRat c.prec (1 : ℚ)
+        have hSr : (0 : ℝ)
+            = (Finset.range 0).sum (fun j => pfqTerm A.length B.length a b z j) := by
+          simp
+        have hTr : (1 : ℝ) = pfqTerm A.length B.length a b z 0 :=
+          (pfqTerm_zero A.length B.length a b z).symm
+        have hLoop : (Finset.range (0 + n)).sum (fun j => pfqTerm A.length B.length a b z j)
+              ∈ resI.1
+            ∧ pfqTerm A.length B.length a b z (0 + n) ∈ resI.2 :=
+          mem_pfqLoop c hc a b A B Z z n hmA hmB hmZ hBne
+            n 0 (by omega) _ _ _ _ hS0 hT0 hSr hTr
+        simp only [Nat.zero_add] at hLoop
+        obtain ⟨hS, hT⟩ := hLoop
+        -- center = (n+1)-term partial sum
+        have hSexact : (Finset.range (n + 1)).sum (fun j => pfqTerm A.length B.length a b z j)
+            = (Finset.range n).sum (fun j => pfqTerm A.length B.length a b z j)
+              + pfqTerm A.length B.length a b z n :=
+          Finset.sum_range_succ _ n
+        have hSmem : (Finset.range (n + 1)).sum (fun j => pfqTerm A.length B.length a b z j)
+            ∈ SI := by
+          rw [hSexact]
+          exact Ival.mem_add hS hT
+        -- ratio bound + R < 1 from the tail-scale enclosure
+        have hRmem : pfqRatio A.length B.length a b |z| n ∈ RIV :=
+          mem_pfqRIval c hc a b A B A.length B.length Z z n rfl rfl
+            hmA hmB hmZ hpq'
+        cases hRhi : RIV.hi with
+        | none =>
+          show pfqReal A.length B.length a b z ∈ Ival.top
+          exact Ival.mem_top _
+        | some hRD =>
+          show pfqReal A.length B.length a b z ∈
+            (if hRD.toRat < 1 then
+              match W.hi with
+              | some h => Ival.add c.prec SI (Ival.ofRats c.prec (-h.toRat) h.toRat)
+              | none => Ival.top
+            else Ival.top)
+          by_cases hRlt : hRD.toRat < 1
+          · rw [ite_eq_left hRlt]
+            cases hW : W.hi with
+            | none =>
+              show pfqReal A.length B.length a b z ∈ Ival.top
+              exact Ival.mem_top _
+            | some h =>
+              show pfqReal A.length B.length a b z ∈
+                Ival.add c.prec SI (Ival.ofRats c.prec (-h.toRat) h.toRat)
+              -- R < 1: tail bound applies
+              have hR : pfqRatio A.length B.length a b |z| n < 1 := by
+                have hle : pfqRatio A.length B.length a b |z| n ≤ ((hRD.toRat : ℚ) : ℝ) := by
+                  have hmem2 := (Ival.mem_def.mp hRmem).2
+                  rw [hRhi] at hmem2
+                  rw [Ival.leHi_some] at hmem2
+                  rwa [Dy.toReal_def] at hmem2
+                have hlt1 : ((hRD.toRat : ℚ) : ℝ) < 1 := by exact_mod_cast hRlt
+                linarith
+              have h1 : (1 : ℝ) ∈ Ival.ofRat c.prec 1 := by
+                exact_mod_cast Ival.mem_ofRat c.prec (1 : ℚ)
+              have hCmem : pfqRatio A.length B.length a b |z| n
+                  / (1 - pfqRatio A.length B.length a b |z| n)
+                  ∈ Ival.div c.prec RIV
+                    (Ival.sub c.prec (Ival.ofRat c.prec 1) RIV) :=
+                Ival.mem_div hRmem (Ival.mem_sub h1 hRmem)
+              have hTabs : |pfqTerm A.length B.length a b z n| ∈ Ival.abs resI.2 :=
+                Ival.mem_abs hT
+              have hWmem : |pfqTerm A.length B.length a b z n|
+                  * (pfqRatio A.length B.length a b |z| n
+                    / (1 - pfqRatio A.length B.length a b |z| n)) ∈ W :=
+                Ival.mem_mul hTabs hCmem
+              have hWle : |pfqTerm A.length B.length a b z n|
+                  * (pfqRatio A.length B.length a b |z| n
+                    / (1 - pfqRatio A.length B.length a b |z| n))
+                  ≤ ((h.toRat : ℚ) : ℝ) := by
+                have hle := (Ival.mem_def.mp hWmem).2
+                rw [hW] at hle
+                rw [Ival.leHi_some] at hle
+                rwa [Dy.toReal_def] at hle
+              have htail := pfqTail_corrected_succ A.length B.length a b z n
+                hpq' hBpos' hR
+              have hrad : |pfqReal A.length B.length a b z
+                  - (Finset.range (n + 1)).sum
+                    (fun j => pfqTerm A.length B.length a b z j)|
+                  ≤ ((h.toRat : ℚ) : ℝ) :=
+                le_trans htail hWle
+              have hdiff : pfqReal A.length B.length a b z
+                  - (Finset.range (n + 1)).sum
+                    (fun j => pfqTerm A.length B.length a b z j)
+                  ∈ Ival.ofRats c.prec (-h.toRat) h.toRat := by
+                obtain ⟨hlo, hhi⟩ := abs_le.mp hrad
+                refine Ival.mem_ofRats ?_ hhi
+                simpa using hlo
+              have hpeq : pfqReal A.length B.length a b z
+                  = (Finset.range (n + 1)).sum
+                      (fun j => pfqTerm A.length B.length a b z j)
+                    + (pfqReal A.length B.length a b z
+                      - (Finset.range (n + 1)).sum
+                        (fun j => pfqTerm A.length B.length a b z j)) := by
+                ring
+              rw [hpeq]
+              exact Ival.mem_add hSmem hdiff
+          · rw [ite_eq_right hRlt]
+            show pfqReal A.length B.length a b z ∈ Ival.top
+            exact Ival.mem_top _
+  | some r =>
+    obtain ⟨i₀, m⟩ := r
+    show pfqReal p q a b z ∈
+      (if pfqGuard B n then pfqFiniteIval c A B A.length B.length Z m else Ival.top)
+    cases hguard : pfqGuard B n with
+    | false =>
+      show pfqReal p q a b z ∈ Ival.top
+      exact Ival.mem_top _
+    | true =>
+      rw [← hlenA, ← hlenB]
+      have hmA' : ∀ i : Nat, i < A.length → a (0 + i) ∈ A.getD i Ival.top := by
+        intro i hi
+        rw [Nat.zero_add]
+        exact hmA i hi
+      have hok := pfqFindTerm_ok a A 0 hmA' _ hft i₀ m rfl
+      obtain ⟨hlt, hval⟩ := hok
+      have hi₀ : i₀ < A.length := by omega
+      exact pfqFinite_sound c hc _ _ a b A B Z z m i₀ rfl rfl hmA hmB hmZ hi₀ hval
 
 /-! ### Bridge to Mathlib's `Complex.regularizedHGFun` (ported from
 `/tmp/pfq_thm_proof.lean`). -/
 
+end Lynth.Interval.Fns
 namespace Complex
 
 open BigOperators
@@ -994,4 +1310,260 @@ theorem HGFun_ofReal_eq_pfqReal (p q : Nat) (a b : ℕ → ℝ) (z : ℝ)
   rw [smul_eq_mul, ← mul_assoc]
   exact HGFunCoeff_mul_pow_ofReal p q a b z k hb
 
+/-- LIST BRIDGE (ported from `/tmp/pfq_thm_proof.lean`): `HGFun` over coerced
+lists agrees with `pfqReal` over the list elements.  Consumed by `HGFunL_sound`. -/
+theorem HGFun_coe_list_eq_pfqReal (ar br : List ℝ) (zr : ℝ)
+    (hb : ∀ j : Nat, j < br.length → ∀ m : ℕ, (br.getD j 0 : ℂ) ≠ -(m : ℂ)) :
+    HGFun (↑(ar.map Complex.ofReal) : Multiset ℂ)
+      (↑(br.map Complex.ofReal) : Multiset ℂ) (zr : ℂ)
+      = ((Lynth.Interval.Fns.pfqReal ar.length br.length
+        (fun i => ar.getD i 0) (fun j => br.getD j 0) zr : ℝ) : ℂ) := by
+  have hl : ∀ l : List ℝ, (↑(l.map Complex.ofReal) : Multiset ℂ)
+      = (Multiset.range l.length).map (fun i => ((l.getD i 0 : ℝ) : ℂ)) := by
+    intro l
+    rw [Multiset.range, Multiset.map_coe, Multiset.coe_eq_coe]
+    apply List.Perm.of_eq
+    apply List.ext_getElem (by simp)
+    intro n h1 _
+    simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by simpa using h1)]
+  rw [hl ar, hl br]
+  exact HGFun_ofReal_eq_pfqReal _ _ _ _ zr hb
+
 end Complex
+namespace Lynth.Interval.Fns
+
+/-! ### List-based `HGFun` mirror (single registry entry).
+
+Users write `Complex.HGFun` over multisets in goals; the reifier
+(`reifyMultisetHGFun?`) normalizes literal spines to lists and targets
+`HGFunL` below. The evaluator extracts real parts (imaginary parts must
+be exactly zero) and runs the general `pfqCoreIval` core at any lengths. -/
+
+/-- list-based `HGFun` mirror (registry vocabulary). -/
+noncomputable def HGFunL (a b : List ℂ) (z : ℂ) : ℂ :=
+  Complex.HGFun ↑a ↑b z
+
+/-- project real intervals elementwise (`none` on any nonzero imaginary part). -/
+def projectReal : List CBox → Option (List Ival)
+  | [] => some []
+  | B :: Bs =>
+    match CBox.realOfZeroIm B with
+    | none => none
+    | some R =>
+      match projectReal Bs with
+      | none => none
+      | some Rs => some (R :: Rs)
+
+/-- `projectReal` success gives pointwise projection equations. -/
+theorem projectReal_some (A : List CBox) (Ar : List Ival)
+    (h : projectReal A = some Ar) :
+    List.Forall₂ (fun B R => CBox.realOfZeroIm B = some R) A Ar := by
+  induction A generalizing Ar with
+  | nil =>
+    have h2 : ([] : List Ival) = Ar := Option.some_inj.mp (by simpa [projectReal] using h)
+    subst h2
+    exact List.Forall₂.nil
+  | cons B Bs ih =>
+    cases hB : CBox.realOfZeroIm B with
+    | none => simp [projectReal, hB] at h
+    | some R =>
+      cases hRs : projectReal Bs with
+      | none => simp [projectReal, hB, hRs] at h
+      | some Rs =>
+        have h2 : R :: Rs = Ar := Option.some_inj.mp (by simpa [projectReal, hB, hRs] using h)
+        subst h2
+        exact List.Forall₂.cons hB (ih _ hRs)
+
+def HGFunL_ev (c : Ctx) : CEnc [.list .cplx, .list .cplx, .cplx] → CBox
+  | .cons _ (some A) (.cons _ (some B) (.cons _ Z .nil)) =>
+    match projectReal A, projectReal B, CBox.realOfZeroIm Z with
+    | some Ar, some Br, some Zr =>
+      -- bottom-cleanliness gate: the `HGFun` bridge (hence `y.im = 0`)
+      -- only holds away from bottom poles.
+      if pfqGuard Br (64 + 2 * c.prec) then
+        ⟨pfqCoreIval c Ar Br Zr (64 + 2 * c.prec), Ival.ofRat c.prec 0⟩
+      else CBox.top
+    | _, _, _ => CBox.top
+  | _ => CBox.top
+
+theorem HGFunL_sound (c : Ctx) :
+    ∀ (vs : CVal [.list .cplx, .list .cplx, .cplx])
+      (ds : CDen [.list .cplx, .list .cplx, .cplx]) (y : ℂ)
+      (X : CEnc [.list .cplx, .list .cplx, .cplx]) (hc : c.Valid)
+      (hg : y = applyCurried [.list .cplx, .list .cplx, .cplx] .cplx HGFunL vs)
+      (hh : CEncHolds X ds) (hag : Agree vs ds),
+    y ∈ HGFunL_ev c X := by
+  intro vs ds y X hc hg hh hag
+  match vs, ds, X with
+  | .cons _ a (.cons _ b (.cons _ z .nil)),
+    .cons _ da (.cons _ db (.cons _ dz .nil)),
+    .cons _ XA (.cons _ XB (.cons _ XZ .nil)) =>
+    have had : a = da := hag.1
+    have hbd : b = db := hag.2.1
+    have hzd : z = dz := hag.2.2.1
+    subst had
+    subst hbd
+    subst hzd
+    cases hXA : XA with
+    | none =>
+      show y ∈ CBox.top
+      exact CBox.mem_top _
+    | some A =>
+      subst hXA
+      cases hXB : XB with
+      | none =>
+        show y ∈ CBox.top
+        exact CBox.mem_top _
+      | some B =>
+        subst hXB
+        show y ∈ match projectReal A, projectReal B, CBox.realOfZeroIm XZ with
+          | some Ar, some Br, some Zr =>
+            if pfqGuard Br (64 + 2 * c.prec) then
+              (⟨pfqCoreIval c Ar Br Zr (64 + 2 * c.prec), Ival.ofRat c.prec 0⟩ : CBox)
+            else CBox.top
+          | _, _, _ => CBox.top
+        cases hAr : projectReal A with
+        | none =>
+          show y ∈ CBox.top
+          exact CBox.mem_top _
+        | some Ar =>
+          cases hBr : projectReal B with
+          | none =>
+            show y ∈ CBox.top
+            exact CBox.mem_top _
+          | some Br =>
+            cases hZr : CBox.realOfZeroIm XZ with
+            | none =>
+              show y ∈ CBox.top
+              exact CBox.mem_top _
+            | some Zr =>
+              show y ∈ (if pfqGuard Br (64 + 2 * c.prec) then
+                (⟨pfqCoreIval c Ar Br Zr (64 + 2 * c.prec), Ival.ofRat c.prec 0⟩ : CBox)
+                else CBox.top)
+              cases hguard : pfqGuard Br (64 + 2 * c.prec) with
+              | false =>
+                show y ∈ CBox.top
+                exact CBox.mem_top _
+              | true =>
+                -- extraction to real parameters
+                have hExA := projectReal_some A Ar hAr
+                have hExB := projectReal_some B Br hBr
+                have hhA : List.Forall₂ (Ty.Mem .cplx) A a := hh.1
+                have hhB : List.Forall₂ (Ty.Mem .cplx) B b := hh.2.1
+                have hhZ : z ∈ XZ := hh.2.2.1
+                obtain ⟨hArLen, haLen, hmemA⟩ :=
+                  extract_real_params A Ar a a rfl hhA hExA
+                obtain ⟨hBrLen, hbLen, hmemB⟩ :=
+                  extract_real_params B Br b b rfl hhB hExB
+                have hre_z : z.re ∈ Zr := (realOfZeroIm_ok XZ Zr z hZr hhZ).1
+                have him_z : z.im = 0 := (realOfZeroIm_ok XZ Zr z hZr hhZ).2
+                -- denoted value via the bridge
+                have hy2 : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z := hg
+                have hgetA : ∀ i : Nat, ((a.map Complex.re).getD i 0) = (a.getD i 0).re := by
+                  intro i
+                  have h := List.getD_map (l := a) (d := (0 : ℂ)) (n := i) (f := Complex.re)
+                  simpa [Complex.zero_re] using h
+                have hgetB : ∀ i : Nat, ((b.map Complex.re).getD i 0) = (b.getD i 0).re := by
+                  intro i
+                  have h := List.getD_map (l := b) (d := (0 : ℂ)) (n := i) (f := Complex.re)
+                  simpa [Complex.zero_re] using h
+                have hmap_a : ((a.map Complex.re).map Complex.ofReal) = a := by
+                  rw [List.map_map]
+                  apply List.ext_getElem (by simp)
+                  intro i h1 h2
+                  have e1 := List.getElem_map (f := Complex.ofReal ∘ Complex.re)
+                    (l := a) (i := i) (h := h1)
+                  rw [e1]
+                  have hiA : i < A.length := by omega
+                  have h2' := (hmemA i hiA).2
+                  rw [getD_of_lt a 0 i h2] at h2'
+                  -- goal: Complex.ofReal ((a[i]).re) = a[i]
+                  exact ofReal_of_re h2'
+                have hmap_b : ((b.map Complex.re).map Complex.ofReal) = b := by
+                  rw [List.map_map]
+                  apply List.ext_getElem (by simp)
+                  intro i h1 h2
+                  have e1 := List.getElem_map (f := Complex.ofReal ∘ Complex.re)
+                    (l := b) (i := i) (h := h1)
+                  rw [e1]
+                  have hiB : i < B.length := by omega
+                  have h2' := (hmemB i hiB).2
+                  rw [getD_of_lt b 0 i h2] at h2'
+                  exact ofReal_of_re h2'
+                have hz_eq : ((z.re : ℝ) : ℂ) = z := ofReal_of_re him_z
+                -- bridge hypothesis from the guard
+                have hmemBr : ∀ i : Nat, i < Br.length → (b.getD i 0).re ∈ Br.getD i Ival.top :=
+                  fun i hi => (hmemB i (by omega)).1
+                have hmB' : ∀ i : Nat, i < Br.length →
+                    (fun j => (b.getD j 0).re) (0 + i) ∈ Br.getD i Ival.top := by
+                  intro i hi
+                  simpa using hmemBr i hi
+                have hG := pfqGuard_ok (fun j => (b.getD j 0).re) Br 0
+                  (64 + 2 * c.prec) hmB' hguard
+                obtain ⟨hpos, hne⟩ := hG
+                have hb_br : ∀ j : Nat, j < (b.map Complex.re).length → ∀ m : ℕ,
+                    ((((b.map Complex.re).getD j 0 : ℝ)) : ℂ) ≠ -(m : ℂ) := by
+                  intro j hj m
+                  have hj' : j < Br.length := by
+                    have e : (b.map Complex.re).length = Br.length := by
+                      rw [List.length_map]; omega
+                    omega
+                  rw [hgetB j]
+                  exact hb_of_guard (fun k => (b.getD k 0).re) Br.length
+                    (64 + 2 * c.prec)
+                    (fun k hk => by
+                      have h2 := hpos k hk
+                      rw [Nat.zero_add] at h2
+                      linarith)
+                    (fun k hk t ht => by
+                      have h2 := hne k hk t ht
+                      rwa [Nat.zero_add] at h2)
+                    j hj' m
+                have hbridge := Complex.HGFun_coe_list_eq_pfqReal
+                  (a.map Complex.re) (b.map Complex.re) (z.re) hb_br
+                rw [← hmap_a, ← hmap_b, ← hz_eq] at hy2
+                rw [hbridge] at hy2
+                -- hy2 : y = ↑(pfqReal ..); core gives the real enclosure
+                have harlen : (a.map Complex.re).length = Ar.length := by
+                  rw [List.length_map]; omega
+                have hbrlen : (b.map Complex.re).length = Br.length := by
+                  rw [List.length_map]; omega
+                have hafun : (fun i => (a.getD i 0).re)
+                    = fun i => ((a.map Complex.re).getD i 0) :=
+                  funext fun i => (hgetA i).symm
+                have hbfun : (fun j => (b.getD j 0).re)
+                    = fun j => ((b.map Complex.re).getD j 0) :=
+                  funext fun j => (hgetB j).symm
+                have hcore : pfqReal Ar.length Br.length
+                    (fun i => (a.getD i 0).re) (fun j => (b.getD j 0).re) (z.re)
+                    ∈ pfqCoreIval c Ar Br Zr (64 + 2 * c.prec) :=
+                  pfqCore_sound c hc _ _ _ _ Ar Br Zr _ (64 + 2 * c.prec) rfl rfl
+                    (fun i hi => (hmemA i (by omega)).1)
+                    (fun i hi => (hmemB i (by omega)).1)
+                    hre_z
+                rw [hafun, hbfun, ← harlen, ← hbrlen] at hcore
+                have hP : pfqReal (a.map Complex.re).length (b.map Complex.re).length
+                    (fun i => ((a.map Complex.re).getD i 0))
+                    (fun j => ((b.map Complex.re).getD j 0)) (z.re) = y.re := by
+                  rw [hy2]
+                  exact (Complex.ofReal_re _).symm
+                rw [hP] at hcore
+                have hyim : y.im ∈ Ival.ofRat c.prec 0 := by
+                  have e : y.im = 0 := by
+                    rw [hy2]
+                    exact Complex.ofReal_im _
+                  rw [e]
+                  exact_mod_cast Ival.mem_ofRat c.prec (0 : ℚ)
+                exact CBox.mem_def.mpr ⟨hcore, hyim⟩
+
+@[lynth_cfn] def HGFunLR : CFn [.list .cplx, .list .cplx, .cplx] .cplx :=
+  { name := "HGFun",
+    fn := fun _ _ _ => (0 : ℂ),
+    graph := CFn.graphOf [.list .cplx, .list .cplx, .cplx] .cplx HGFunL,
+    exu := CFn.exuOf (tys := [.list .cplx, .list .cplx, .cplx]) .cplx HGFunL,
+    ev := HGFunL_ev,
+    sound := HGFunL_sound,
+    cost := 1500 }
+
+
+end Lynth.Interval.Fns
