@@ -26,6 +26,8 @@ set_option maxHeartbeats 60000 in
 def dig_one : { x : Rat //
     abs (Real'.digamma 1 - x) < 1 / 1000000 } := by
   lynth
+/-- info: 'dig_one' depends on axioms: [propext, Classical.choice, Quot.sound, dig_one._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms dig_one
 #eval! dig_one.1
 
@@ -34,6 +36,8 @@ set_option maxHeartbeats 60000 in
 def dig_two : { x : Rat //
     abs (Real'.digamma 2 - x) < 1 / 1000000 } := by
   lynth
+/-- info: 'dig_two' depends on axioms: [propext, Classical.choice, Quot.sound, dig_two._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms dig_two
 #eval! dig_two.1
 
@@ -42,6 +46,8 @@ set_option maxHeartbeats 60000 in
 def dig_half : { x : Rat //
     abs (Real'.digamma (1 / 2) - x) < 1 / 1000000 } := by
   lynth
+/-- info: 'dig_half' depends on axioms: [propext, Classical.choice, Quot.sound, dig_half._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms dig_half
 #eval! dig_half.1
 
@@ -50,6 +56,8 @@ set_option maxHeartbeats 60000 in
 def dig_five_halves : { x : Rat //
     abs (Real'.digamma (5 / 2) - x) < 1 / 1000000 } := by
   lynth
+/-- info: 'dig_five_halves' depends on axioms: [propext, Classical.choice, Quot.sound, dig_five_halves._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms dig_five_halves
 #eval! dig_five_halves.1
 
@@ -58,6 +66,8 @@ set_option maxHeartbeats 60000 in
 def dig_neg_half : { x : Rat //
     abs (Real'.digamma (-1 / 2) - x) < 1 / 1000 } := by
   lynth
+/-- info: 'dig_neg_half' depends on axioms: [propext, Classical.choice, Quot.sound, dig_neg_half._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms dig_neg_half
 #eval! dig_neg_half.1
 
@@ -66,5 +76,7 @@ set_option maxHeartbeats 60000 in
 def dig_three : { x : Rat //
     abs (Real'.digamma 3 - x) < 1 / 1000000 } := by
   lynth
+/-- info: 'dig_three' depends on axioms: [propext, Classical.choice, Quot.sound, dig_three._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms dig_three
 #eval! dig_three.1

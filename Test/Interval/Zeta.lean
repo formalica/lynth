@@ -28,6 +28,8 @@ set_option maxHeartbeats 60000 in
 def zeta_two : { x : Rat //
     abs (Real'.zeta 2 - x) < 1 / 1000000 } := by
   lynth
+/-- info: 'zeta_two' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_two._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms zeta_two
 #eval! zeta_two.1
 
@@ -36,6 +38,8 @@ set_option maxHeartbeats 60000 in
 def zeta_three : { x : Rat //
     abs (Real'.zeta 3 - x) < 1 / 1000000 } := by
   lynth
+/-- info: 'zeta_three' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_three._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms zeta_three
 #eval! zeta_three.1
 
@@ -44,6 +48,8 @@ set_option maxHeartbeats 60000 in
 def zeta_four : { x : Rat //
     abs (Real'.zeta 4 - x) < 1 / 1000000 } := by
   lynth
+/-- info: 'zeta_four' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_four._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms zeta_four
 #eval! zeta_four.1
 
@@ -52,6 +58,8 @@ set_option maxHeartbeats 60000 in
 def zeta_five : { x : Rat //
     abs (Real'.zeta 5 - x) < 1 / 1000000 } := by
   lynth
+/-- info: 'zeta_five' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_five._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms zeta_five
 #eval! zeta_five.1
 
@@ -60,6 +68,8 @@ set_option maxHeartbeats 60000 in
 def zeta_six : { x : Rat //
     abs (Real'.zeta 6 - x) < 1 / 1000000 } := by
   lynth
+/-- info: 'zeta_six' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_six._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms zeta_six
 #eval! zeta_six.1
 
@@ -68,6 +78,8 @@ set_option maxHeartbeats 60000 in
 def zeta_seven : { x : Rat //
     abs (Real'.zeta 7 - x) < 1 / 1000000 } := by
   lynth
+/-- info: 'zeta_seven' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_seven._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms zeta_seven
 #eval! zeta_seven.1
 
@@ -76,6 +88,8 @@ set_option maxHeartbeats 60000 in
 def zeta_eight : { x : Rat //
     abs (Real'.zeta 8 - x) < 1 / 1000000 } := by
   lynth
+/-- info: 'zeta_eight' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_eight._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms zeta_eight
 #eval! zeta_eight.1
 
@@ -84,6 +98,11 @@ set_option maxHeartbeats 60000 in
 def zeta_three_halves : { x : Rat //
     abs (Real'.zeta 1.5 - x) < 1 / 1000000 } := by
   lynth
+/-- info: 'zeta_three_halves' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ zeta_three_halves._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms zeta_three_halves
 #eval! zeta_three_halves.1
 
@@ -92,6 +111,11 @@ set_option maxHeartbeats 60000 in
 def zeta_five_halves : { x : Rat //
     abs (Real'.zeta 2.5 - x) < 1 / 1000000 } := by
   lynth
+/-- info: 'zeta_five_halves' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ zeta_five_halves._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms zeta_five_halves
 #eval! zeta_five_halves.1
 
@@ -100,6 +124,8 @@ set_option maxHeartbeats 60000 in
 def zeta_half : { x : Rat //
     abs (Real'.zeta 0.5 - x) < 1 / 1000000 } := by
   lynth
+/-- info: 'zeta_half' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_half._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms zeta_half
 #eval! zeta_half.1
 
@@ -108,6 +134,8 @@ set_option maxHeartbeats 60000 in
 def zeta_neg_one : { x : Rat //
     abs (Real'.zeta (-1) - x) < 1 / 1000 } := by
   lynth
+/-- info: 'zeta_neg_one' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_neg_one._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms zeta_neg_one
 #eval! zeta_neg_one.1
 
@@ -116,6 +144,8 @@ set_option maxHeartbeats 60000 in
 def zeta_neg_three : { x : Rat //
     abs (Real'.zeta (-3) - x) < 1 / 1000 } := by
   lynth
+/-- info: 'zeta_neg_three' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_neg_three._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms zeta_neg_three
 #eval! zeta_neg_three.1
 
@@ -124,6 +154,8 @@ set_option maxHeartbeats 60000 in
 def zeta_neg_two : { x : Rat //
     abs (Real'.zeta (-2) - x) < 1 / 1000 } := by
   lynth
+/-- info: 'zeta_neg_two' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_neg_two._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms zeta_neg_two
 #eval! zeta_neg_two.1
 
@@ -132,5 +164,7 @@ set_option maxHeartbeats 60000 in
 def zeta_neg_half : { x : Rat //
     abs (Real'.zeta (-1 / 2) - x) < 1 / 1000 } := by
   lynth
+/-- info: 'zeta_neg_half' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_neg_half._native.native_decide.ax_1] -/
+#guard_msgs in
 #print axioms zeta_neg_half
 #eval! zeta_neg_half.1

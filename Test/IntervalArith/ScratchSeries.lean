@@ -23,7 +23,16 @@ set_option profiler true in
 theorem alternatingHarmonic_not_summable :
     ¬ Summable scratchSeries_alternatingHarmonic := by
   lynth_series
+/-- info: 'IntervalArith.alternatingHarmonic_not_summable' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms alternatingHarmonic_not_summable
 
+
+/-- info: 'IntervalArith.scratchSeries_infiniteSumTolerance' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms scratchSeries_infiniteSumTolerance
+/-- info: 'IntervalArith.scratchSeries_alternatingHarmonic' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms scratchSeries_alternatingHarmonic
 
 end IntervalArith

@@ -46,6 +46,8 @@ theorem mem_phiBase {c : Ctx} : ((1 + Real.sqrt 5) / 2 : ℝ) ∈ phiBase c := b
 set_option maxHeartbeats 4000 in
 def phi_two : { x : ℚ // abs (phi 2 - x) < 1 / 10 ^ 6 } := by
   lynth
+/-- info: 'phi_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms phi_two
 #eval phi_two.1
 
@@ -53,6 +55,8 @@ def phi_two : { x : ℚ // abs (phi 2 - x) < 1 / 10 ^ 6 } := by
 set_option maxHeartbeats 4000 in
 def phi_sqrt_two : { x : ℚ // abs (phi (Real.sqrt 2 + 1) - x) < 1 / 10 ^ 6 } := by
   lynth
+/-- info: 'phi_sqrt_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms phi_sqrt_two
 #eval phi_sqrt_two.1
 
@@ -60,6 +64,8 @@ def phi_sqrt_two : { x : ℚ // abs (phi (Real.sqrt 2 + 1) - x) < 1 / 10 ^ 6 } :
 set_option maxHeartbeats 4000 in
 def phi_cos : { x : ℚ // abs (Real.cos (phi 1) - x) < 1 / 10 ^ 6 } := by
   lynth
+/-- info: 'phi_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms phi_cos
 #eval phi_cos.1
 
@@ -67,5 +73,20 @@ def phi_cos : { x : ℚ // abs (Real.cos (phi 1) - x) < 1 / 10 ^ 6 } := by
 set_option maxHeartbeats 6000 in
 def phi_floor : { x : ℚ // abs (phi (Nat.floor (phi 1)) - x) < 1 / 10 ^ 6 } := by
   lynth
+/-- info: 'phi_floor' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms phi_floor
 #eval phi_floor.1
+
+/-- info: 'phi' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms phi
+/-- info: 'phiBase' depends on axioms: [propext] -/
+#guard_msgs in
+#print axioms phiBase
+/-- info: 'mem_phiBase' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms mem_phiBase
+/-- info: 'phiR' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms phiR

@@ -17,14 +17,20 @@ open Lynth.Interval
 set_option maxHeartbeats 26834 in
 -- Closed bounds through `lynth`.
 theorem gamma_quarter_le : Real.Gamma (1 / 4) ≤ 37 / 10 := by lynth
+/-- info: 'gamma_quarter_le' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms gamma_quarter_le
 set_option maxHeartbeats 26927 in
 theorem gamma_third_ge : 13 / 5 ≤ Real.Gamma (1 / 3) := by lynth
+/-- info: 'gamma_third_ge' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms gamma_third_ge
 
 set_option maxHeartbeats 27460 in
 def gamma_quarter_approx : { x : Rat // abs (Real.Gamma (1 / 4) - x) < (10 : ℝ) ^ (-5 : ℤ) } := by
   lynth
+/-- info: 'gamma_quarter_approx' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms gamma_quarter_approx
 
 -- Axiom footprint: the standard three plus the temporary Stirling axiom

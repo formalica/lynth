@@ -27,6 +27,8 @@ set_option maxHeartbeats 20000 in
 -- N1: 2-ary Nat, bare discrete witness. 7
 def nary_nat_add : { n : Nat // n = myadd 3 4 } := by
   lynth
+/-- info: 'nary_nat_add' does not depend on any axioms -/
+#guard_msgs in
 #print axioms nary_nat_add
 #eval nary_nat_add.1
 
@@ -34,6 +36,8 @@ set_option maxHeartbeats 20000 in
 -- N2: 2-ary Int with negatives, bare discrete witness. -12
 def nary_int_mul : { s : Int // s = mymul (-3) 4 } := by
   lynth
+/-- info: 'nary_int_mul' does not depend on any axioms -/
+#guard_msgs in
 #print axioms nary_int_mul
 #eval nary_int_mul.1
 
@@ -41,6 +45,8 @@ set_option maxHeartbeats 20000 in
 -- N3: 3-ary Nat, bare discrete witness. 14
 def nary_nat_3ary : { n : Nat // n = myf3 1 2 3 } := by
   lynth
+/-- info: 'nary_nat_3ary' does not depend on any axioms -/
+#guard_msgs in
 #print axioms nary_nat_3ary
 #eval nary_nat_3ary.1
 
@@ -77,6 +83,8 @@ set_option maxHeartbeats 60000 in
 def nary_real_manual : { x : Rat //
     abs (mysqadd 2 3 - x) < 1 / 1000 } := by
   lynth
+/-- info: 'nary_real_manual' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms nary_real_manual
 #eval nary_real_manual.1
 
@@ -166,6 +174,8 @@ set_option maxHeartbeats 60000 in
 def nary_rat_param : { x : Rat //
     abs (myratmul (3 / 2) 2 - x) < 1 / 1000 } := by
   lynth
+/-- info: 'nary_rat_param' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms nary_rat_param
 #eval nary_rat_param.1
 
@@ -174,6 +184,8 @@ set_option maxHeartbeats 60000 in
 def nary_rat_result : { x : Rat //
     abs (((myhalf 3 : ℚ) : ℝ) - x) < 1 / 1000 } := by
   lynth
+/-- info: 'nary_rat_result' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms nary_rat_result
 #eval nary_rat_result.1
 
@@ -182,6 +194,8 @@ set_option maxHeartbeats 60000 in
 def nary_rat_nest : { x : Rat //
     abs (myqmul (myhalf 3) 2 - x) < 1 / 1000 } := by
   lynth
+/-- info: 'nary_rat_nest' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms nary_rat_nest
 #eval nary_rat_nest.1
 
@@ -190,6 +204,8 @@ set_option maxHeartbeats 60000 in
 def nary_nest_manual : { x : Rat //
     abs (mysqadd (myratmul (1 / 2) 4) 1 - x) < 1 / 1000 } := by
   lynth
+/-- info: 'nary_nest_manual' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms nary_nest_manual
 #eval nary_nest_manual.1
 
@@ -210,6 +226,8 @@ set_option maxHeartbeats 20000 in
 -- N9: noncomputable with internal custom type, bare witness. 9
 noncomputable def nary_noncomputable : { n : Nat // n = mywsum 3 4 } := by
   lynth
+/-- info: 'nary_noncomputable' does not depend on any axioms -/
+#guard_msgs in
 #print axioms nary_noncomputable
 -- `#eval[!]` cannot compile the noncomputable marker; the witness value is
 -- checked definitionally instead (bare candidate is the literal `9`).
@@ -267,5 +285,86 @@ set_option maxHeartbeats 60000 in
 def nary_mixed_4ary : { x : Rat //
     abs (myall 1 (-2) (1 / 2) 3 - x) < 1 / 1000 } := by
   lynth
+/-- info: 'nary_mixed_4ary' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
 #print axioms nary_mixed_4ary
 #eval nary_mixed_4ary.1
+
+/-- info: 'myadd' does not depend on any axioms -/
+#guard_msgs in
+#print axioms myadd
+/-- info: 'mymul' does not depend on any axioms -/
+#guard_msgs in
+#print axioms mymul
+/-- info: 'myf3' does not depend on any axioms -/
+#guard_msgs in
+#print axioms myf3
+/-- info: 'myaddR' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms myaddR
+/-- info: 'mymulR' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms mymulR
+/-- info: 'myf3R' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms myf3R
+/-- info: 'mysqadd' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms mysqadd
+/-- info: 'mysqadd_ev' depends on axioms: [propext] -/
+#guard_msgs in
+#print axioms mysqadd_ev
+/-- info: 'mysqadd_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms mysqadd_sound
+/-- info: 'mysqaddR' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms mysqaddR
+/-- info: 'myratmul' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms myratmul
+/-- info: 'myratmul_ev' depends on axioms: [propext] -/
+#guard_msgs in
+#print axioms myratmul_ev
+/-- info: 'myratmul_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms myratmul_sound
+/-- info: 'myratmulR' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms myratmulR
+/-- info: 'myhalf' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms myhalf
+/-- info: 'myhalfR' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms myhalfR
+/-- info: 'myqmul' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms myqmul
+/-- info: 'myqmul_ev' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in
+#print axioms myqmul_ev
+/-- info: 'myqmul_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms myqmul_sound
+/-- info: 'myqmulR' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms myqmulR
+/-- info: 'mywsum' does not depend on any axioms -/
+#guard_msgs in
+#print axioms mywsum
+/-- info: 'mywsumR' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms mywsumR
+/-- info: 'myall' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms myall
+/-- info: 'myall_ev' depends on axioms: [propext] -/
+#guard_msgs in
+#print axioms myall_ev
+/-- info: 'myall_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms myall_sound
+/-- info: 'myallR' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms myallR
