@@ -309,16 +309,36 @@ theorem mem_piMul {w : Nat} {c : Ctx} (hc : c.Valid) (k : Int) : (k : ℝ) * Rea
   refine Ival.mem_mul ?_ hc.pi_mem
   have := Ival.mem_pt (Dy.ofInt k); simpa [toReal_def] using this
 
-/-- `sin` on an interval -/
+/-- a point enclosure pins the value (dyadic cast). -/
+theorem pointMemZero {X : Ival} {x : ℝ} {lo hi : Dy} (hx : x ∈ X)
+    (hlo : X.lo = some lo) (hhi : X.hi = some hi) (h0 : lo = hi ∧ lo.toRat = 0) :
+    x = 0 := by
+  rw [Ival.mem_def] at hx
+  obtain ⟨hx1, hx2⟩ := hx
+  have e1 := hx1 lo hlo
+  have e2 := hx2 hi hhi
+  rw [Dy.toReal_def] at e1 e2
+  have h3 : hi.toRat = lo.toRat := by rw [h0.1]
+  rw [h3, h0.2] at e2
+  rw [h0.2] at e1
+  simp only [Rat.cast_zero] at e1 e2
+  exact le_antisymm e2 e1
+
+/-- `sin` on an interval (exact-zero fast path: the series loop takes zero
+steps at `0`, where `encl1` bails to `[-1, 1]`). -/
 def sinIval (c : Ctx) (X : Ival) : Ival :=
   let w := c.prec + 8
-  match X.mid with
-  | some m =>
-    let k := piMultiple c m
-    let Y := Ival.sub w X (piMul w c k)
-    let S := if inHalfPi c Y then sinMono w Y else lipEncl w sinSer Y
-    if k % 2 == 0 then S else Ival.neg S
-  | none => unitIval
+  match X.lo, X.hi with
+  | some lo, some hi =>
+    if lo = hi ∧ lo.toRat = 0 then Ival.zero
+    else match X.mid with
+      | some m =>
+        let k := piMultiple c m
+        let Y := Ival.sub w X (piMul w c k)
+        let S := if inHalfPi c Y then sinMono w Y else lipEncl w sinSer Y
+        if k % 2 == 0 then S else Ival.neg S
+      | none => unitIval
+  | _, _ => unitIval
 
 /-- `cos` on an interval -/
 def cosIval (c : Ctx) (X : Ival) : Ival :=
@@ -337,29 +357,55 @@ theorem neg_one_zpow_cases (k : Int) : ((-1 : ℝ) ^ k = 1 ∧ k % 2 = 0) ∨ ((
   · right; exact ⟨h.neg_one_zpow, by have := Int.odd_iff.1 h; omega⟩
 
 theorem mem_sinIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X) : Real.sin x ∈ sinIval c X := by
-  unfold sinIval
-  simp only
-  split
-  · rename_i m _
-    set k := piMultiple c m
-    have hy : x - k * Real.pi ∈ Ival.sub (c.prec + 8) X (piMul (c.prec + 8) c k) :=
-      Ival.mem_sub hx (mem_piMul hc k)
-    have hsin : Real.sin x = (-1 : ℝ) ^ k * Real.sin (x - k * Real.pi) := by
-      rw [← Real.sin_add_int_mul_pi]; ring_nf
-    have hS : Real.sin (x - k * Real.pi) ∈
-        (if inHalfPi c (Ival.sub (c.prec + 8) X (piMul (c.prec + 8) c k)) then
-          sinMono (c.prec + 8) (Ival.sub (c.prec + 8) X (piMul (c.prec + 8) c k))
-        else lipEncl (c.prec + 8) sinSer (Ival.sub (c.prec + 8) X (piMul (c.prec + 8) c k))) := by
-      split
-      · rename_i h; exact mem_sinMono hc h hy
-      · exact mem_lipEncl Real.abs_sin_sub_sin_le (mem_sinSer _)
-          (fun u => ⟨Real.neg_one_le_sin u, Real.sin_le_one u⟩) hy
-    rcases neg_one_zpow_cases k with ⟨h1, h2⟩ | ⟨h1, h2⟩
-    · rw [hsin, h1, one_mul]; simp only [h2, beq_self_eq_true, ↓reduceIte]; exact hS
-    · rw [hsin, h1, neg_one_mul]
-      have : (k % 2 == 0) = false := by simp [h2]
-      simp only [this]; exact Ival.mem_neg hS
-  · exact mem_unitIval (Real.neg_one_le_sin _) (Real.sin_le_one _)
+  cases hlo : X.lo with
+  | none =>
+    have hev : sinIval c X = unitIval := by simp [sinIval, hlo]
+    rw [hev]
+    exact mem_unitIval (Real.neg_one_le_sin _) (Real.sin_le_one _)
+  | some lo =>
+    cases hhi : X.hi with
+    | none =>
+      have hev : sinIval c X = unitIval := by simp [sinIval, hlo, hhi]
+      rw [hev]
+      exact mem_unitIval (Real.neg_one_le_sin _) (Real.sin_le_one _)
+    | some hi =>
+      by_cases hz : lo = hi ∧ lo.toRat = 0
+      · have hev : sinIval c X = Ival.zero := by simp [sinIval, hlo, hhi, eq_true hz]
+        rw [hev]
+        have hx0 : x = 0 := pointMemZero hx hlo hhi hz
+        rw [hx0, Real.sin_zero]
+        exact Ival.mem_zero
+      · have hev : sinIval c X = (match X.mid with
+          | some m =>
+            let k := piMultiple c m
+            let Y := Ival.sub (c.prec + 8) X (piMul (c.prec + 8) c k)
+            let S := if inHalfPi c Y then sinMono (c.prec + 8) Y
+              else lipEncl (c.prec + 8) sinSer Y
+            if k % 2 == 0 then S else Ival.neg S
+          | none => unitIval) := by
+          simp [sinIval, hlo, hhi, hz]
+        rw [hev]
+        split
+        · rename_i m _
+          set k := piMultiple c m
+          have hy : x - k * Real.pi ∈ Ival.sub (c.prec + 8) X (piMul (c.prec + 8) c k) :=
+            Ival.mem_sub hx (mem_piMul hc k)
+          have hsin : Real.sin x = (-1 : ℝ) ^ k * Real.sin (x - k * Real.pi) := by
+            rw [← Real.sin_add_int_mul_pi]; ring_nf
+          have hS : Real.sin (x - k * Real.pi) ∈
+              (if inHalfPi c (Ival.sub (c.prec + 8) X (piMul (c.prec + 8) c k)) then
+                sinMono (c.prec + 8) (Ival.sub (c.prec + 8) X (piMul (c.prec + 8) c k))
+              else lipEncl (c.prec + 8) sinSer (Ival.sub (c.prec + 8) X (piMul (c.prec + 8) c k))) := by
+            split
+            · rename_i h; exact mem_sinMono hc h hy
+            · exact mem_lipEncl Real.abs_sin_sub_sin_le (mem_sinSer _)
+                (fun u => ⟨Real.neg_one_le_sin u, Real.sin_le_one u⟩) hy
+          rcases neg_one_zpow_cases k with ⟨h1, h2⟩ | ⟨h1, h2⟩
+          · rw [hsin, h1, one_mul]; simp only [h2, beq_self_eq_true, ↓reduceIte]; exact hS
+          · rw [hsin, h1, neg_one_mul]
+            have : (k % 2 == 0) = false := by simp [h2]
+            simp only [this]; exact Ival.mem_neg hS
+        · exact mem_unitIval (Real.neg_one_le_sin _) (Real.sin_le_one _)
 
 theorem mem_cosIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X) : Real.cos x ∈ cosIval c X := by
   unfold cosIval

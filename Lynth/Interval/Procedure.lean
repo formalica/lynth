@@ -51,6 +51,10 @@ def run : TacticM ProcedureOutcome := do
         goal.assign pf
         replaceMainGoal []
         return .success
+      if let some pf ← Goals.provePairSubtype? ty' then
+        goal.assign pf
+        replaceMainGoal []
+        return .success
       if let some pf ← Goals.proveDiscreteSubtype? ty' then
         goal.assign pf
         replaceMainGoal []

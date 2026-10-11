@@ -9,6 +9,8 @@
 -- Every module listed below is a test that currently passes.
 
 -- subdirectory aggregators
+import Test.ComplexArith
+import Test.ComplexIntervalArith
 import Test.DiscMath
 import Test.FinDomain
 import Test.FinSearch.Suite

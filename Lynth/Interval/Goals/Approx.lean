@@ -131,4 +131,92 @@ def proveRatSubtype? (goalTy : Lean.Expr) : TacticM (Option Lean.Expr) := do
         catch e => trace[lynth.interval] "candidate {q}: {e.toMessageData}"
     return none
 
+/-- the two component types of a `Rat × Rat` type term -/
+def prodArgs? (ty : Lean.Expr) : MetaM (Option (Lean.Expr × Lean.Expr)) := do
+  let (fn, args) := ty.getAppFnArgs
+  if fn == ``Prod && args.size == 2 then return some (args[0]!, args[1]!)
+  else return none
+
+/-- closed side of an `HSub` whose other side mentions `pp`
+(complex anchors `E - C` / `C - E`) -/
+def complexAnchors (pp : Lean.Expr) (P : Lean.Expr) : Array Lean.Expr := Id.run do
+  let id := pp.fvarId!
+  let mut out := #[]
+  for e in subterms P do
+    match e.getAppFnArgs with
+    | (``HSub.hSub, #[_, _, _, _, a, b]) =>
+      if b.containsFVar id && !a.hasFVar && !a.hasMVar && !a.hasLooseBVars then
+        out := out.push a
+      else if a.containsFVar id && !b.hasFVar && !b.hasMVar && !b.hasLooseBVars then
+        out := out.push b
+    | _ => pure ()
+  return out
+
+/-- evaluate a closed complex anchor and propose rational pairs -/
+def complexCandidates (E : Lean.Expr) (tol : ℚ) : TacticM (List (ℚ × ℚ)) := do
+  try
+    let r ← reify {} E
+    unless r.ty == .cplx do
+      return []
+    let v ← evalExprVal .cplx r.expr
+    let maxPrec := lynth.interval.maxPrec.get (← getOptions)
+    for prec in precSchedule maxPrec do
+      let B : CBox := v.eval (Ctx.make prec) {}
+      match B.re.lo, B.re.hi, B.im.lo, B.im.hi with
+      | some lo1, some hi1, some lo2, some hi2 =>
+        let m1 := (lo1.toRat + hi1.toRat) / 2
+        let w1 := hi1.toRat - lo1.toRat
+        let m2 := (lo2.toRat + hi2.toRat) / 2
+        let w2 := hi2.toRat - lo2.toRat
+        if w1 < tol / 4 && w2 < tol / 4 then
+          let qs1 := shortRats m1 (tol / 4 - w1 / 2)
+          let qs2 := shortRats m2 (tol / 4 - w2 / 2)
+          let mut out : List (ℚ × ℚ) := []
+          for q1 in qs1.take 2 do
+            for q2 in qs2.take 2 do
+              out := out ++ [(q1, q2)]
+          return out
+      | _, _, _, _ => pure ()
+    return []
+  catch _ => return []
+
+/-- `{p : ℚ × ℚ // P p}`: complex anchors first, then independent
+real anchors per component (cartesian product) -/
+def provePairSubtype? (goalTy : Lean.Expr) : TacticM (Option Lean.Expr) := do
+  let_expr Subtype α p := goalTy | return none
+  let α ← whnfR α
+  let some (a1, a2) ← prodArgs? α | return none
+  unless (← whnfR a1).isConstOf ``Rat do return none
+  unless (← whnfR a2).isConstOf ``Rat do return none
+  let p ← whnfR p
+  let .lam n _ body _ := p | return none
+  withLocalDeclD n α fun pp => do
+    let P := body.instantiate1 pp
+    let tol ← minTol P
+    -- 1. complex anchors `E - C` / `C - E`
+    for E in complexAnchors pp P do
+      for (q1, q2) in ← complexCandidates E tol do
+        let pairE ← mkAppM ``Prod.mk #[toExpr q1, toExpr q2]
+        let Pq := body.instantiate1 pairE
+        try
+          if let some pf ← proveClosed? Pq then
+            return some (mkApp4 (mkConst ``Subtype.mk [1]) α p pairE pf)
+        catch e => trace[lynth.interval] "candidate ({q1}, {q2}): {e.toMessageData}"
+    -- 2. independent real anchors for `p.1` / `p.2`
+    let p1 := mkProj ``Prod 0 pp
+    let p2 := mkProj ``Prod 1 pp
+    let A1 := anchorsFor p1 P
+    let A2 := anchorsFor p2 P
+    for A in A1 do
+      for q1 in ← candidatesOf A tol do
+        for B in A2 do
+          for q2 in ← candidatesOf B tol do
+            let pairE ← mkAppM ``Prod.mk #[toExpr q1, toExpr q2]
+            let Pq := body.instantiate1 pairE
+            try
+              if let some pf ← proveClosed? Pq then
+                return some (mkApp4 (mkConst ``Subtype.mk [1]) α p pairE pf)
+            catch e => trace[lynth.interval] "candidate ({q1}, {q2}): {e.toMessageData}"
+    return none
+
 end Lynth.Interval.Goals
