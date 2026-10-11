@@ -468,6 +468,42 @@ theorem mem_sqrtBox (c : Ctx) (hc : c.Valid) {z : ℂ} {B : CBox} (hx : z ∈ B)
     exact mem_argBox c hc hx.1 hx.2
   cost := 200
 
+@[lynth_cfn] def cpowC : Fn2 .cplx .cplx .cplx where
+  name := "Complex.cpow"
+  graph x y z := z = x ^ y
+  exu := exu_eq₂ _
+  ev c X Y :=
+    match (CBox.norm c.prec X).lo with
+    | some lo =>
+      if 0 < lo.toRat then
+        expBox c (CBox.mul c.prec (logBox c X) Y)
+      else CBox.top
+    | none => CBox.top
+  sound := fun c x y _ X Y hc hz hx hy => by
+    obtain rfl := hz
+    cases hlo : (CBox.norm c.prec X).lo with
+    | none =>
+      show Complex.cpow x y ∈ CBox.top
+      exact CBox.mem_top _
+    | some lo =>
+      by_cases hpos : 0 < lo.toRat
+      · simp only [hpos, ite_true]
+        have hx0 : x ≠ 0 := by
+          have hle : ((lo.toRat : ℚ) : ℝ) ≤ ‖x‖ := by
+            have h := CBox.mem_norm (p := c.prec) hx
+            have h2 := (Ival.mem_def.mp h).1 lo hlo
+            simpa [Ival.loLe_some, Dy.toReal_def] using h2
+          have h0 : (0 : ℝ) < ((lo.toRat : ℚ) : ℝ) := by exact_mod_cast hpos
+          have hpos' : 0 < ‖x‖ := by linarith
+          exact norm_pos_iff.mp hpos'
+        show x ^ y ∈ expBox c (CBox.mul c.prec (logBox c X) Y)
+        rw [Complex.cpow_def, ite_eq_right hx0]
+        exact mem_expBox c hc (CBox.mem_mul (mem_logBox c hc hx) hy)
+      · simp only [hpos, ite_false]
+        show Complex.cpow x y ∈ CBox.top
+        exact CBox.mem_top _
+  cost := 200
+
 @[lynth_cfn] def piC : Fn0 .cplx where
   name := "Complex.pi"
   graph y := y = (Real.pi : ℂ)
