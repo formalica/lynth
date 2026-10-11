@@ -1,6 +1,7 @@
 import Lynth.Interval.Fns.Exp
 import Lynth.Interval.Fns.Trig
 import Lynth.Interval.Fns.Elem
+import Lynth.Interval.Fns.EulerGamma.Eval
 
 /-!
 # Complex elementary functions via real/imaginary components.
@@ -121,6 +122,30 @@ theorem cosh_im_of (x : ℂ) :
   simp only [Complex.add_im, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
     Complex.I_re, Complex.I_im, mul_zero, mul_one, zero_mul, one_mul,
     sub_zero, add_zero, zero_add] <;> ring
+
+/-- ARG, right half-plane (mirror of `/tmp/complex/batch2_handoff.lean`,
+for the external prover). -/
+theorem arg_of_pos {z : ℂ} (hx : 0 < z.re) :
+    z.arg = Real.arctan (z.im / z.re) := by
+  sorry
+
+/-- ARG, left half-plane, nonnegative imag (mirror for the prover). -/
+theorem arg_of_neg_nonneg {z : ℂ} (hx : z.re < 0) (hy : 0 ≤ z.im) :
+    z.arg = Real.arctan (z.im / z.re) + Real.pi := by
+  sorry
+
+/-- ARG, left half-plane, negative imag (mirror for the prover). -/
+theorem arg_of_neg_neg {z : ℂ} (hx : z.re < 0) (hy : z.im < 0) :
+    z.arg = Real.arctan (z.im / z.re) - Real.pi := by
+  sorry
+
+/-- SQRT, right half-plane interior, division form matching `sqrtBox`
+(mirror for the prover). -/
+theorem sqrt_components_of_pos {z : ℂ} (hx : 0 < z.re) :
+    (Complex.sqrt z).re = Real.sqrt ((‖z‖ + z.re) / 2)
+    ∧ (Complex.sqrt z).im
+      = z.im / (2 * Real.sqrt ((‖z‖ + z.re) / 2)) := by
+  sorry
 
 end Complex
 
@@ -259,5 +284,208 @@ theorem mem_coshBox (c : Ctx) (hc : c.Valid) {x : ℂ} {B : CBox} (hx : x ∈ B)
     rw [Complex.tanh_eq_sinh_div_cosh]
     exact CBox.mem_div (mem_sinhBox c hc hx) (mem_coshBox c hc hx)
   cost := 100
+
+/-- enclosure lower bound from a point lower end. -/
+theorem mem_lo_le {x : ℝ} {X : Ival} {lo : Dy} (hx : x ∈ X) (hlo : X.lo = some lo) :
+    ((lo.toRat : ℚ) : ℝ) ≤ x := by
+  rw [Ival.mem_def] at hx
+  have h := hx.1 lo hlo
+  simpa [Ival.loLe_some, Dy.toReal_def] using h
+
+/-- enclosure upper bound from a point upper end. -/
+theorem mem_le_hi {x : ℝ} {X : Ival} {hi : Dy} (hx : x ∈ X) (hhi : X.hi = some hi) :
+    x ≤ ((hi.toRat : ℚ) : ℝ) := by
+  rw [Ival.mem_def] at hx
+  have h := hx.2 hi hhi
+  simpa [Ival.leHi_some, Dy.toReal_def] using h
+
+/-- argument enclosure by quadrants (`⊤` outside the three exact cases). -/
+def argBox (c : Ctx) (X Y : Ival) : Ival :=
+  match X.lo, X.hi with
+  | some xl, _ =>
+    if 0 < xl.toRat then atanIval c (Ival.div c.prec Y X)
+    else match X.hi, Y.lo, Y.hi with
+      | some xh, some yl, some yh =>
+        if xh.toRat < 0 ∧ 0 ≤ yl.toRat then
+          Ival.add c.prec (atanIval c (Ival.div c.prec Y X)) c.pi
+        else if xh.toRat < 0 ∧ yh.toRat < 0 then
+          Ival.sub c.prec (atanIval c (Ival.div c.prec Y X)) c.pi
+        else Ival.top
+      | _, _, _ => Ival.top
+  | _, _ => Ival.top
+
+theorem mem_argBox (c : Ctx) (hc : c.Valid) {z : ℂ} {X Y : Ival}
+    (hx : z.re ∈ X) (hy : z.im ∈ Y) :
+    z.arg ∈ argBox c X Y := by
+  cases hlo : X.lo with
+  | none =>
+    have hev : argBox c X Y = Ival.top := by simp [argBox, hlo]
+    rw [hev]; exact Ival.mem_top _
+  | some xl =>
+    by_cases hpos : 0 < xl.toRat
+    · have hev : argBox c X Y = atanIval c (Ival.div c.prec Y X) := by
+        simp [argBox, hlo, hpos]
+      rw [hev]
+      have hxr : 0 < z.re := by
+        have h0 : (0 : ℝ) < ((xl.toRat : ℚ) : ℝ) := by exact_mod_cast hpos
+        linarith [mem_lo_le hx hlo]
+      rw [Complex.arg_of_pos hxr]
+      exact mem_atanIval hc (Ival.mem_div hy hx)
+    · cases hhi : X.hi with
+      | none =>
+        have hev : argBox c X Y = Ival.top := by simp [argBox, hlo, hpos, hhi]
+        rw [hev]; exact Ival.mem_top _
+      | some xh =>
+        cases hyl : Y.lo with
+        | none =>
+          have hev : argBox c X Y = Ival.top := by simp [argBox, hlo, hpos, hhi, hyl]
+          rw [hev]; exact Ival.mem_top _
+        | some yl =>
+          cases hyh : Y.hi with
+          | none =>
+            have hev : argBox c X Y = Ival.top := by simp [argBox, hlo, hpos, hhi, hyl, hyh]
+            rw [hev]; exact Ival.mem_top _
+          | some yh =>
+            by_cases hneg : xh.toRat < 0 ∧ 0 ≤ yl.toRat
+            · have hev : argBox c X Y =
+                  Ival.add c.prec (atanIval c (Ival.div c.prec Y X)) c.pi := by
+                simp [argBox, hlo, hpos, hhi, hyl, hyh, eq_true hneg]
+              rw [hev]
+              have hxr : z.re < 0 := by
+                have h1 := mem_le_hi hx hhi
+                have h2 : ((xh.toRat : ℚ) : ℝ) < 0 := by exact_mod_cast hneg.1
+                linarith
+              have hyi : 0 ≤ z.im := by
+                have h1 := mem_lo_le hy hyl
+                have h2 : (0 : ℝ) ≤ ((yl.toRat : ℚ) : ℝ) := by exact_mod_cast hneg.2
+                linarith
+              rw [Complex.arg_of_neg_nonneg hxr hyi]
+              exact Ival.mem_add (mem_atanIval hc (Ival.mem_div hy hx)) hc.pi_mem
+            · by_cases hneg2 : xh.toRat < 0 ∧ yh.toRat < 0
+              · have hev : argBox c X Y =
+                    Ival.sub c.prec (atanIval c (Ival.div c.prec Y X)) c.pi := by
+                  simp [argBox, hlo, hpos, hhi, hyl, hyh, hneg, eq_true hneg2]
+                rw [hev]
+                have hxr : z.re < 0 := by
+                  have h1 := mem_le_hi hx hhi
+                  have h2 : ((xh.toRat : ℚ) : ℝ) < 0 := by exact_mod_cast hneg2.1
+                  linarith
+                have hyi : z.im < 0 := by
+                  have h1 := mem_le_hi hy hyh
+                  have h2 : ((yh.toRat : ℚ) : ℝ) < 0 := by exact_mod_cast hneg2.2
+                  linarith
+                rw [Complex.arg_of_neg_neg hxr hyi]
+                exact Ival.mem_sub (mem_atanIval hc (Ival.mem_div hy hx)) hc.pi_mem
+              · have hev : argBox c X Y = Ival.top := by
+                  simp [argBox, hlo, hpos, hhi, hyl, hyh, hneg, eq_true hneg2]
+                rw [hev]; exact Ival.mem_top _
+
+/-- `log` on rectangles (unconditional: `logIval`/`argBox` both widen to `⊤`). -/
+def logBox (c : Ctx) (B : CBox) : CBox :=
+  ⟨logIval c (CBox.norm c.prec B), argBox c B.re B.im⟩
+
+theorem mem_logBox (c : Ctx) (hc : c.Valid) {z : ℂ} {B : CBox} (hx : z ∈ B) :
+    Complex.log z ∈ logBox c B := by
+  show (Complex.log z).re ∈ _ ∧ (Complex.log z).im ∈ _
+  rw [Complex.log_re, Complex.log_im]
+  exact ⟨mem_logIval hc (CBox.mem_norm hx), mem_argBox c hc hx.1 hx.2⟩
+
+/-- `sqrt` on rectangles (right half-plane interior, else `⊤`). -/
+def sqrtBox (c : Ctx) (B : CBox) : CBox :=
+  match B.re.lo with
+  | some xl =>
+    if 0 < xl.toRat then
+      ⟨Ival.sqrt c.prec
+        (Ival.divNat c.prec (Ival.add c.prec (CBox.norm c.prec B) B.re) 2),
+      Ival.div c.prec B.im
+        (Ival.mul c.prec (Ival.ofRat c.prec 2)
+          (Ival.sqrt c.prec (Ival.divNat c.prec (Ival.add c.prec (CBox.norm c.prec B) B.re) 2)))⟩
+    else CBox.top
+  | none => CBox.top
+
+theorem mem_sqrtBox (c : Ctx) (hc : c.Valid) {z : ℂ} {B : CBox} (hx : z ∈ B) :
+    Complex.sqrt z ∈ sqrtBox c B := by
+  cases hlo : B.re.lo with
+  | none =>
+    have hev : sqrtBox c B = CBox.top := by simp [sqrtBox, hlo]
+    rw [hev]; exact CBox.mem_top _
+  | some xl =>
+    by_cases hpos : 0 < xl.toRat
+    · have hev : sqrtBox c B =
+          ⟨Ival.sqrt c.prec
+            (Ival.divNat c.prec (Ival.add c.prec (CBox.norm c.prec B) B.re) 2),
+          Ival.div c.prec B.im
+            (Ival.mul c.prec (Ival.ofRat c.prec 2)
+              (Ival.sqrt c.prec
+                (Ival.divNat c.prec (Ival.add c.prec (CBox.norm c.prec B) B.re) 2)))⟩ := by
+        simp [sqrtBox, hlo, hpos]
+      rw [hev]
+      have hxr : 0 < z.re := by
+        have h0 : (0 : ℝ) < ((xl.toRat : ℚ) : ℝ) := by exact_mod_cast hpos
+        linarith [mem_lo_le hx.1 hlo]
+      obtain ⟨hre, him⟩ := Complex.sqrt_components_of_pos hxr
+      have hr : ‖z‖ ∈ CBox.norm c.prec B := CBox.mem_norm hx
+      have hs : Real.sqrt ((‖z‖ + z.re) / 2) ∈ Ival.sqrt c.prec
+          (Ival.divNat c.prec (Ival.add c.prec (CBox.norm c.prec B) B.re) 2) := by
+        apply Ival.mem_sqrt
+        apply Ival.mem_divNat (p := c.prec) _ (n := 2) (by norm_num)
+        exact Ival.mem_add hr hx.1
+      have h2 : (2 : ℝ) ∈ Ival.ofRat c.prec 2 := by
+        exact_mod_cast Ival.mem_ofRat c.prec (2 : ℚ)
+      show (Complex.sqrt z).re ∈ _ ∧ (Complex.sqrt z).im ∈ _
+      rw [hre, him]
+      exact ⟨hs, Ival.mem_div hx.2 (Ival.mem_mul h2 hs)⟩
+    · have hev : sqrtBox c B = CBox.top := by simp [sqrtBox, hlo, hpos]
+      rw [hev]; exact CBox.mem_top _
+
+@[lynth_cfn] def logC : Fn1 .cplx .cplx where
+  name := "Complex.log"
+  graph x y := y = Complex.log x
+  exu := exu_eq _
+  ev c B := logBox c B
+  sound := fun c _ _ _ hc hy hx => by
+    obtain rfl := hy
+    exact mem_logBox c hc hx
+  cost := 200
+
+@[lynth_cfn] def sqrtC : Fn1 .cplx .cplx where
+  name := "Complex.sqrt"
+  graph x y := y = Complex.sqrt x
+  exu := exu_eq _
+  ev c B := sqrtBox c B
+  sound := fun c _ _ _ hc hy hx => by
+    obtain rfl := hy
+    exact mem_sqrtBox c hc hx
+  cost := 200
+
+@[lynth_cfn] def argC : Fn1 .cplx .real where
+  name := "Complex.arg"
+  graph x y := y = x.arg
+  exu := exu_eq _
+  ev c B := argBox c B.re B.im
+  sound := fun c _ _ _ hc hy hx => by
+    obtain rfl := hy
+    exact mem_argBox c hc hx.1 hx.2
+  cost := 200
+
+@[lynth_cfn] def piC : Fn0 .cplx where
+  name := "Complex.pi"
+  graph y := y = (Real.pi : ℂ)
+  exu := exu_eq₀ _
+  ev c := CBox.ofReal c.pi
+  sound := fun _ _ hc hy => by
+    obtain rfl := hy
+    exact CBox.mem_ofReal hc.pi_mem
+  cost := 50
+
+@[lynth_cfn] def eulerC : Fn0 .cplx where
+  name := "Complex.eulerMascheroni"
+  graph y := y = ((Real.eulerMascheroniConstant : ℝ) : ℂ)
+  exu := exu_eq₀ _
+  ev c := CBox.ofReal (eulerBMIval c)
+  sound := fun _ _ hc hy => by
+    obtain rfl := hy
+    exact CBox.mem_ofReal (mem_eulerBMIval hc)
+  cost := 50
 
 end Lynth.Interval.Fns

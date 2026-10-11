@@ -6,3 +6,4 @@
 -- Every module listed below is a test that currently passes.
 
 import Test.ComplexArith.Exp
+import Test.ComplexArith.LogSqrt
