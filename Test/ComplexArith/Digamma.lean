@@ -96,3 +96,33 @@ def cx_dig_three : { p : Rat × Rat //
 #guard_msgs in
 #print axioms cx_dig_three
 #eval! cx_dig_three.1
+
+set_option maxHeartbeats 2202 in
+-- CD7 (own, complex argument): `ψ(1+I) = 0.0946503206 + 1.0766740475·I`.
+def cx_dig_one_add_I : { p : Rat × Rat //
+    ‖Complex.digamma (1 + Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
+      < 1 / 1000000 } := by
+  lynth
+/-- info: 'cx_dig_one_add_I' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ cx_dig_one_add_I._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms cx_dig_one_add_I
+#eval! cx_dig_one_add_I.1
+
+set_option maxHeartbeats 2223 in
+-- CD8 (own, complex argument): `ψ(2+I) = 0.5946503206 + 0.5766740475·I`.
+def cx_dig_two_add_I : { p : Rat × Rat //
+    ‖Complex.digamma (2 + Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
+      < 1 / 1000000 } := by
+  lynth
+/-- info: 'cx_dig_two_add_I' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ cx_dig_two_add_I._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms cx_dig_two_add_I
+#eval! cx_dig_two_add_I.1

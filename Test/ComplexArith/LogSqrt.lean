@@ -102,3 +102,33 @@ def cx_log_I : { p : Rat × Rat //
 #guard_msgs in
 #print axioms cx_log_I
 #eval! cx_log_I.1
+
+set_option maxHeartbeats 2646 in
+-- CL4 (own, complex argument): `log (2+3I) = 1.2824746787 + 0.9827937232·I`.
+def cx_log_two_3I : { p : Rat × Rat //
+    ‖Complex.log (2 + 3 * Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
+      < 1 / 1000000 } := by
+  lynth
+/-- info: 'cx_log_two_3I' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ cx_log_two_3I._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms cx_log_two_3I
+#eval! cx_log_two_3I.1
+
+set_option maxHeartbeats 2619 in
+-- CS3 (own, complex argument): `sqrt (2+3I) = 1.6741492280 + 0.8959774761·I`.
+def cx_sqrt_two_3I : { p : Rat × Rat //
+    ‖Complex.sqrt (2 + 3 * Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
+      < 1 / 1000000 } := by
+  lynth
+/-- info: 'cx_sqrt_two_3I' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ cx_sqrt_two_3I._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms cx_sqrt_two_3I
+#eval! cx_sqrt_two_3I.1

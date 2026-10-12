@@ -78,3 +78,18 @@ def cx_gamma_half : { p : Rat × Rat //
 #guard_msgs in
 #print axioms cx_gamma_half
 #eval! cx_gamma_half.1
+
+set_option maxHeartbeats 2293 in
+-- CG5 (own, complex argument): `Γ(1+I) = 0.4980156681 - 0.1549498283·I`.
+def cx_gamma_one_add_I : { p : Rat × Rat //
+    ‖Complex.Gamma (1 + Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
+      < 1 / 1000000 } := by
+  lynth
+/-- info: 'cx_gamma_one_add_I' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ cx_gamma_one_add_I._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms cx_gamma_one_add_I
+#eval! cx_gamma_one_add_I.1

@@ -66,6 +66,39 @@ def cx_conj_symm : { p : Rat × Rat //
 #print axioms cx_conj_symm
 #eval! cx_conj_symm.1
 
+set_option maxHeartbeats 8048 in
+-- CE6 (own, complex argument): `exp (1+I) = 1.4686939399 + 2.2873552872·I`.
+def cx_exp_one_add_I : { p : Rat × Rat //
+    ‖Complex.exp (1 + Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
+      < 1 / 1000000 } := by
+  lynth
+/-- info: 'cx_exp_one_add_I' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms cx_exp_one_add_I
+#eval! cx_exp_one_add_I.1
+
+set_option maxHeartbeats 9882 in
+-- CE7 (own, complex argument): `sin (1+I) = 1.2984575814 + 0.6349639148·I`.
+def cx_sin_one_add_I : { p : Rat × Rat //
+    ‖Complex.sin (1 + Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
+      < 1 / 1000000 } := by
+  lynth
+/-- info: 'cx_sin_one_add_I' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms cx_sin_one_add_I
+#eval! cx_sin_one_add_I.1
+
+set_option maxHeartbeats 9964 in
+-- CE8 (own, complex argument): `cos (1+I) = 0.8337300251 - 0.9888977058·I`.
+def cx_cos_one_add_I : { p : Rat × Rat //
+    ‖Complex.cos (1 + Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
+      < 1 / 1000000 } := by
+  lynth
+/-- info: 'cx_cos_one_add_I' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms cx_cos_one_add_I
+#eval! cx_cos_one_add_I.1
+
 set_option maxHeartbeats 16439 in
 -- CC1: `(1+I)^(2:ℂ) = 2·I`. (0, 2)
 def cx_cpow_one_add_I : { p : Rat × Rat //

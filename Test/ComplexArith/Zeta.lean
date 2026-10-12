@@ -135,3 +135,33 @@ def cx_zeta_neg_two : { p : Rat × Rat //
 #guard_msgs in
 #print axioms cx_zeta_neg_two
 #eval! cx_zeta_neg_two.1
+
+set_option maxHeartbeats 5807 in
+-- CZ9 (own, complex argument): `ζ(6+I) = 1.0126728826 - 0.0115446266·I`.
+def cx_zeta_six_add_I : { p : Rat × Rat //
+    ‖riemannZeta (6 + Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
+      < 1 / 1000000 } := by
+  lynth
+/-- info: 'cx_zeta_six_add_I' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ cx_zeta_six_add_I._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms cx_zeta_six_add_I
+#eval! cx_zeta_six_add_I.1
+
+set_option maxHeartbeats 6290 in
+-- CZ10 (own, complex argument): `ζ(3+2I) = 0.9730419604 - 0.1476955930·I`.
+def cx_zeta_three_add_2I : { p : Rat × Rat //
+    ‖riemannZeta (3 + 2 * Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
+      < 1 / 1000 } := by
+  lynth
+/-- info: 'cx_zeta_three_add_2I' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ cx_zeta_three_add_2I._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms cx_zeta_three_add_2I
+#eval! cx_zeta_three_add_2I.1
