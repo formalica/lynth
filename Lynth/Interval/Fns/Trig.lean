@@ -47,11 +47,42 @@ def cosStep (w : Nat) (Y2 : Ival) (k : Nat) (T : Ival) : Ival :=
 def encl1 (w : Nat) (st : SerState) : Ival :=
   if 1 ≤ st.k then st.encl w (Dy.ofNat 2) else unitIval
 
-/-- `sin y` for `|y| ≤ 2` -/
+/-- `sin` on tiny intervals (series takes zero steps): `|sin y| ≤ |y|`. -/
+def sinTiny (w : Nat) (Y : Ival) : Ival :=
+  match Ival.magHi (Ival.abs Y) with
+  | some m => Ival.widen w Ival.zero m
+  | none => Ival.top
+
+theorem mem_sinTiny {w : Nat} {Y : Ival} {y : ℝ} (hy : y ∈ Y) :
+    Real.sin y ∈ sinTiny w Y := by
+  unfold sinTiny
+  cases hhi : Ival.magHi (Ival.abs Y) with
+  | none => exact Ival.mem_top _
+  | some m =>
+    apply Ival.mem_widen Ival.mem_zero
+    have hsin : |Real.sin y| ≤ |y| := by
+      have h := Real.lipschitzWith_sin.dist_le_mul (x := y) (y := 0)
+      rw [Real.sin_zero, dist_zero_right, dist_zero_right,
+        Real.norm_eq_abs, Real.norm_eq_abs] at h
+      simpa using h
+    have hmag := Ival.abs_le_magHi (Ival.mem_abs hy) hhi
+    rw [abs_abs] at hmag
+    rw [sub_zero]
+    exact le_trans hsin hmag
+
+/-- series state with at least one step taken; zero-step states (tiny `|y|`)
+use the Lipschitz enclosure instead of bailing to `[-1, 1]`. -/
+def enclSin (w : Nat) (Y : Ival) (st : SerState) : Ival :=
+  if 1 ≤ st.k then st.encl w (Dy.ofNat 2) else sinTiny w Y
+
+/-- `sin y` for `|y| ≤ 2` (exact at `0`: the series loop takes zero steps
+there, so without this the endpoint bounds in `sinMono` would widen to `±1`
+for intervals like `[−ε, 0]`). -/
 def sinSer (w : Nat) (y : Dy) : Ival :=
-  if isTrigArg y then
+  if y.toRat = 0 then Ival.zero
+  else if isTrigArg y then
     let Y := Ival.pt y
-    encl1 w (serLoop w (sinStep w (Ival.sq w Y)) (smallTerm w) (w + 16) (SerState.start Y))
+    enclSin w Y (serLoop w (sinStep w (Ival.sq w Y)) (smallTerm w) (w + 16) (SerState.start Y))
   else unitIval
 
 /-- `cos y` for `|y| ≤ 2` -/
@@ -88,36 +119,45 @@ theorem mem_hi_of {I : Ival} {a b : Dy} (ha : I.lo = some a) (hb : I.hi = some b
 theorem mem_sinSer (w : Nat) (y : Dy) : Real.sin y.toReal ∈ sinSer w y := by
   unfold sinSer
   split
-  · rename_i h
-    have hy := abs_le_two_of_isTrigArg h
-    simp only
-    set t : ℕ → ℝ := fun n => (-1) ^ n * y.toReal ^ (2 * n + 1) / ((2 * n + 1).factorial : ℝ) with ht
-    have hsq : y.toReal ^ 2 ∈ Ival.sq w (Ival.pt y) := Ival.mem_sq (Ival.mem_pt y)
-    have hrec : ∀ k, t (k + 1) = -t k * y.toReal ^ 2 / (((2 * k + 2) * (2 * k + 3) : ℕ) : ℝ) := by
-      intro k
-      simp only [ht]
-      rw [show 2 * (k + 1) + 1 = (2 * k + 1) + 1 + 1 by ring, Nat.factorial_succ, Nat.factorial_succ]
-      push_cast
-      field_simp
-      ring
-    have hstep : ∀ k X, t k ∈ X → t (k + 1) ∈ sinStep w (Ival.sq w (Ival.pt y)) k X := by
-      intro k X hX
-      rw [hrec]
-      exact Ival.mem_divNat (Ival.mem_mul (Ival.mem_neg hX) hsq) (by positivity)
-    have h0 : t 0 ∈ Ival.pt y := by simpa [ht] using Ival.mem_pt y
-    have hinv := serLoop_inv (p := w) (small := smallTerm w) hstep (w + 16) _ (SerState.start_inv h0)
-    unfold encl1
+  · rename_i h0
+    have hy0 : y.toReal = 0 := by
+      rw [Dy.toReal_def]
+      exact_mod_cast h0
+    rw [hy0, Real.sin_zero]
+    exact Ival.mem_zero
+  · rename_i _
     split
-    · rename_i hk
-      refine SerState.mem_encl (Real.hasSum_sin y.toReal) hinv (q := 1 / 2) (by norm_num)
-        (by norm_num) ?_ (by simp [toReal_def]; norm_num)
-      intro k hk2
-      show |t (k + 1)| ≤ 1 / 2 * |t k|
-      rw [hrec]
-      have hk1 : 1 ≤ k := le_trans hk hk2
-      exact ratio_step (by positivity) (ratio_aux hy (by nlinarith))
+    · rename_i h
+      have hy := abs_le_two_of_isTrigArg h
+      simp only
+      set t : ℕ → ℝ := fun n => (-1) ^ n * y.toReal ^ (2 * n + 1) / ((2 * n + 1).factorial : ℝ) with ht
+      have hsq : y.toReal ^ 2 ∈ Ival.sq w (Ival.pt y) := Ival.mem_sq (Ival.mem_pt y)
+      have hrec : ∀ k, t (k + 1) = -t k * y.toReal ^ 2 / (((2 * k + 2) * (2 * k + 3) : ℕ) : ℝ) := by
+        intro k
+        simp only [ht]
+        rw [show 2 * (k + 1) + 1 = (2 * k + 1) + 1 + 1 by ring, Nat.factorial_succ, Nat.factorial_succ]
+        push_cast
+        field_simp
+        ring
+      have hstep : ∀ k X, t k ∈ X → t (k + 1) ∈ sinStep w (Ival.sq w (Ival.pt y)) k X := by
+        intro k X hX
+        rw [hrec]
+        exact Ival.mem_divNat (Ival.mem_mul (Ival.mem_neg hX) hsq) (by positivity)
+      have h0 : t 0 ∈ Ival.pt y := by simpa [ht] using Ival.mem_pt y
+      have hinv := serLoop_inv (p := w) (small := smallTerm w) hstep (w + 16) _ (SerState.start_inv h0)
+      unfold enclSin
+      split
+      · rename_i hk
+        refine SerState.mem_encl (Real.hasSum_sin y.toReal) hinv (q := 1 / 2) (by norm_num)
+          (by norm_num) ?_ (by simp [toReal_def]; norm_num)
+        intro k hk2
+        show |t (k + 1)| ≤ 1 / 2 * |t k|
+        rw [hrec]
+        have hk1 : 1 ≤ k := le_trans hk hk2
+        exact ratio_step (by positivity) (ratio_aux hy (by nlinarith))
+      · rename_i _
+        exact mem_sinTiny (Ival.mem_pt y)
     · exact mem_unitIval (Real.neg_one_le_sin _) (Real.sin_le_one _)
-  · exact mem_unitIval (Real.neg_one_le_sin _) (Real.sin_le_one _)
 
 theorem mem_cosSer (w : Nat) (y : Dy) : Real.cos y.toReal ∈ cosSer w y := by
   unfold cosSer

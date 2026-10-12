@@ -6,3 +6,5 @@
 -- Every module listed below is a test that currently passes.
 
 import Test.ComplexIntervalArith.Basic
+import Test.ComplexIntervalArith.Special
+import Test.ComplexIntervalArith.Compositions
