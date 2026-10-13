@@ -19,7 +19,7 @@ cross-checks as the real versions.  Witnesses are `Rat × Rat` pairs;
 distance is `Complex.abs` (`‖·‖`).
 Real costs for comparison: all `60000` (native EM/Euler).
 
-Deferred to the complex Euler–Maclaurin batch: `ζ(3)`, `ζ(5)`,
+Covered by the complex Euler–Maclaurin evaluator: `ζ(3)`, `ζ(5)`,
 `ζ(3/2)`, `ζ(5/2)`, `ζ(1/2)`, `ζ(-1/2)` (no `Complex.*` gap — the
 evaluator covers them once EM lands).
 -/
@@ -38,7 +38,7 @@ def cx_zeta_two : { p : Rat × Rat //
 #print axioms cx_zeta_two
 #eval! cx_zeta_two.1
 
-set_option maxHeartbeats 4857 in
+set_option maxHeartbeats 6105 in
 -- CZ2: port of `zeta_four`: `ζ(4) = π⁴/90 = 1.0823232337`. (1.082323, 0)
 def cx_zeta_four : { p : Rat × Rat //
     ‖riemannZeta 4 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
@@ -108,7 +108,7 @@ def cx_zeta_neg_one : { p : Rat × Rat //
 #print axioms cx_zeta_neg_one
 #eval! cx_zeta_neg_one.1
 
-set_option maxHeartbeats 5229 in
+set_option maxHeartbeats 6483 in
 -- CZ7: port of `zeta_neg_three`: `ζ(-3) = 1/120 = 0.0083333`.
 def cx_zeta_neg_three : { p : Rat × Rat //
     ‖riemannZeta (-3) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000 } := by
@@ -122,7 +122,7 @@ def cx_zeta_neg_three : { p : Rat × Rat //
 #print axioms cx_zeta_neg_three
 #eval! cx_zeta_neg_three.1
 
-set_option maxHeartbeats 5001 in
+set_option maxHeartbeats 6208 in
 -- CZ8: port of `zeta_neg_two`: `ζ(-2) = 0` (trivial zero).
 def cx_zeta_neg_two : { p : Rat × Rat //
     ‖riemannZeta (-2) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000 } := by
@@ -151,7 +151,7 @@ def cx_zeta_six_add_I : { p : Rat × Rat //
 #print axioms cx_zeta_six_add_I
 #eval! cx_zeta_six_add_I.1
 
-set_option maxHeartbeats 6290 in
+set_option maxHeartbeats 7840 in
 -- CZ10 (own, complex argument): `ζ(3+2I) = 0.9730419604 - 0.1476955930·I`.
 def cx_zeta_three_add_2I : { p : Rat × Rat //
     ‖riemannZeta (3 + 2 * Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
@@ -165,3 +165,91 @@ def cx_zeta_three_add_2I : { p : Rat × Rat //
 #guard_msgs in
 #print axioms cx_zeta_three_add_2I
 #eval! cx_zeta_three_add_2I.1
+
+set_option maxHeartbeats 6078 in
+-- CZ11: port of `zeta_three`: `ζ(3) = 1.2020569032` (Apéry, via EM).
+def cx_zeta_three : { p : Rat × Rat //
+    ‖riemannZeta 3 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
+  lynth
+/-- info: 'cx_zeta_three' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ cx_zeta_three._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms cx_zeta_three
+#eval! cx_zeta_three.1
+
+set_option maxHeartbeats 6093 in
+-- CZ12: port of `zeta_five`: `ζ(5) = 1.0369277551` (via EM).
+def cx_zeta_five : { p : Rat × Rat //
+    ‖riemannZeta 5 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
+  lynth
+/-- info: 'cx_zeta_five' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ cx_zeta_five._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms cx_zeta_five
+#eval! cx_zeta_five.1
+
+set_option maxHeartbeats 6432 in
+-- CZ13: port of `zeta_three_halves`: `ζ(3/2) = 2.6123753487` (via EM).
+def cx_zeta_three_halves : { p : Rat × Rat //
+    ‖riemannZeta ((3 / 2 : ℝ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
+      < 1 / 1000000 } := by
+  lynth
+/-- info: 'cx_zeta_three_halves' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ cx_zeta_three_halves._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms cx_zeta_three_halves
+#eval! cx_zeta_three_halves.1
+
+set_option maxHeartbeats 6439 in
+-- CZ14: port of `zeta_five_halves`: `ζ(5/2) = 1.3414872573` (via EM).
+def cx_zeta_five_halves : { p : Rat × Rat //
+    ‖riemannZeta ((5 / 2 : ℝ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
+      < 1 / 1000000 } := by
+  lynth
+/-- info: 'cx_zeta_five_halves' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ cx_zeta_five_halves._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms cx_zeta_five_halves
+#eval! cx_zeta_five_halves.1
+
+set_option maxHeartbeats 6444 in
+-- CZ15: port of `zeta_half`: `ζ(1/2) = -1.4603545101` (via EM).
+def cx_zeta_half : { p : Rat × Rat //
+    ‖riemannZeta ((1 / 2 : ℝ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
+      < 1 / 1000000 } := by
+  lynth
+/-- info: 'cx_zeta_half' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ cx_zeta_half._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms cx_zeta_half
+#eval! cx_zeta_half.1
+
+set_option maxHeartbeats 6796 in
+-- CZ16: port of `zeta_neg_half`: `ζ(-1/2) = -0.2078862250` (via FE + EM).
+def cx_zeta_neg_half : { p : Rat × Rat //
+    ‖riemannZeta ((-1 / 2 : ℝ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
+      < 1 / 1000 } := by
+  lynth
+/-- info: 'cx_zeta_neg_half' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ cx_zeta_neg_half._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms cx_zeta_neg_half
+#eval! cx_zeta_neg_half.1

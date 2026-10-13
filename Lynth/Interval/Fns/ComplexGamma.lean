@@ -511,4 +511,95 @@ theorem mem_gammaCBox {c : Ctx} (hc : c.Valid) {z : ℂ} {X : CBox}
   sound := fun _ _ _ _ hc hy hx => by obtain rfl := hy; exact mem_gammaCBox hc hx
   cost := 500
 
+/-! ### Complex list sums -/
+
+/-- fold `CBox.add` over boxes. -/
+def csumC (w : Nat) : List CBox → CBox
+  | [] => ⟨Ival.zero, Ival.zero⟩
+  | B :: Bs => CBox.add w B (csumC w Bs)
+
+theorem mem_csumC (w : Nat) (xs : List ℂ) (Bs : List CBox)
+    (h : List.Forall₂ (fun x B => x ∈ B) xs Bs) :
+    xs.sum ∈ csumC w Bs := by
+  induction h with
+  | nil =>
+    simp only [csumC, List.sum_nil]
+    exact ⟨by rw [Complex.zero_re]; exact Ival.mem_zero,
+      by rw [Complex.zero_im]; exact Ival.mem_zero⟩
+  | cons hx _ ih =>
+    simp only [csumC, List.sum_cons]
+    exact CBox.mem_add hx ih
+
+/-- list sum over a mapped range is the finset sum (complex version of
+`dig_list_sum_map_range`). -/
+theorem csum_list_sum_map_range (f : Nat → ℂ) : ∀ N : Nat,
+    ((List.range N).map f).sum = (Finset.range N).sum fun k => f k
+  | 0 => by simp
+  | N + 1 => by
+    simp only [List.range_succ, List.map_append, List.map_cons, List.map_nil,
+      List.sum_append, List.sum_cons, List.sum_nil, add_zero,
+      Finset.sum_range_succ]
+    rw [csum_list_sum_map_range f N]
+
+/-- `Forall₂` over a mapped range from pointwise membership. -/
+theorem csumForall₂Range {F : Nat → ℂ} {G : Nat → CBox}
+    (h : ∀ k : Nat, F k ∈ G k) (n : Nat) :
+    List.Forall₂ (fun x B => x ∈ B) ((List.range n).map F) ((List.range n).map G) := by
+  induction n with
+  | zero => exact List.Forall₂.nil
+  | succ n ih =>
+    rw [List.range_succ, List.map_append, List.map_append,
+      List.map_cons, List.map_nil]
+    exact List.rel_append ih (List.Forall₂.cons (h n) List.Forall₂.nil)
+
+/-- bounded version (correction terms need the index bound). -/
+theorem csumForall₂RangeLe {F : Nat → ℂ} {G : Nat → CBox} {K : Nat}
+    (h : ∀ k : Nat, k ≤ K → F k ∈ G k) :
+    ∀ n : Nat, n ≤ K → List.Forall₂ (fun x B => x ∈ B)
+      ((List.range n).map F) ((List.range n).map G) := by
+  intro n
+  induction n with
+  | zero =>
+    intro _
+    exact List.Forall₂.nil
+  | succ n ih =>
+    intro hn
+    rw [List.range_succ, List.map_append, List.map_append,
+      List.map_cons, List.map_nil]
+    exact List.rel_append (ih (by omega)) (List.Forall₂.cons (h n (by omega)) List.Forall₂.nil)
+
+/-! ### Small constant boxes -/
+
+/-- the constant `2` box. -/
+def twoC (w : Nat) : CBox := CBox.ofReal (Ival.ofRat w 2)
+
+theorem mem_twoC {w : Nat} : (2 : ℂ) ∈ twoC w := by
+  rw [twoC]
+  simpa using CBox.mem_ofReal (Ival.mem_ofRat w (2 : ℚ))
+
+/-- the constant `6` box. -/
+def sixC (w : Nat) : CBox := CBox.ofReal (Ival.ofRat w 6)
+
+theorem mem_sixC {w : Nat} : (6 : ℂ) ∈ sixC w := by
+  rw [sixC]
+  simpa using CBox.mem_ofReal (Ival.mem_ofRat w (6 : ℚ))
+
+/-- the constant `1` box. -/
+def oneCBox : CBox := ⟨Ival.one, Ival.zero⟩
+
+theorem mem_oneCBox : (1 : ℂ) ∈ oneCBox :=
+  ⟨by rw [Complex.one_re]; exact Ival.mem_one,
+   by rw [Complex.one_im]; exact Ival.mem_zero⟩
+
+theorem mem_oneC : (1 : ℂ) ∈ CBox.ofReal Ival.one := by
+  rw [← Complex.ofReal_one]
+  exact CBox.mem_ofReal Ival.mem_one
+
+/-- `cpow` with a known-nonzero constant base, via `exp`/`log`. -/
+theorem mem_cpow_point {c : Ctx} (hc : c.Valid) {b : ℂ} {B : CBox} {y : ℂ} {Y : CBox}
+    (hb : b ∈ B) (hb0 : b ≠ 0) (hy : y ∈ Y) :
+    b ^ y ∈ expBox c (CBox.mul c.prec (logBox c B) Y) := by
+  rw [Complex.cpow_def, ite_eq_right hb0]
+  exact mem_expBox c hc (CBox.mem_mul (mem_logBox c hc hb) hy)
+
 end Lynth.Interval.Fns

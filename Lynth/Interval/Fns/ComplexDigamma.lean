@@ -39,63 +39,6 @@ namespace Lynth.Interval.Fns
 
 open Lynth.Interval Dy
 
-/-! ### Complex list sums -/
-
-/-- fold `CBox.add` over boxes. -/
-def csumC (w : Nat) : List CBox → CBox
-  | [] => ⟨Ival.zero, Ival.zero⟩
-  | B :: Bs => CBox.add w B (csumC w Bs)
-
-theorem mem_csumC (w : Nat) (xs : List ℂ) (Bs : List CBox)
-    (h : List.Forall₂ (fun x B => x ∈ B) xs Bs) :
-    xs.sum ∈ csumC w Bs := by
-  induction h with
-  | nil =>
-    simp only [csumC, List.sum_nil]
-    exact ⟨by rw [Complex.zero_re]; exact Ival.mem_zero,
-      by rw [Complex.zero_im]; exact Ival.mem_zero⟩
-  | cons hx _ ih =>
-    simp only [csumC, List.sum_cons]
-    exact CBox.mem_add hx ih
-
-/-- list sum over a mapped range is the finset sum (complex version of
-`dig_list_sum_map_range`). -/
-theorem csum_list_sum_map_range (f : Nat → ℂ) : ∀ N : Nat,
-    ((List.range N).map f).sum = (Finset.range N).sum fun k => f k
-  | 0 => by simp
-  | N + 1 => by
-    simp only [List.range_succ, List.map_append, List.map_cons, List.map_nil,
-      List.sum_append, List.sum_cons, List.sum_nil, add_zero,
-      Finset.sum_range_succ]
-    rw [csum_list_sum_map_range f N]
-
-/-- `Forall₂` over a mapped range from pointwise membership. -/
-theorem csumForall₂Range {F : Nat → ℂ} {G : Nat → CBox}
-    (h : ∀ k : Nat, F k ∈ G k) (n : Nat) :
-    List.Forall₂ (fun x B => x ∈ B) ((List.range n).map F) ((List.range n).map G) := by
-  induction n with
-  | zero => exact List.Forall₂.nil
-  | succ n ih =>
-    rw [List.range_succ, List.map_append, List.map_append,
-      List.map_cons, List.map_nil]
-    exact List.rel_append ih (List.Forall₂.cons (h n) List.Forall₂.nil)
-
-/-- bounded version (correction terms need the index bound). -/
-theorem csumForall₂RangeLe {F : Nat → ℂ} {G : Nat → CBox} {K : Nat}
-    (h : ∀ k : Nat, k ≤ K → F k ∈ G k) :
-    ∀ n : Nat, n ≤ K → List.Forall₂ (fun x B => x ∈ B)
-      ((List.range n).map F) ((List.range n).map G) := by
-  intro n
-  induction n with
-  | zero =>
-    intro _
-    exact List.Forall₂.nil
-  | succ n ih =>
-    intro hn
-    rw [List.range_succ, List.map_append, List.map_append,
-      List.map_cons, List.map_nil]
-    exact List.rel_append (ih (by omega)) (List.Forall₂.cons (h n (by omega)) List.Forall₂.nil)
-
 /-! ### Shift identity (inline from `digamma_apply_add_nat`) -/
 
 /-- `ψ(x) = ψ(x+n) - Σ_{k<n} 1/(x+k)` for pole-free `x`. -/

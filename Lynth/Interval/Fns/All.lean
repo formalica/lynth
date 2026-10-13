@@ -9,6 +9,7 @@ import Lynth.Interval.Fns.Const
 import Lynth.Interval.Fns.Gamma
 import Lynth.Interval.Fns.ComplexGamma
 import Lynth.Interval.Fns.ComplexZeta
+import Lynth.Interval.Fns.ComplexZetaEM
 import Lynth.Interval.Fns.ComplexDigamma
 import Lynth.Interval.Fns.Floor
 import Lynth.Interval.Fns.Zeta

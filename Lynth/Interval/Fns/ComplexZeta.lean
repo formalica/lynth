@@ -1,5 +1,6 @@
 import Lynth.Interval.Fns.Zeta
 import Lynth.Interval.Fns.ComplexGamma
+import Lynth.Interval.Fns.ComplexZetaEM
 import Lynth.Interval.Fns.ComplexElem
 
 /-!
@@ -45,40 +46,6 @@ end Complex
 namespace Lynth.Interval.Fns
 
 open Lynth.Interval Dy
-
-/-! ### Small constant boxes -/
-
-/-- the constant `2` box. -/
-def twoC (w : Nat) : CBox := CBox.ofReal (Ival.ofRat w 2)
-
-theorem mem_twoC {w : Nat} : (2 : ℂ) ∈ twoC w := by
-  rw [twoC]
-  simpa using CBox.mem_ofReal (Ival.mem_ofRat w (2 : ℚ))
-
-/-- the constant `6` box. -/
-def sixC (w : Nat) : CBox := CBox.ofReal (Ival.ofRat w 6)
-
-theorem mem_sixC {w : Nat} : (6 : ℂ) ∈ sixC w := by
-  rw [sixC]
-  simpa using CBox.mem_ofReal (Ival.mem_ofRat w (6 : ℚ))
-
-/-- the constant `1` box. -/
-def oneCBox : CBox := ⟨Ival.one, Ival.zero⟩
-
-theorem mem_oneCBox : (1 : ℂ) ∈ oneCBox :=
-  ⟨by rw [Complex.one_re]; exact Ival.mem_one,
-   by rw [Complex.one_im]; exact Ival.mem_zero⟩
-
-theorem mem_oneC : (1 : ℂ) ∈ CBox.ofReal Ival.one := by
-  rw [← Complex.ofReal_one]
-  exact CBox.mem_ofReal Ival.mem_one
-
-/-- `cpow` with a known-nonzero constant base, via `exp`/`log`. -/
-theorem mem_cpow_point {c : Ctx} (hc : c.Valid) {b : ℂ} {B : CBox} {y : ℂ} {Y : CBox}
-    (hb : b ∈ B) (hb0 : b ≠ 0) (hy : y ∈ Y) :
-    b ^ y ∈ expBox c (CBox.mul c.prec (logBox c B) Y) := by
-  rw [Complex.cpow_def, ite_eq_right hb0]
-  exact mem_expBox c hc (CBox.mem_mul (mem_logBox c hc hb) hy)
 
 /-! ### Euler product -/
 
@@ -234,13 +201,16 @@ theorem mem_closedTwoC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox}
 
 /-! ### Positive dispatch (`Re ≥ 2`) -/
 
-/-- `ζ` on boxes with `Re ≥ 2`: point `2` → closed form, else Euler product. -/
+/-- `ζ` on boxes with `Re ≥ 2`: point `2` → closed form, `Re ≥ 6` →
+Euler product (fast tail), else Euler–Maclaurin (the Euler tail at
+`σ < 6` is too wide to be useful). -/
 def zetaPosC (c : Ctx) (S : CBox) : CBox :=
   let w := c.prec + 16
   match S.re.lo, S.re.hi, S.im.lo, S.im.hi with
   | some lo, some hi, some ilo, some ihi =>
     if lo.toRat = 2 ∧ hi.toRat = 2 ∧ ilo.toRat = 0 ∧ ihi.toRat = 0 then closedTwoC c
-    else if 2 ≤ lo.toRat then zetaEulerProdC c S (64 + 2 * c.prec)
+    else if 6 ≤ lo.toRat then zetaEulerProdC c S (64 + 2 * c.prec)
+    else if 0 < lo.toRat ∧ (hi.toRat < 1 ∨ 1 < lo.toRat) then zetaEMGuardC c S lo hi
     else CBox.top
   | _, _, _, _ => CBox.top
 
@@ -312,22 +282,67 @@ theorem mem_zetaPosC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox}
               simp [zetaPosC, hlo, hhi, hloi, hhii, eq_true hpt]
             rw [hev]
             exact mem_closedTwoC hc hx hlo hhi hloi hhii hpt
-          · by_cases hge : 2 ≤ lo.toRat
+          · by_cases hge : 6 ≤ lo.toRat
             · have hev : zetaPosC c S = zetaEulerProdC c S (64 + 2 * c.prec) := by
                 simp [zetaPosC, hlo, hhi, hloi, hhii, hpt, eq_true hge]
               rw [hev]
               have hre : 2 ≤ z.re := by
                 have h1 := mem_lo_le hx.1 hlo
-                have h2l : (2 : ℝ) ≤ ((lo.toRat : ℚ) : ℝ) := by
+                have h2l : (6 : ℝ) ≤ ((lo.toRat : ℚ) : ℝ) := by
                   exact_mod_cast hge
                 linarith
               exact mem_zetaEulerProdC hc hx hre (by omega)
-            · have hev : zetaPosC c S = CBox.top := by
-                simp [zetaPosC, hlo, hhi, hloi, hhii, hpt, hge]
-              rw [hev]
-              exact CBox.mem_top _
+            · by_cases hem : 0 < lo.toRat ∧ (hi.toRat < 1 ∨ 1 < lo.toRat)
+              · have hev : zetaPosC c S = zetaEMGuardC c S lo hi := by
+                  simp [zetaPosC, hlo, hhi, hloi, hhii, hpt, hge, eq_true hem]
+                rw [hev]
+                exact mem_zetaEMGuardC hc hx hlo hhi
+              · have hev : zetaPosC c S = CBox.top := by
+                  simp [zetaPosC, hlo, hhi, hloi, hhii, hpt, hge, hem]
+                rw [hev]
+                exact CBox.mem_top _
 
-/-! ### Reflection (`Re ≤ -1`) -/
+/-- inner values (`Re > 1` always here): Euler product at `Re ≥ 2`,
+Euler–Maclaurin on `(1, 2)`. (Non-recursive: the outer `Re < 0` rules out
+a second reflection.) -/
+def zetaInnerC (c : Ctx) (Y : CBox) : CBox :=
+  match Y.re.lo, Y.re.hi with
+  | some lo, some hi =>
+    if 2 ≤ lo.toRat then zetaPosC c Y
+    else if 0 < lo.toRat ∧ (hi.toRat < 1 ∨ 1 < lo.toRat) then zetaEMGuardC c Y lo hi
+    else CBox.top
+  | _, _ => CBox.top
+
+theorem mem_zetaInnerC {c : Ctx} (hc : c.Valid) {z : ℂ} {Y : CBox}
+    (hx : z ∈ Y) : riemannZeta z ∈ zetaInnerC c Y := by
+  cases hlo : Y.re.lo with
+  | none =>
+    cases hhi : Y.re.hi with
+    | none =>
+      have hev : zetaInnerC c Y = CBox.top := by simp [zetaInnerC, hlo, hhi]
+      rw [hev]; exact CBox.mem_top _
+    | some _ =>
+      have hev : zetaInnerC c Y = CBox.top := by simp [zetaInnerC, hlo, hhi]
+      rw [hev]; exact CBox.mem_top _
+  | some lo =>
+    cases hhi : Y.re.hi with
+    | none =>
+      have hev : zetaInnerC c Y = CBox.top := by simp [zetaInnerC, hlo, hhi]
+      rw [hev]; exact CBox.mem_top _
+    | some hi =>
+      by_cases hge : 2 ≤ lo.toRat
+      · have hev : zetaInnerC c Y = zetaPosC c Y := by
+          simp [zetaInnerC, hlo, hhi, eq_true hge]
+        rw [hev]; exact mem_zetaPosC hc hx
+      · by_cases hem : 0 < lo.toRat ∧ (hi.toRat < 1 ∨ 1 < lo.toRat)
+        · have hev : zetaInnerC c Y = zetaEMGuardC c Y lo hi := by
+            simp [zetaInnerC, hlo, hhi, hge, eq_true hem]
+          rw [hev]; exact mem_zetaEMGuardC hc hx hlo hhi
+        · have hev : zetaInnerC c Y = CBox.top := by
+            simp [zetaInnerC, hlo, hhi, hge, hem]
+          rw [hev]; exact CBox.mem_top _
+
+/-! ### Reflection (`Re < 0`) -/
 
 /-- `ζ` via `ζ(s) = 2^s·π^{s-1}·sin(πs/2)·Γ(1-s)·ζ(1-s)`. -/
 def zetaNegC (c : Ctx) (X : CBox) : CBox :=
@@ -337,13 +352,13 @@ def zetaNegC (c : Ctx) (X : CBox) : CBox :=
     (CBox.sub w X (CBox.ofReal Ival.one)))
   let C := sinBox c (CBox.div w (CBox.mul w (CBox.ofReal c.pi) X) (twoC w))
   let D := gammaCBox c (CBox.sub w (CBox.ofReal Ival.one) X)
-  let E := zetaPosC c (CBox.sub w (CBox.ofReal Ival.one) X)
+  let E := zetaInnerC c (CBox.sub w (CBox.ofReal Ival.one) X)
   CBox.mul w (CBox.mul w (CBox.mul w (CBox.mul w A B) C) D) E
 
 theorem mem_zetaNegC {c : Ctx} (hc : c.Valid) {z : ℂ} {X : CBox}
-    (hx : z ∈ X) (hle : z.re ≤ -1) :
+    (hx : z ∈ X) (hle : z.re < 0) :
     riemannZeta z ∈ zetaNegC c X := by
-  have hFE := Complex.zeta_neg_fe z (by linarith : z.re < 0)
+  have hFE := Complex.zeta_neg_fe z hle
   have hA : (2 : ℂ) ^ z
       ∈ expBox c (CBox.mul c.prec (logBox c (twoC (c.prec + 16))) X) :=
     mem_cpow_point hc (mem_twoC) (by norm_num) hx
@@ -361,8 +376,8 @@ theorem mem_zetaNegC {c : Ctx} (hc : c.Valid) {z : ℂ} {X : CBox}
       ∈ gammaCBox c (CBox.sub (c.prec + 16) (CBox.ofReal Ival.one) X) :=
     mem_gammaCBox hc (CBox.mem_sub (mem_oneC) hx)
   have hE : riemannZeta (1 - z)
-      ∈ zetaPosC c (CBox.sub (c.prec + 16) (CBox.ofReal Ival.one) X) :=
-    mem_zetaPosC hc (CBox.mem_sub (mem_oneC) hx)
+      ∈ zetaInnerC c (CBox.sub (c.prec + 16) (CBox.ofReal Ival.one) X) :=
+    mem_zetaInnerC hc (CBox.mem_sub (mem_oneC) hx)
   unfold zetaNegC
   simp only
   rw [hFE]
@@ -370,14 +385,19 @@ theorem mem_zetaNegC {c : Ctx} (hc : c.Valid) {z : ℂ} {X : CBox}
 
 /-! ### Top-level dispatch -/
 
-/-- `ζ` on any box: Euler product at `Re ≥ 2`, reflection at `Re ≤ -1`,
-`⊤` on the strip (complex Euler–Maclaurin is a later batch). -/
+/-- `ζ` on any box: Euler product at `Re ≥ 2`, reflection at `Re < 0`,
+Euler–Maclaurin at `0 < Re ≠ 1`, `⊤` elsewhere (poles, `Re = 0`). -/
 def zetaCBox (c : Ctx) (X : CBox) : CBox :=
   match X.re.lo, X.re.hi with
   | some lo, some hi =>
     if 2 ≤ lo.toRat then zetaPosC c X
-    else if hi.toRat ≤ -1 then zetaNegC c X
-    else CBox.top
+    else if hi.toRat < 0 then zetaNegC c X
+    else match X.im.lo, X.im.hi with
+      | some ilo, some ihi =>
+        if 0 < lo.toRat ∧ (hi.toRat < 1 ∨ 1 < lo.toRat) then
+          zetaEMGuardC c X lo hi
+        else CBox.top
+      | _, _ => CBox.top
   | _, _ => CBox.top
 
 theorem mem_zetaCBox {c : Ctx} (hc : c.Valid) {z : ℂ} {X : CBox}
@@ -401,18 +421,41 @@ theorem mem_zetaCBox {c : Ctx} (hc : c.Valid) {z : ℂ} {X : CBox}
       · have hev : zetaCBox c X = zetaPosC c X := by
           simp [zetaCBox, hlo, hhi, eq_true hge]
         rw [hev]; exact mem_zetaPosC hc hx
-      · by_cases hle : hi.toRat ≤ -1
+      · by_cases hneg : hi.toRat < 0
         · have hev : zetaCBox c X = zetaNegC c X := by
-            simp [zetaCBox, hlo, hhi, hge, eq_true hle]
+            simp [zetaCBox, hlo, hhi, hge, eq_true hneg]
           rw [hev]
-          have hleR : z.re ≤ -1 := by
+          have hleR : z.re < 0 := by
             have h1 := mem_le_hi hx.1 hhi
-            have h2 : ((hi.toRat : ℚ) : ℝ) ≤ -1 := by exact_mod_cast hle
+            have h2 : ((hi.toRat : ℚ) : ℝ) < 0 := by exact_mod_cast hneg
             linarith
           exact mem_zetaNegC hc hx hleR
-        · have hev : zetaCBox c X = CBox.top := by
-            simp [zetaCBox, hlo, hhi, hge, hle]
-          rw [hev]; exact CBox.mem_top _
+        · cases hilo : X.im.lo with
+          | none =>
+            cases hhii : X.im.hi with
+            | none =>
+              have hev : zetaCBox c X = CBox.top := by
+                simp [zetaCBox, hlo, hhi, hge, hneg, hilo, hhii]
+              rw [hev]; exact CBox.mem_top _
+            | some _ =>
+              have hev : zetaCBox c X = CBox.top := by
+                simp [zetaCBox, hlo, hhi, hge, hneg, hilo, hhii]
+              rw [hev]; exact CBox.mem_top _
+          | some ilo =>
+            cases hhii : X.im.hi with
+            | none =>
+              have hev : zetaCBox c X = CBox.top := by
+                simp [zetaCBox, hlo, hhi, hge, hneg, hilo, hhii]
+              rw [hev]; exact CBox.mem_top _
+            | some ihi =>
+              by_cases hem : 0 < lo.toRat ∧ (hi.toRat < 1 ∨ 1 < lo.toRat)
+              · have hev : zetaCBox c X = zetaEMGuardC c X lo hi := by
+                  simp [zetaCBox, hlo, hhi, hge, hneg, hilo, hhii, eq_true hem]
+                rw [hev]
+                exact mem_zetaEMGuardC hc hx hlo hhi
+              · have hev : zetaCBox c X = CBox.top := by
+                  simp [zetaCBox, hlo, hhi, hge, hneg, hilo, hhii, hem]
+                rw [hev]; exact CBox.mem_top _
 
 @[lynth_cfn] def zetaC : Fn1 .cplx .cplx where
   name := "riemannZeta"
