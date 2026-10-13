@@ -1,3 +1,4 @@
+import Lynth.Interval.Fns.EMCore.Zeta
 import Lynth.Interval.Fns.ComplexGamma
 import Lynth.Interval.Fns.ComplexElem
 import Lynth.Interval.Fns.Zeta
@@ -8,11 +9,12 @@ import Lynth.Interval.Fns.Zeta
 Mirror of the real Euler–Maclaurin evaluator (`zetaEMIval`,
 `Lynth/Interval/Fns/Zeta.lean`): direct `cpow` sum, the `(N+1)^{1-s}/(s-1)`
 integral term, the `(N+1)^{-s}/2` half term, Bernoulli corrections with
-complex rising factorials, all widened by an explicit interval tail.
-The one analytic input — the complex EM expansion with remainder — is
-stated below as a mirror of `/tmp/complex/zeta_em_handoff.lean` (same
-contract as the other mirrors: keep byte-identical, paste the prover's
-proof back).  Everything else is proved inline.
+complex rising factorials, all widened by an explicit interval tail
+(carrying the corrected extra factor).
+The one analytic input — the corrected complex EM expansion
+(`Complex.zeta_em_bound_corrected`) — is ported from
+`/tmp/complex2/zeta_em_handoff.lean` (the original `2·emTailC` bound was
+proved false).  Everything else is proved inline.
 -/
 
 namespace Complex
@@ -29,23 +31,70 @@ noncomputable def emTailC (s : ℂ) (N M : Nat) : ℝ :=
     * ‖(Finset.range (2 * (M + 1) - 1)).prod fun j => s + ((((j : ℕ))) : ℂ)‖
     / (((N + 1 : ℕ)) : ℝ) ^ (s.re + (2 * (((M + 1 : Nat)) : ℝ)) - 1)
 
-/-- COMPLEX EULER–MACLAURIN (zeta with explicit remainder).
-WARNING: proved FALSE as stated by the external prover (same tarball,
-`output-final_aristotle/zeta_em_handoff.lean` contains the Lean
-counterexample `Complex.zeta_em_bound_false` at `s = 1/2 + 74i`, `N = 13`,
-`M = 1`, plus the corrected `Complex.zeta_em_bound_corrected`).  Do NOT
-prove this statement; the evaluator must be reworked to the corrected
-bound (extra factor `‖s + 2M + 1‖ / (Re s + 2M + 1)`) first.  `sorry` kept
-intentionally. -/
-theorem zeta_em_bound (s : ℂ) (hs : 0 < s.re) (hs1 : s.re ≠ 1) (N M : Nat)
-    (hN : 1 ≤ N) (hM : 1 ≤ M) (hNM : s.re + 2 * M + 2 ≤ (((N + 1 : ℕ)) : ℝ)) :
+/-- COMPLEX EULER–MACLAURIN for zeta — corrected.
+Ported from `/tmp/complex2/zeta_em_handoff.lean` (Lean 4.28 → 4.34); the original
+`‖R‖ ≤ 2 * emTailC` statement was proved FALSE (`zeta_em_bound_false` in the handoff).
+
+Changes w.r.t. the original:
+* the remainder bound carries the extra factor `‖s + (2M+1)‖ / (Re s + 2M + 1)` (equal to `1`
+  for real `s`), i.e. it is `2 |B_{2M+2}| / (2M+2)! · |s (s+1) ⋯ (s+2M+1)| / ((Re s + 2M + 1)
+  (N+1)^{Re s + 2M + 1})`;
+* the hypothesis `s.re ≠ 1` is weakened to `s ≠ 1`, and the unused hypotheses
+  `1 ≤ N`, `1 ≤ M`, `s.re + 2M + 2 ≤ N + 1` are dropped.
+
+Proved by Euler–Maclaurin summation of `x ↦ x^{-s}` over `[N+1, ∞)` for `Re s > 1`, followed by
+analytic continuation to `{Re s > 0, s ≠ 1}`. -/
+theorem zeta_em_bound_corrected (s : ℂ) (hs : 0 < s.re) (hs1 : s ≠ 1) (N M : Nat) :
     ∃ R : ℂ, riemannZeta s
         = (∑ k ∈ Finset.range N, ((((k + 1 : ℕ))) : ℂ) ^ (-s))
           + ((((N + 1 : ℕ))) : ℂ) ^ (1 - s) / (s - 1)
           + ((((N + 1 : ℕ))) : ℂ) ^ (-s) / 2
           + (∑ r ∈ Finset.range M, emCorrC s N (r + 1)) + R
-      ∧ ‖R‖ ≤ 2 * emTailC s N M := by
-  sorry
+      ∧ ‖R‖ ≤ 2 * emTailC s N M * (‖s + (2 * M + 1 : ℂ)‖ / (s.re + 2 * M + 1)) := by
+  refine ⟨EMCore.zetaR s N M, ?_, ?_⟩
+  · rw [EMCore.zeta_em hs hs1 N M]
+    unfold EMCore.zetaRHS
+    have hcorr : ∑ r ∈ Finset.range M, emCorrC s N (r + 1)
+        = -∑ j ∈ Finset.range M,
+            (((bernoulli (2 * (j + 1)) : ℝ) / ((2 * (j + 1)).factorial : ℝ) : ℝ) : ℂ)
+              * EMCore.zF s (2 * j + 1) (((N + 1 : ℕ)) : ℝ) := by
+      rw [← Finset.sum_neg_distrib]
+      refine Finset.sum_congr rfl (fun j _ => ?_)
+      unfold emCorrC EMCore.zF EMCore.pochC
+      have e1 : 2 * (j + 1) - 1 = 2 * j + 1 := by omega
+      have e2 : -s - ((2 * j + 1 : ℕ) : ℂ) = -(s + 2 * (((j + 1 : ℕ)) : ℂ) - 1) := by
+        push_cast; ring
+      rw [e1, e2, Complex.cpow_neg, pow_succ, pow_mul]
+      push_cast
+      simp only [neg_one_sq, one_pow, one_mul]
+      field_simp
+    rw [hcorr]
+    ring
+  · have hb := EMCore.zetaR_bound hs N M
+    refine hb.trans (le_of_eq ?_)
+    have hq : 0 < s.re + (2 * M + 1) := by positivity
+    have hN0 : (0:ℝ) < ((N + 1 : ℕ) : ℝ) := by positivity
+    have hp : EMCore.pochC s (2 * (M + 1))
+        = ((Finset.range (2 * (M + 1) - 1)).prod fun j => s + ((((j : ℕ))) : ℂ))
+          * (s + (2 * M + 1 : ℂ)) := by
+      unfold EMCore.pochC
+      have e' : 2 * (M + 1) - 1 = 2 * M + 1 := by omega
+      have e : 2 * (M + 1) = (2 * M + 1) + 1 := by ring
+      rw [e', e, Finset.prod_range_succ]
+      push_cast
+      ring
+    have hexp : s.re + (2 * ((((M + 1 : ℕ))) : ℝ)) - 1 = s.re + (2 * M + 1) := by
+      push_cast; ring
+    unfold emTailC
+    rw [hp, norm_mul, hexp, Real.rpow_neg hN0.le]
+    have : s.re + 2 * (M : ℝ) + 1 = s.re + (2 * M + 1) := by ring
+    rw [this]
+    push_cast
+    field_simp
+
+/-- info: 'Complex.zeta_em_bound_corrected' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms Complex.zeta_em_bound_corrected
 
 end Complex
 
@@ -73,6 +122,43 @@ def emCorrBoxC (c : Ctx) (S Np1 : CBox) (Q : ℚ) (r : Nat) : CBox :=
     (expBox c (CBox.mul c.prec (logBox c Np1)
       (CBox.add w S (CBox.ofReal (Ival.ofRat w ((2 * ((r : Nat) : ℚ)) - 1))))))
 
+/-- interval enclosing the EM correction factor
+`‖z + 2M+1‖ / (Re z + 2M+1)` (which is `1` on the real axis). -/
+def emTailFactorC (c : Ctx) (S : CBox) (M : Nat) : Ival :=
+  let w := c.prec + 16
+  let Q : ℚ := 2 * ((M : Nat) : ℚ) + 1
+  Ival.div w
+    (CBox.norm w (CBox.add w S (CBox.ofReal (Ival.ofRat w Q))))
+    (Ival.add w S.re (Ival.ofRat w Q))
+
+theorem mem_emTailFactorC {c : Ctx} {z : ℂ} {S : CBox} {M : Nat}
+    (hx : z ∈ S) :
+    ‖z + (2 * ((((M : ℕ))) : ℂ) + 1)‖ / (z.re + 2 * ((((M : ℕ))) : ℝ) + 1)
+      ∈ emTailFactorC c S M := by
+  unfold emTailFactorC
+  simp only
+  set Q : ℚ := 2 * ((M : Nat) : ℚ) + 1 with hQ
+  have hQc : ((((Q : ℚ)) : ℝ) : ℂ) = 2 * ((((M : ℕ))) : ℂ) + 1 := by
+    rw [hQ]; push_cast; ring
+  have hQr : (((Q : ℚ)) : ℝ) = 2 * ((((M : ℕ))) : ℝ) + 1 := by
+    rw [hQ]; push_cast; ring
+  have hsh : ((((Q : ℚ)) : ℝ) : ℂ) ∈ CBox.ofReal (Ival.ofRat (c.prec + 16) Q) :=
+    CBox.mem_ofReal (Ival.mem_ofRat _ _)
+  rw [hQc] at hsh
+  have hnum : ‖z + (2 * ((((M : ℕ))) : ℂ) + 1)‖
+      ∈ CBox.norm (c.prec + 16)
+        (CBox.add (c.prec + 16) S (CBox.ofReal (Ival.ofRat (c.prec + 16) Q))) :=
+    CBox.mem_norm (CBox.mem_add hx hsh)
+  have hmem : ((((Q : ℚ))) : ℝ) ∈ Ival.ofRat (c.prec + 16) Q :=
+    Ival.mem_ofRat _ _
+  have hden : z.re + 2 * ((((M : ℕ))) : ℝ) + 1
+      ∈ Ival.add (c.prec + 16) S.re (Ival.ofRat (c.prec + 16) Q) := by
+    have h0 : z.re + ((((Q : ℚ))) : ℝ)
+        ∈ Ival.add (c.prec + 16) S.re (Ival.ofRat (c.prec + 16) Q) :=
+      Ival.mem_add hx.1 hmem
+    rwa [hQr, ← add_assoc] at h0
+  exact Ival.mem_div hnum hden
+
 /-- Euler–Maclaurin enclosure at `S ∋ s` (`0 < Re s ≠ 1` from the guard). -/
 def zetaEMC (c : Ctx) (S : CBox) (N M : Nat) : CBox :=
   let w := c.prec + 16
@@ -93,20 +179,26 @@ def zetaEMC (c : Ctx) (S : CBox) (N M : Nat) : CBox :=
       (bernoulliQ (2 * (r + 1)) / ((Nat.factorial (2 * (r + 1)) : Nat) : ℚ)) (r + 1)
   let sumPart := CBox.add w (csumC w terms)
     (CBox.add w intTerm (CBox.add w halfTerm (csumC w corrs)))
-  let tail := Ival.div w
-    (Ival.mul w
-      (Ival.ofRat w (2 * |(bernoulliQ (2 * (M + 1)))|
-        / ((Nat.factorial (2 * (M + 1)) : Nat) : ℚ)))
-      (CBox.norm w (risingC w S (2 * (M + 1) - 1))))
-    (rpowIval c (Ival.ofRat w (((N + 1 : Nat)) : ℚ))
-      (Ival.add w S.re (Ival.ofRat w ((2 * (((M + 1 : Nat)) : ℚ)) - 1))))
+  let tail := Ival.mul w
+    (Ival.div w
+      (Ival.mul w
+        (Ival.ofRat w (2 * |(bernoulliQ (2 * (M + 1)))|
+          / ((Nat.factorial (2 * (M + 1)) : Nat) : ℚ)))
+        (CBox.norm w (risingC w S (2 * (M + 1) - 1))))
+      (rpowIval c (Ival.ofRat w (((N + 1 : Nat)) : ℚ))
+        (Ival.add w S.re (Ival.ofRat w ((2 * (((M + 1 : Nat)) : ℚ)) - 1)))))
+    (emTailFactorC c S M)
   widenCBox w sumPart (Ival.magHi tail)
 
 theorem mem_zetaEMC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox} {N M : Nat}
-    (hx : z ∈ S) (hs : 0 < z.re) (hs1 : z.re ≠ 1)
-    (hN : 1 ≤ N) (hM : 1 ≤ M) (hNM : z.re + 2 * M + 2 ≤ ((((N + 1 : Nat))) : ℝ)) :
+    (hx : z ∈ S) (hs : 0 < z.re) (hs1 : z.re ≠ 1) :
     riemannZeta z ∈ zetaEMC c S N M := by
-  obtain ⟨R, hR, hRb⟩ := Complex.zeta_em_bound z hs hs1 N M hN hM hNM
+  have hs1' : z ≠ 1 := by
+    intro h
+    have hr := congrArg Complex.re h
+    simp at hr
+    exact hs1 hr
+  obtain ⟨R, hR, hRb⟩ := Complex.zeta_em_bound_corrected z hs hs1' N M
   -- direct terms
   have hterm : ∀ k : Nat, ((((k + 1 : ℕ))) : ℂ) ^ (-z)
       ∈ expBox c (CBox.mul c.prec
@@ -164,9 +256,8 @@ theorem mem_zetaEMC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox} {N M : Nat}
       exact bernoulliList_getD _ _ le_rfl
     have hQv : (((Q : ℝ)) : ℂ)
         = (((bernoulli (2 * (r + 1)) : ℚ)) : ℂ) / ((((Nat.factorial (2 * (r + 1)) : ℕ))) : ℂ) := by
-      simp only [hQ, hbq, Rat.cast_sub, Rat.cast_mul, Rat.cast_natCast, Rat.cast_one,
-          Complex.ofReal_sub, Complex.ofReal_mul, Complex.ofReal_natCast,
-          Complex.ofReal_one, Complex.ofReal_ratCast, Rat.cast_div, Complex.ofReal_div, Rat.cast_ofNat, Nat.cast_ofNat]
+      simp only [hQ, hbq, Rat.cast_natCast, Complex.ofReal_natCast,
+          Complex.ofReal_ratCast, Rat.cast_div, Complex.ofReal_div]
     have hQmem : (((Q : ℝ)) : ℂ)
         ∈ CBox.ofReal (Ival.ofRat (c.prec + 16) Q) :=
       CBox.mem_ofReal (Ival.mem_ofRat _ _)
@@ -256,7 +347,7 @@ theorem mem_zetaEMC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox} {N M : Nat}
     exact CBox.mem_add hdirT
       (CBox.mem_add hint (CBox.mem_add hhalfT hS))
   -- tail
-  have hT : 2 * Complex.emTailC z N M
+  have hTail : 2 * Complex.emTailC z N M
         ∈ Ival.div (c.prec + 16)
           (Ival.mul (c.prec + 16)
             (Ival.ofRat (c.prec + 16)
@@ -320,11 +411,25 @@ theorem mem_zetaEMC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox} {N M : Nat}
       rw [bernoulliQ_cast, risingCx_eq_prod]
       ring
     rwa [hTeq] at hdiv
+  have hT : 2 * Complex.emTailC z N M
+      * (‖z + (2 * ((((M : ℕ))) : ℂ) + 1)‖ / (z.re + 2 * ((((M : ℕ))) : ℝ) + 1))
+      ∈ Ival.mul (c.prec + 16)
+        (Ival.div (c.prec + 16)
+          (Ival.mul (c.prec + 16)
+            (Ival.ofRat (c.prec + 16)
+              (2 * |(bernoulliQ (2 * (M + 1)))| / ((Nat.factorial (2 * (M + 1)) : Nat) : ℚ)))
+            (CBox.norm (c.prec + 16) (risingC (c.prec + 16) S (2 * (M + 1) - 1))))
+          (rpowIval c (Ival.ofRat (c.prec + 16) (((N + 1 : Nat)) : ℚ))
+            (Ival.add (c.prec + 16) S.re
+              (Ival.ofRat (c.prec + 16) ((2 * (((M + 1 : Nat)) : ℚ)) - 1)))))
+        (emTailFactorC c S M) :=
+    Ival.mem_mul hTail (mem_emTailFactorC hx)
   unfold zetaEMC
   simp only
   apply mem_widenCBox hMS
   intro m hm
-  have hB : 2 * Complex.emTailC z N M ≤ m.toReal :=
+  have hB : 2 * Complex.emTailC z N M
+      * (‖z + (2 * ((((M : ℕ))) : ℂ) + 1)‖ / (z.re + 2 * ((((M : ℕ))) : ℝ) + 1)) ≤ m.toReal :=
     le_trans (le_abs_self _) (Ival.abs_le_magHi hT hm)
   have hReq : riemannZeta z
       - (((∑ k ∈ Finset.range N, ((((k + 1 : ℕ))) : ℂ) ^ (-z))
@@ -438,7 +543,7 @@ theorem mem_zetaEMGuardC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox}
           omega
         exact_mod_cast hle
       linarith [hsHi]
-    exact mem_zetaEMC hc hx hs hs1 hN hM hNM
+    exact mem_zetaEMC hc hx hs hs1
   · exact CBox.mem_top _
 
 end Lynth.Interval.Fns

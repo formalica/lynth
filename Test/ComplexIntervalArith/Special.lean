@@ -16,7 +16,7 @@ def cx_gamma_quarter : { p : Rat × Rat //
     ‖Complex.Gamma ((1 / 4 : ℝ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < (10 : ℝ) ^ (-5 : ℤ) } := by
   lynth
-/-- info: 'ComplexIntervalArith.cx_gamma_quarter' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
+/-- info: 'ComplexIntervalArith.cx_gamma_quarter' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms cx_gamma_quarter
 #eval! cx_gamma_quarter.1

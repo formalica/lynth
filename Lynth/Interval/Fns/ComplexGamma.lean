@@ -1,3 +1,4 @@
+import Lynth.Interval.Fns.EMCore.GammaLimit
 import Lynth.Interval.Fns.ComplexElem
 import Lynth.Interval.Fns.Gamma
 
@@ -6,16 +7,17 @@ import Lynth.Interval.Fns.Gamma
 
 Mirror of `Lynth/Interval/Fns/Gamma.lean` with `Ival` replaced by `CBox`
 and `|·|` by `‖·‖`: argument shifting with `Γ(s+1) = s·Γ(s)` until
-`8 ≤ (z+r).re`, Stirling expansion of `log Γ` with explicit remainder,
-then `exp` divided by the complex rising factorial.  Arguments with
+`8 ≤ (z+r).re`, Stirling expansion (exponential form, sector-factor
+remainder) mapped through `exp`, then divided by the complex rising
+factorial.  Arguments with
 `Re < 1` go through Euler's reflection formula
 (`Complex.Gamma_mul_Gamma_one_sub`); general boxes are split at `Re = 0`
 and joined with `CBox.hull`.
 
-The one analytic input — the complex Stirling expansion with remainder —
-is stated below as a mirror of `/tmp/complex/gamma_handoff.lean` (same
-contract as the batch-2 `arg`/`sqrt` mirrors: keep the statement
-byte-identical, paste the prover's proof back).  Everything else is proved
+The one analytic input — the corrected complex Stirling expansion
+(`Complex.stirling_Gamma_exp`, exponential form with sector factor) — is
+ported from `/tmp/complex2/gamma_handoff.lean` (the original log-Gamma
+statement was proved false).  Everything else is proved
 inline from Mathlib facts plus the already-built `CBox`/`logBox`/`expBox`/
 `sinBox` membership lemmas.  Poles are handled exactly as in the real
 case: Mathlib's `Γ` is `0` at nonpositive integers while `_/0 = 0`, so the
@@ -24,21 +26,32 @@ shift-division identity holds everywhere (`gammaCx_eq_gamma_add_div_rising`).
 
 namespace Complex
 
-/-- COMPLEX STIRLING (log-Gamma with explicit remainder).
-WARNING: proved FALSE as stated by the external prover
-(`/tmp/86f924db-58c6-4375-9ea5-2de8c76ce92e-aristotle.tar.gz`,
-`output-final_aristotle/gamma_handoff.lean` contains the Lean counterexample
-`Complex.stirling_logGamma_false` at `w = 8 + 100i`, `N = 1`, plus the
-corrected `Complex.stirling_Gamma_exp`).  Do NOT prove this statement;
-the evaluator must be reworked to the corrected (exponential-form, sector
-factor) bound first.  `sorry` kept intentionally. -/
-theorem stirling_logGamma (w : ℂ) (hw : 8 ≤ w.re) (N : ℕ) (hN : 1 ≤ N) :
-    ∃ R : ℂ, Complex.log (Complex.Gamma w)
-        = (w - 1 / 2) * Complex.log w - w + Complex.log (Real.sqrt (2 * Real.pi))
+/-- COMPLEX STIRLING — corrected (exponential form, sector factor).
+Ported from `/tmp/complex2/gamma_handoff.lean` (Lean 4.28 → 4.34); the original
+log-Gamma statement was proved FALSE (`stirling_logGamma_false` in the handoff).
+
+Changes w.r.t. the original:
+* the identity is stated for `Gamma w = exp (…)` instead of `log (Gamma w) = …`
+  (the principal logarithm cannot match the Stirling exponent once `Im w` is large);
+* the remainder bound carries the factor `(2‖w‖ / (‖w‖ + Re w)) ^ N = sec^{2N}(arg w / 2)`,
+  which equals `1` for real `w`;
+* the hypothesis is weakened from `8 ≤ w.re` to `0 < w.re`.
+
+The remainder is the Euler–Maclaurin tail `∑_{k ≥ 0} ∫_k^{k+1} (B_{2N}(x-k) - B_{2N})/(2N)! ·
+d^{2N}/dx^{2N} log (x + w) dx`. -/
+theorem stirling_Gamma_exp (w : ℂ) (hw : 0 < w.re) (N : ℕ) (hN : 1 ≤ N) :
+    ∃ R : ℂ, Complex.Gamma w
+        = Complex.exp ((w - 1 / 2) * Complex.log w - w + Complex.log (Real.sqrt (2 * Real.pi))
           + (∑ k ∈ Finset.range (N - 1),
-              ((bernoulli (2 * (k + 1)) : ℚ) : ℂ) / ((2 * ((k + 1) : ℂ)) * (2 * ((k + 1) : ℂ) - 1) * w ^ (2 * (k + 1) - 1))) + R
-      ∧ ‖R‖ ≤ 2 * |(((bernoulli (2 * N) : ℚ)) : ℝ) / ((2 * ((N : ℝ))) * (2 * ((N : ℝ)) - 1))| / (‖w‖ ^ (2 * N - 1)) := by
-  sorry
+              ((bernoulli (2 * (k + 1)) : ℚ) : ℂ) / ((2 * ((k + 1) : ℂ)) * (2 * ((k + 1) : ℂ) - 1) * w ^ (2 * (k + 1) - 1))) + R)
+      ∧ ‖R‖ ≤ 2 * |(((bernoulli (2 * N) : ℚ)) : ℝ) / ((2 * ((N : ℝ))) * (2 * ((N : ℝ)) - 1))|
+          * (2 * ‖w‖ / (‖w‖ + w.re)) ^ N / (‖w‖ ^ (2 * N - 1)) :=
+  ⟨EMCore.gammaR w N, EMCore.gamma_eq_exp_stirlingPhi hw hN,
+    (EMCore.gammaR_summable_bound hw hN).2⟩
+
+/-- info: 'Complex.stirling_Gamma_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms Complex.stirling_Gamma_exp
 
 end Complex
 
@@ -225,13 +238,17 @@ theorem stirling_sum_bridge (z : ℂ) (N : Nat) :
   have h := (cTermC_eq_bernoulli z (k + 1) (by omega)).symm
   rwa [Nat.cast_add, Nat.cast_one] at h
 
-/-- the handoff's tail bound is the hybrid-coefficient tail bound. -/
+/-- the handoff's tail bound is the hybrid-coefficient tail bound, times the
+sector factor (present on both sides). -/
 theorem stirling_tail_bridge (N : ℕ) (hN : 1 ≤ N) (z : ℂ) :
-    2 * |(((bernoulli (2 * N) : ℚ)) : ℝ) / ((2 * ((N : ℝ))) * (2 * ((N : ℝ)) - 1))| / (‖z‖ ^ (2 * N - 1))
-      = 2 * |(stirlingCoeff N : ℝ)| / ‖z‖ ^ (2 * N - 1) := by
+    2 * |(((bernoulli (2 * N) : ℚ)) : ℝ) / ((2 * ((N : ℝ))) * (2 * ((N : ℝ)) - 1))|
+      * (2 * ‖z‖ / (‖z‖ + z.re)) ^ N / (‖z‖ ^ (2 * N - 1))
+      = (2 * |(stirlingCoeff N : ℝ)| / ‖z‖ ^ (2 * N - 1))
+        * (2 * ‖z‖ / (‖z‖ + z.re)) ^ N := by
   rw [stirlingCoeff_eq N hN]
   unfold stirlingQuot
   norm_cast
+  ring
 
 /-! ### Stirling main term and tail -/
 
@@ -283,19 +300,52 @@ theorem mem_stirlingMainC {c : Ctx} (hc : c.Valid) {z : ℂ} {Z : CBox} (hx : z 
   exact h
 
 /-- interval containing the remainder bound `2|c_N| / ‖z‖^(2N-1)`. -/
-def stirlingTailC (w : Nat) (Z : CBox) (N : Nat) : Ival :=
+def stirlingTailRealC (w : Nat) (Z : CBox) (N : Nat) : Ival :=
   Ival.div w (Ival.ofRat w (2 * |stirlingCoeff N|)) (Ival.npow w (CBox.norm w Z) (2 * N - 1))
 
-theorem mem_stirlingTailC {w : Nat} {Z : CBox} {N : Nat} {z : ℂ}
+theorem mem_stirlingTailRealC {w : Nat} {Z : CBox} {N : Nat} {z : ℂ}
     (hx : z ∈ Z) :
-    2 * |(stirlingCoeff N : ℝ)| / ‖z‖ ^ (2 * N - 1) ∈ stirlingTailC w Z N := by
-  unfold stirlingTailC
+    2 * |(stirlingCoeff N : ℝ)| / ‖z‖ ^ (2 * N - 1) ∈ stirlingTailRealC w Z N := by
+  unfold stirlingTailRealC
   have hnum : ((2 * |stirlingCoeff N| : ℚ) : ℝ) = 2 * |(stirlingCoeff N : ℝ)| := by
     rw [Rat.cast_mul, Rat.cast_abs, Rat.cast_ofNat]
   have hmem : ((2 * |stirlingCoeff N| : ℚ) : ℝ) ∈ Ival.ofRat w (2 * |stirlingCoeff N|) :=
     Ival.mem_ofRat _ _
   rw [hnum] at hmem
   exact Ival.mem_div hmem (Ival.mem_npow (CBox.mem_norm hx) _)
+
+/-- interval enclosing the sector factor `(2‖z‖/(‖z‖+Re z))^N` (which is `1`
+on the real axis and `≥ 1` elsewhere). -/
+def secFactorC (w : Nat) (Z : CBox) (N : Nat) : Ival :=
+  Ival.npow w
+    (Ival.div w (Ival.mul w (Ival.ofRat w 2) (CBox.norm w Z))
+      (Ival.add w (CBox.norm w Z) Z.re)) N
+
+theorem mem_secFactorC {w : Nat} {Z : CBox} {N : Nat} {z : ℂ}
+    (hx : z ∈ Z) :
+    (2 * ‖z‖ / (‖z‖ + z.re)) ^ N ∈ secFactorC w Z N := by
+  unfold secFactorC
+  have h2m : ((2 : ℚ) : ℝ) ∈ Ival.ofRat w 2 := Ival.mem_ofRat _ _
+  have e2 : ((2 : ℚ) : ℝ) = 2 := by simp
+  rw [e2] at h2m
+  have hnorm : ‖z‖ ∈ CBox.norm w Z := CBox.mem_norm hx
+  have hnum : 2 * ‖z‖ ∈ Ival.mul w (Ival.ofRat w 2) (CBox.norm w Z) :=
+    Ival.mem_mul h2m hnorm
+  have hden : ‖z‖ + z.re ∈ Ival.add w (CBox.norm w Z) Z.re :=
+    Ival.mem_add hnorm hx.1
+  exact Ival.mem_npow (Ival.mem_div hnum hden) N
+
+/-- interval containing the corrected remainder bound
+`2|c_N| / ‖z‖^(2N-1) · (2‖z‖/(‖z‖+Re z))^N`. -/
+def stirlingTailC (w : Nat) (Z : CBox) (N : Nat) : Ival :=
+  Ival.mul w (stirlingTailRealC w Z N) (secFactorC w Z N)
+
+theorem mem_stirlingTailC {w : Nat} {Z : CBox} {N : Nat} {z : ℂ}
+    (hx : z ∈ Z) :
+    2 * |(stirlingCoeff N : ℝ)| / ‖z‖ ^ (2 * N - 1)
+      * (2 * ‖z‖ / (‖z‖ + z.re)) ^ N ∈ stirlingTailC w Z N := by
+  unfold stirlingTailC
+  exact Ival.mem_mul (mem_stirlingTailRealC hx) (mem_secFactorC hx)
 
 /-- widen both components by a norm bound. -/
 def widenCBox (w : Nat) (B : CBox) (t : Option Dy) : CBox :=
@@ -318,7 +368,8 @@ theorem mem_widenCBox {w : Nat} {z v : ℂ} {B : CBox} {t : Option Dy} (hv : v �
       exact le_trans h1 (h m rfl)
   | none => exact CBox.mem_top _
 
-/-- `log Γ` on `Z ∋ z` with `8 ≤ z.re`: main + Horner sum widened by the tail.
+/-- `Γ` on `Z ∋ z` with `8 ≤ z.re`: exponent box (main + Horner sum widened
+by the corrected tail) mapped through `exp`.
 `B` is the shared Bernoulli list (`bernoulliList (2N)`). -/
 def logGammaC (c : Ctx) (w : Nat) (Z : CBox) (N : Nat) (B : List ℚ) : CBox :=
   let Zinv := CBox.inv w Z
@@ -329,8 +380,9 @@ def logGammaC (c : Ctx) (w : Nat) (Z : CBox) (N : Nat) (B : List ℚ) : CBox :=
 
 theorem mem_logGammaC {c : Ctx} (hc : c.Valid) {w : Nat} {Z : CBox} {N : Nat} {z : ℂ}
     (hx : z ∈ Z) (hz : 8 ≤ z.re) (hN1 : 1 ≤ N) :
-    Complex.log (Complex.Gamma z) ∈ logGammaC c w Z N (bernoulliList (2 * N)) := by
-  obtain ⟨R, hR, hRb⟩ := Complex.stirling_logGamma z hz N hN1
+    Complex.Gamma z ∈ expBox c (logGammaC c w Z N (bernoulliList (2 * N))) := by
+  have hz0 : 0 < z.re := by linarith
+  obtain ⟨R, hR, hRb⟩ := Complex.stirling_Gamma_exp z hz0 N hN1
   have hMN : N - 1 + 1 ≤ N := by omega
   have hzi : z⁻¹ ∈ CBox.inv w Z := CBox.mem_inv hx
   have hW2 : z⁻¹ * z⁻¹ ∈ CBox.mul w (CBox.inv w Z) (CBox.inv w Z) :=
@@ -353,19 +405,27 @@ theorem mem_logGammaC {c : Ctx} (hc : c.Valid) {w : Nat} {Z : CBox} {N : Nat} {z
             (bernoulliList (2 * N)) (N - 1) (N - 1))) :=
     CBox.mem_add hM hS
   have hT : 2 * |(stirlingCoeff N : ℝ)| / ‖z‖ ^ (2 * N - 1)
+      * (2 * ‖z‖ / (‖z‖ + z.re)) ^ N
       ∈ stirlingTailC w Z N := mem_stirlingTailC (w := w) (N := N) hx
-  unfold logGammaC
-  simp only
-  apply mem_widenCBox hMS
-  intro m hm
-  have hB : 2 * |(stirlingCoeff N : ℝ)| / ‖z‖ ^ (2 * N - 1) ≤ m.toReal :=
-    le_trans (le_abs_self _) (Ival.abs_le_magHi hT hm)
-  have hReq : Complex.log (Complex.Gamma z)
-      - (((z - 1 / 2) * Complex.log z - z + Complex.log (Real.sqrt (2 * Real.pi)))
-        + (∑ k ∈ Finset.range (N - 1), cTermC z (k + 1))) = R := by
-    linear_combination hR
-  rw [hReq]
-  exact le_trans hRb hB
+  have hE : ((z - 1 / 2) * Complex.log z - z + Complex.log (Real.sqrt (2 * Real.pi)))
+      + (∑ k ∈ Finset.range (N - 1), cTermC z (k + 1)) + R
+      ∈ logGammaC c w Z N (bernoulliList (2 * N)) := by
+    unfold logGammaC
+    simp only
+    apply mem_widenCBox hMS
+    intro m hm
+    have hB : 2 * |(stirlingCoeff N : ℝ)| / ‖z‖ ^ (2 * N - 1)
+        * (2 * ‖z‖ / (‖z‖ + z.re)) ^ N ≤ m.toReal :=
+      le_trans (le_abs_self _) (Ival.abs_le_magHi hT hm)
+    have hReq : (((z - 1 / 2) * Complex.log z - z + Complex.log (Real.sqrt (2 * Real.pi)))
+        + (∑ k ∈ Finset.range (N - 1), cTermC z (k + 1)) + R)
+        - (((z - 1 / 2) * Complex.log z - z + Complex.log (Real.sqrt (2 * Real.pi)))
+          + (∑ k ∈ Finset.range (N - 1), cTermC z (k + 1))) = R := by
+      ring
+    rw [hReq]
+    exact le_trans hRb hB
+  rw [hR]
+  exact mem_expBox c hc hE
 
 /-! ### Shifted evaluation (`8 ≤ Re` after shift) -/
 
@@ -407,13 +467,10 @@ theorem mem_gammaPosC {c : Ctx} (hc : c.Valid) {z : ℂ} {X : CBox}
       CBox.mem_add hx (natCastC_mem_ofRat w r)
     have hL := mem_logGammaC (w := w) (N := chooseN w T) hc hZ h8
       chooseN_ge_one
-    have hpos : 0 < (z + ((r : ℕ) : ℂ)).re := by linarith
-    have hne : Complex.Gamma (z + ((r : ℕ) : ℂ)) ≠ 0 :=
-      gamma_ne_zero_of_pos_re hpos
-    have hG : Complex.Gamma (z + ((r : ℕ) : ℂ)) ∈ expBox c (logGammaC c w
-        (CBox.add w X (CBox.ofReal (Ival.ofRat w (r : ℚ)))) N (bernoulliList (2 * N))) := by
-      rw [← Complex.exp_log hne]
-      exact mem_expBox c hc hL
+    have hG : Complex.Gamma (z + ((r : ℕ) : ℂ))
+        ∈ expBox c (logGammaC c w
+          (CBox.add w X (CBox.ofReal (Ival.ofRat w (r : ℚ)))) N (bernoulliList (2 * N))) :=
+      hL
     have hRr := mem_risingC (w := w) hx r
     have e := gammaCx_eq_gamma_add_div_rising z r
     rw [e]

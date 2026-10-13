@@ -5,9 +5,9 @@ open Lynth.Interval
 open Lynth.Interval.Fns
 
 -- Complex `Gamma` runs native (per-declaration native axioms):
--- Stirling kernels are slow in the kernel, and soundness rests on the
--- sorry'd Stirling mirror (`Complex.stirling_logGamma`,
--- `/tmp/complex/gamma_handoff.lean`), as in `Test/Interval/Zeta.lean`.
+-- Stirling kernels are slow in the kernel; soundness rests on the proved
+-- Stirling expansion (`Complex.stirling_Gamma_exp`), as in
+-- `Test/Interval/Zeta.lean`.
 set_option lynth.interval.trust "native"
 
 /-! # Complex Gamma values (ported from `Test/Interval/Gamma.lean`).
@@ -27,7 +27,6 @@ def cx_gamma_quarter : { p : Rat × Rat //
       < (10 : ℝ) ^ (-5 : ℤ) } := by
   lynth
 /-- info: 'cx_gamma_quarter' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_gamma_quarter._native.native_decide.ax_1] -/
@@ -41,11 +40,7 @@ def cx_gamma_third : { p : Rat × Rat //
     ‖Complex.Gamma ((1 / 3 : ℝ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < (10 : ℝ) ^ (-5 : ℤ) } := by
   lynth
-/-- info: 'cx_gamma_third' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_gamma_third._native.native_decide.ax_1] -/
+/-- info: 'cx_gamma_third' depends on axioms: [propext, Classical.choice, Quot.sound, cx_gamma_third._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_gamma_third
 #eval! cx_gamma_third.1
@@ -55,11 +50,7 @@ set_option maxHeartbeats 1682 in
 def cx_gamma_two : { p : Rat × Rat //
     ‖Complex.Gamma 2 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_gamma_two' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_gamma_two._native.native_decide.ax_1] -/
+/-- info: 'cx_gamma_two' depends on axioms: [propext, Classical.choice, Quot.sound, cx_gamma_two._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_gamma_two
 #eval! cx_gamma_two.1
@@ -70,11 +61,7 @@ def cx_gamma_half : { p : Rat × Rat //
     ‖Complex.Gamma ((1 / 2 : ℝ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_gamma_half' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_gamma_half._native.native_decide.ax_1] -/
+/-- info: 'cx_gamma_half' depends on axioms: [propext, Classical.choice, Quot.sound, cx_gamma_half._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_gamma_half
 #eval! cx_gamma_half.1
@@ -86,7 +73,6 @@ def cx_gamma_one_add_I : { p : Rat × Rat //
       < 1 / 1000000 } := by
   lynth
 /-- info: 'cx_gamma_one_add_I' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_gamma_one_add_I._native.native_decide.ax_1] -/

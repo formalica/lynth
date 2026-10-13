@@ -1,3 +1,4 @@
+import Lynth.Interval.Fns.EMCore.Digamma
 import Lynth.Interval.Fns.Digamma
 import Lynth.Interval.Fns.ComplexGamma
 import Lynth.Interval.Fns.ComplexZeta
@@ -14,30 +15,41 @@ the shift sum.  Negative arguments go through reflection
 `ψ(s) = ψ(1-s) - π·cot(πs)` (`Complex.digamma_one_sub`); boxes meeting a
 pole (`-m`, `m : ℕ`) go to `⊤`.
 
-The one analytic input — the complex Stirling expansion with remainder —
-is stated below as a mirror of `/tmp/complex/digamma_handoff.lean` (same
-contract as the Stirling/Gamma mirrors: keep byte-identical, paste the
-prover's proof back).  Shift, reflection and pole avoidance are proved
+The one analytic input — the corrected complex Stirling expansion
+(`Complex.dig_stirling_bound_sector`, sector-factor remainder) — is ported
+from `/tmp/complex2/digamma_handoff.lean` (the original factor-2 statement
+is believed false).  Shift, reflection and pole avoidance are proved
 inline from Mathlib facts.  The strip around `Re = 0` goes to `⊤`.
 -/
 
 namespace Complex
 
-/-- COMPLEX STIRLING (digamma with explicit remainder).
-WARNING: believed FALSE as stated (numerical evidence in the prover tarball:
-Binet-integral ratio ~5.3 at `w = 8 + 100i`, `K = 314`; see
-`output-final_aristotle/NOTES.md` and `numerics/digamma_binet_ratio.py`).
-The tarball's `digamma_handoff.lean` proves the corrected
-`Complex.dig_stirling_bound_sector` (sector factor).  Do NOT prove this
-statement; the evaluator must be reworked to the corrected bound first.
-`sorry` kept intentionally. -/
-theorem dig_stirling_bound (w : ℂ) (hw : 8 ≤ w.re) (K : ℕ) (hK : 1 ≤ K) :
+/-- COMPLEX STIRLING for digamma — corrected (sector factor).
+Ported from `/tmp/complex2/digamma_handoff.lean` (Lean 4.28 → 4.34); the original
+factor-2 statement is believed FALSE (numerical evidence in the handoff).
+
+Changes w.r.t. the original:
+* the remainder bound carries the factor `(2‖w‖ / (‖w‖ + Re w)) ^ (K + 2)`
+  (a bound for `sec^{2K+3}(arg w / 2)`), which equals `1` for real `w`;
+* the hypothesis `8 ≤ w.re` is weakened to `0 < w.re`, and `1 ≤ K` is dropped (unused).
+
+The remainder is the Euler–Maclaurin tail `∑_{k ≥ 0} ∫_k^{k+1} (B_{2K+2}(x-k) - B_{2K+2})/(2K+2)! ·
+d^{2K+2}/dx^{2K+2} (x + w)⁻¹ dx`. -/
+theorem dig_stirling_bound_sector (w : ℂ) (hw : 0 < w.re) (K : ℕ) :
     ∃ R : ℂ, Complex.digamma w
         = Complex.log w - 1 / (2 * w)
           + (∑ k ∈ Finset.range K,
               -(((bernoulli (2 * (k + 1)) : ℚ)) : ℂ) / ((2 * ((((k + 1) : ℕ)) : ℂ)) * w ^ (2 * (k + 1)))) + R
-      ∧ ‖R‖ ≤ (2 * (|(((bernoulli (2 * (K + 1)) : ℚ)) : ℝ)| / ((2 * ((((K + 1) : ℕ)) : ℝ))))) / ‖w‖ ^ (2 * (K + 1)) := by
-  sorry
+      ∧ ‖R‖ ≤ (2 * (|(((bernoulli (2 * (K + 1)) : ℚ)) : ℝ)| / ((2 * ((((K + 1) : ℕ)) : ℝ)))))
+          * (2 * ‖w‖ / (‖w‖ + w.re)) ^ (K + 2) / ‖w‖ ^ (2 * (K + 1)) := by
+  refine ⟨EMCore.digR w (K + 1), ?_, ?_⟩
+  · have := EMCore.digamma_eq_stirling hw (N := K + 1) (by omega)
+    simpa using this
+  · exact EMCore.digR_bound hw (N := K + 1) (by omega)
+
+/-- info: 'Complex.dig_stirling_bound_sector' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms Complex.dig_stirling_bound_sector
 
 end Complex
 
@@ -117,17 +129,31 @@ def digStirlingC (c : Ctx) (Y : CBox) (L : List ℚ) (K : Nat) : CBox :=
   let corrs : List CBox := (List.range K).map fun k =>
     digCorrBoxC c (-(L.getD (2 * (k + 1)) 0) / (2 * (((k + 1 : Nat) : ℚ)))) Y (k + 1)
   let sumPart := csumC w ([logT, CBox.neg halfT] ++ corrs)
-  let tail := Ival.div w
-    (Ival.ofRat w (2 * |(L.getD (2 * (K + 1)) 0)| / (2 * (((K + 1 : Nat) : ℚ)))))
-    (Ival.npow w (CBox.norm w Y) (2 * (K + 1)))
+  let tail := Ival.mul w
+    (Ival.div w
+      (Ival.ofRat w (2 * |(L.getD (2 * (K + 1)) 0)| / (2 * (((K + 1 : Nat) : ℚ)))))
+      (Ival.npow w (CBox.norm w Y) (2 * (K + 1))))
+    (secFactorC w Y (K + 2))
   widenCBox w sumPart (Ival.magHi tail)
+
+/-- the corrected tail bound, reassociated for the interval tail. -/
+theorem dig_tail_bridge (K : ℕ) (z : ℂ) :
+    (2 * (|(((bernoulli (2 * (K + 1)) : ℚ)) : ℝ)| / ((2 * ((((K + 1) : ℕ)) : ℝ)))))
+      * (2 * ‖z‖ / (‖z‖ + z.re)) ^ (K + 2) / ‖z‖ ^ (2 * (K + 1))
+      = ((2 * (|(((bernoulli (2 * (K + 1)) : ℚ)) : ℝ)| / ((2 * ((((K + 1) : ℕ)) : ℝ))))) / ‖z‖ ^ (2 * (K + 1)))
+        * (2 * ‖z‖ / (‖z‖ + z.re)) ^ (K + 2) := by
+  ring
 
 theorem mem_digStirlingC {c : Ctx} (hc : c.Valid) {w : Nat} {Y : CBox} {K : Nat}
     {L : List ℚ} {z : ℂ} (hx : z ∈ Y)
     (hL : ∀ i : Nat, i ≤ 2 * (K + 1) → (L.getD i 0 : ℚ) = bernoulli i)
     (hK : 1 ≤ K) (hz : 8 ≤ z.re) :
     Complex.digamma z ∈ digStirlingC c Y L K := by
-  obtain ⟨R, hR, hRb⟩ := Complex.dig_stirling_bound z hz K hK
+  have hz0 : 0 < z.re := by
+    have h := hz
+    linarith
+  obtain ⟨R, hR, hRb⟩ := Complex.dig_stirling_bound_sector z hz0 K
+  rw [dig_tail_bridge K z] at hRb
   -- main + half terms
   have hlog : Complex.log z ∈ logBox c Y := mem_logBox c hc hx
   have hhalf : (1 : ℂ) / (2 * z)
@@ -197,29 +223,39 @@ theorem mem_digStirlingC {c : Ctx} (hc : c.Valid) {w : Nat} {Y : CBox} {K : Nat}
       rw [csum_list_sum_map_range]
       ring
     rwa [hlist] at hmem
-  -- tail (no `(σ-1)` factor: the bound is `2·scale`)
+  -- tail (corrected bound: `2·scale` times the sector factor `^(K+2)`)
   have hT : (2 * (|(((bernoulli (2 * (K + 1)) : ℚ)) : ℝ)| / ((2 * ((((K + 1) : ℕ)) : ℝ))))) / ‖z‖ ^ (2 * (K + 1))
-      ∈ Ival.div (c.prec + 16)
-        (Ival.ofRat (c.prec + 16)
-          (2 * |(L.getD (2 * (K + 1)) 0)| / (2 * (((K + 1 : Nat) : ℚ)))))
-        (Ival.npow (c.prec + 16) (CBox.norm (c.prec + 16) Y) (2 * (K + 1))) := by
-    have hQT : (((2 * |(L.getD (2 * (K + 1)) 0)| / (2 * (((K + 1 : Nat) : ℚ))) : ℚ)) : ℝ)
-        = 2 * (|(((bernoulli (2 * (K + 1)) : ℚ)) : ℝ)| / ((2 * ((((K + 1) : ℕ)) : ℝ)))) := by
-      have hLk := hL (2 * (K + 1)) (by omega)
-      rw [hLk]
-      push_cast
-      ring
-    have hmemQT : ((((2 * |(L.getD (2 * (K + 1)) 0)| / (2 * (((K + 1 : Nat) : ℚ))) : ℚ))) : ℝ)
-        ∈ Ival.ofRat (c.prec + 16)
-          (2 * |(L.getD (2 * (K + 1)) 0)| / (2 * (((K + 1 : Nat) : ℚ)))) :=
-      Ival.mem_ofRat _ _
-    rw [hQT] at hmemQT
-    exact Ival.mem_div hmemQT (Ival.mem_npow (CBox.mem_norm hx) _)
+      * (2 * ‖z‖ / (‖z‖ + z.re)) ^ (K + 2)
+      ∈ Ival.mul (c.prec + 16)
+        (Ival.div (c.prec + 16)
+          (Ival.ofRat (c.prec + 16)
+            (2 * |(L.getD (2 * (K + 1)) 0)| / (2 * (((K + 1 : Nat) : ℚ)))))
+          (Ival.npow (c.prec + 16) (CBox.norm (c.prec + 16) Y) (2 * (K + 1))))
+        (secFactorC (c.prec + 16) Y (K + 2)) := by
+    have hTreal : (2 * (|(((bernoulli (2 * (K + 1)) : ℚ)) : ℝ)| / ((2 * ((((K + 1) : ℕ)) : ℝ))))) / ‖z‖ ^ (2 * (K + 1))
+        ∈ Ival.div (c.prec + 16)
+          (Ival.ofRat (c.prec + 16)
+            (2 * |(L.getD (2 * (K + 1)) 0)| / (2 * (((K + 1 : Nat) : ℚ)))))
+          (Ival.npow (c.prec + 16) (CBox.norm (c.prec + 16) Y) (2 * (K + 1))) := by
+      have hQT : (((2 * |(L.getD (2 * (K + 1)) 0)| / (2 * (((K + 1 : Nat) : ℚ))) : ℚ)) : ℝ)
+          = 2 * (|(((bernoulli (2 * (K + 1)) : ℚ)) : ℝ)| / ((2 * ((((K + 1) : ℕ)) : ℝ)))) := by
+        have hLk := hL (2 * (K + 1)) (by omega)
+        rw [hLk]
+        push_cast
+        ring
+      have hmemQT : ((((2 * |(L.getD (2 * (K + 1)) 0)| / (2 * (((K + 1 : Nat) : ℚ))) : ℚ))) : ℝ)
+          ∈ Ival.ofRat (c.prec + 16)
+            (2 * |(L.getD (2 * (K + 1)) 0)| / (2 * (((K + 1 : Nat) : ℚ)))) :=
+        Ival.mem_ofRat _ _
+      rw [hQT] at hmemQT
+      exact Ival.mem_div hmemQT (Ival.mem_npow (CBox.mem_norm hx) _)
+    exact Ival.mem_mul hTreal (mem_secFactorC hx)
   unfold digStirlingC
   simp only
   apply mem_widenCBox hMS
   intro m hm
-  have hB : (2 * (|(((bernoulli (2 * (K + 1)) : ℚ)) : ℝ)| / ((2 * ((((K + 1) : ℕ)) : ℝ))))) / ‖z‖ ^ (2 * (K + 1)) ≤ m.toReal :=
+  have hB : (2 * (|(((bernoulli (2 * (K + 1)) : ℚ)) : ℝ)| / ((2 * ((((K + 1) : ℕ)) : ℝ))))) / ‖z‖ ^ (2 * (K + 1))
+      * (2 * ‖z‖ / (‖z‖ + z.re)) ^ (K + 2) ≤ m.toReal :=
     le_trans (le_abs_self _) (Ival.abs_le_magHi hT hm)
   have hReq : Complex.digamma z
       - ((Complex.log z - 1 / (2 * z))

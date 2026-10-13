@@ -43,7 +43,7 @@ def cx_gamma_sin_add_two : { p : Rat × Rat //
     ‖Complex.Gamma (Complex.sin ((1 / 2 : ℝ) : ℂ) + 2)
       - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
-/-- info: 'ComplexIntervalArith.cx_gamma_sin_add_two' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
+/-- info: 'ComplexIntervalArith.cx_gamma_sin_add_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms cx_gamma_sin_add_two
 #eval! cx_gamma_sin_add_two.1
@@ -54,7 +54,7 @@ def cx_log_gamma_add_sqrt : { p : Rat × Rat //
     ‖Complex.log (Complex.Gamma ((1 / 4 : ℝ) : ℂ) + Complex.sqrt ((2 : ℝ) : ℂ))
       - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
-/-- info: 'ComplexIntervalArith.cx_log_gamma_add_sqrt' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
+/-- info: 'ComplexIntervalArith.cx_log_gamma_add_sqrt' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms cx_log_gamma_add_sqrt
 #eval! cx_log_gamma_add_sqrt.1
@@ -120,7 +120,7 @@ def cx_log_two_gamma_div_exp : { p : Rat × Rat //
     ‖Complex.log 2 * Complex.Gamma ((1 / 4 : ℝ) : ℂ) / Complex.exp 1
       - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 100000000 } := by
   lynth
-/-- info: 'ComplexIntervalArith.cx_log_two_gamma_div_exp' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
+/-- info: 'ComplexIntervalArith.cx_log_two_gamma_div_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms cx_log_two_gamma_div_exp
 #eval! cx_log_two_gamma_div_exp.1

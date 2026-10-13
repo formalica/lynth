@@ -5,8 +5,8 @@ open Lynth.Interval
 open Lynth.Interval.Fns
 
 -- Complex `arctan` runs native (per-declaration native axioms):
--- its soundness goes through `logBox`, resting on the sorry'd helpers
--- (`/tmp/complex/batch2_handoff.lean`), as in `Test/Interval/Zeta.lean`.
+-- its soundness goes through `logBox`, resting on the proved helpers
+-- (`Complex.arg_of_pos`, …).
 set_option lynth.interval.trust "native"
 
 /-! # Complex arctan values.

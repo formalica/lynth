@@ -5,9 +5,9 @@ open Lynth.Interval
 open Lynth.Interval.Fns
 
 -- Complex `digamma` runs native (per-declaration native axioms):
--- shift/Stirling kernels evaluate dozens of `cpow`/`log` boxes, and
--- soundness rests on the sorry'd Stirling mirror
--- (`/tmp/complex/digamma_handoff.lean`), as in `Test/Interval/Zeta.lean`.
+-- shift/Stirling kernels evaluate dozens of `cpow`/`log` boxes; soundness
+-- rests on the proved Stirling expansion
+-- (`Complex.dig_stirling_bound_sector`), as in `Test/Interval/Zeta.lean`.
 set_option lynth.interval.trust "native"
 
 /-! # Complex digamma values (ported from `Test/Interval/Digamma.lean`).
@@ -23,7 +23,7 @@ set_option maxHeartbeats 1815 in
 def cx_dig_one : { p : Rat × Rat //
     ‖Complex.digamma 1 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_dig_one' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, cx_dig_one._native.native_decide.ax_1] -/
+/-- info: 'cx_dig_one' depends on axioms: [propext, Classical.choice, Quot.sound, cx_dig_one._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_dig_one
 #eval! cx_dig_one.1
@@ -33,7 +33,7 @@ set_option maxHeartbeats 1790 in
 def cx_dig_two : { p : Rat × Rat //
     ‖Complex.digamma 2 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_dig_two' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, cx_dig_two._native.native_decide.ax_1] -/
+/-- info: 'cx_dig_two' depends on axioms: [propext, Classical.choice, Quot.sound, cx_dig_two._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_dig_two
 #eval! cx_dig_two.1
@@ -44,11 +44,7 @@ def cx_dig_half : { p : Rat × Rat //
     ‖Complex.digamma ((1 / 2 : ℝ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_dig_half' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_dig_half._native.native_decide.ax_1] -/
+/-- info: 'cx_dig_half' depends on axioms: [propext, Classical.choice, Quot.sound, cx_dig_half._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_dig_half
 #eval! cx_dig_half.1
@@ -60,7 +56,6 @@ def cx_dig_five_halves : { p : Rat × Rat //
       < 1 / 1000000 } := by
   lynth
 /-- info: 'cx_dig_five_halves' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_dig_five_halves._native.native_decide.ax_1] -/
@@ -74,11 +69,7 @@ def cx_dig_neg_half : { p : Rat × Rat //
     ‖Complex.digamma ((-1 / 2 : ℝ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000 } := by
   lynth
-/-- info: 'cx_dig_neg_half' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_dig_neg_half._native.native_decide.ax_1] -/
+/-- info: 'cx_dig_neg_half' depends on axioms: [propext, Classical.choice, Quot.sound, cx_dig_neg_half._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_dig_neg_half
 #eval! cx_dig_neg_half.1
@@ -88,11 +79,7 @@ set_option maxHeartbeats 1791 in
 def cx_dig_three : { p : Rat × Rat //
     ‖Complex.digamma 3 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_dig_three' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_dig_three._native.native_decide.ax_1] -/
+/-- info: 'cx_dig_three' depends on axioms: [propext, Classical.choice, Quot.sound, cx_dig_three._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_dig_three
 #eval! cx_dig_three.1
@@ -104,7 +91,6 @@ def cx_dig_one_add_I : { p : Rat × Rat //
       < 1 / 1000000 } := by
   lynth
 /-- info: 'cx_dig_one_add_I' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_dig_one_add_I._native.native_decide.ax_1] -/
@@ -119,7 +105,6 @@ def cx_dig_two_add_I : { p : Rat × Rat //
       < 1 / 1000000 } := by
   lynth
 /-- info: 'cx_dig_two_add_I' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_dig_two_add_I._native.native_decide.ax_1] -/

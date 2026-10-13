@@ -5,8 +5,8 @@ open Lynth.Interval
 open Lynth.Interval.Fns
 
 -- Complex `log`/`sqrt` run native (per-declaration native axioms):
--- their soundness rests on the sorry'd quadrant/cut helpers
--- (`/tmp/complex/batch2_handoff.lean`), as in `Test/Interval/Zeta.lean`.
+-- their soundness rests on the proved quadrant/cut helpers
+-- (`Complex.arg_of_pos`, `Complex.sqrt_components_of_pos`, …).
 set_option lynth.interval.trust "native"
 
 /-! # Complex log, sqrt, arg, pi (batch 2).

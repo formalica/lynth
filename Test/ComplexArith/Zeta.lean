@@ -5,9 +5,10 @@ open Lynth.Interval
 open Lynth.Interval.Fns
 
 -- Complex `zeta` runs native (per-declaration native axioms):
--- Euler-product kernels evaluate hundreds of `cpow` factors, and soundness
--- rests on the sorry'd Euler-tail / FE mirrors
--- (`/tmp/complex/zeta_handoff.lean`), as in `Test/Interval/Zeta.lean`.
+-- Euler-product kernels evaluate hundreds of `cpow` factors; soundness
+-- rests on the proved Euler tail, FE, and EM bounds
+-- (`Complex.eulerprod_tail`, `Complex.zeta_neg_fe`,
+-- `Complex.zeta_em_bound_corrected`), as in `Test/Interval/Zeta.lean`.
 set_option lynth.interval.trust "native"
 
 /-! # Complex Riemann zeta values (ported from `Test/Interval/Zeta.lean`).
@@ -29,11 +30,7 @@ set_option maxHeartbeats 1703 in
 def cx_zeta_two : { p : Rat × Rat //
     ‖riemannZeta 2 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_zeta_two' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_zeta_two._native.native_decide.ax_1] -/
+/-- info: 'cx_zeta_two' depends on axioms: [propext, Classical.choice, Quot.sound, cx_zeta_two._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_zeta_two
 #eval! cx_zeta_two.1
@@ -43,11 +40,7 @@ set_option maxHeartbeats 6105 in
 def cx_zeta_four : { p : Rat × Rat //
     ‖riemannZeta 4 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_zeta_four' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_zeta_four._native.native_decide.ax_1] -/
+/-- info: 'cx_zeta_four' depends on axioms: [propext, Classical.choice, Quot.sound, cx_zeta_four._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_zeta_four
 #eval! cx_zeta_four.1
@@ -57,11 +50,7 @@ set_option maxHeartbeats 4880 in
 def cx_zeta_six : { p : Rat × Rat //
     ‖riemannZeta 6 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_zeta_six' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_zeta_six._native.native_decide.ax_1] -/
+/-- info: 'cx_zeta_six' depends on axioms: [propext, Classical.choice, Quot.sound, cx_zeta_six._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_zeta_six
 #eval! cx_zeta_six.1
@@ -71,11 +60,7 @@ set_option maxHeartbeats 4867 in
 def cx_zeta_seven : { p : Rat × Rat //
     ‖riemannZeta 7 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_zeta_seven' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_zeta_seven._native.native_decide.ax_1] -/
+/-- info: 'cx_zeta_seven' depends on axioms: [propext, Classical.choice, Quot.sound, cx_zeta_seven._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_zeta_seven
 #eval! cx_zeta_seven.1
@@ -85,11 +70,7 @@ set_option maxHeartbeats 4864 in
 def cx_zeta_eight : { p : Rat × Rat //
     ‖riemannZeta 8 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_zeta_eight' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_zeta_eight._native.native_decide.ax_1] -/
+/-- info: 'cx_zeta_eight' depends on axioms: [propext, Classical.choice, Quot.sound, cx_zeta_eight._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_zeta_eight
 #eval! cx_zeta_eight.1
@@ -99,11 +80,7 @@ set_option maxHeartbeats 2070 in
 def cx_zeta_neg_one : { p : Rat × Rat //
     ‖riemannZeta (-1) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000 } := by
   lynth
-/-- info: 'cx_zeta_neg_one' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_zeta_neg_one._native.native_decide.ax_1] -/
+/-- info: 'cx_zeta_neg_one' depends on axioms: [propext, Classical.choice, Quot.sound, cx_zeta_neg_one._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_zeta_neg_one
 #eval! cx_zeta_neg_one.1
@@ -114,7 +91,6 @@ def cx_zeta_neg_three : { p : Rat × Rat //
     ‖riemannZeta (-3) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000 } := by
   lynth
 /-- info: 'cx_zeta_neg_three' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_zeta_neg_three._native.native_decide.ax_1] -/
@@ -127,11 +103,7 @@ set_option maxHeartbeats 6208 in
 def cx_zeta_neg_two : { p : Rat × Rat //
     ‖riemannZeta (-2) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000 } := by
   lynth
-/-- info: 'cx_zeta_neg_two' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_zeta_neg_two._native.native_decide.ax_1] -/
+/-- info: 'cx_zeta_neg_two' depends on axioms: [propext, Classical.choice, Quot.sound, cx_zeta_neg_two._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_zeta_neg_two
 #eval! cx_zeta_neg_two.1
@@ -143,7 +115,6 @@ def cx_zeta_six_add_I : { p : Rat × Rat //
       < 1 / 1000000 } := by
   lynth
 /-- info: 'cx_zeta_six_add_I' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_zeta_six_add_I._native.native_decide.ax_1] -/
@@ -158,7 +129,6 @@ def cx_zeta_three_add_2I : { p : Rat × Rat //
       < 1 / 1000 } := by
   lynth
 /-- info: 'cx_zeta_three_add_2I' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_zeta_three_add_2I._native.native_decide.ax_1] -/
@@ -171,11 +141,7 @@ set_option maxHeartbeats 6078 in
 def cx_zeta_three : { p : Rat × Rat //
     ‖riemannZeta 3 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_zeta_three' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_zeta_three._native.native_decide.ax_1] -/
+/-- info: 'cx_zeta_three' depends on axioms: [propext, Classical.choice, Quot.sound, cx_zeta_three._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_zeta_three
 #eval! cx_zeta_three.1
@@ -185,11 +151,7 @@ set_option maxHeartbeats 6093 in
 def cx_zeta_five : { p : Rat × Rat //
     ‖riemannZeta 5 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_zeta_five' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_zeta_five._native.native_decide.ax_1] -/
+/-- info: 'cx_zeta_five' depends on axioms: [propext, Classical.choice, Quot.sound, cx_zeta_five._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_zeta_five
 #eval! cx_zeta_five.1
@@ -201,7 +163,6 @@ def cx_zeta_three_halves : { p : Rat × Rat //
       < 1 / 1000000 } := by
   lynth
 /-- info: 'cx_zeta_three_halves' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_zeta_three_halves._native.native_decide.ax_1] -/
@@ -216,7 +177,6 @@ def cx_zeta_five_halves : { p : Rat × Rat //
       < 1 / 1000000 } := by
   lynth
 /-- info: 'cx_zeta_five_halves' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_zeta_five_halves._native.native_decide.ax_1] -/
@@ -230,11 +190,7 @@ def cx_zeta_half : { p : Rat × Rat //
     ‖riemannZeta ((1 / 2 : ℝ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_zeta_half' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_zeta_half._native.native_decide.ax_1] -/
+/-- info: 'cx_zeta_half' depends on axioms: [propext, Classical.choice, Quot.sound, cx_zeta_half._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_zeta_half
 #eval! cx_zeta_half.1
@@ -246,7 +202,6 @@ def cx_zeta_neg_half : { p : Rat × Rat //
       < 1 / 1000 } := by
   lynth
 /-- info: 'cx_zeta_neg_half' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_zeta_neg_half._native.native_decide.ax_1] -/
