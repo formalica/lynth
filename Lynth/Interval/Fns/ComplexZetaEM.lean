@@ -18,13 +18,13 @@ proof back).  Everything else is proved inline.
 namespace Complex
 
 /-- one complex Bernoulli correction (evaluator form, matches the handoff). -/
-noncomputable def emCorrCh (s : ℂ) (N r : Nat) : ℂ :=
+noncomputable def emCorrC (s : ℂ) (N r : Nat) : ℂ :=
   (((bernoulli (2 * r) : ℚ)) : ℂ) / ((((Nat.factorial (2 * r) : ℕ))) : ℂ)
     * ((Finset.range (2 * r - 1)).prod fun j => s + ((((j : ℕ))) : ℂ))
     / ((((N + 1 : ℕ))) : ℂ) ^ (s + (2 * ((((r : ℕ))) : ℂ)) - 1)
 
 /-- complex tail scale (real-valued, matches the handoff). -/
-noncomputable def emTailCh (s : ℂ) (N M : Nat) : ℝ :=
+noncomputable def emTailC (s : ℂ) (N M : Nat) : ℝ :=
   |(((bernoulli (2 * (M + 1)) : ℚ)) : ℝ)| / ((((Nat.factorial (2 * (M + 1)) : ℕ))) : ℝ)
     * ‖(Finset.range (2 * (M + 1) - 1)).prod fun j => s + ((((j : ℕ))) : ℂ)‖
     / (((N + 1 : ℕ)) : ℝ) ^ (s.re + (2 * (((M + 1 : Nat)) : ℝ)) - 1)
@@ -37,8 +37,8 @@ theorem zeta_em_bound (s : ℂ) (hs : 0 < s.re) (hs1 : s.re ≠ 1) (N M : Nat)
         = (∑ k ∈ Finset.range N, ((((k + 1 : ℕ))) : ℂ) ^ (-s))
           + ((((N + 1 : ℕ))) : ℂ) ^ (1 - s) / (s - 1)
           + ((((N + 1 : ℕ))) : ℂ) ^ (-s) / 2
-          + (∑ r ∈ Finset.range M, emCorrCh s N (r + 1)) + R
-      ∧ ‖R‖ ≤ 2 * emTailCh s N M := by
+          + (∑ r ∈ Finset.range M, emCorrC s N (r + 1)) + R
+      ∧ ‖R‖ ≤ 2 * emTailC s N M := by
   sorry
 
 end Complex
@@ -147,7 +147,7 @@ theorem mem_zetaEMC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox} {N M : Nat}
       (mem_cpow_point hc hNp1mem hNp10 (CBox.mem_neg hx))
       mem_twoC
   -- corrections
-  have hcorrT : ∀ r : Nat, r ≤ M → Complex.emCorrCh z N (r + 1)
+  have hcorrT : ∀ r : Nat, r ≤ M → Complex.emCorrC z N (r + 1)
       ∈ emCorrBoxC c S
         (CBox.ofReal (Ival.ofRat (c.prec + 16) (((N + 1 : Nat)) : ℚ)))
         (bernoulliQ (2 * (r + 1)) / ((Nat.factorial (2 * (r + 1)) : Nat) : ℚ)) (r + 1) := by
@@ -187,8 +187,8 @@ theorem mem_zetaEMC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox} {N M : Nat}
       exact CBox.mem_div (CBox.mem_mul hQmem hRising) hden
     have heq : (((Q : ℝ)) : ℂ) * risingCx z (2 * (r + 1) - 1)
         / ((((N + 1 : ℕ))) : ℂ) ^ (z + (((E : ℝ)) : ℂ))
-        = Complex.emCorrCh z N (r + 1) := by
-      unfold Complex.emCorrCh
+        = Complex.emCorrC z N (r + 1) := by
+      unfold Complex.emCorrC
       rw [hQv, risingCx_eq_prod]
       have hexp : z + (((E : ℝ)) : ℂ)
           = z + (2 * ((((r + 1 : ℕ))) : ℂ)) - 1 := by
@@ -199,13 +199,13 @@ theorem mem_zetaEMC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox} {N M : Nat}
     rwa [heq] at hmemQ
   -- correction sum
   have hfaC : List.Forall₂ (fun x B => x ∈ B)
-      ((List.range M).map fun r => Complex.emCorrCh z N (r + 1))
+      ((List.range M).map fun r => Complex.emCorrC z N (r + 1))
       ((List.range M).map fun r =>
         emCorrBoxC c S
           (CBox.ofReal (Ival.ofRat (c.prec + 16) (((N + 1 : Nat)) : ℚ)))
           (bernoulliQ (2 * (r + 1)) / ((Nat.factorial (2 * (r + 1)) : Nat) : ℚ)) (r + 1)) :=
     csumForall₂RangeLe hcorrT M le_rfl
-  have hS : (∑ r ∈ Finset.range M, Complex.emCorrCh z N (r + 1))
+  have hS : (∑ r ∈ Finset.range M, Complex.emCorrC z N (r + 1))
       ∈ csumC (c.prec + 16) ((List.range M).map fun r =>
         emCorrBoxC c S
           (CBox.ofReal (Ival.ofRat (c.prec + 16) (((N + 1 : Nat)) : ℚ)))
@@ -216,7 +216,7 @@ theorem mem_zetaEMC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox} {N M : Nat}
   have hMS : ((∑ k ∈ Finset.range N, ((((k + 1 : ℕ))) : ℂ) ^ (-z))
       + (((((N + 1 : ℕ))) : ℂ) ^ (1 - z) / (z - 1)
         + (((((N + 1 : ℕ))) : ℂ) ^ (-z) / 2
-          + (∑ r ∈ Finset.range M, Complex.emCorrCh z N (r + 1)))))
+          + (∑ r ∈ Finset.range M, Complex.emCorrC z N (r + 1)))))
       ∈ CBox.add (c.prec + 16) (csumC (c.prec + 16) ((List.range N).map fun k =>
         expBox c (CBox.mul c.prec
           (logBox c (CBox.ofReal (Ival.ofRat (c.prec + 16) (((k + 1 : Nat)) : ℚ))))
@@ -240,17 +240,17 @@ theorem mem_zetaEMC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox} {N M : Nat}
     have hval : ((∑ k ∈ Finset.range N, ((((k + 1 : ℕ))) : ℂ) ^ (-z))
         + (((((N + 1 : ℕ))) : ℂ) ^ (1 - z) / (z - 1)
           + (((((N + 1 : ℕ))) : ℂ) ^ (-z) / 2
-            + (∑ r ∈ Finset.range M, Complex.emCorrCh z N (r + 1)))))
+            + (∑ r ∈ Finset.range M, Complex.emCorrC z N (r + 1)))))
         = ((∑ k ∈ Finset.range N, ((((k + 1 : ℕ))) : ℂ) ^ (-z)))
           + ((((((N + 1 : ℕ))) : ℂ) ^ (1 - z) / (z - 1)
             + (((((N + 1 : ℕ))) : ℂ) ^ (-z) / 2
-              + (∑ r ∈ Finset.range M, Complex.emCorrCh z N (r + 1))))) := by
+              + (∑ r ∈ Finset.range M, Complex.emCorrC z N (r + 1))))) := by
       ring
     rw [hval]
     exact CBox.mem_add hdirT
       (CBox.mem_add hint (CBox.mem_add hhalfT hS))
   -- tail
-  have hT : 2 * Complex.emTailCh z N M
+  have hT : 2 * Complex.emTailC z N M
         ∈ Ival.div (c.prec + 16)
           (Ival.mul (c.prec + 16)
             (Ival.ofRat (c.prec + 16)
@@ -308,8 +308,8 @@ theorem mem_zetaEMC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox} {N M : Nat}
     have hTeq : ((2 * |(bernoulliQ (2 * (M + 1)))|
         / ((Nat.factorial (2 * (M + 1)) : Nat) : ℚ) : ℚ) : ℝ)
         * ‖risingCx z (2 * (M + 1) - 1)‖ / (((N + 1 : ℕ)) : ℝ) ^ (z.re + (2 * ((((M + 1 : ℕ))) : ℝ)) - 1)
-        = 2 * Complex.emTailCh z N M := by
-      unfold Complex.emTailCh
+        = 2 * Complex.emTailC z N M := by
+      unfold Complex.emTailC
       push_cast
       rw [bernoulliQ_cast, risingCx_eq_prod]
       ring
@@ -318,13 +318,13 @@ theorem mem_zetaEMC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox} {N M : Nat}
   simp only
   apply mem_widenCBox hMS
   intro m hm
-  have hB : 2 * Complex.emTailCh z N M ≤ m.toReal :=
+  have hB : 2 * Complex.emTailC z N M ≤ m.toReal :=
     le_trans (le_abs_self _) (Ival.abs_le_magHi hT hm)
   have hReq : riemannZeta z
       - (((∑ k ∈ Finset.range N, ((((k + 1 : ℕ))) : ℂ) ^ (-z))
         + (((((N + 1 : ℕ))) : ℂ) ^ (1 - z) / (z - 1)
           + (((((N + 1 : ℕ))) : ℂ) ^ (-z) / 2
-            + (∑ r ∈ Finset.range M, Complex.emCorrCh z N (r + 1)))))) = R := by
+            + (∑ r ∈ Finset.range M, Complex.emCorrC z N (r + 1)))))) = R := by
     linear_combination hR
   rw [hReq]
   exact le_trans hRb hB
