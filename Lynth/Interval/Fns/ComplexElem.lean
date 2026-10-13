@@ -123,21 +123,49 @@ theorem cosh_im_of (x : ℂ) :
     Complex.I_re, Complex.I_im, mul_zero, mul_one, zero_mul, one_mul,
     sub_zero, add_zero, zero_add] <;> ring
 
-/-- ARG, right half-plane (mirror of `/tmp/complex/batch2_handoff.lean`,
-for the external prover). -/
+/-- ARG, right half-plane (ported from `/tmp/86f924db-58c6-4375-9ea5-2de8c76ce92e-aristotle.tar.gz`
+`output-final_aristotle/batch2_handoff.lean`, adapted to Lean 4.34:
+`push_neg` → `push Not`). -/
 theorem arg_of_pos {z : ℂ} (hx : 0 < z.re) :
     z.arg = Real.arctan (z.im / z.re) := by
-  sorry
+  have h := abs_lt.1 (Complex.abs_arg_lt_pi_div_two_iff.2 (Or.inl hx))
+  rw [← Complex.tan_arg, Real.arctan_tan h.1 h.2]
 
-/-- ARG, left half-plane, nonnegative imag (mirror for the prover). -/
+/-- info: 'Complex.arg_of_pos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms Complex.arg_of_pos
+
+/-- ARG, left half-plane, nonnegative imag (ported from the same handoff). -/
 theorem arg_of_neg_nonneg {z : ℂ} (hx : z.re < 0) (hy : 0 ≤ z.im) :
     z.arg = Real.arctan (z.im / z.re) + Real.pi := by
-  sorry
+  have h1 := Complex.arg_le_pi z
+  have h2 : Real.pi / 2 < z.arg := by
+    by_contra h
+    push Not at h
+    have := Complex.abs_arg_le_pi_div_two_iff.1
+      (abs_le.2 ⟨by linarith [Complex.arg_nonneg_iff.2 hy, Real.pi_pos], h⟩)
+    linarith
+  rw [← Complex.tan_arg, ← Real.tan_sub_pi, Real.arctan_tan] <;> linarith
 
-/-- ARG, left half-plane, negative imag (mirror for the prover). -/
+/-- info: 'Complex.arg_of_neg_nonneg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms Complex.arg_of_neg_nonneg
+
+/-- ARG, left half-plane, negative imag (ported from the same handoff). -/
 theorem arg_of_neg_neg {z : ℂ} (hx : z.re < 0) (hy : z.im < 0) :
     z.arg = Real.arctan (z.im / z.re) - Real.pi := by
-  sorry
+  have h1 := Complex.neg_pi_lt_arg z
+  have h2 : z.arg < -(Real.pi / 2) := by
+    by_contra h
+    push Not at h
+    have := Complex.abs_arg_le_pi_div_two_iff.1
+      (abs_le.2 ⟨h, by linarith [Complex.arg_neg_iff.2 hy, Real.pi_pos]⟩)
+    linarith
+  rw [← Complex.tan_arg, ← Real.tan_add_pi, Real.arctan_tan] <;> linarith
+
+/-- info: 'Complex.arg_of_neg_neg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms Complex.arg_of_neg_neg
 
 /-- ARG, pure imaginary positive axis. -/
 theorem arg_of_zero_pos {y : ℝ} (hy : 0 < y) : (⟨0, y⟩ : ℂ).arg = Real.pi / 2 := by
@@ -154,12 +182,33 @@ theorem arg_of_zero_neg {y : ℝ} (hy : y < 0) : (⟨0, y⟩ : ℂ).arg = -(Real
   exact (Complex.arg_real_mul _ (by linarith)).trans Complex.arg_neg_I
 
 /-- SQRT, right half-plane interior, division form matching `sqrtBox`
-(mirror for the prover). -/
+(ported from `/tmp/86f924db-58c6-4375-9ea5-2de8c76ce92e-aristotle.tar.gz`
+`output-final_aristotle/batch2_handoff.lean`). -/
 theorem sqrt_components_of_pos {z : ℂ} (hx : 0 < z.re) :
     (Complex.sqrt z).re = Real.sqrt ((‖z‖ + z.re) / 2)
     ∧ (Complex.sqrt z).im
       = z.im / (2 * Real.sqrt ((‖z‖ + z.re) / 2)) := by
-  sorry
+  have hn : z.re ≤ ‖z‖ := Complex.re_le_norm z
+  have hpos : 0 < (‖z‖ + z.re) / 2 := by linarith
+  have hs := Real.sqrt_pos.2 hpos
+  have key : Real.sqrt ((‖z‖ - z.re) / 2) * Real.sqrt ((‖z‖ + z.re) / 2) = |z.im| / 2 := by
+    rw [← Real.sqrt_mul (by linarith)]
+    have : (‖z‖ - z.re) / 2 * ((‖z‖ + z.re) / 2) = (|z.im| / 2) ^ 2 := by
+      have := Complex.sq_norm z
+      rw [Complex.normSq_apply] at this
+      rw [div_pow, sq_abs]; nlinarith
+    rw [this, Real.sqrt_sq (by positivity)]
+  rw [Complex.sqrt_eq_real_add_ite]
+  generalize Real.sqrt ((‖z‖ - z.re) / 2) = a at key ⊢
+  generalize Real.sqrt ((‖z‖ + z.re) / 2) = b at key hs ⊢
+  rw [eq_div_iff (by positivity)]
+  split_ifs with h
+  · simp; rw [abs_of_nonneg h] at key; linarith
+  · simp; rw [abs_of_neg (by linarith)] at key; linarith
+
+/-- info: 'Complex.sqrt_components_of_pos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms Complex.sqrt_components_of_pos
 
 end Complex
 

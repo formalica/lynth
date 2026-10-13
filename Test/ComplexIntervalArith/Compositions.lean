@@ -76,7 +76,7 @@ def cx_cosh_sin_add_arctan : { p : Rat × Rat //
     ‖Complex.cosh (Complex.sin 1 + Complex.arctan 1)
       - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
-/-- info: 'ComplexIntervalArith.cx_cosh_sin_add_arctan' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
+/-- info: 'ComplexIntervalArith.cx_cosh_sin_add_arctan' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms cx_cosh_sin_add_arctan
 #eval! cx_cosh_sin_add_arctan.1
@@ -109,7 +109,7 @@ def cx_arctan_log_ten_mul_exp : { p : Rat × Rat //
     ‖Complex.arctan (Complex.log 10 * Complex.exp (-1))
       - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
-/-- info: 'ComplexIntervalArith.cx_arctan_log_ten_mul_exp' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
+/-- info: 'ComplexIntervalArith.cx_arctan_log_ten_mul_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms cx_arctan_log_ten_mul_exp
 #eval! cx_arctan_log_ten_mul_exp.1
@@ -131,7 +131,7 @@ def cx_sqrt_pi_mul_tanh : { p : Rat × Rat //
     ‖Complex.sqrt ((Real.pi : ℝ) : ℂ) * Complex.tanh ((1 / 2 : ℝ) : ℂ)
       - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < Real.pi / (10 : ℝ) ^ 7 } := by
   lynth
-/-- info: 'ComplexIntervalArith.cx_sqrt_pi_mul_tanh' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
+/-- info: 'ComplexIntervalArith.cx_sqrt_pi_mul_tanh' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms cx_sqrt_pi_mul_tanh
 #eval! cx_sqrt_pi_mul_tanh.1

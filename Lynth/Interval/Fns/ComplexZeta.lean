@@ -16,30 +16,176 @@ form `ζ(2) = π²/6` (the Euler tail at `σ = 2` is too wide to be useful, and
 the `ζ(-1)` reflection needs a tight `ζ(2)`).
 
 The two analytic inputs — the Euler-product remainder over `ℂ` and the
-functional equation solved for `ζ s` — are stated below as mirrors of
-`/tmp/complex/zeta_handoff.lean` (same contract as the Stirling mirror:
-keep byte-identical, paste the prover's proof back).  Everything else is
+functional equation solved for `ζ s` — were proved by the external prover
+(`/tmp/86f924db-58c6-4375-9ea5-2de8c76ce92e-aristotle.tar.gz`,
+`output-final_aristotle/zeta_handoff.lean`) and ported here with two Lean
+4.34 adaptations: `smoothNumbers` unfolding in the `indicator` term
+(folded back by `rfl`), `if_pos` → `ite_eq_left`.  Everything else is
 proved inline.  The strip `(-1, 2)` (critical strip, `ζ(1/2)`, `ζ(3/2)`,
 `ζ(-1/2)`, `ζ(3)`, `ζ(5)`, …) needs complex Euler–Maclaurin and is left for
 the next batch.
 -/
 
+/-! ### Real `p`-series tail lemmas (ported from the zeta handoff).
+
+Helper lemmas for `Complex.eulerprod_tail`, kept at root level exactly as
+proved by the external prover. -/
+
+/-- Telescoping step: `(x+1)^{-(a+1)} ≤ (x^{-a} - (x+1)^{-a}) / a` for `a ≥ 1`, `x ≥ 1`. -/
+lemma rpow_step_ineq {a x : ℝ} (ha : 1 ≤ a) (hx : 1 ≤ x) :
+    (x + 1) ^ (-(a + 1)) ≤ (x ^ (-a) - (x + 1) ^ (-a)) / a := by
+  have hx0 : 0 < x := by linarith
+  have hx1 : 0 < x + 1 := by linarith
+  have hb := one_add_mul_self_le_rpow_one_add (s := 1 / x) (by
+    have : 0 < 1 / x := by positivity
+    linarith) ha
+  have e1 : (1 + 1 / x) = (x + 1) / x := by field_simp
+  rw [e1, Real.div_rpow hx1.le hx0.le] at hb
+  have hxa : 0 < x ^ a := Real.rpow_pos_of_pos hx0 a
+  have hx1a : 0 < (x + 1) ^ a := Real.rpow_pos_of_pos hx1 a
+  rw [le_div_iff₀ hxa] at hb
+  rw [Real.rpow_neg hx0.le, Real.rpow_neg hx1.le, Real.rpow_neg hx1.le,
+    Real.rpow_add hx1, Real.rpow_one]
+  rw [le_div_iff₀ (by linarith), inv_sub_inv hxa.ne' hx1a.ne']
+  generalize x ^ a = X at *
+  generalize (x + 1) ^ a = Y at *
+  rw [inv_mul_eq_div, div_le_div_iff₀ (by positivity) (by positivity)]
+  have h2 : a * X ≤ x * (Y - X) := by
+    have : (1 + a * (1 / x)) * X * x = (x + a) * X := by field_simp
+    nlinarith
+  have : a * X ≤ (x + 1) * (Y - X) := by nlinarith
+  nlinarith [mul_pos hxa hx1a]
+
+lemma sum_Ico_rpow_le {a : ℝ} (ha : 1 ≤ a) (P : ℕ) (hP : 1 ≤ P) (k : ℕ) :
+    ∑ n ∈ Finset.Ico (P + 1) (P + 1 + k), ((n : ℕ) : ℝ) ^ (-(a + 1))
+      ≤ ((P : ℝ) ^ (-a) - ((P + k : ℕ) : ℝ) ^ (-a)) / a := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [← add_assoc, Finset.sum_Ico_succ_top (by omega)]
+    have h := rpow_step_ineq ha (x := ((P + k : ℕ) : ℝ)) (by
+      have : (1:ℝ) ≤ P := by exact_mod_cast hP
+      push_cast; linarith [(k.cast_nonneg : (0:ℝ) ≤ k)])
+    have e : ((P + 1 + k : ℕ) : ℝ) = ((P + k : ℕ) : ℝ) + 1 := by push_cast; ring
+    have e2 : ((P + (k + 1) : ℕ) : ℝ) = ((P + k : ℕ) : ℝ) + 1 := by push_cast; ring
+    rw [e, e2]
+    calc _ ≤ ((P : ℝ) ^ (-a) - ((P + k : ℕ) : ℝ) ^ (-a)) / a
+          + (((P + k : ℕ) : ℝ) ^ (-a) - (((P + k : ℕ) : ℝ) + 1) ^ (-a)) / a := add_le_add ih h
+      _ = _ := by ring
+
+/-- Tail of the `p`-series: `∑_{n ≥ P+1} n^{-(a+1)} ≤ P^{-a} / a` for `a ≥ 1`. -/
+lemma tsum_tail_rpow_le {a : ℝ} (ha : 1 ≤ a) (P : ℕ) (hP : 1 ≤ P) :
+    Summable (fun n : ℕ => if P + 1 ≤ n then ((n : ℝ)) ^ (-(a + 1)) else 0) ∧
+    ∑' n : ℕ, (if P + 1 ≤ n then ((n : ℝ)) ^ (-(a + 1)) else 0) ≤ (P : ℝ) ^ (-a) / a := by
+  have hnn : ∀ n : ℕ, 0 ≤ (if P + 1 ≤ n then ((n : ℝ)) ^ (-(a + 1)) else 0) := by
+    intro n; split_ifs <;> positivity
+  have hb : ∀ M, ∑ n ∈ Finset.range M, (if P + 1 ≤ n then ((n : ℝ)) ^ (-(a + 1)) else 0)
+      ≤ (P : ℝ) ^ (-a) / a := by
+    intro M
+    have h0 : 0 < a := by linarith
+    calc _ ≤ ∑ n ∈ Finset.range (P + 1 + M),
+            (if P + 1 ≤ n then ((n : ℝ)) ^ (-(a + 1)) else 0) :=
+          Finset.sum_le_sum_of_subset_of_nonneg (by intro x; simp; omega) (fun i _ _ => hnn i)
+      _ = ∑ n ∈ Finset.Ico (P + 1) (P + 1 + M), ((n : ℕ) : ℝ) ^ (-(a + 1)) := by
+          rw [Finset.range_eq_Ico, ← Finset.sum_Ico_consecutive _ (Nat.zero_le (P+1)) (by omega)]
+          rw [Finset.sum_eq_zero (fun i hi => by simp at hi; simp; omega), zero_add]
+          exact Finset.sum_congr rfl (fun i hi => by simp at hi; simp [hi.1])
+      _ ≤ ((P : ℝ) ^ (-a) - ((P + M : ℕ) : ℝ) ^ (-a)) / a := sum_Ico_rpow_le ha P hP M
+      _ ≤ _ := by
+          apply div_le_div_of_nonneg_right _ h0.le
+          have : 0 ≤ ((P + M : ℕ) : ℝ) ^ (-a) := by positivity
+          linarith
+  exact ⟨summable_of_sum_range_le hnn hb, Real.tsum_le_of_sum_range_le hnn hb⟩
+
 namespace Complex
 
 /-- COMPLEX EULER PRODUCT (remainder over `ℂ`).
-Mirror of `/tmp/complex/zeta_handoff.lean` for the external prover. -/
+Ported from `/tmp/86f924db-58c6-4375-9ea5-2de8c76ce92e-aristotle.tar.gz`
+`output-final_aristotle/zeta_handoff.lean` (Lean 4.34 adaptations: fold back
+the unfolded `smoothNumbers` by `rfl`; `if_pos` → `ite_eq_left`). -/
 theorem eulerprod_tail (s : ℂ) (hs : 2 ≤ s.re) (P : ℕ) (hP : 2 ≤ P) :
     ‖riemannZeta s - ∏ p ∈ Nat.primesBelow (P + 1), (1 - (p : ℂ) ^ (-s))⁻¹‖
       ≤ 2 / ((P : ℝ) ^ (s.re - 1) * (s.re - 1)) := by
-  sorry
+  have hs1 : 1 < s.re := by linarith
+  have hs0 : s ≠ 0 := ne_zero_of_one_lt_re hs1
+  set F := riemannZetaSummandHom hs0 with hF
+  have hFapp : ∀ n : ℕ, F n = (n : ℂ) ^ (-s) := fun n => rfl
+  have hsum : Summable F := (summable_riemannZetaSummand hs1).of_norm
+  have hζ : HasSum F (riemannZeta s) := by
+    rw [← tsum_riemannZetaSummand hs1]; exact hsum.hasSum
+  have hprod : ∏ p ∈ Nat.primesBelow (P + 1), (1 - (p : ℂ) ^ (-s))⁻¹
+      = ∑' m : (P + 1).smoothNumbers, F m :=
+    EulerProduct.prod_primesBelow_geometric_eq_tsum_smoothNumbers
+      (f := (F : ℕ →* ℂ)) hsum (P + 1)
+  have hsub := hasSum_subtype_iff_indicator.mp (hsum.subtype ((P + 1).smoothNumbers)).hasSum
+  have hdiff := hζ.sub hsub
+  rw [hprod]
+  set a := s.re - 1 with ha_def
+  have ha : 1 ≤ a := by linarith
+  obtain ⟨hgs, hgle⟩ := tsum_tail_rpow_le ha P (by omega)
+  refine (hdiff.norm_le_of_bounded hgs.hasSum ?_).trans (hgle.trans ?_)
+  · intro n
+    -- 4.34 unfolds `smoothNumbers` in the `indicator` term; fold it back
+    -- (defeq, so `rfl`) before the `indicator` rewrites.
+    have hfold : (Set.indicator (fun x => x ≠ 0 ∧ ∀ p ∈ x.primeFactorsList, p < P + 1)
+        (⇑F) n) = (Set.indicator ((P + 1).smoothNumbers) (⇑F) n) := rfl
+    rw [hfold]
+    by_cases hn : n ∈ (P + 1).smoothNumbers
+    · simp [Set.indicator_of_mem hn]
+      positivity
+    · rw [Set.indicator_of_notMem hn, sub_zero, hFapp]
+      rcases Nat.eq_zero_or_pos n with h0 | hpos
+      · subst h0; simp [hs0]
+      · have hle : P + 1 ≤ n := by
+          by_contra h
+          exact hn (Nat.mem_smoothNumbers_of_lt hpos (by omega))
+        rw [ite_eq_left hle, Complex.norm_natCast_cpow_of_pos hpos]
+        simp [ha_def]
+  · rw [Real.rpow_neg (by positivity)]
+    have hPpos : (0:ℝ) < (P : ℝ) ^ a := by
+      apply Real.rpow_pos_of_pos; exact_mod_cast (by omega : 0 < P)
+    rw [div_le_div_iff₀ (by positivity) (by positivity)]
+    field_simp
+    nlinarith
+
+/-- info: 'Complex.eulerprod_tail' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms Complex.eulerprod_tail
 
 /-- COMPLEX FUNCTIONAL EQUATION (solved for `ζ s`).
-Mirror of `/tmp/complex/zeta_handoff.lean` for the external prover. -/
+Ported from the same handoff (no adaptation needed). -/
 theorem zeta_neg_fe (s : ℂ) (hs : s.re < 0) :
     riemannZeta s
       = ((((2 : ℂ) ^ s * (Real.pi : ℂ) ^ (s - 1)) * Complex.sin ((Real.pi : ℂ) * s / 2))
         * Complex.Gamma (1 - s)) * riemannZeta (1 - s) := by
-  sorry
+  have h1 : ∀ n : ℕ, (1 - s) ≠ -(n : ℂ) := by
+    intro n h
+    have := congrArg Complex.re h
+    simp at this
+    have : (0:ℝ) ≤ n := n.cast_nonneg
+    linarith
+  have h2 : (1 - s) ≠ 1 := by
+    intro h
+    have := congrArg Complex.re h
+    simp at this; linarith
+  have := riemannZeta_one_sub h1 h2
+  rw [sub_sub_cancel] at this
+  rw [this]
+  have hc : Complex.cos (↑Real.pi * (1 - s) / 2) = Complex.sin (↑Real.pi * s / 2) := by
+    rw [← Complex.cos_pi_div_two_sub]; congr 1; ring
+  have hp : (2 * (Real.pi : ℂ)) ^ (-(1 - s)) = (2:ℂ) ^ (s - 1) * (Real.pi : ℂ) ^ (s - 1) := by
+    rw [neg_sub]
+    have := Complex.mul_cpow_ofReal_nonneg (by norm_num : (0:ℝ) ≤ 2) Real.pi_pos.le (s - 1)
+    simpa using this
+  have h2s : (2:ℂ) * (2:ℂ) ^ (s - 1) = (2:ℂ) ^ s := by
+    rw [Complex.cpow_sub _ _ (by norm_num), Complex.cpow_one]
+    field_simp
+  rw [hc, hp, ← h2s]
+  ring
+
+/-- info: 'Complex.zeta_neg_fe' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms Complex.zeta_neg_fe
 
 end Complex
 

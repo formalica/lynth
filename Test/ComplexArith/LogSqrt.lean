@@ -22,7 +22,7 @@ def cx_log_e : { p : Rat × Rat //
     ‖Complex.log ((Real.exp 1 : ℝ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_log_e' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, cx_log_e._native.native_decide.ax_1] -/
+/-- info: 'cx_log_e' depends on axioms: [propext, Classical.choice, Quot.sound, cx_log_e._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_log_e
 #eval! cx_log_e.1
@@ -34,7 +34,6 @@ def cx_log_one_add_I : { p : Rat × Rat //
       < 1 / 1000000 } := by
   lynth
 /-- info: 'cx_log_one_add_I' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_log_one_add_I._native.native_decide.ax_1] -/
@@ -47,11 +46,7 @@ set_option maxHeartbeats 1537 in
 def cx_sqrt_four : { p : Rat × Rat //
     ‖Complex.sqrt 4 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_sqrt_four' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_sqrt_four._native.native_decide.ax_1] -/
+/-- info: 'cx_sqrt_four' depends on axioms: [propext, Classical.choice, Quot.sound, cx_sqrt_four._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_sqrt_four
 #eval! cx_sqrt_four.1
@@ -62,11 +57,7 @@ def cx_sqrt_3_4I : { p : Rat × Rat //
     ‖Complex.sqrt (3 + 4 * Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_sqrt_3_4I' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_sqrt_3_4I._native.native_decide.ax_1] -/
+/-- info: 'cx_sqrt_3_4I' depends on axioms: [propext, Classical.choice, Quot.sound, cx_sqrt_3_4I._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_sqrt_3_4I
 #eval! cx_sqrt_3_4I.1
@@ -98,7 +89,7 @@ def cx_log_I : { p : Rat × Rat //
     ‖Complex.log Complex.I - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_log_I' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, cx_log_I._native.native_decide.ax_1] -/
+/-- info: 'cx_log_I' depends on axioms: [propext, Classical.choice, Quot.sound, cx_log_I._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_log_I
 #eval! cx_log_I.1
@@ -109,11 +100,7 @@ def cx_log_two_3I : { p : Rat × Rat //
     ‖Complex.log (2 + 3 * Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_log_two_3I' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_log_two_3I._native.native_decide.ax_1] -/
+/-- info: 'cx_log_two_3I' depends on axioms: [propext, Classical.choice, Quot.sound, cx_log_two_3I._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_log_two_3I
 #eval! cx_log_two_3I.1
@@ -124,11 +111,7 @@ def cx_sqrt_two_3I : { p : Rat × Rat //
     ‖Complex.sqrt (2 + 3 * Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_sqrt_two_3I' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_sqrt_two_3I._native.native_decide.ax_1] -/
+/-- info: 'cx_sqrt_two_3I' depends on axioms: [propext, Classical.choice, Quot.sound, cx_sqrt_two_3I._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_sqrt_two_3I
 #eval! cx_sqrt_two_3I.1

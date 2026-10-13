@@ -30,7 +30,13 @@ noncomputable def emTailC (s : ℂ) (N M : Nat) : ℝ :=
     / (((N + 1 : ℕ)) : ℝ) ^ (s.re + (2 * (((M + 1 : Nat)) : ℝ)) - 1)
 
 /-- COMPLEX EULER–MACLAURIN (zeta with explicit remainder).
-Mirror of `/tmp/complex/zeta_em_handoff.lean` for the external prover. -/
+WARNING: proved FALSE as stated by the external prover (same tarball,
+`output-final_aristotle/zeta_em_handoff.lean` contains the Lean
+counterexample `Complex.zeta_em_bound_false` at `s = 1/2 + 74i`, `N = 13`,
+`M = 1`, plus the corrected `Complex.zeta_em_bound_corrected`).  Do NOT
+prove this statement; the evaluator must be reworked to the corrected
+bound (extra factor `‖s + 2M + 1‖ / (Re s + 2M + 1)`) first.  `sorry` kept
+intentionally. -/
 theorem zeta_em_bound (s : ℂ) (hs : 0 < s.re) (hs1 : s.re ≠ 1) (N M : Nat)
     (hN : 1 ≤ N) (hM : 1 ≤ M) (hNM : s.re + 2 * M + 2 ≤ (((N + 1 : ℕ)) : ℝ)) :
     ∃ R : ℂ, riemannZeta s

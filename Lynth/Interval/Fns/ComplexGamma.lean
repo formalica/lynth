@@ -25,7 +25,13 @@ shift-division identity holds everywhere (`gammaCx_eq_gamma_add_div_rising`).
 namespace Complex
 
 /-- COMPLEX STIRLING (log-Gamma with explicit remainder).
-Mirror of `/tmp/complex/gamma_handoff.lean` for the external prover. -/
+WARNING: proved FALSE as stated by the external prover
+(`/tmp/86f924db-58c6-4375-9ea5-2de8c76ce92e-aristotle.tar.gz`,
+`output-final_aristotle/gamma_handoff.lean` contains the Lean counterexample
+`Complex.stirling_logGamma_false` at `w = 8 + 100i`, `N = 1`, plus the
+corrected `Complex.stirling_Gamma_exp`).  Do NOT prove this statement;
+the evaluator must be reworked to the corrected (exponential-form, sector
+factor) bound first.  `sorry` kept intentionally. -/
 theorem stirling_logGamma (w : ℂ) (hw : 8 ≤ w.re) (N : ℕ) (hN : 1 ≤ N) :
     ∃ R : ℂ, Complex.log (Complex.Gamma w)
         = (w - 1 / 2) * Complex.log w - w + Complex.log (Real.sqrt (2 * Real.pi))

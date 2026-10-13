@@ -50,7 +50,7 @@ def cx_log_pi_over_hundred : { p : Rat × Rat //
     ‖Complex.log ((Real.pi / 100 : ℝ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 100000 } := by
   lynth
-/-- info: 'ComplexIntervalArith.cx_log_pi_over_hundred' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
+/-- info: 'ComplexIntervalArith.cx_log_pi_over_hundred' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms cx_log_pi_over_hundred
 #eval! cx_log_pi_over_hundred.1
@@ -62,7 +62,7 @@ def cx_cpow_two_one_third : { p : Rat × Rat //
     ‖(2 : ℂ) ^ (((1 / 3 : ℝ)) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000000 } := by
   lynth
-/-- info: 'ComplexIntervalArith.cx_cpow_two_one_third' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
+/-- info: 'ComplexIntervalArith.cx_cpow_two_one_third' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms cx_cpow_two_one_third
 #eval! cx_cpow_two_one_third.1
@@ -73,7 +73,7 @@ def cx_sqrt_two_basic : { p : Rat × Rat //
     ‖Complex.sqrt 2 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < (10 : ℝ) ^ (-10 : ℤ) } := by
   lynth
-/-- info: 'ComplexIntervalArith.cx_sqrt_two_basic' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
+/-- info: 'ComplexIntervalArith.cx_sqrt_two_basic' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms cx_sqrt_two_basic
 #eval! cx_sqrt_two_basic.1

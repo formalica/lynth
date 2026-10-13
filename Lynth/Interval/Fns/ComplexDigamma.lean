@@ -24,7 +24,13 @@ inline from Mathlib facts.  The strip around `Re = 0` goes to `⊤`.
 namespace Complex
 
 /-- COMPLEX STIRLING (digamma with explicit remainder).
-Mirror of `/tmp/complex/digamma_handoff.lean` for the external prover. -/
+WARNING: believed FALSE as stated (numerical evidence in the prover tarball:
+Binet-integral ratio ~5.3 at `w = 8 + 100i`, `K = 314`; see
+`output-final_aristotle/NOTES.md` and `numerics/digamma_binet_ratio.py`).
+The tarball's `digamma_handoff.lean` proves the corrected
+`Complex.dig_stirling_bound_sector` (sector factor).  Do NOT prove this
+statement; the evaluator must be reworked to the corrected bound first.
+`sorry` kept intentionally. -/
 theorem dig_stirling_bound (w : ℂ) (hw : 8 ≤ w.re) (K : ℕ) (hK : 1 ≤ K) :
     ∃ R : ℂ, Complex.digamma w
         = Complex.log w - 1 / (2 * w)

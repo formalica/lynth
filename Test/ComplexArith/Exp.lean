@@ -105,7 +105,7 @@ def cx_cpow_one_add_I : { p : Rat × Rat //
     ‖(1 + Complex.I) ^ ((2 : ℂ)) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_cpow_one_add_I' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
+/-- info: 'cx_cpow_one_add_I' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms cx_cpow_one_add_I
 #eval! cx_cpow_one_add_I.1
@@ -115,7 +115,7 @@ set_option maxHeartbeats 15949 in
 def cx_cpow_two_four : { p : Rat × Rat //
     ‖(2 : ℂ) ^ ((4 : ℂ)) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_cpow_two_four' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
+/-- info: 'cx_cpow_two_four' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms cx_cpow_two_four
 #eval! cx_cpow_two_four.1

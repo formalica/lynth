@@ -21,11 +21,7 @@ def cx_arctan_half : { p : Rat × Rat //
     ‖Complex.arctan ((1 : ℝ) / 2 : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000000 } := by
   lynth
-/-- info: 'cx_arctan_half' depends on axioms: [propext,
- sorryAx,
- Classical.choice,
- Quot.sound,
- cx_arctan_half._native.native_decide.ax_1] -/
+/-- info: 'cx_arctan_half' depends on axioms: [propext, Classical.choice, Quot.sound, cx_arctan_half._native.native_decide.ax_1] -/
 #guard_msgs in
 #print axioms cx_arctan_half
 #eval! cx_arctan_half.1
@@ -37,7 +33,6 @@ def cx_arctan_one_add_I : { p : Rat × Rat //
       < 1 / 1000 } := by
   lynth
 /-- info: 'cx_arctan_one_add_I' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_arctan_one_add_I._native.native_decide.ax_1] -/
@@ -90,7 +85,6 @@ def cx_arctan_two_add_I : { p : Rat × Rat //
       < 1 / 1000000 } := by
   lynth
 /-- info: 'cx_arctan_two_add_I' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_arctan_two_add_I._native.native_decide.ax_1] -/
