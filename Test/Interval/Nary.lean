@@ -3,11 +3,12 @@ import Lynth
 
 open Lynth.Interval
 
-/-! # User-defined n-ary custom functions (N1–N10).
+/-! # User-defined n-ary functions (N1–N10).
 
-End-to-end coverage for `CFn` over `Nat`/`Int`/`Rat`/`Real`: registry
-(`@[lynth_cfn]`), reification (`Expr.call` nodes, rat lit-or-chain rule),
-evaluation (discrete top-guard), and discrete/closed witnesses.
+End-to-end coverage for plain user `def`s over `Nat`/`Int`/`Rat`/`Real`:
+they unfold in the reifier, so no registration is needed.  Covered:
+reification (`Expr.call` nodes, rat lit-or-chain rule), evaluation
+(discrete top-guard), and discrete/closed witnesses.
 Ground truth checked against kernel computation.
 -/
 
@@ -43,11 +44,11 @@ def nary_nat_3ary : { n : Nat // n = myf3 1 2 3 } := by
 #print axioms nary_nat_3ary
 #eval nary_nat_3ary.1
 
-/-- N4 setup: manual 2-ary Real entry (`x² + y²`, composed interval ops). -/
+/-- N4 setup: plain 2-ary Real function (`x² + y²`). -/
 def mysqadd (x y : ℝ) : ℝ := x * x + y * y
 
 set_option maxHeartbeats 60000 in
--- N4: manual 2-ary Real via the closed procedure. 13
+-- N4: 2-ary Real via the closed procedure. 13
 def nary_real_manual : { x : Rat //
     abs (mysqadd 2 3 - x) < 1 / 1000 } := by
   lynth
@@ -94,7 +95,7 @@ def nary_rat_nest : { x : Rat //
 #eval nary_rat_nest.1
 
 set_option maxHeartbeats 60000 in
--- N8: manual nested in manual with a rational parameter. 5
+-- N8: nested plain functions with a rational parameter. 5
 def nary_nest_manual : { x : Rat //
     abs (mysqadd (myratmul (1 / 2) 4) 1 - x) < 1 / 1000 } := by
   lynth
