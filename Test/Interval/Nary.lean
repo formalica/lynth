@@ -16,13 +16,6 @@ def myadd (a b : ℕ) : ℕ := a + b
 def mymul (a b : ℤ) : ℤ := a * b
 def myf3 (a b c : ℕ) : ℕ := a + 2 * b + 3 * c
 
-@[lynth_cfn] def myaddR : CFn [.nat, .nat] .nat :=
-  CFn.ofFn [.nat, .nat] .nat myadd "myadd" 1
-@[lynth_cfn] def mymulR : CFn [.int, .int] .int :=
-  CFn.ofFn [.int, .int] .int mymul "mymul" 1
-@[lynth_cfn] def myf3R : CFn [.nat, .nat, .nat] .nat :=
-  CFn.ofFn [.nat, .nat, .nat] .nat myf3 "myf3" 1
-
 set_option maxHeartbeats 20000 in
 -- N1: 2-ary Nat, bare discrete witness. 7
 def nary_nat_add : { n : Nat // n = myadd 3 4 } := by
@@ -299,15 +292,6 @@ def nary_mixed_4ary : { x : Rat //
 /-- info: 'myf3' does not depend on any axioms -/
 #guard_msgs in
 #print axioms myf3
-/-- info: 'myaddR' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms myaddR
-/-- info: 'mymulR' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms mymulR
-/-- info: 'myf3R' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms myf3R
 /-- info: 'mysqadd' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms mysqadd
