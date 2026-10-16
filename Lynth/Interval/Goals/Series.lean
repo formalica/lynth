@@ -1,4 +1,5 @@
 import Lynth.Interval.Goals.Approx
+import Lynth.Interval.Goals.ComplexSeries
 import Lynth.Interval.Series.Cert
 
 /-!
@@ -119,8 +120,10 @@ def proveNotSummable? (P : Lean.Expr) : TacticM (Option Lean.Expr) := do
 partial def proveSeries? (goalTy : Lean.Expr) : TacticM (Option Lean.Expr) := do
   if let some pf ← proveNotSummable? goalTy then return some pf
   if let some pf ← proveSeriesSubtype? goalTy then return some pf
+  if let some pf ← proveComplexSeries? goalTy then return some pf
   let ty ← whnf goalTy
   if let some pf ← proveSeriesSubtype? ty then return some pf
+  if let some pf ← proveComplexSeries? ty then return some pf
   let_expr PSum A B := ty | return none
   let s ← saveState
   try
