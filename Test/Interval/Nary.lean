@@ -68,9 +68,6 @@ theorem mysqadd_sound (c : Ctx) :
     unfold mysqadd
     exact Ival.mem_add (Ival.mem_mul hxM hxM) (Ival.mem_mul hyM hyM)
 
-@[lynth_cfn] def mysqaddR : CFn [.real, .real] .real :=
-  CFn.manual [.real, .real] .real mysqadd mysqadd_ev mysqadd_sound "mysqadd" 10
-
 set_option maxHeartbeats 60000 in
 -- N4: manual 2-ary Real via the closed procedure. 13
 def nary_real_manual : { x : Rat //
@@ -116,13 +113,7 @@ theorem myratmul_sound (c : Ctx) :
       simp only [myratmul_ev]
       exact Ival.mem_top _
 
-@[lynth_cfn] def myratmulR : CFn [.rat, .real] .real :=
-  CFn.manual [.rat, .real] .real myratmul myratmul_ev myratmul_sound "myratmul" 5
-
 def myhalf (n : ℕ) : ℚ := n / 2
-
-@[lynth_cfn] def myhalfR : CFn [.nat] .rat :=
-  CFn.ofFn [.nat] .rat myhalf "myhalf" 1
 
 def myqmul (q : ℚ) (x : ℝ) : ℝ := q * x + 1
 
@@ -158,9 +149,6 @@ theorem myqmul_sound (c : Ctx) :
     | none =>
       simp only [myqmul_ev]
       exact Ival.mem_top _
-
-@[lynth_cfn] def myqmulR : CFn [.rat, .real] .real :=
-  CFn.manual [.rat, .real] .real myqmul myqmul_ev myqmul_sound "myqmul" 5
 
 set_option maxHeartbeats 60000 in
 -- N5: rational parameter (closed literal). 3
@@ -211,9 +199,6 @@ inductive MyTag where
 noncomputable def mywsum (a b : ℕ) : ℕ :=
   let tags : List MyTag := [MyTag.A, MyTag.B]
   a + b + tags.length
-
-@[lynth_cfn] noncomputable def mywsumR : CFn [.nat, .nat] .nat :=
-  CFn.ofFn [.nat, .nat] .nat mywsum "mywsum" 1
 
 set_option maxHeartbeats 20000 in
 -- N9: noncomputable with internal custom type, bare witness. 9
@@ -270,9 +255,6 @@ theorem myall_sound (c : Ctx) :
       simp only [myall_ev]
       exact Ival.mem_top _
 
-@[lynth_cfn] def myallR : CFn [.nat, .int, .rat, .real] .real :=
-  CFn.manual [.nat, .int, .rat, .real] .real myall myall_ev myall_sound "myall" 10
-
 set_option maxHeartbeats 60000 in
 -- N10: 4-ary mixed, all `CTy`s. 2.5
 def nary_mixed_4ary : { x : Rat //
@@ -301,9 +283,6 @@ def nary_mixed_4ary : { x : Rat //
 /-- info: 'mysqadd_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms mysqadd_sound
-/-- info: 'mysqaddR' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms mysqaddR
 /-- info: 'myratmul' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms myratmul
@@ -313,15 +292,9 @@ def nary_mixed_4ary : { x : Rat //
 /-- info: 'myratmul_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms myratmul_sound
-/-- info: 'myratmulR' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms myratmulR
 /-- info: 'myhalf' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms myhalf
-/-- info: 'myhalfR' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms myhalfR
 /-- info: 'myqmul' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms myqmul
@@ -331,15 +304,9 @@ def nary_mixed_4ary : { x : Rat //
 /-- info: 'myqmul_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms myqmul_sound
-/-- info: 'myqmulR' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms myqmulR
 /-- info: 'mywsum' does not depend on any axioms -/
 #guard_msgs in
 #print axioms mywsum
-/-- info: 'mywsumR' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms mywsumR
 /-- info: 'myall' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms myall
@@ -349,6 +316,3 @@ def nary_mixed_4ary : { x : Rat //
 /-- info: 'myall_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms myall_sound
-/-- info: 'myallR' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms myallR
