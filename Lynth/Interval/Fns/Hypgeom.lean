@@ -1,4 +1,6 @@
 import Lynth.Interval.Fns.Zeta
+import Lynth.Interval.Fns.Exp
+import Lynth.Interval.Fns.ComplexElem
 import Lynth.Hypergeometric
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 
@@ -1581,6 +1583,203 @@ theorem cpfqCore_sound (c : Ctx) (hc : c.Valid)
     (hmZ : z ∈ Z) :
     cpfqComplex p q a b z ∈ cpfqCoreBox c A B Z n := by
   sorry
+/-! ### 2F1/1F1 transform drivers (FLINT `2f1_choose` + Kummer).
+
+Pfaff and Kummer need no Gamma factors, so they compose the existing
+cores (`pfqCoreIval` / `cpfqCoreBox`, `rpowIval`, `expIval`, cpow-style
+boxes). Heavier connection formulas (2F1 terms 2–5) and the `z ≈ 1` corner
+stay on the direct path (top on failure) — see `/tmp/hyperc`.
+* Pfaff: `2F1(a;b;c;z) = (1-z)^{-a} · 2F1(a,c-b;c;z/(z-1))`, used when the
+  direct series does not terminate and `|z/(z-1)| < |z|` at midpoints with
+  the box strictly left of the cut (mirrors FLINT's `mag[1] < mag[0]` pick).
+* Kummer: `1F1(a;b;z) = e^z · 1F1(b-a;b;-z)`, used when the direct series
+  does not terminate but the transformed one does (`b - a = -m`, `m ≤ n`).
+Both fire only when the direct engine would not close exactly, so existing
+passing tests keep their paths unless the transform strictly applies.
+Soundness is `sorry`'d (identities + assembly in `/tmp/hyperc`). -/
+
+/-- midpoint squared modulus of a real interval (`none` if unbounded). -/
+def ivalMidSq (X : Ival) : Option ℚ :=
+  match X.lo, X.hi with
+  | some lo, some hi =>
+    let m := (lo.toRat + hi.toRat) / 2
+    some (m * m)
+  | _, _ => none
+
+/-- Pfaff-transformed problem, when the direct 2F1 does not terminate and
+`|z/(z-1)| < |z|` with the box left of the cut. -/
+def pfqPfaffArgs (c : Ctx) (A B : List Ival) (Z : Ival) :
+    Option (List Ival × List Ival × Ival × Ival) :=
+  match A, B with
+  | [A0, A1], [B0] =>
+    match pfqFindTerm [A0, A1] 0, ivalMidSq Z, Z.hi with
+    | none, some mz, some zhi =>
+      let W := Ival.div c.prec Z (Ival.sub c.prec Z (Ival.ofRat c.prec 1))
+      match ivalMidSq W with
+      | some mw =>
+        if mw < mz ∧ zhi.toRat < 1 then
+          let P := rpowIval c (Ival.sub c.prec (Ival.ofRat c.prec 1) Z)
+            (Ival.neg A0)
+          some ([A0, Ival.sub c.prec B0 A1], [B0], W, P)
+        else none
+      | none => none
+    | _, _, _ => none
+  | _, _ => none
+
+/-- Kummer-transformed problem, when the direct 1F1 does not terminate but
+the transformed one does (`b - a = -m`, `m ≤ n`). -/
+def pfqKummerArgs (c : Ctx) (A B : List Ival) (Z : Ival) (n : Nat) :
+    Option (List Ival × List Ival × Ival × Ival) :=
+  match A, B with
+  | [A0], [B0] =>
+    match pfqFindTerm [A0] 0 with
+    | some _ => none
+    | none =>
+      let D := Ival.sub c.prec B0 A0
+      match D.lo, D.hi with
+      | some lo, some hi =>
+        if lo = hi then
+          let q := lo.toRat
+          if q.den = 1 ∧ q.num ≤ 0 ∧ (-q.num).toNat ≤ n then
+            some ([D], [B0], Ival.neg Z, expIval c Z)
+          else none
+        else none
+      | _, _ => none
+  | _, _ => none
+
+/-- Pfaff assembly soundness (identity + inner core + prefactor). -/
+theorem pfqPfaff_sound (c : Ctx) (hc : c.Valid)
+    (A B : List CBox) (Z : CBox) (a b : List ℂ) (z y : ℂ) (n : Nat)
+    (Ar Br : List Ival) (Zr : Ival) (A' B' : List Ival) (W P : Ival)
+    (hhA : List.Forall₂ (Ty.Mem .cplx) A a)
+    (hhB : List.Forall₂ (Ty.Mem .cplx) B b)
+    (hhZ : z ∈ Z)
+    (hExA : List.Forall₂ (fun B R => CBox.realOfZeroIm B = some R) A Ar)
+    (hExB : List.Forall₂ (fun B R => CBox.realOfZeroIm B = some R) B Br)
+    (hZr : CBox.realOfZeroIm Z = some Zr)
+    (hy : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z)
+    (hArgs : pfqPfaffArgs c Ar Br Zr = some (A', B', W, P)) :
+    y ∈ (⟨Ival.mul c.prec P (pfqCoreIval c A' B' W n),
+      Ival.ofRat c.prec 0⟩ : CBox) := by
+  sorry
+
+/-- Kummer assembly soundness (identity + inner core + prefactor). -/
+theorem pfqKummer_sound (c : Ctx) (hc : c.Valid)
+    (A B : List CBox) (Z : CBox) (a b : List ℂ) (z y : ℂ) (n : Nat)
+    (Ar Br : List Ival) (Zr : Ival) (A' B' : List Ival) (W P : Ival)
+    (hhA : List.Forall₂ (Ty.Mem .cplx) A a)
+    (hhB : List.Forall₂ (Ty.Mem .cplx) B b)
+    (hhZ : z ∈ Z)
+    (hExA : List.Forall₂ (fun B R => CBox.realOfZeroIm B = some R) A Ar)
+    (hExB : List.Forall₂ (fun B R => CBox.realOfZeroIm B = some R) B Br)
+    (hZr : CBox.realOfZeroIm Z = some Zr)
+    (hy : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z)
+    (hArgs : pfqKummerArgs c Ar Br Zr n = some (A', B', W, P)) :
+    y ∈ (⟨Ival.mul c.prec P (pfqCoreIval c A' B' W n),
+      Ival.ofRat c.prec 0⟩ : CBox) := by
+  sorry
+
+/-- Pfaff for real series values (follows `Complex.HGFun_pfaff` via the
+ofReal bridge `HGFun_ofReal_eq_pfqReal`). See `/tmp/hyperc`. -/
+theorem pfqReal_pfaff (a₀ a₁ b₀ z : ℝ) (hz : z < 1)
+    (hb : ∀ m : ℕ, b₀ + m ≠ 0) :
+    pfqReal 2 1 (fun i => [a₀, a₁].getD i 0) (fun _ => b₀) z
+      = (1 - z) ^ (-a₀) * pfqReal 2 1 (fun i => [a₀, b₀ - a₁].getD i 0)
+        (fun _ => b₀) (z / (z - 1)) := by
+  sorry
+
+/-- Kummer for real series values (follows `Complex.HGFun_kummer` via the
+ofReal bridge). See `/tmp/hyperc`. -/
+theorem pfqReal_kummer (a₀ b₀ z : ℝ)
+    (hb : ∀ m : ℕ, b₀ + m ≠ 0) :
+    pfqReal 1 1 (fun _ => a₀) (fun _ => b₀) z
+      = Real.exp z * pfqReal 1 1 (fun _ => b₀ - a₀) (fun _ => b₀) (-z) := by
+  sorry
+
+/-! ### Complex transform drivers (same FLINT picks, `CBox` arithmetic).
+
+Mirror of the real drivers above: Pfaff when `|z/(z-1)| < |z|` at box
+midpoints with the box left of the cut, Kummer when the direct series does
+not terminate but the transformed one does.  Prefactors use the `cpow`
+pattern (`exp (log · * ·)`, nonzero-modulus gate) mirroring `cpowC.ev`.
+Soundness is `sorry`'d (identities + assembly in `/tmp/hyperc`). -/
+
+/-- midpoint squared modulus of a complex box (`none` if unbounded). -/
+def cboxMidSq (B : CBox) : Option ℚ :=
+  match B.re.lo, B.re.hi, B.im.lo, B.im.hi with
+  | some rlo, some rhi, some ilo, some ihi =>
+    let rx := (rlo.toRat + rhi.toRat) / 2
+    let ix := (ilo.toRat + ihi.toRat) / 2
+    some (rx * rx + ix * ix)
+  | _, _, _, _ => none
+
+/-- Pfaff-transformed problem, complex version. -/
+def cpfqPfaffArgs (c : Ctx) (A B : List CBox) (Z : CBox) :
+    Option (List CBox × List CBox × CBox × CBox) :=
+  let one : CBox := ⟨Ival.ofRat c.prec 1, Ival.zero⟩
+  match A, B with
+  | [A0, A1], [B0] =>
+    match cpfqFindTerm [A0, A1] 0, cboxMidSq Z, Z.re.hi with
+    | none, some mz, some zhi =>
+      let W := CBox.div c.prec Z (CBox.sub c.prec Z one)
+      match cboxMidSq W with
+      | some mw =>
+        if mw < mz ∧ zhi.toRat < 1 then
+          let X1 := CBox.sub c.prec one Z
+          let P := match (CBox.norm c.prec X1).lo with
+            | some lo => if 0 < lo.toRat then
+                expBox c (CBox.mul c.prec (logBox c X1) (CBox.neg A0))
+              else CBox.top
+            | none => CBox.top
+          some ([A0, CBox.sub c.prec B0 A1], [B0], W, P)
+        else none
+      | none => none
+    | _, _, _ => none
+  | _, _ => none
+
+/-- Kummer-transformed problem, complex version. -/
+def cpfqKummerArgs (c : Ctx) (A B : List CBox) (Z : CBox) (n : Nat) :
+    Option (List CBox × List CBox × CBox × CBox) :=
+  match A, B with
+  | [A0], [B0] =>
+    match cpfqFindTerm [A0] 0 with
+    | some _ => none
+    | none =>
+      let D := CBox.sub c.prec B0 A0
+      match D.re.lo, D.re.hi, D.im.lo, D.im.hi with
+      | some rlo, some rhi, some ilo, some ihi =>
+        if rlo = rhi ∧ ilo = ihi ∧ ilo.toRat = 0 then
+          let q := rlo.toRat
+          if q.den = 1 ∧ q.num ≤ 0 ∧ (-q.num).toNat ≤ n then
+            some ([D], [B0], CBox.neg Z, expBox c Z)
+          else none
+        else none
+      | _, _, _, _ => none
+  | _, _ => none
+
+/-- complex Pfaff assembly soundness (identity + inner core + prefactor). -/
+theorem cpfqPfaff_sound (c : Ctx) (hc : c.Valid)
+    (A B : List CBox) (Z : CBox) (a b : List ℂ) (z y : ℂ) (n : Nat)
+    (A' B' : List CBox) (W P : CBox)
+    (hhA : List.Forall₂ (Ty.Mem .cplx) A a)
+    (hhB : List.Forall₂ (Ty.Mem .cplx) B b)
+    (hhZ : z ∈ Z)
+    (hy : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z)
+    (hArgs : cpfqPfaffArgs c A B Z = some (A', B', W, P)) :
+    y ∈ CBox.mul c.prec P (cpfqCoreBox c A' B' W n) := by
+  sorry
+
+/-- complex Kummer assembly soundness (identity + inner core + prefactor). -/
+theorem cpfqKummer_sound (c : Ctx) (hc : c.Valid)
+    (A B : List CBox) (Z : CBox) (a b : List ℂ) (z y : ℂ) (n : Nat)
+    (A' B' : List CBox) (W P : CBox)
+    (hhA : List.Forall₂ (Ty.Mem .cplx) A a)
+    (hhB : List.Forall₂ (Ty.Mem .cplx) B b)
+    (hhZ : z ∈ Z)
+    (hy : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z)
+    (hArgs : cpfqKummerArgs c A B Z n = some (A', B', W, P)) :
+    y ∈ CBox.mul c.prec P (cpfqCoreBox c A' B' W n) := by
+  sorry
 
 /-! ### Bridge to Mathlib's `Complex.regularizedHGFun` (ported from
 `/tmp/pfq_thm_proof.lean`). -/
@@ -1676,6 +1875,23 @@ theorem HGFun_coe_list_eq_cpfqComplex (ar br : List ℂ) (zr : ℂ)
         (fun i => ar.getD i 0) (fun j => br.getD j 0) zr := by
   sorry
 
+/-- Pfaff transformation (DLMF 15.8.1): `2F1(a;b;c;z) = (1-z)^{-a} · 2F1(a,c-b;c;z/(z-1))`,
+valid left of the cut. The series version follows by analytic continuation;
+see `/tmp/hyperc`. -/
+theorem HGFun_pfaff (a b c z : ℂ) (hz : z.re < 1)
+    (hb : ∀ m : ℕ, c + m ≠ 0) :
+    Complex.HGFun (↑[a, b] : Multiset ℂ) (↑[c] : Multiset ℂ) z
+      = (1 - z) ^ (-a) * Complex.HGFun (↑[a, c - b] : Multiset ℂ) (↑[c] : Multiset ℂ)
+        (z / (z - 1)) := by
+  sorry
+
+/-- Kummer transformation: `1F1(a;b;z) = e^z · 1F1(b-a;b;-z)` (entire).
+See `/tmp/hyperc`. -/
+theorem HGFun_kummer (a b z : ℂ) (hb : ∀ m : ℕ, b + m ≠ 0) :
+    Complex.HGFun (↑[a] : Multiset ℂ) (↑[b] : Multiset ℂ) z
+      = Complex.exp z * Complex.HGFun (↑[b - a] : Multiset ℂ) (↑[b] : Multiset ℂ) (-z) := by
+  sorry
+
 end Complex
 namespace Lynth.Interval.Fns
 
@@ -1737,13 +1953,28 @@ def HGFunL_ev (c : Ctx) : CEnc [.list .cplx, .list .cplx, .cplx] → CBox
   | .cons _ (some A) (.cons _ (some B) (.cons _ Z .nil)) =>
     match projectReal A, projectReal B, CBox.realOfZeroIm Z with
     | some Ar, some Br, some Zr =>
-      -- bottom-cleanliness gate: the `HGFun` bridge (hence `y.im = 0`)
-      -- only holds away from bottom poles.
-      if pfqGuard Br (64 + 2 * c.prec) then
-        ⟨pfqCoreIval c Ar Br Zr (64 + 2 * c.prec), Ival.ofRat c.prec 0⟩
-      else CBox.top
-    -- genuinely complex args: same engine with `CBox` arithmetic.
-    | _, _, _ => cpfqCoreBox c A B Z (64 + 2 * c.prec)
+      match pfqPfaffArgs c Ar Br Zr with
+      | some (A', B', W, P) =>
+        (⟨Ival.mul c.prec P (pfqCoreIval c A' B' W (64 + 2 * c.prec)),
+          Ival.ofRat c.prec 0⟩ : CBox)
+      | none =>
+        match pfqKummerArgs c Ar Br Zr (64 + 2 * c.prec) with
+        | some (A', B', W, P) =>
+          (⟨Ival.mul c.prec P (pfqCoreIval c A' B' W (64 + 2 * c.prec)),
+            Ival.ofRat c.prec 0⟩ : CBox)
+        | none =>
+          if pfqGuard Br (64 + 2 * c.prec) then
+            (⟨pfqCoreIval c Ar Br Zr (64 + 2 * c.prec), Ival.ofRat c.prec 0⟩ : CBox)
+          else CBox.top
+    | _, _, _ =>
+      match cpfqPfaffArgs c A B Z with
+      | some (A', B', W, P) =>
+        CBox.mul c.prec P (cpfqCoreBox c A' B' W (64 + 2 * c.prec))
+      | none =>
+        match cpfqKummerArgs c A B Z (64 + 2 * c.prec) with
+        | some (A', B', W, P) =>
+          CBox.mul c.prec P (cpfqCoreBox c A' B' W (64 + 2 * c.prec))
+        | none => cpfqCoreBox c A B Z (64 + 2 * c.prec)
   | _ => CBox.top
 
 theorem HGFunL_sound (c : Ctx) :
@@ -1778,152 +2009,283 @@ theorem HGFunL_sound (c : Ctx) :
         subst hXB
         show y ∈ match projectReal A, projectReal B, CBox.realOfZeroIm XZ with
           | some Ar, some Br, some Zr =>
-            if pfqGuard Br (64 + 2 * c.prec) then
-              (⟨pfqCoreIval c Ar Br Zr (64 + 2 * c.prec), Ival.ofRat c.prec 0⟩ : CBox)
-            else CBox.top
-          | _, _, _ => cpfqCoreBox c A B XZ (64 + 2 * c.prec)
+            match pfqPfaffArgs c Ar Br Zr with
+            | some (A', B', W, P) =>
+              (⟨Ival.mul c.prec P (pfqCoreIval c A' B' W (64 + 2 * c.prec)),
+                Ival.ofRat c.prec 0⟩ : CBox)
+            | none =>
+              match pfqKummerArgs c Ar Br Zr (64 + 2 * c.prec) with
+              | some (A', B', W, P) =>
+                (⟨Ival.mul c.prec P (pfqCoreIval c A' B' W (64 + 2 * c.prec)),
+                  Ival.ofRat c.prec 0⟩ : CBox)
+              | none =>
+                if pfqGuard Br (64 + 2 * c.prec) then
+                  (⟨pfqCoreIval c Ar Br Zr (64 + 2 * c.prec), Ival.ofRat c.prec 0⟩ : CBox)
+                else CBox.top
+          | _, _, _ =>
+            match cpfqPfaffArgs c A B XZ with
+            | some (A', B', W, P) =>
+              CBox.mul c.prec P (cpfqCoreBox c A' B' W (64 + 2 * c.prec))
+            | none =>
+              match cpfqKummerArgs c A B XZ (64 + 2 * c.prec) with
+              | some (A', B', W, P) =>
+                CBox.mul c.prec P (cpfqCoreBox c A' B' W (64 + 2 * c.prec))
+              | none => cpfqCoreBox c A B XZ (64 + 2 * c.prec)
         cases hAr : projectReal A with
         | none =>
-          have hhA : List.Forall₂ (Ty.Mem .cplx) A a := hh.1
-          have hhB : List.Forall₂ (Ty.Mem .cplx) B b := hh.2.1
-          have hhZ : z ∈ XZ := hh.2.2.1
-          have hy2 : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z := hg
-          exact HGFunL_sound_complex c hc a b z A B XZ y hhA hhB hhZ hy2
-        | some Ar =>
-          cases hBr : projectReal B with
+          show y ∈ match cpfqPfaffArgs c A B XZ with
+          | some (A', B', W, P) =>
+            CBox.mul c.prec P (cpfqCoreBox c A' B' W (64 + 2 * c.prec))
           | none =>
+            match cpfqKummerArgs c A B XZ (64 + 2 * c.prec) with
+            | some (A', B', W, P) =>
+              CBox.mul c.prec P (cpfqCoreBox c A' B' W (64 + 2 * c.prec))
+            | none => cpfqCoreBox c A B XZ (64 + 2 * c.prec)
+          cases hP : cpfqPfaffArgs c A B XZ with
+          | some v =>
+            obtain ⟨A', B', W, P⟩ := v
             have hhA : List.Forall₂ (Ty.Mem .cplx) A a := hh.1
             have hhB : List.Forall₂ (Ty.Mem .cplx) B b := hh.2.1
             have hhZ : z ∈ XZ := hh.2.2.1
             have hy2 : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z := hg
-            exact HGFunL_sound_complex c hc a b z A B XZ y hhA hhB hhZ hy2
-          | some Br =>
-            cases hZr : CBox.realOfZeroIm XZ with
+            exact cpfqPfaff_sound c hc A B XZ a b z y (64 + 2 * c.prec) A' B' W P hhA hhB hhZ hy2 hP
+          | none =>
+            cases hK : cpfqKummerArgs c A B XZ (64 + 2 * c.prec) with
+            | some v =>
+              obtain ⟨A', B', W, P⟩ := v
+              have hhA : List.Forall₂ (Ty.Mem .cplx) A a := hh.1
+              have hhB : List.Forall₂ (Ty.Mem .cplx) B b := hh.2.1
+              have hhZ : z ∈ XZ := hh.2.2.1
+              have hy2 : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z := hg
+              exact cpfqKummer_sound c hc A B XZ a b z y (64 + 2 * c.prec) A' B' W P hhA hhB hhZ hy2 hK
             | none =>
               have hhA : List.Forall₂ (Ty.Mem .cplx) A a := hh.1
               have hhB : List.Forall₂ (Ty.Mem .cplx) B b := hh.2.1
               have hhZ : z ∈ XZ := hh.2.2.1
               have hy2 : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z := hg
               exact HGFunL_sound_complex c hc a b z A B XZ y hhA hhB hhZ hy2
-            | some Zr =>
-              show y ∈ (if pfqGuard Br (64 + 2 * c.prec) then
-                (⟨pfqCoreIval c Ar Br Zr (64 + 2 * c.prec), Ival.ofRat c.prec 0⟩ : CBox)
-                else CBox.top)
-              cases hguard : pfqGuard Br (64 + 2 * c.prec) with
-              | false =>
-                show y ∈ CBox.top
-                exact CBox.mem_top _
-              | true =>
-                -- extraction to real parameters
-                have hExA := projectReal_some A Ar hAr
-                have hExB := projectReal_some B Br hBr
+        | some Ar =>
+          cases hBr : projectReal B with
+          | none =>
+            show y ∈ match cpfqPfaffArgs c A B XZ with
+            | some (A', B', W, P) =>
+              CBox.mul c.prec P (cpfqCoreBox c A' B' W (64 + 2 * c.prec))
+            | none =>
+              match cpfqKummerArgs c A B XZ (64 + 2 * c.prec) with
+              | some (A', B', W, P) =>
+                CBox.mul c.prec P (cpfqCoreBox c A' B' W (64 + 2 * c.prec))
+              | none => cpfqCoreBox c A B XZ (64 + 2 * c.prec)
+            cases hP : cpfqPfaffArgs c A B XZ with
+            | some v =>
+              obtain ⟨A', B', W, P⟩ := v
+              have hhA : List.Forall₂ (Ty.Mem .cplx) A a := hh.1
+              have hhB : List.Forall₂ (Ty.Mem .cplx) B b := hh.2.1
+              have hhZ : z ∈ XZ := hh.2.2.1
+              have hy2 : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z := hg
+              exact cpfqPfaff_sound c hc A B XZ a b z y (64 + 2 * c.prec) A' B' W P hhA hhB hhZ hy2 hP
+            | none =>
+              cases hK : cpfqKummerArgs c A B XZ (64 + 2 * c.prec) with
+              | some v =>
+                obtain ⟨A', B', W, P⟩ := v
                 have hhA : List.Forall₂ (Ty.Mem .cplx) A a := hh.1
                 have hhB : List.Forall₂ (Ty.Mem .cplx) B b := hh.2.1
                 have hhZ : z ∈ XZ := hh.2.2.1
-                obtain ⟨hArLen, haLen, hmemA⟩ :=
-                  extract_real_params A Ar a a rfl hhA hExA
-                obtain ⟨hBrLen, hbLen, hmemB⟩ :=
-                  extract_real_params B Br b b rfl hhB hExB
-                have hre_z : z.re ∈ Zr := (realOfZeroIm_ok XZ Zr z hZr hhZ).1
-                have him_z : z.im = 0 := (realOfZeroIm_ok XZ Zr z hZr hhZ).2
-                -- denoted value via the bridge
                 have hy2 : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z := hg
-                have hgetA : ∀ i : Nat, ((a.map Complex.re).getD i 0) = (a.getD i 0).re := by
-                  intro i
-                  have h := List.getD_map (l := a) (d := (0 : ℂ)) (n := i) (f := Complex.re)
-                  simpa [Complex.zero_re] using h
-                have hgetB : ∀ i : Nat, ((b.map Complex.re).getD i 0) = (b.getD i 0).re := by
-                  intro i
-                  have h := List.getD_map (l := b) (d := (0 : ℂ)) (n := i) (f := Complex.re)
-                  simpa [Complex.zero_re] using h
-                have hmap_a : ((a.map Complex.re).map Complex.ofReal) = a := by
-                  rw [List.map_map]
-                  apply List.ext_getElem (by simp)
-                  intro i h1 h2
-                  have e1 := List.getElem_map (f := Complex.ofReal ∘ Complex.re)
-                    (l := a) (i := i) (h := h1)
-                  rw [e1]
-                  have hiA : i < A.length := by omega
-                  have h2' := (hmemA i hiA).2
-                  rw [getD_of_lt a 0 i h2] at h2'
-                  -- goal: Complex.ofReal ((a[i]).re) = a[i]
-                  exact ofReal_of_re h2'
-                have hmap_b : ((b.map Complex.re).map Complex.ofReal) = b := by
-                  rw [List.map_map]
-                  apply List.ext_getElem (by simp)
-                  intro i h1 h2
-                  have e1 := List.getElem_map (f := Complex.ofReal ∘ Complex.re)
-                    (l := b) (i := i) (h := h1)
-                  rw [e1]
-                  have hiB : i < B.length := by omega
-                  have h2' := (hmemB i hiB).2
-                  rw [getD_of_lt b 0 i h2] at h2'
-                  exact ofReal_of_re h2'
-                have hz_eq : ((z.re : ℝ) : ℂ) = z := ofReal_of_re him_z
-                -- bridge hypothesis from the guard
-                have hmemBr : ∀ i : Nat, i < Br.length → (b.getD i 0).re ∈ Br.getD i Ival.top :=
-                  fun i hi => (hmemB i (by omega)).1
-                have hmB' : ∀ i : Nat, i < Br.length →
-                    (fun j => (b.getD j 0).re) (0 + i) ∈ Br.getD i Ival.top := by
-                  intro i hi
-                  simpa using hmemBr i hi
-                have hG := pfqGuard_ok (fun j => (b.getD j 0).re) Br 0
-                  (64 + 2 * c.prec) hmB' hguard
-                obtain ⟨hpos, hne⟩ := hG
-                have hb_br : ∀ j : Nat, j < (b.map Complex.re).length → ∀ m : ℕ,
-                    ((((b.map Complex.re).getD j 0 : ℝ)) : ℂ) ≠ -(m : ℂ) := by
-                  intro j hj m
-                  have hj' : j < Br.length := by
-                    have e : (b.map Complex.re).length = Br.length := by
+                exact cpfqKummer_sound c hc A B XZ a b z y (64 + 2 * c.prec) A' B' W P hhA hhB hhZ hy2 hK
+              | none =>
+                have hhA : List.Forall₂ (Ty.Mem .cplx) A a := hh.1
+                have hhB : List.Forall₂ (Ty.Mem .cplx) B b := hh.2.1
+                have hhZ : z ∈ XZ := hh.2.2.1
+                have hy2 : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z := hg
+                exact HGFunL_sound_complex c hc a b z A B XZ y hhA hhB hhZ hy2
+          | some Br =>
+            cases hZr : CBox.realOfZeroIm XZ with
+            | none =>
+              show y ∈ match cpfqPfaffArgs c A B XZ with
+              | some (A', B', W, P) =>
+                CBox.mul c.prec P (cpfqCoreBox c A' B' W (64 + 2 * c.prec))
+              | none =>
+                match cpfqKummerArgs c A B XZ (64 + 2 * c.prec) with
+                | some (A', B', W, P) =>
+                  CBox.mul c.prec P (cpfqCoreBox c A' B' W (64 + 2 * c.prec))
+                | none => cpfqCoreBox c A B XZ (64 + 2 * c.prec)
+              cases hP : cpfqPfaffArgs c A B XZ with
+              | some v =>
+                obtain ⟨A', B', W, P⟩ := v
+                have hhA : List.Forall₂ (Ty.Mem .cplx) A a := hh.1
+                have hhB : List.Forall₂ (Ty.Mem .cplx) B b := hh.2.1
+                have hhZ : z ∈ XZ := hh.2.2.1
+                have hy2 : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z := hg
+                exact cpfqPfaff_sound c hc A B XZ a b z y (64 + 2 * c.prec) A' B' W P hhA hhB hhZ hy2 hP
+              | none =>
+                cases hK : cpfqKummerArgs c A B XZ (64 + 2 * c.prec) with
+                | some v =>
+                  obtain ⟨A', B', W, P⟩ := v
+                  have hhA : List.Forall₂ (Ty.Mem .cplx) A a := hh.1
+                  have hhB : List.Forall₂ (Ty.Mem .cplx) B b := hh.2.1
+                  have hhZ : z ∈ XZ := hh.2.2.1
+                  have hy2 : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z := hg
+                  exact cpfqKummer_sound c hc A B XZ a b z y (64 + 2 * c.prec) A' B' W P hhA hhB hhZ hy2 hK
+                | none =>
+                  have hhA : List.Forall₂ (Ty.Mem .cplx) A a := hh.1
+                  have hhB : List.Forall₂ (Ty.Mem .cplx) B b := hh.2.1
+                  have hhZ : z ∈ XZ := hh.2.2.1
+                  have hy2 : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z := hg
+                  exact HGFunL_sound_complex c hc a b z A B XZ y hhA hhB hhZ hy2
+            | some Zr =>
+              show y ∈ match pfqPfaffArgs c Ar Br Zr with
+              | some (A', B', W, P) =>
+                (⟨Ival.mul c.prec P (pfqCoreIval c A' B' W (64 + 2 * c.prec)),
+                  Ival.ofRat c.prec 0⟩ : CBox)
+              | none =>
+                match pfqKummerArgs c Ar Br Zr (64 + 2 * c.prec) with
+                | some (A', B', W, P) =>
+                  (⟨Ival.mul c.prec P (pfqCoreIval c A' B' W (64 + 2 * c.prec)),
+                    Ival.ofRat c.prec 0⟩ : CBox)
+                | none =>
+                  if pfqGuard Br (64 + 2 * c.prec) then
+                    (⟨pfqCoreIval c Ar Br Zr (64 + 2 * c.prec), Ival.ofRat c.prec 0⟩ : CBox)
+                    else CBox.top
+              cases hP : pfqPfaffArgs c Ar Br Zr with
+              | some v =>
+                obtain ⟨A', B', W, P⟩ := v
+                have hhA : List.Forall₂ (Ty.Mem .cplx) A a := hh.1
+                have hhB : List.Forall₂ (Ty.Mem .cplx) B b := hh.2.1
+                have hhZ : z ∈ XZ := hh.2.2.1
+                have hExA := projectReal_some A Ar hAr
+                have hExB := projectReal_some B Br hBr
+                have hy2 : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z := hg
+                exact pfqPfaff_sound c hc A B XZ a b z y (64 + 2 * c.prec) Ar Br Zr A' B' W P hhA hhB hhZ hExA hExB hZr hy2 hP
+              | none =>
+                cases hK : pfqKummerArgs c Ar Br Zr (64 + 2 * c.prec) with
+                | some v =>
+                  obtain ⟨A', B', W, P⟩ := v
+                  have hhA : List.Forall₂ (Ty.Mem .cplx) A a := hh.1
+                  have hhB : List.Forall₂ (Ty.Mem .cplx) B b := hh.2.1
+                  have hhZ : z ∈ XZ := hh.2.2.1
+                  have hExA := projectReal_some A Ar hAr
+                  have hExB := projectReal_some B Br hBr
+                  have hy2 : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z := hg
+                  exact pfqKummer_sound c hc A B XZ a b z y (64 + 2 * c.prec) Ar Br Zr A' B' W P hhA hhB hhZ hExA hExB hZr hy2 hK
+                | none =>
+                  show y ∈ (if pfqGuard Br (64 + 2 * c.prec) then
+                    (⟨pfqCoreIval c Ar Br Zr (64 + 2 * c.prec), Ival.ofRat c.prec 0⟩ : CBox)
+                    else CBox.top)
+                  cases hguard : pfqGuard Br (64 + 2 * c.prec) with
+                  | false =>
+                    show y ∈ CBox.top
+                    exact CBox.mem_top _
+                  | true =>
+                    -- extraction to real parameters
+                    have hExA := projectReal_some A Ar hAr
+                    have hExB := projectReal_some B Br hBr
+                    have hhA : List.Forall₂ (Ty.Mem .cplx) A a := hh.1
+                    have hhB : List.Forall₂ (Ty.Mem .cplx) B b := hh.2.1
+                    have hhZ : z ∈ XZ := hh.2.2.1
+                    obtain ⟨hArLen, haLen, hmemA⟩ :=
+                      extract_real_params A Ar a a rfl hhA hExA
+                    obtain ⟨hBrLen, hbLen, hmemB⟩ :=
+                      extract_real_params B Br b b rfl hhB hExB
+                    have hre_z : z.re ∈ Zr := (realOfZeroIm_ok XZ Zr z hZr hhZ).1
+                    have him_z : z.im = 0 := (realOfZeroIm_ok XZ Zr z hZr hhZ).2
+                    -- denoted value via the bridge
+                    have hy2 : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z := hg
+                    have hgetA : ∀ i : Nat, ((a.map Complex.re).getD i 0) = (a.getD i 0).re := by
+                      intro i
+                      have h := List.getD_map (l := a) (d := (0 : ℂ)) (n := i) (f := Complex.re)
+                      simpa [Complex.zero_re] using h
+                    have hgetB : ∀ i : Nat, ((b.map Complex.re).getD i 0) = (b.getD i 0).re := by
+                      intro i
+                      have h := List.getD_map (l := b) (d := (0 : ℂ)) (n := i) (f := Complex.re)
+                      simpa [Complex.zero_re] using h
+                    have hmap_a : ((a.map Complex.re).map Complex.ofReal) = a := by
+                      rw [List.map_map]
+                      apply List.ext_getElem (by simp)
+                      intro i h1 h2
+                      have e1 := List.getElem_map (f := Complex.ofReal ∘ Complex.re)
+                        (l := a) (i := i) (h := h1)
+                      rw [e1]
+                      have hiA : i < A.length := by omega
+                      have h2' := (hmemA i hiA).2
+                      rw [getD_of_lt a 0 i h2] at h2'
+                      -- goal: Complex.ofReal ((a[i]).re) = a[i]
+                      exact ofReal_of_re h2'
+                    have hmap_b : ((b.map Complex.re).map Complex.ofReal) = b := by
+                      rw [List.map_map]
+                      apply List.ext_getElem (by simp)
+                      intro i h1 h2
+                      have e1 := List.getElem_map (f := Complex.ofReal ∘ Complex.re)
+                        (l := b) (i := i) (h := h1)
+                      rw [e1]
+                      have hiB : i < B.length := by omega
+                      have h2' := (hmemB i hiB).2
+                      rw [getD_of_lt b 0 i h2] at h2'
+                      exact ofReal_of_re h2'
+                    have hz_eq : ((z.re : ℝ) : ℂ) = z := ofReal_of_re him_z
+                    -- bridge hypothesis from the guard
+                    have hmemBr : ∀ i : Nat, i < Br.length → (b.getD i 0).re ∈ Br.getD i Ival.top :=
+                      fun i hi => (hmemB i (by omega)).1
+                    have hmB' : ∀ i : Nat, i < Br.length →
+                        (fun j => (b.getD j 0).re) (0 + i) ∈ Br.getD i Ival.top := by
+                      intro i hi
+                      simpa using hmemBr i hi
+                    have hG := pfqGuard_ok (fun j => (b.getD j 0).re) Br 0
+                      (64 + 2 * c.prec) hmB' hguard
+                    obtain ⟨hpos, hne⟩ := hG
+                    have hb_br : ∀ j : Nat, j < (b.map Complex.re).length → ∀ m : ℕ,
+                        ((((b.map Complex.re).getD j 0 : ℝ)) : ℂ) ≠ -(m : ℂ) := by
+                      intro j hj m
+                      have hj' : j < Br.length := by
+                        have e : (b.map Complex.re).length = Br.length := by
+                          rw [List.length_map]; omega
+                        omega
+                      rw [hgetB j]
+                      exact hb_of_guard (fun k => (b.getD k 0).re) Br.length
+                        (64 + 2 * c.prec)
+                        (fun k hk => by
+                          have h2 := hpos k hk
+                          rw [Nat.zero_add] at h2
+                          linarith)
+                        (fun k hk t ht => by
+                          have h2 := hne k hk t ht
+                          rwa [Nat.zero_add] at h2)
+                        j hj' m
+                    have hbridge := Complex.HGFun_coe_list_eq_pfqReal
+                      (a.map Complex.re) (b.map Complex.re) (z.re) hb_br
+                    rw [← hmap_a, ← hmap_b, ← hz_eq] at hy2
+                    rw [hbridge] at hy2
+                    -- hy2 : y = ↑(pfqReal ..); core gives the real enclosure
+                    have harlen : (a.map Complex.re).length = Ar.length := by
                       rw [List.length_map]; omega
-                    omega
-                  rw [hgetB j]
-                  exact hb_of_guard (fun k => (b.getD k 0).re) Br.length
-                    (64 + 2 * c.prec)
-                    (fun k hk => by
-                      have h2 := hpos k hk
-                      rw [Nat.zero_add] at h2
-                      linarith)
-                    (fun k hk t ht => by
-                      have h2 := hne k hk t ht
-                      rwa [Nat.zero_add] at h2)
-                    j hj' m
-                have hbridge := Complex.HGFun_coe_list_eq_pfqReal
-                  (a.map Complex.re) (b.map Complex.re) (z.re) hb_br
-                rw [← hmap_a, ← hmap_b, ← hz_eq] at hy2
-                rw [hbridge] at hy2
-                -- hy2 : y = ↑(pfqReal ..); core gives the real enclosure
-                have harlen : (a.map Complex.re).length = Ar.length := by
-                  rw [List.length_map]; omega
-                have hbrlen : (b.map Complex.re).length = Br.length := by
-                  rw [List.length_map]; omega
-                have hafun : (fun i => (a.getD i 0).re)
-                    = fun i => ((a.map Complex.re).getD i 0) :=
-                  funext fun i => (hgetA i).symm
-                have hbfun : (fun j => (b.getD j 0).re)
-                    = fun j => ((b.map Complex.re).getD j 0) :=
-                  funext fun j => (hgetB j).symm
-                have hcore : pfqReal Ar.length Br.length
-                    (fun i => (a.getD i 0).re) (fun j => (b.getD j 0).re) (z.re)
-                    ∈ pfqCoreIval c Ar Br Zr (64 + 2 * c.prec) :=
-                  pfqCore_sound c hc _ _ _ _ Ar Br Zr _ (64 + 2 * c.prec) rfl rfl
-                    (fun i hi => (hmemA i (by omega)).1)
-                    (fun i hi => (hmemB i (by omega)).1)
-                    hre_z
-                rw [hafun, hbfun, ← harlen, ← hbrlen] at hcore
-                have hP : pfqReal (a.map Complex.re).length (b.map Complex.re).length
-                    (fun i => ((a.map Complex.re).getD i 0))
-                    (fun j => ((b.map Complex.re).getD j 0)) (z.re) = y.re := by
-                  rw [hy2]
-                  exact (Complex.ofReal_re _).symm
-                rw [hP] at hcore
-                have hyim : y.im ∈ Ival.ofRat c.prec 0 := by
-                  have e : y.im = 0 := by
-                    rw [hy2]
-                    exact Complex.ofReal_im _
-                  rw [e]
-                  exact_mod_cast Ival.mem_ofRat c.prec (0 : ℚ)
-                exact CBox.mem_def.mpr ⟨hcore, hyim⟩
+                    have hbrlen : (b.map Complex.re).length = Br.length := by
+                      rw [List.length_map]; omega
+                    have hafun : (fun i => (a.getD i 0).re)
+                        = fun i => ((a.map Complex.re).getD i 0) :=
+                      funext fun i => (hgetA i).symm
+                    have hbfun : (fun j => (b.getD j 0).re)
+                        = fun j => ((b.map Complex.re).getD j 0) :=
+                      funext fun j => (hgetB j).symm
+                    have hcore : pfqReal Ar.length Br.length
+                        (fun i => (a.getD i 0).re) (fun j => (b.getD j 0).re) (z.re)
+                        ∈ pfqCoreIval c Ar Br Zr (64 + 2 * c.prec) :=
+                      pfqCore_sound c hc _ _ _ _ Ar Br Zr _ (64 + 2 * c.prec) rfl rfl
+                        (fun i hi => (hmemA i (by omega)).1)
+                        (fun i hi => (hmemB i (by omega)).1)
+                        hre_z
+                    rw [hafun, hbfun, ← harlen, ← hbrlen] at hcore
+                    have hP : pfqReal (a.map Complex.re).length (b.map Complex.re).length
+                        (fun i => ((a.map Complex.re).getD i 0))
+                        (fun j => ((b.map Complex.re).getD j 0)) (z.re) = y.re := by
+                      rw [hy2]
+                      exact (Complex.ofReal_re _).symm
+                    rw [hP] at hcore
+                    have hyim : y.im ∈ Ival.ofRat c.prec 0 := by
+                      have e : y.im = 0 := by
+                        rw [hy2]
+                        exact Complex.ofReal_im _
+                      rw [e]
+                      exact_mod_cast Ival.mem_ofRat c.prec (0 : ℚ)
+                    exact CBox.mem_def.mpr ⟨hcore, hyim⟩
 
 @[lynth_cfn] def HGFunLR : CFn [.list .cplx, .list .cplx, .cplx] .cplx :=
   { name := "HGFun",

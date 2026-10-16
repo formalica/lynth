@@ -8,7 +8,7 @@ open Lynth.Interval.Fns
 -- the enclosures are wide enough that kernel certification recurses too deep.
 set_option lynth.interval.trust "native"
 
-/-! # Complex hypergeometric `pFq` (H1–H4).
+/-! # Complex hypergeometric `pFq` (C1–C7).
 
 `Complex.HGFun` with genuinely complex arguments goes through the complex
 core (`Fns/Hypgeom.lean`, `cpfqCoreBox`): same FLINT `pfq_direct` engine
@@ -78,5 +78,47 @@ def cx_hyp_term : { p : Rat × Rat //
 #guard_msgs in
 #print axioms cx_hyp_term
 #eval! cx_hyp_term.1
+
+set_option maxHeartbeats 4725 in
+-- C5: Pfaff ₂F₁(1,1;2;-2+i/2). 0.5428700918 + 0.0531431842·I
+def cx_hyp_pfaff : { p : Rat × Rat //
+    ‖Complex.HGFun {1, 1} {2} ((-2 : ℂ) + (1 / 2 : ℂ) * Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 100 } := by
+  lynth
+/-- info: 'ComplexIntervalArith.cx_hyp_pfaff' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ cx_hyp_pfaff._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms cx_hyp_pfaff
+#eval! cx_hyp_pfaff.1
+
+set_option maxHeartbeats 4371 in
+-- C6: Kummer ₁F₁(3+i;1+i;1+i/2). 7.6728691826 + 2.2557915160·I
+def cx_hyp_kummer : { p : Rat × Rat //
+    ‖Complex.HGFun {3 + Complex.I} {1 + Complex.I} (((1 : ℕ) : ℂ) + (1 / 2 : ℂ) * Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 100 } := by
+  lynth
+/-- info: 'ComplexIntervalArith.cx_hyp_kummer' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ cx_hyp_kummer._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms cx_hyp_kummer
+#eval! cx_hyp_kummer.1
+
+set_option maxHeartbeats 6580 in
+-- C7: 17 params, ₉F₈(1⁹;2⁸;1/2+i/4), direct. 1.0019820815 + 0.0010175545·I
+def cx_hyp_9f8_big : { p : Rat × Rat //
+    ‖Complex.HGFun {1, 1, 1, 1, 1, 1, 1, 1, 1} {2, 2, 2, 2, 2, 2, 2, 2} ((1 / 2 : ℂ) + (1 / 4 : ℂ) * Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 100 } := by
+  lynth
+/-- info: 'ComplexIntervalArith.cx_hyp_9f8_big' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ cx_hyp_9f8_big._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms cx_hyp_9f8_big
+#eval! cx_hyp_9f8_big.1
 
 end ComplexIntervalArith

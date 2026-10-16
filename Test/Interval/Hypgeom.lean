@@ -9,7 +9,7 @@ open Lynth.Interval.Fns
 -- enclosures are wide enough that kernel certification recurses too deep.
 set_option lynth.interval.trust "native"
 
-/-! # Generalized hypergeometric `pFq` via multiset `Complex.HGFun` (H1–H14).
+/-! # Generalized hypergeometric `pFq` via multiset `Complex.HGFun` (H1–H17).
 
 Single engine (`Fns/Hypgeom.lean`, `HGFunL` entry): goals write
 `Complex.HGFun` over multisets; the reifier normalizes literal spines to
@@ -18,8 +18,8 @@ prefixes, and direct-series cross-checks in Python.  Analytic bounds are
 `sorry`'d (pure analysis mirrored Mathlib-only in `/tmp/pfq_thm_proof.lean`).
 -/
 
-set_option maxHeartbeats 2872 in
--- H1: ₂F₁(1,1;2;-1/2) = 2ln(3/2). 0.8109302162
+set_option maxHeartbeats 2935 in
+-- H1: ₂F₁(1,1;2;-1/2) = 2ln(3/2), via Pfaff (|w|=1/3<|z|). 0.8109302162
 def hyp_2f1_neg : { x : Rat //
     abs ((Complex.HGFun {1, 1} {2} (-1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
@@ -197,3 +197,45 @@ def hyp_1f1_two : { x : Rat //
 #guard_msgs in
 #print axioms hyp_1f1_two
 #eval! hyp_1f1_two.1
+
+set_option maxHeartbeats 2569 in
+-- H15: ₂F₁(1,1;2;-5) = ln6/5, via Pfaff (direct diverges). 0.3583518938
+def hyp_2f1_pfaff : { x : Rat //
+    abs ((Complex.HGFun {1, 1} {2} (-5 : ℂ)).re - x) < 1 / 1000000 } := by
+  lynth
+/-- info: 'hyp_2f1_pfaff' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ hyp_2f1_pfaff._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms hyp_2f1_pfaff
+#eval! hyp_2f1_pfaff.1
+
+set_option maxHeartbeats 2171 in
+-- H16: ₁F₁(2;1;5) = 6e^5, via Kummer (transformed series terminates). 890.4789546155
+def hyp_1f1_kummer : { x : Rat //
+    abs ((Complex.HGFun {2} {1} (5 : ℂ)).re - x) < 1 / 1000000 } := by
+  lynth
+/-- info: 'hyp_1f1_kummer' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ hyp_1f1_kummer._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms hyp_1f1_kummer
+#eval! hyp_1f1_kummer.1
+
+set_option maxHeartbeats 4637 in
+-- H17: ₉F₈(1⁹;2⁸;1/2), 17 params, direct. 1.0019933182
+def hyp_9f8_direct : { x : Rat //
+    abs ((Complex.HGFun {1, 1, 1, 1, 1, 1, 1, 1, 1} {2, 2, 2, 2, 2, 2, 2, 2} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
+  lynth
+/-- info: 'hyp_9f8_direct' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ hyp_9f8_direct._native.native_decide.ax_1] -/
+#guard_msgs in
+#print axioms hyp_9f8_direct
+#eval! hyp_9f8_direct.1
