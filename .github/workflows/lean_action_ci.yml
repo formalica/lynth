@@ -35,4 +35,4 @@ jobs:
       - name: Run passing tests (incl. `#print axioms` checks)
         run: |
           lake build Test
-      - uses: leanprover-community/docgen-action@v1
+      # - uses: leanprover-community/docgen-action@v1
