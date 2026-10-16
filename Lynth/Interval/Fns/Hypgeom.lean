@@ -1254,6 +1254,334 @@ theorem pfqCore_sound (c : Ctx) (hc : c.Valid)
       have hi₀ : i₀ < A.length := by omega
       exact pfqFinite_sound c hc _ _ a b A B Z z m i₀ rfl rfl hmA hmB hmZ hi₀ hval
 
+/-! ### Complex core (FLINT `pfq_direct`, complex-line form).
+
+Mirrors the real core with `CBox` arithmetic: forward term recurrence,
+norm-based ratio bound (`acb_hypgeom/pfq_bound_factor.c`, complex form:
+`‖a+k‖/‖b+k‖ ≤ ‖a-b‖/‖b+n‖ + 1` for `k ≥ n` once `Re b + n > 0`, since
+`‖b+k‖ ≥ ‖b+n‖` there), 0-exclusion bottom guard, terminating-prefix
+shortcut. `HGFunL_ev` uses it when any parameter (or `z`) is genuinely
+complex; all-real inputs keep the real core above (same enclosures, same
+heartbeats). Every soundness lemma below is `sorry`'d; proofs are handed
+off in `/tmp/hyperc` (each docstring names the real mirror to follow).
+-/
+
+/-- one complex series term (rising products; `T_0 = 1` definitionally). -/
+noncomputable def cpfqTerm (p q : Nat) (a b : ℕ → ℂ) (z : ℂ) (k : ℕ) : ℂ :=
+  (∏ i ∈ Finset.range p, ∏ j ∈ Finset.range k, (a i + (j : ℂ)))
+    / (∏ i ∈ Finset.range q, ∏ j ∈ Finset.range k, (b i + (j : ℂ)))
+    * z ^ k / (Nat.factorial k : ℂ)
+
+/-- the complex `pFq` value as a series. -/
+noncomputable def cpfqComplex (p q : Nat) (a b : ℕ → ℂ) (z : ℂ) : ℂ :=
+  ∑' k, cpfqTerm p q a b z k
+
+/-- product of boxes (`1` on `[]`). -/
+def cprod (c : Ctx) : List CBox → CBox
+  | [] => ⟨Ival.one, Ival.zero⟩
+  | B :: Bs => CBox.mul c.prec B (cprod c Bs)
+
+/-- sum of boxes (`0` on `[]`). -/
+def csum (c : Ctx) : List CBox → CBox
+  | [] => ⟨Ival.zero, Ival.zero⟩
+  | B :: Bs => CBox.add c.prec B (csum c Bs)
+
+/-- `((k : ℕ) : ℂ)` as a box. -/
+def cNatBox (c : Ctx) (k : Nat) : CBox :=
+  ⟨Ival.ofRat c.prec (k : ℚ), Ival.zero⟩
+
+/-- one step of the forward recurrence. -/
+def cpfqStepBox (c : Ctx) (A B : List CBox) (p q : Nat) (Z T : CBox) (k : Nat) : CBox :=
+  let num := cprod c ((List.range p).map fun i =>
+    CBox.add c.prec (A.getD i CBox.top) (cNatBox c k))
+  let den := cprod c ((List.range q).map fun j =>
+    CBox.add c.prec (B.getD j CBox.top) (cNatBox c k))
+  CBox.div c.prec (CBox.mul c.prec (CBox.mul c.prec T num) Z)
+    (CBox.mul c.prec den (cNatBox c (k + 1)))
+
+/-- fuel loop: `(sum of terms k..k+f-1, T_{k+f})`, structural on fuel. -/
+def cpfqLoop (c : Ctx) (A B : List CBox) (p q : Nat) (Z : CBox) :
+    Nat → Nat → CBox → CBox → CBox × CBox
+  | 0, _, S, T => (S, T)
+  | f + 1, k, S, T =>
+    cpfqLoop c A B p q Z f (k + 1) (CBox.add c.prec S T)
+      (cpfqStepBox c A B p q Z T k)
+
+/-- paired norm factor `‖aᵢ-bᵢ‖/Dᵢ + 1`. -/
+def cpfqPairBox (c : Ctx) (Ai Bi Di : Ival) : Ival :=
+  Ival.add c.prec
+    (Ival.div c.prec (Ival.abs (Ival.sub c.prec Ai Bi)) Di)
+    (Ival.ofRat c.prec 1)
+
+/-- `R` denominator extras over `j ∈ [p, q)`, fuel-indexed. -/
+def cpfqRDenAux (c : Ctx) (nB : List Ival) (n : Nat) : Nat → Nat → List Ival
+  | _, 0 => []
+  | p, f + 1 => cpfqRDenAux c nB n p f
+    ++ [Ival.add c.prec (nB.getD (p + f) Ival.top)
+      (Ival.ofRat c.prec ((n : Nat) : ℚ))]
+
+/-- full `R` norm-ratio bound (mirrors `pfqRatio`, same `if`). -/
+def cpfqRBox (c : Ctx) (nA nB : List Ival) (p q : Nat) (Zabs : Ival)
+    (aq : Ival) (n : Nat) : Ival :=
+  let base := Ival.div c.prec
+    (Ival.mul c.prec Zabs (iprod c ((List.range (min p q)).map fun i =>
+      cpfqPairBox c (nA.getD i Ival.top) (nB.getD i Ival.top)
+        (Ival.add c.prec (nB.getD i Ival.top) (Ival.ofRat c.prec ((n : Nat) : ℚ))))))
+    (Ival.mul c.prec
+      (iprod c (cpfqRDenAux c nB n p (q - p)))
+      (Ival.ofRat c.prec (((n : Nat) : ℚ) + 1)))
+  if p = q + 1 then
+    Ival.mul c.prec base
+      (Ival.add c.prec aq (Ival.ofRat c.prec (((n : Nat) : ℚ) + 1)))
+  else base
+
+/-- one bottom-box × shift avoids `0` (endpoint check). -/
+def cpfqGuardElem (J : CBox) (k : Nat) : Bool :=
+  match J.re.lo, J.re.hi, J.im.lo, J.im.hi with
+  | some rlo, some rhi, some ilo, some ihi =>
+    decide ((rhi.toRat + (k : ℚ) < 0 ∨ 0 < rlo.toRat + (k : ℚ))
+      ∨ (ihi.toRat < 0 ∨ 0 < ilo.toRat))
+  | _, _, _, _ => false
+
+/-- real part of a bottom box stays positive past the shift (for the
+ratio monotonicity `‖b+k‖ ≥ ‖b+n‖`, `k ≥ n`). -/
+def cpfqGuardRe (J : CBox) (n : Nat) : Bool :=
+  match J.re.lo with
+  | some rlo => decide (0 < rlo.toRat + (n : ℚ))
+  | none => false
+
+/-- bottom guard: shifted bottoms keep positive real part, and no pole
+in range. -/
+def cpfqGuard (B : List CBox) (n : Nat) : Bool :=
+  B.all (fun J => cpfqGuardRe J n) &&
+  (List.range n).all (fun k => B.all (fun J => cpfqGuardElem J k))
+
+/-- rising product box `∏_{j<k} (S + j)`. -/
+def risingCBox (c : Ctx) (S : CBox) : Nat → CBox
+  | 0 => ⟨Ival.one, Ival.zero⟩
+  | k + 1 => CBox.mul c.prec (risingCBox c S k)
+    (CBox.add c.prec S (cNatBox c k))
+
+/-- closed-form term box. -/
+def cpfqTermBox (c : Ctx) (A B : List CBox) (p q : Nat) (Z : CBox) (k : Nat) : CBox :=
+  CBox.div c.prec
+    (CBox.div c.prec
+      (CBox.mul c.prec
+        (cprod c ((List.range p).map fun i => risingCBox c (A.getD i CBox.top) k))
+        (CBox.npow c.prec Z k))
+      (cprod c ((List.range q).map fun j => risingCBox c (B.getD j CBox.top) k)))
+    (cNatBox c (Nat.factorial k))
+
+/-- terminating-top search: first `(index, m)` with point value `-m`
+(imaginary part exactly zero). -/
+def cpfqFindTerm : List CBox → Nat → Option (Nat × Nat)
+  | [], _ => none
+  | B :: Bs, i =>
+    match B.re.lo, B.re.hi, B.im.lo, B.im.hi with
+    | some rlo, some rhi, some ilo, some ihi =>
+      if rlo = rhi && ilo = ihi && ilo.toRat = 0 then
+        let q := rlo.toRat
+        if q.den = 1 ∧ q.num ≤ 0 then some (i, (-q.num).toNat)
+        else cpfqFindTerm Bs (i + 1)
+      else cpfqFindTerm Bs (i + 1)
+    | _, _, _, _ => cpfqFindTerm Bs (i + 1)
+
+/-- finite prefix enclosure (exact identity, no tail). -/
+def cpfqFiniteBox (c : Ctx) (A B : List CBox) (p q : Nat) (Z : CBox)
+    (m : Nat) : CBox :=
+  csum c ((List.range (m + 1)).map fun k => cpfqTermBox c A B p q Z k)
+
+/-- core evaluator: finite prefix or (`n+1` terms) + symmetric tail disc.
+The loop returns `(Σ_{k<n} T_k, T_n)`; the enclosure is centered at
+`Σ_{k<n+1} T_k = S + T_n` with disc radius `‖T_n‖·R/(1-R)`. -/
+def cpfqCoreBox (c : Ctx) (A B : List CBox) (Z : CBox) (n : Nat) : CBox :=
+  match cpfqFindTerm A 0 with
+  | some (_, m) =>
+    -- finite path needs bottom cleanliness too: the `HGFun` bridge only holds
+    -- away from bottom poles.
+    if cpfqGuard B n then cpfqFiniteBox c A B A.length B.length Z m else CBox.top
+  | none =>
+    if A.length > B.length + 1 then CBox.top
+    else if cpfqGuard B n then
+      let nA := (List.range A.length).map fun i => CBox.norm c.prec (A.getD i CBox.top)
+      let nB := (List.range B.length).map fun j => CBox.norm c.prec (B.getD j CBox.top)
+      let R := cpfqRBox c nA nB A.length B.length (CBox.norm c.prec Z)
+        (CBox.norm c.prec (A.getD B.length CBox.top)) n
+      match R.hi with
+      | none => CBox.top
+      | some hR =>
+        if hR.toRat < 1 then
+          let res := cpfqLoop c A B A.length B.length Z n 0
+            ⟨Ival.zero, Ival.zero⟩ ⟨Ival.one, Ival.zero⟩
+          let S := CBox.add c.prec res.1 res.2
+          let W := Ival.mul c.prec (CBox.norm c.prec res.2)
+            (Ival.div c.prec R
+              (Ival.sub c.prec (Ival.ofRat c.prec 1) R))
+          match W.hi with
+          | some h => CBox.add c.prec S ⟨Ival.ofRats c.prec (-h.toRat) h.toRat,
+              Ival.ofRats c.prec (-h.toRat) h.toRat⟩
+          | none => CBox.top
+        else CBox.top
+    else CBox.top
+
+/-- term recurrence (mirror `pfqTerm_succ`). -/
+theorem cpfqTerm_succ (p q : Nat) (a b : ℕ → ℂ) (z : ℂ) (k : Nat)
+    (hB : ∀ j : Nat, j < q → (b j + (k : ℂ)) ≠ 0) :
+    cpfqTerm p q a b z (k + 1) = cpfqTerm p q a b z k
+      * ((∏ i ∈ Finset.range p, (a i + (k : ℂ)))
+        / (∏ j ∈ Finset.range q, (b j + (k : ℂ))) * z / ((k : ℂ) + 1)) := by
+  sorry
+
+/-- product-box membership (mirror `mem_iprod`). -/
+theorem mem_cprod (c : Ctx) (hc : c.Valid) (L : List CBox) (v : List ℂ)
+    (h : List.Forall₂ (fun z B => z ∈ B) v L) :
+    v.prod ∈ cprod c L := by
+  sorry
+
+/-- sum-box membership (mirror `mem_isum`). -/
+theorem mem_csum (c : Ctx) (hc : c.Valid) (L : List CBox) (v : List ℂ)
+    (h : List.Forall₂ (fun z B => z ∈ B) v L) :
+    v.sum ∈ csum c L := by
+  sorry
+
+/-- nat-cast box membership. -/
+theorem mem_cNatBox (c : Ctx) (k : Nat) : ((k : ℕ) : ℂ) ∈ cNatBox c k := by
+  sorry
+
+/-- range-mapped shifted-factor memberships (mirror `pfqAddForall₂`). -/
+theorem cpfqAddForall₂ (c : Ctx) (L : List CBox) (v : ℕ → ℂ) (k : Nat)
+    (hm : ∀ i : Nat, i < L.length → v i ∈ L.getD i CBox.top) :
+    List.Forall₂ (fun z B => z ∈ B)
+      ((List.range L.length).map fun i => v i + (k : ℂ))
+      ((List.range L.length).map fun i =>
+        CBox.add c.prec (L.getD i CBox.top) (cNatBox c k)) := by
+  sorry
+
+/-- step membership (mirror `mem_pfqStep`). -/
+theorem mem_cpfqStep (c : Ctx) (hc : c.Valid)
+    (a b : ℕ → ℂ) (A B : List CBox) (Z : CBox) (z : ℂ) (k : Nat)
+    (hmA : ∀ i : Nat, i < A.length → a i ∈ A.getD i CBox.top)
+    (hmB : ∀ i : Nat, i < B.length → b i ∈ B.getD i CBox.top)
+    (hmZ : z ∈ Z) (T : CBox) (Tk : ℂ) (hT : Tk ∈ T) :
+    Tk * ((∏ i ∈ Finset.range A.length, (a i + (k : ℂ)))
+      / (∏ j ∈ Finset.range B.length, (b j + (k : ℂ))) * z / ((k : ℂ) + 1))
+      ∈ cpfqStepBox c A B A.length B.length Z T k := by
+  sorry
+
+/-- joint loop invariant (mirror `mem_pfqLoop`). -/
+theorem mem_cpfqLoop (c : Ctx) (hc : c.Valid)
+    (a b : ℕ → ℂ) (A B : List CBox) (Z : CBox) (z : ℂ) (n : Nat)
+    (hmA : ∀ i : Nat, i < A.length → a i ∈ A.getD i CBox.top)
+    (hmB : ∀ i : Nat, i < B.length → b i ∈ B.getD i CBox.top)
+    (hmZ : z ∈ Z)
+    (hBne : ∀ j : Nat, j < B.length → ∀ k : Nat, k < n → (b j + (k : ℂ)) ≠ 0) :
+    ∀ (f k : Nat), k + f ≤ n → ∀ (S T : CBox) (Sr Tr : ℂ),
+    Sr ∈ S → Tr ∈ T →
+    Sr = (Finset.range k).sum (fun j => cpfqTerm A.length B.length a b z j) →
+    Tr = cpfqTerm A.length B.length a b z k →
+    ((Finset.range (k + f)).sum (fun j => cpfqTerm A.length B.length a b z j)
+      ∈ (cpfqLoop c A B A.length B.length Z f k S T).1
+    ∧ cpfqTerm A.length B.length a b z (k + f)
+      ∈ (cpfqLoop c A B A.length B.length Z f k S T).2) := by
+  sorry
+
+/-- where `cpfqRatio` is the uniform later-term norm ratio
+(`‖T_{k+1}‖/‖T_k‖ ≤ R` for `k ≥ n`), mirroring `pfqRatio`. -/
+noncomputable def cpfqRatio (p q : Nat) (a b : ℕ → ℂ) (Z : ℝ) (n : Nat) : ℝ :=
+  Z * (∏ i ∈ Finset.range (min p q), (‖a i - b i‖ / ‖b i + (n : ℂ)‖ + 1))
+    / ((∏ j ∈ Finset.Ico p q, ‖b j + (n : ℂ)‖) * ((n : ℝ) + 1))
+    * (if p = q + 1 then (‖a q‖ + (n : ℝ) + 1) else 1)
+
+/-- ratio-bound membership (mirror `mem_pfqRIval`; per-factor steps use
+`CBox.mem_norm`, `Ival.mem_div/abs/sub` and the paired estimate
+`‖a+k‖/‖b+k‖ ≤ ‖a-b‖/‖b+n‖ + 1` for `k ≥ n`). -/
+theorem mem_cpfqR (c : Ctx) (hc : c.Valid)
+    (a b : ℕ → ℂ) (A B : List CBox) (p q : Nat)
+    (nA nB : List Ival) (Z : CBox) (z : ℂ) (n : Nat)
+    (hmA : ∀ i : Nat, i < A.length → ‖a i‖ ∈ nA.getD i Ival.top)
+    (hmB : ∀ i : Nat, i < B.length → ‖b i‖ ∈ nB.getD i Ival.top)
+    (hmZ : ‖z‖ ∈ CBox.norm c.prec Z)
+    (hpq : p ≤ q + 1) :
+    cpfqRatio p q a b ‖z‖ n ∈ cpfqRBox c nA nB p q
+      (CBox.norm c.prec Z) (CBox.norm c.prec (A.getD q CBox.top)) n := by
+  sorry
+
+/-- guard element correctness: exclusion + real-part positivity
+(mirror `pfqGuardElem_ok`). -/
+theorem cpfqGuardElem_ok (J : CBox) (k n : Nat) (lo hi : Dy)
+    (hlo : J.re.lo = some lo) (hhi : J.re.hi = some hi)
+    (b : ℂ) (hb : b ∈ J) (h : cpfqGuardElem J k = true) :
+    (b + (k : ℂ)) ≠ 0 ∧ 0 < (b + (n : ℂ)).re := by
+  sorry
+
+/-- guard correctness (mirror `pfqGuard_ok`). -/
+theorem cpfqGuard_ok (b : ℕ → ℂ) (B : List CBox) (n : Nat)
+    (hmB : ∀ i : Nat, i < B.length → b i ∈ B.getD i CBox.top)
+    (hguard : cpfqGuard B n = true) :
+    (∀ j : Nat, j < B.length → 0 < (b j + (n : ℂ)).re)
+      ∧ (∀ j : Nat, j < B.length → ∀ k : Nat, k < n → (b j + (k : ℂ)) ≠ 0) := by
+  sorry
+
+/-- rising-product box membership (mirror `mem_risingZ`). -/
+theorem mem_risingCBox (c : Ctx) (hc : c.Valid) (S : CBox) (s : ℂ)
+    (hs : s ∈ S) (k : Nat) :
+    (∏ j ∈ Finset.range k, (s + (j : ℂ))) ∈ risingCBox c S k := by
+  sorry
+
+/-- closed-form term membership (mirror `mem_pfqTermIval`). -/
+theorem mem_cpfqTermBox (c : Ctx) (hc : c.Valid)
+    (a b : ℕ → ℂ) (A B : List CBox) (p q : Nat) (Z : CBox) (z : ℂ) (k : Nat)
+    (hmA : ∀ i : Nat, i < A.length → a i ∈ A.getD i CBox.top)
+    (hmB : ∀ i : Nat, i < B.length → b i ∈ B.getD i CBox.top)
+    (hmZ : z ∈ Z) :
+    cpfqTerm p q a b z k ∈ cpfqTermBox c A B p q Z k := by
+  sorry
+
+/-- terminating-top exact identity (mirror `pfqTerm_exact`). -/
+theorem cpfqTerm_exact (p q : Nat) (a b : ℕ → ℂ) (z : ℂ) (m : Nat) (i₀ : Nat)
+    (hi₀ : i₀ < p) (hterm : a i₀ = -(m : ℂ)) :
+    cpfqComplex p q a b z
+      = (Finset.range (m + 1)).sum (fun k => cpfqTerm p q a b z k) := by
+  sorry
+
+/-- finite-prefix soundness (mirror `pfqFinite_sound`). -/
+theorem cpfqFinite_sound (c : Ctx) (hc : c.Valid)
+    (p q : Nat) (a b : ℕ → ℂ) (A B : List CBox) (Z : CBox) (z : ℂ)
+    (m : Nat) (i₀ : Nat)
+    (hmA : ∀ i : Nat, i < A.length → a i ∈ A.getD i CBox.top)
+    (hmB : ∀ i : Nat, i < B.length → b i ∈ B.getD i CBox.top)
+    (hmZ : z ∈ Z)
+    (hi₀ : i₀ < p) (hterm : a i₀ = -(m : ℂ)) :
+    cpfqComplex p q a b z ∈ cpfqFiniteBox c A B p q Z m := by
+  sorry
+
+/-- disc membership from a norm bound. -/
+theorem mem_cpfqDisc (c : Ctx) {z : ℂ} {h : Dy} (hle : ‖z‖ ≤ ((h.toRat : ℚ) : ℝ)) :
+    z ∈ (⟨Ival.ofRats c.prec (-h.toRat) h.toRat,
+      Ival.ofRats c.prec (-h.toRat) h.toRat⟩ : CBox) := by
+  sorry
+
+/-- norm tail bound (mirror `pfqTail_corrected_succ`; the abstract
+`summable + ‖·‖ ≤` step is `Complex_geometric_tail`). -/
+theorem cpfqTail_bound (p q : Nat) (a b : ℕ → ℂ) (z : ℂ) (n : Nat)
+    (hpq : p ≤ q + 1)
+    (hBne : ∀ j : Nat, j < q → ∀ m : ℕ, (b j + (m : ℂ)) ≠ 0)
+    (hR : cpfqRatio p q a b ‖z‖ n < 1) :
+    ‖cpfqComplex p q a b z
+      - (Finset.range (n + 1)).sum (fun j => cpfqTerm p q a b z j)‖
+      ≤ ‖cpfqTerm p q a b z n‖
+        * (cpfqRatio p q a b ‖z‖ n / (1 - cpfqRatio p q a b ‖z‖ n)) := by
+  sorry
+
+/-- core soundness (mirror `pfqCore_sound`). -/
+theorem cpfqCore_sound (c : Ctx) (hc : c.Valid)
+    (p q : Nat) (a b : ℕ → ℂ) (A B : List CBox) (Z : CBox) (z : ℂ) (n : Nat)
+    (hmA : ∀ i : Nat, i < A.length → a i ∈ A.getD i CBox.top)
+    (hmB : ∀ i : Nat, i < B.length → b i ∈ B.getD i CBox.top)
+    (hmZ : z ∈ Z) :
+    cpfqComplex p q a b z ∈ cpfqCoreBox c A B Z n := by
+  sorry
+
 /-! ### Bridge to Mathlib's `Complex.regularizedHGFun` (ported from
 `/tmp/pfq_thm_proof.lean`). -/
 
@@ -1329,6 +1657,25 @@ theorem HGFun_coe_list_eq_pfqReal (ar br : List ℝ) (zr : ℝ)
   rw [hl ar, hl br]
   exact HGFun_ofReal_eq_pfqReal _ _ _ _ zr hb
 
+/-- BRIDGE (coefficients, complex): at parameters with no bottom
+parameter a nonpositive integer, the `k`-th term of the (Γ-normalized)
+series `HGFun` is the complex mirror `cpfqTerm`. Mirror
+`HGFunCoeff_mul_pow_ofReal` (same Gamma manipulation, over `ℂ`). -/
+theorem HGFunCoeff_mul_pow_ofComplex (p q : Nat) (a b : ℕ → ℂ) (z : ℂ) (k : ℕ)
+    (hb : ∀ j : Nat, j < q → ∀ m : ℕ, b j ≠ -(m : ℂ)) :
+    HGFunCoeff ((Multiset.range p).map a) ((Multiset.range q).map b) k * z ^ k
+      = Lynth.Interval.Fns.cpfqTerm p q a b z k := by
+  sorry
+
+/-- LIST BRIDGE (complex): `HGFun` over coerced lists agrees with
+`cpfqComplex` over the list elements. Consumed by `HGFunL_sound_complex`. -/
+theorem HGFun_coe_list_eq_cpfqComplex (ar br : List ℂ) (zr : ℂ)
+    (hb : ∀ j : Nat, j < br.length → ∀ m : ℕ, (br.getD j 0) ≠ -(m : ℂ)) :
+    Complex.HGFun (↑ar : Multiset ℂ) (↑br : Multiset ℂ) zr
+      = Lynth.Interval.Fns.cpfqComplex ar.length br.length
+        (fun i => ar.getD i 0) (fun j => br.getD j 0) zr := by
+  sorry
+
 end Complex
 namespace Lynth.Interval.Fns
 
@@ -1338,6 +1685,18 @@ Users write `Complex.HGFun` over multisets in goals; the reifier
 (`reifyMultisetHGFun?`) normalizes literal spines to lists and targets
 `HGFunL` below. The evaluator extracts real parts (imaginary parts must
 be exactly zero) and runs the general `pfqCoreIval` core at any lengths. -/
+
+/-- `HGFunL` soundness, genuinely-complex case: all parameters live in
+their boxes and the value is enclosed by the complex core. The proof is
+`cpfqCore_sound` after the `HGFun_coe_list_eq_cpfqComplex` bridge. -/
+theorem HGFunL_sound_complex (c : Ctx) (hc : c.Valid)
+    (a b : List ℂ) (z : ℂ) (A B : List CBox) (XZ : CBox) (y : ℂ)
+    (hhA : List.Forall₂ (Ty.Mem .cplx) A a)
+    (hhB : List.Forall₂ (Ty.Mem .cplx) B b)
+    (hhZ : z ∈ XZ)
+    (hy : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z) :
+    y ∈ cpfqCoreBox c A B XZ (64 + 2 * c.prec) := by
+  sorry
 
 /-- list-based `HGFun` mirror (registry vocabulary). -/
 noncomputable def HGFunL (a b : List ℂ) (z : ℂ) : ℂ :=
@@ -1383,7 +1742,8 @@ def HGFunL_ev (c : Ctx) : CEnc [.list .cplx, .list .cplx, .cplx] → CBox
       if pfqGuard Br (64 + 2 * c.prec) then
         ⟨pfqCoreIval c Ar Br Zr (64 + 2 * c.prec), Ival.ofRat c.prec 0⟩
       else CBox.top
-    | _, _, _ => CBox.top
+    -- genuinely complex args: same engine with `CBox` arithmetic.
+    | _, _, _ => cpfqCoreBox c A B Z (64 + 2 * c.prec)
   | _ => CBox.top
 
 theorem HGFunL_sound (c : Ctx) :
@@ -1421,21 +1781,30 @@ theorem HGFunL_sound (c : Ctx) :
             if pfqGuard Br (64 + 2 * c.prec) then
               (⟨pfqCoreIval c Ar Br Zr (64 + 2 * c.prec), Ival.ofRat c.prec 0⟩ : CBox)
             else CBox.top
-          | _, _, _ => CBox.top
+          | _, _, _ => cpfqCoreBox c A B XZ (64 + 2 * c.prec)
         cases hAr : projectReal A with
         | none =>
-          show y ∈ CBox.top
-          exact CBox.mem_top _
+          have hhA : List.Forall₂ (Ty.Mem .cplx) A a := hh.1
+          have hhB : List.Forall₂ (Ty.Mem .cplx) B b := hh.2.1
+          have hhZ : z ∈ XZ := hh.2.2.1
+          have hy2 : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z := hg
+          exact HGFunL_sound_complex c hc a b z A B XZ y hhA hhB hhZ hy2
         | some Ar =>
           cases hBr : projectReal B with
           | none =>
-            show y ∈ CBox.top
-            exact CBox.mem_top _
+            have hhA : List.Forall₂ (Ty.Mem .cplx) A a := hh.1
+            have hhB : List.Forall₂ (Ty.Mem .cplx) B b := hh.2.1
+            have hhZ : z ∈ XZ := hh.2.2.1
+            have hy2 : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z := hg
+            exact HGFunL_sound_complex c hc a b z A B XZ y hhA hhB hhZ hy2
           | some Br =>
             cases hZr : CBox.realOfZeroIm XZ with
             | none =>
-              show y ∈ CBox.top
-              exact CBox.mem_top _
+              have hhA : List.Forall₂ (Ty.Mem .cplx) A a := hh.1
+              have hhB : List.Forall₂ (Ty.Mem .cplx) B b := hh.2.1
+              have hhZ : z ∈ XZ := hh.2.2.1
+              have hy2 : y = Complex.HGFun (↑a : Multiset ℂ) (↑b : Multiset ℂ) z := hg
+              exact HGFunL_sound_complex c hc a b z A B XZ y hhA hhB hhZ hy2
             | some Zr =>
               show y ∈ (if pfqGuard Br (64 + 2 * c.prec) then
                 (⟨pfqCoreIval c Ar Br Zr (64 + 2 * c.prec), Ival.ofRat c.prec 0⟩ : CBox)
