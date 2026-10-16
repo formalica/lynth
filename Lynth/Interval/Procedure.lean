@@ -18,10 +18,12 @@ open Lean Meta Elab Tactic
 
 initialize registerTraceClass `lynth.interval
 
-/-- does the goal mention real or complex numbers, or is it a `ℕ`/`ℤ`
-subtype goal (discrete witnesses, possibly over custom functions) -/
+/-- does the goal mention real or complex numbers, series (`Summable`),
+or is it a `ℕ`/`ℤ` subtype goal (discrete witnesses, possibly over
+custom functions) -/
 def relevant (ty : Lean.Expr) : Bool :=
-  (ty.find? fun e => e.isConstOf ``Real || e.isConstOf ``Complex).isSome ||
+  (ty.find? fun e => e.isConstOf ``Real || e.isConstOf ``Complex
+    || e.isConstOf ``Summable).isSome ||
     match ty.getAppFnArgs with
     | (``Subtype, #[α, _]) => α.isConstOf ``Nat || α.isConstOf ``Int
     | _ => false
