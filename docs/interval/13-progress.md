@@ -2,6 +2,30 @@
 
 Update at every milestone.  Keep "Next" pointing at the lowest unfinished item.
 
+## Numerical integration update — 2026-10-17
+
+The Real Petras/Gauss-Legendre engine is implemented in Integral/ and
+Goals/Integral.lean. It synthesizes rational witnesses, checks integrability,
+handles selected improper endpoints/tails, and proves recognized divergence.
+The 43 one-dimensional regression declarations include the migrated tests,
+selected real FLINT examples, and orientation regressions. The ten-dimensional cube
+remains in TestFailures. Recursive real integrals are now handled by the
+separate fallback described in [15-nested-integrals.md](15-nested-integrals.md):
+dependent bounds, recursive sampling, shared tables and memoized certificate
+replay, half-lines/whole lines, and certified endpoint transformations.
+There are 23 additional nested integration regressions and five certificate
+rejection groups, each with its own measured +5% heartbeat cap. The existing
+43 caps and their source files are unchanged by this extension.
+
+Proof status is explicitly provisional under the user's authorization:
+74 Mathlib-only obligations in /tmp/intgrl and 19 Lynth-dependent adapter gaps.
+The mathematical packets elaborate independently; no Lynth-dependent theorem
+is included in the proof handoff. Heavy certificates follow the existing
+auto/native trust policy, and their axiom footprints are recorded in tests.
+See [14-gauss-legendre-plan.md](14-gauss-legendre-plan.md) for algorithms,
+coverage, validation, and remaining limits. Older non-integration milestone
+rows below have not been audited against the current implementation.
+
 ## Milestones
 
 | id | content | status |
@@ -16,18 +40,21 @@ Update at every milestone.  Keep "Next" pointing at the lowest unfinished item.
 | M7 | AD + monotone leaves | todo |
 | M8 | ranges, extrema | todo |
 | M9 | Taylor models + Taylor capabilities | todo |
-| M10 | quadrature, integrability; M10c complex integrals | todo |
+| M10 | Real Petras quadrature and integrability implemented; proofs and complex integral extension remain | in progress |
 | M11 | infinite series (AIA, tails, non-summability); M11c | todo |
 | M12 | meta adaptive (convergence caps); M12c | todo |
 | M13 | meta integral + piecewise polynomials | todo |
 
 ## Done
 
-(nothing yet)
+Real numerical integration engine and the test migrations described above.
 
 ## Next
 
-M0 → M1: vendor `LeanCert/Core/Dyadic.lean`, write `Num/Dy.lean` rounding API.
+Integration: complete the portable mathematical proofs and local adapters;
+extend function capabilities and uniform majorants for the remaining real
+examples. Public complex paths and product-domain/Fubini normalization remain
+separate work. Benchmark evaluator crossovers before treating them as tuned.
 
 ## Known gaps / risks
 

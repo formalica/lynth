@@ -2,6 +2,8 @@ import Lynth.Procedure
 import Lynth.Interval.Goals.Approx
 import Lynth.Interval.Goals.Discrete
 import Lynth.Interval.Goals.Series
+import Lynth.Interval.Goals.Integral
+import Lynth.Interval.Goals.NestedIntegral
 
 /-!
 # The `interval` procedure of `lynth`
@@ -32,6 +34,14 @@ def run : TacticM ProcedureOutcome := do
   unless relevant ty do return .failure []
   let s ← saveState
   try
+    if let some pf ← Goals.proveIntegral? ty then
+      goal.assign pf
+      replaceMainGoal []
+      return .success
+    if let some pf ← Goals.proveNestedIntegral? ty then
+      goal.assign pf
+      replaceMainGoal []
+      return .success
     if (← isProp ty) && !ty.hasFVar && !ty.hasMVar then
       if let some pf ← Goals.proveClosed? ty then
         goal.assign pf

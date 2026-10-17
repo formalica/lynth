@@ -16,13 +16,15 @@ you are working on.
 | `04-functions.md` | per-function algorithms and Mathlib lemma sources (real + complex) |
 | `05-point-goals.md` | Phases 1–3: point approximations, closed inequalities, floor/ceil/sign, finite sums, certificates |
 | `06-box-goals.md` | Phase 4: branch & bound, AD, ranges, roots, extrema |
-| `07-integrals.md` | Phase 5: Taylor models, quadrature, integrability |
+| `07-integrals.md` | Historical Taylor-model integration design; superseded by 14 |
 | `08-series.md` | Phase 6: infinite sums, summability, tails, non-summability |
 | `09-meta.md` | Phase 7: meta goals (adaptive precision + piecewise polynomials) |
 | `10-complex.md` | complex boxes and complex functions across **all** phases |
 | `11-vendoring.md` | which LeanCert files are copied/adapted and how |
 | `12-tests.md` | test inventory, per-test route, test fixes, new complex tests |
 | `13-progress.md` | living status: milestones, done/next, known gaps |
+| `14-gauss-legendre-plan.md` | FLINT/Petras integration plan, fast Legendre algorithms, benchmark coverage, portable proof handoff |
+| `15-nested-integrals.md` | Recursive real quadrature, dependent bounds, improper transforms, certificate replay and proof handoff |
 
 ## Decisions log (binding; from the user, 2026-09-30)
 
@@ -61,6 +63,10 @@ you are working on.
   theorem yields the user goal.
 * **No `sorry`, no new `axiom`** in `Lynth/` (repository rule).  Temporary
   gaps must be explicit `yield`s of the procedure, never fake proofs.
+  **Integration exception authorized by the user on 2026-10-17:** numerical
+  integration may use explicitly marked mathematical/adapter `sorry` proofs.
+  Its tests expect `sorryAx` while the standalone Mathlib proof packets are
+  completed. See [14-gauss-legendre-plan.md](14-gauss-legendre-plan.md).
 * Every goal handler *yields* (returns `.failure []`, goal untouched) on shapes
   it does not recognize, so later procedures still run.
 * Complex numbers are first-class: every generic component is parameterized by

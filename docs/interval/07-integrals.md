@@ -1,5 +1,11 @@
 # 07 — Integrals (Phase 5): Taylor models and verified quadrature
 
+**Superseded for numerical integration:** the requested implementation now
+uses FLINT's adaptive Gauss-Legendre/Petras method. See
+[14-gauss-legendre-plan.md](14-gauss-legendre-plan.md) and the implemented
+[recursive real backend](15-nested-integrals.md). The Taylor-model
+design below is retained as historical design material.
+
 ## 1. Goal shapes (`Goals/Integral.lean`)
 
 * `{x : ℚ // |(∫ y in a..b, f y) - ↑x| < tol}` (interval integral).
