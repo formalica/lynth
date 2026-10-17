@@ -63,7 +63,7 @@ private theorem sqrt_cpow (z c : ℂ) : (Complex.sqrt z) ^ c = z ^ (c / 2) := by
 /-- The `₀F₁` series in terms of the Gamma function. -/
 private theorem HGFun0F1_eq (b z : ℂ) :
     HGFun {} {b} z = Gamma b * ∑' n : ℕ, z ^ n / ((n ! : ℂ) * Gamma (b + n)) := by
-  rw [HGFun_eq_tsum, ← tsum_mul_left]
+  rw [HGFun_eq_tsum {} {b} z, ← tsum_mul_left]
   refine tsum_congr fun n => ?_
   rw [HGFunCoeff_def, regularizedHGFunCoeff]
   simp only [Multiset.empty_eq_zero, Multiset.map_zero, Multiset.prod_zero,

@@ -29,7 +29,6 @@ def cx_hyp_real : { p : Rat × Rat //
     ‖Complex.HGFun {1, 1} {2} ((1 / 2 : ℂ)) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
 /-- info: 'ComplexIntervalArith.cx_hyp_real' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_hyp_real._native.native_decide.ax_1] -/
@@ -43,7 +42,6 @@ def cx_hyp_2f1 : { p : Rat × Rat //
     ‖Complex.HGFun {1, 1} {2} ((1 / 4 : ℂ) + (1 / 4 : ℂ) * Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 100 } := by
   lynth
 /-- info: 'ComplexIntervalArith.cx_hyp_2f1' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_hyp_2f1._native.native_decide.ax_1] -/
@@ -57,7 +55,6 @@ def cx_hyp_9f8 : { p : Rat × Rat //
     ‖Complex.HGFun {1, 1, 1, 1, 1, 1, 1, 1, 1} {2, 2, 2, 2, 2, 2, 2, 2} ((1 / 4 : ℂ) + (1 / 8 : ℂ) * Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 100 } := by
   lynth
 /-- info: 'ComplexIntervalArith.cx_hyp_9f8' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_hyp_9f8._native.native_decide.ax_1] -/
@@ -71,7 +68,6 @@ def cx_hyp_term : { p : Rat × Rat //
     ‖Complex.HGFun {-2, 1 + Complex.I} {2} ((1 / 4 : ℂ) + (1 / 8 : ℂ) * Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 100 } := by
   lynth
 /-- info: 'ComplexIntervalArith.cx_hyp_term' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_hyp_term._native.native_decide.ax_1] -/
@@ -85,7 +81,6 @@ def cx_hyp_pfaff : { p : Rat × Rat //
     ‖Complex.HGFun {1, 1} {2} ((-2 : ℂ) + (1 / 2 : ℂ) * Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 100 } := by
   lynth
 /-- info: 'ComplexIntervalArith.cx_hyp_pfaff' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_hyp_pfaff._native.native_decide.ax_1] -/
@@ -99,7 +94,6 @@ def cx_hyp_kummer : { p : Rat × Rat //
     ‖Complex.HGFun {3 + Complex.I} {1 + Complex.I} (((1 : ℕ) : ℂ) + (1 / 2 : ℂ) * Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 100 } := by
   lynth
 /-- info: 'ComplexIntervalArith.cx_hyp_kummer' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_hyp_kummer._native.native_decide.ax_1] -/
@@ -113,7 +107,6 @@ def cx_hyp_9f8_big : { p : Rat × Rat //
     ‖Complex.HGFun {1, 1, 1, 1, 1, 1, 1, 1, 1} {2, 2, 2, 2, 2, 2, 2, 2} ((1 / 2 : ℂ) + (1 / 4 : ℂ) * Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 100 } := by
   lynth
 /-- info: 'ComplexIntervalArith.cx_hyp_9f8_big' depends on axioms: [propext,
- sorryAx,
  Classical.choice,
  Quot.sound,
  cx_hyp_9f8_big._native.native_decide.ax_1] -/

@@ -182,7 +182,7 @@ theorem not_HGFun3F2_1_at_zero :
         - Complex.log (1 - z) / (3 * z) := by
   intro h
   have h0 := h 0
-  rw [HGFun_eq_tsum] at h0
+  rw [HGFun_eq_tsum {-1 / 2, 1, 1} {1 / 2, 2} 0] at h0
   have hzero : (∑' n : ℕ, HGFunCoeff {-1 / 2, 1, 1} {1 / 2, 2} n * (0 : ℂ) ^ n) = 1 := by
     rw [tsum_eq_single 0 (fun n hn => by simp [zero_pow hn]), HGFunCoeff_3F2_1]
     norm_num

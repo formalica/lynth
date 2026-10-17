@@ -674,7 +674,8 @@ theorem HGFun2F1_0 (ha : ∀ k : ℕ, 2 * a ≠ -k)
     HGFun {a, a - 1 / 2} {2 * a} z =
       2 ^ (2 * a - 1) * (Complex.sqrt (1 - z) + 1) ^ (1 - 2 * a) := by
   have hG : Gamma (2 * a) ≠ 0 := Gamma_ne_zero ha
-  rw [HGFun_def, regularized2F1_0 hz]
+  have hzne : ‖z‖ ≤ 1 := hz.elim le_of_lt (le_of_eq ∘ And.left)
+  rw [HGFun_def _ _ _ (not_isPfaffRegime_of_norm_le_one hzne), regularized2F1_0 hz]
   simp only [Multiset.map_singleton, Multiset.prod_singleton]
   field_simp
 

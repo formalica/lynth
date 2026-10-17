@@ -45,38 +45,157 @@ coefficients of the regularized series multiplied by `∏ⱼ Γ(bⱼ)`. -/
 noncomputable def HGFunCoeff (a b : Multiset ℂ) (n : ℕ) : ℂ :=
   (b.map Gamma).prod * regularizedHGFunCoeff a b n
 
-/-- The (non-regularized) generalized hypergeometric function `pFq`, defined through the
-regularized one by `pFq(a; b; z) = (∏ⱼ Γ(bⱼ)) · pF̃q(a; b; z)`. -/
-noncomputable def HGFun (a b : Multiset ℂ) (z : ℂ) : ℂ :=
+/-- Lexicographic order on `ℂ` used to canonically order the top pair in `IsPfaffRegime`. -/
+def cplxLe (u v : ℂ) : Prop :=
+  u.re < v.re ∨ (u.re = v.re ∧ u.im ≤ v.im)
+
+theorem cplxLe_refl (u : ℂ) : cplxLe u u :=
+  Or.inr ⟨rfl, le_rfl⟩
+
+theorem cplxLe_antisymm {u v : ℂ} (h1 : cplxLe u v) (h2 : cplxLe v u) : u = v := by
+  rcases h1 with h1 | ⟨h1r, h1i⟩ <;> rcases h2 with h2 | ⟨h2r, h2i⟩
+  · exfalso; linarith
+  · exfalso; linarith
+  · exfalso; linarith
+  · exact Complex.ext h1r (le_antisymm h1i h2i)
+
+/-- Regime in which the `₂F₁` series is analytically continued left of `Re z = -1`
+via the Pfaff transformation `₂F₁(a₀, a₁; c; z) = (1 - z)^{-a₀} ₂F₁(a₀, c - a₁; c; z / (z - 1))`. -/
+def IsPfaffRegime (a b : Multiset ℂ) (z : ℂ) : Prop :=
+  z.re < -1 ∧ (∀ x ∈ a, 0 < x.re) ∧
+    (∃ p : ℂ × ℂ, a = {p.1, p.2} ∧ cplxLe p.1 p.2) ∧ (∃ c : ℂ, b = {c})
+
+/-- Raw power-series definition `(∏ⱼ Γ(bⱼ)) · pF̃q(a; b; z)`. -/
+noncomputable def HGFunBase (a b : Multiset ℂ) (z : ℂ) : ℂ :=
   (b.map Gamma).prod * regularizedHGFun a b z
 
-theorem HGFun_def (a b : Multiset ℂ) (z : ℂ) :
-    HGFun a b z = (b.map Gamma).prod * regularizedHGFun a b z := rfl
+open Classical in
+/-- The (non-regularized) generalized hypergeometric function `pFq`, defined through the
+regularized one by `pFq(a; b; z) = (∏ⱼ Γ(bⱼ)) · pF̃q(a; b; z)` and extended to `IsPfaffRegime`
+by Pfaff's transformation. -/
+noncomputable def HGFun (a b : Multiset ℂ) (z : ℂ) : ℂ :=
+  if h : IsPfaffRegime a b z then
+    let p := Classical.choose h.2.2.1
+    let c := Classical.choose h.2.2.2
+    (1 - z) ^ (-p.1) * HGFunBase {p.1, c - p.2} {c} (z / (z - 1))
+  else
+    HGFunBase a b z
+
+theorem not_isPfaffRegime_of_card_a (h : a.card ≠ 2) : ¬ IsPfaffRegime a b z := by
+  rintro ⟨_, _, ⟨p, ha, _⟩, _⟩
+  apply h
+  rw [ha]
+  simp
+
+theorem not_isPfaffRegime_of_card_b (h : b.card ≠ 1) : ¬ IsPfaffRegime a b z := by
+  rintro ⟨_, _, _, ⟨c, hb⟩⟩
+  apply h
+  rw [hb]
+  simp
+
+theorem not_isPfaffRegime_of_re_ge (h : -1 ≤ z.re) : ¬ IsPfaffRegime a b z := by
+  rintro ⟨hz, _⟩
+  linarith
+
+theorem not_isPfaffRegime_of_norm_le_one (h : ‖z‖ ≤ 1) : ¬ IsPfaffRegime a b z := by
+  apply not_isPfaffRegime_of_re_ge
+  have h1 := (abs_re_le_norm z).trans h
+  linarith [abs_le.mp h1]
+
+theorem not_isPfaffRegime_of_norm_lt_one (h : ‖z‖ < 1) : ¬ IsPfaffRegime a b z :=
+  not_isPfaffRegime_of_norm_le_one h.le
+
+macro "not_pfaff_tac" : tactic => `(tactic|
+  first
+  | assumption
+  | (apply not_isPfaffRegime_of_card_a; simp; done)
+  | (apply not_isPfaffRegime_of_card_b; simp; done)
+  | (apply not_isPfaffRegime_of_re_ge; norm_num; done)
+  | (apply not_isPfaffRegime_of_norm_le_one; assumption)
+  | (apply not_isPfaffRegime_of_norm_lt_one; assumption))
+
+theorem HGFun_def (a b : Multiset ℂ) (z : ℂ)
+    (hnp : ¬ IsPfaffRegime a b z := by not_pfaff_tac) :
+    HGFun a b z = (b.map Gamma).prod * regularizedHGFun a b z := by
+  simp only [HGFun, HGFunBase, hnp, dite_false]
 
 theorem HGFunCoeff_def (a b : Multiset ℂ) (n : ℕ) :
     HGFunCoeff a b n = (b.map Gamma).prod * regularizedHGFunCoeff a b n := rfl
 
 /-- The `HGFun` analogue of `Complex.regularizedHGFun_eq_tsum`: the hypergeometric function is
 the sum of its power series. -/
-theorem HGFun_eq_tsum (a b : Multiset ℂ) (z : ℂ) :
+theorem HGFun_eq_tsum (a b : Multiset ℂ) (z : ℂ)
+    (hnp : ¬ IsPfaffRegime a b z := by not_pfaff_tac) :
     HGFun a b z = ∑' n : ℕ, HGFunCoeff a b n * z ^ n := by
-  rw [HGFun_def, regularizedHGFun_eq_tsum, ← tsum_mul_left]
+  rw [HGFun_def a b z hnp, regularizedHGFun_eq_tsum, ← tsum_mul_left]
   exact tsum_congr fun n => by rw [HGFunCoeff_def]; ring
 
 /-- If `∏ⱼ Γ(bⱼ) = 1` (for instance if `b` is empty, or consists of positive integers with
 `∏ⱼ (bⱼ - 1)! = 1`), the hypergeometric function agrees with the regularized one. -/
-theorem HGFun_eq_regularizedHGFun_of_prod_eq_one (h : (b.map Gamma).prod = 1) :
+theorem HGFun_eq_regularizedHGFun_of_prod_eq_one (h : (b.map Gamma).prod = 1)
+    (hnp : ¬ IsPfaffRegime a b z := by not_pfaff_tac) :
     HGFun a b z = regularizedHGFun a b z := by
-  rw [HGFun_def, h, one_mul]
+  rw [HGFun_def a b z hnp, h, one_mul]
 
 @[simp]
 theorem HGFun_empty (a : Multiset ℂ) (z : ℂ) : HGFun a {} z = regularizedHGFun a {} z :=
-  HGFun_eq_regularizedHGFun_of_prod_eq_one (by simp)
+  HGFun_eq_regularizedHGFun_of_prod_eq_one (by simp) (not_isPfaffRegime_of_card_b (by simp))
 
 /-- The regularized function in terms of the non-regularized one. -/
-theorem regularizedHGFun_eq_HGFun_div (h : (b.map Gamma).prod ≠ 0) :
+theorem regularizedHGFun_eq_HGFun_div (h : (b.map Gamma).prod ≠ 0)
+    (hnp : ¬ IsPfaffRegime a b z := by not_pfaff_tac) :
     regularizedHGFun a b z = HGFun a b z / (b.map Gamma).prod := by
-  rw [HGFun_def, mul_comm, mul_div_assoc, div_self h, mul_one]
+  rw [HGFun_def a b z hnp, mul_comm, mul_div_assoc, div_self h, mul_one]
+
+theorem div_sub_one_re_pos {z : ℂ} (hz : z.re < -1) : 0 < (z / (z - 1)).re := by
+  rw [Complex.div_re, ← add_div]
+  have h1 : (z - 1).re = z.re - 1 := by simp
+  have h2 : (z - 1).im = z.im := by simp
+  have hns : 0 < Complex.normSq (z - 1) := by
+    rw [Complex.normSq_apply, h1, h2]
+    have : 0 < (z.re - 1) * (z.re - 1) := by nlinarith
+    nlinarith [mul_self_nonneg z.im]
+  have hnum : 0 < z.re * (z - 1).re + z.im * (z - 1).im := by
+    rw [h1, h2]
+    have : 0 < z.re * (z.re - 1) := by nlinarith
+    nlinarith [mul_self_nonneg z.im]
+  exact div_pos hnum hns
+
+theorem pair_eq_of_cplxLe {a₀ a₁ a₀' a₁' : ℂ}
+    (heq : ({a₀, a₁} : Multiset ℂ) = {a₀', a₁'})
+    (h1 : cplxLe a₀ a₁) (h2 : cplxLe a₀' a₁') :
+    a₀ = a₀' ∧ a₁ = a₁' := by
+  have hmem0 : a₀' ∈ ({a₀, a₁} : Multiset ℂ) := by rw [heq]; simp
+  simp only [Multiset.insert_eq_cons, Multiset.mem_cons, Multiset.mem_singleton] at hmem0
+  have hsum : a₀ + a₁ = a₀' + a₁' := by
+    have := congrArg Multiset.sum heq
+    simpa [Multiset.insert_eq_cons] using this
+  rcases hmem0 with rfl | rfl
+  · exact ⟨rfl, add_left_cancel hsum⟩
+  · have ha1 : a₀ = a₁' := by linear_combination hsum
+    subst ha1
+    have heq' := cplxLe_antisymm h1 h2
+    exact ⟨heq', heq'.symm⟩
+
+theorem HGFun_pfaff_eq (a₀ a₁ c z : ℂ) (hz : z.re < -1)
+    (ha₀ : 0 < a₀.re) (ha₁ : 0 < a₁.re) (hle : cplxLe a₀ a₁) :
+    HGFun {a₀, a₁} {c} z =
+      (1 - z) ^ (-a₀) * HGFun {a₀, c - a₁} {c} (z / (z - 1)) := by
+  have hPf : IsPfaffRegime {a₀, a₁} {c} z := by
+    refine ⟨hz, ?_, ⟨(a₀, a₁), rfl, hle⟩, ⟨c, rfl⟩⟩
+    intro x hx
+    simp only [Multiset.insert_eq_cons, Multiset.mem_cons, Multiset.mem_singleton] at hx
+    rcases hx with rfl | rfl <;> assumption
+  have hNotPf : ¬ IsPfaffRegime {a₀, c - a₁} {c} (z / (z - 1)) :=
+    not_isPfaffRegime_of_re_ge (by linarith [div_sub_one_re_pos hz])
+  simp only [HGFun, hPf, hNotPf, dite_true, dite_false]
+  have hp_spec := Classical.choose_spec hPf.2.2.1
+  have hc_spec := Classical.choose_spec hPf.2.2.2
+  obtain ⟨ha0_eq, ha1_eq⟩ := pair_eq_of_cplxLe hp_spec.1 hle hp_spec.2
+  have hc_eq : c = Classical.choose hPf.2.2.2 := by
+    have := congrArg Multiset.sum hc_spec
+    simpa using this
+  rw [← ha0_eq, ← ha1_eq, ← hc_eq]
 
 section Classical
 

@@ -58,7 +58,7 @@ private theorem hasSum_HGFun0F1_0 (z : ℂ) :
 /-- **The requested identity**: `₀F₁(; 1/2; z) = cosh (2 √z)` for every `z : ℂ`. -/
 theorem hypergeometric0F1_0 {z : ℂ} :
     HGFun {} {1 / 2} z = Complex.cosh (2 * Complex.sqrt z) := by
-  rw [HGFun_eq_tsum]
+  rw [HGFun_eq_tsum {} {1 / 2} z]
   exact (hasSum_HGFun0F1_0 z).tsum_eq
 
 /-- The regularized version of the identity: the regularized function differs from the classical
@@ -67,7 +67,7 @@ theorem regularized0F1_0 {z : ℂ} :
     regularizedHGFun {} {1 / 2} z = Complex.cosh (2 * Complex.sqrt z) / Gamma (1 / 2) := by
   have hg : Gamma ((1 : ℂ) / 2) ≠ 0 := Gamma_one_half_ne_zero
   have h := hypergeometric0F1_0 (z := z)
-  rw [HGFun_def] at h
+  rw [HGFun_def {} {1 / 2} z] at h
   simp only [Multiset.map_singleton, Multiset.prod_singleton] at h
   rw [eq_div_iff hg, mul_comm]
   exact h
