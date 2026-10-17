@@ -1264,8 +1264,9 @@ norm-based ratio bound (`acb_hypgeom/pfq_bound_factor.c`, complex form:
 `‖b+k‖ ≥ ‖b+n‖` there), 0-exclusion bottom guard, terminating-prefix
 shortcut. `HGFunL_ev` uses it when any parameter (or `z`) is genuinely
 complex; all-real inputs keep the real core above (same enclosures, same
-heartbeats). Every soundness lemma below is `sorry`'d; proofs are handed
-off in `/tmp/hyperc` (each docstring names the real mirror to follow).
+heartbeats). Soundness is proved in place layer by layer (each lemma
+mirrors its proved real counterpart); still-`sorry`'d parts are handed
+off in `/tmp/hyperc` (each docstring names the mirror to follow).
 -/
 
 /-- one complex series term (rising products; `T_0 = 1` definitionally). -/
@@ -1432,23 +1433,43 @@ theorem cpfqTerm_succ (p q : Nat) (a b : ℕ → ℂ) (z : ℂ) (k : Nat)
     cpfqTerm p q a b z (k + 1) = cpfqTerm p q a b z k
       * ((∏ i ∈ Finset.range p, (a i + (k : ℂ)))
         / (∏ j ∈ Finset.range q, (b j + (k : ℂ))) * z / ((k : ℂ) + 1)) := by
-  sorry
+  simp only [cpfqTerm, Finset.prod_range_succ, Finset.prod_mul_distrib, Nat.factorial_succ,
+    Nat.cast_mul, pow_succ]
+  push_cast
+  simp only [div_eq_mul_inv, mul_inv]
+  ring
 
 /-- product-box membership (mirror `mem_iprod`). -/
 theorem mem_cprod (c : Ctx) (hc : c.Valid) (L : List CBox) (v : List ℂ)
     (h : List.Forall₂ (fun z B => z ∈ B) v L) :
     v.prod ∈ cprod c L := by
-  sorry
+  induction h with
+  | nil =>
+    simp only [cprod, List.prod_nil]
+    exact ⟨by rw [Complex.one_re]; exact Ival.mem_one,
+      by rw [Complex.one_im]; exact Ival.mem_zero⟩
+  | cons hx _ ih =>
+    simp only [cprod, List.prod_cons]
+    exact CBox.mem_mul hx (ih)
 
 /-- sum-box membership (mirror `mem_isum`). -/
 theorem mem_csum (c : Ctx) (hc : c.Valid) (L : List CBox) (v : List ℂ)
     (h : List.Forall₂ (fun z B => z ∈ B) v L) :
     v.sum ∈ csum c L := by
-  sorry
+  induction h with
+  | nil =>
+    simp only [csum, List.sum_nil]
+    exact ⟨by rw [Complex.zero_re]; exact Ival.mem_zero,
+      by rw [Complex.zero_im]; exact Ival.mem_zero⟩
+  | cons hx _ ih =>
+    simp only [csum, List.sum_cons]
+    exact CBox.mem_add hx (ih)
 
 /-- nat-cast box membership. -/
 theorem mem_cNatBox (c : Ctx) (k : Nat) : ((k : ℕ) : ℂ) ∈ cNatBox c k := by
-  sorry
+  refine ⟨?_, ?_⟩
+  · rw [Complex.natCast_re]; exact_mod_cast Ival.mem_ofRat c.prec (k : ℚ)
+  · rw [Complex.natCast_im]; exact Ival.mem_zero
 
 /-- range-mapped shifted-factor memberships (mirror `pfqAddForall₂`). -/
 theorem cpfqAddForall₂ (c : Ctx) (L : List CBox) (v : ℕ → ℂ) (k : Nat)
@@ -1457,7 +1478,32 @@ theorem cpfqAddForall₂ (c : Ctx) (L : List CBox) (v : ℕ → ℂ) (k : Nat)
       ((List.range L.length).map fun i => v i + (k : ℂ))
       ((List.range L.length).map fun i =>
         CBox.add c.prec (L.getD i CBox.top) (cNatBox c k)) := by
-  sorry
+  have h : ∀ m : Nat, m ≤ L.length → List.Forall₂ (fun z B => z ∈ B)
+      ((List.range m).map fun (i : Nat) => v i + (k : ℂ))
+      ((List.range m).map fun (i : Nat) =>
+        CBox.add c.prec (L.getD i CBox.top) (cNatBox c k)) := by
+    intro m
+    induction m with
+    | zero => intro _; exact List.Forall₂.nil
+    | succ m ih =>
+      intro hmle
+      rw [List.range_succ, List.map_append, List.map_append]
+      refine List.rel_append (ih (by omega)) ?_
+      refine List.Forall₂.cons ?_ List.Forall₂.nil
+      have hvm := hm m (by omega)
+      exact CBox.mem_add hvm (mem_cNatBox c k)
+  exact h L.length le_rfl
+
+/-- list product over a mapped range is the finset product (complex mirror
+of `list_prod_map_range`). -/
+theorem list_prod_map_rangeC (f : Nat → ℂ) : ∀ N : Nat,
+    ((List.range N).map f).prod = (Finset.range N).prod fun k => f k
+  | 0 => by simp
+  | N + 1 => by
+    simp only [List.range_succ, List.map_append, List.map_cons, List.map_nil,
+      List.prod_append, List.prod_cons, List.prod_nil, mul_one,
+      Finset.prod_range_succ]
+    rw [list_prod_map_rangeC f N]
 
 /-- step membership (mirror `mem_pfqStep`). -/
 theorem mem_cpfqStep (c : Ctx) (hc : c.Valid)
@@ -1468,7 +1514,24 @@ theorem mem_cpfqStep (c : Ctx) (hc : c.Valid)
     Tk * ((∏ i ∈ Finset.range A.length, (a i + (k : ℂ)))
       / (∏ j ∈ Finset.range B.length, (b j + (k : ℂ))) * z / ((k : ℂ) + 1))
       ∈ cpfqStepBox c A B A.length B.length Z T k := by
-  sorry
+  have hnum := mem_cprod c hc _ _ (cpfqAddForall₂ c A a k hmA)
+  rw [list_prod_map_rangeC] at hnum
+  have hden := mem_cprod c hc _ _ (cpfqAddForall₂ c B b k hmB)
+  rw [list_prod_map_rangeC] at hden
+  have hk1C : ((k + 1 : Nat) : ℂ) ∈ cNatBox c (k + 1) := mem_cNatBox c (k + 1)
+  have hval : Tk * ((∏ i ∈ Finset.range A.length, (a i + (k : ℂ)))
+      / (∏ j ∈ Finset.range B.length, (b j + (k : ℂ))) * z / ((k : ℂ) + 1))
+      = ((Tk * (Finset.range A.length).prod (fun i => a i + (k : ℂ))) * z)
+        / ((Finset.range B.length).prod (fun j => b j + (k : ℂ))
+          * ((k + 1 : Nat) : ℂ)) := by
+    have e : (((k + 1 : Nat)) : ℂ) = (k : ℂ) + 1 := by push_cast; ring
+    rw [e]
+    simp only [div_eq_mul_inv, mul_inv]
+    ring
+  rw [hval]
+  simp only [cpfqStepBox]
+  exact CBox.mem_div (CBox.mem_mul (CBox.mem_mul hT hnum) hmZ)
+    (CBox.mem_mul hden hk1C)
 
 /-- joint loop invariant (mirror `mem_pfqLoop`). -/
 theorem mem_cpfqLoop (c : Ctx) (hc : c.Valid)
@@ -1485,7 +1548,44 @@ theorem mem_cpfqLoop (c : Ctx) (hc : c.Valid)
       ∈ (cpfqLoop c A B A.length B.length Z f k S T).1
     ∧ cpfqTerm A.length B.length a b z (k + f)
       ∈ (cpfqLoop c A B A.length B.length Z f k S T).2) := by
-  sorry
+  intro f
+  induction f with
+  | zero =>
+    intro k hkn S T Sr Tr hS hT hSeq hTeq
+    simp only [cpfqLoop, Nat.add_zero]
+    constructor
+    · rw [← hSeq]; exact hS
+    · rw [← hTeq]; exact hT
+  | succ f ih =>
+    intro k hkn S T Sr Tr hS hT hSeq hTeq
+    show ((Finset.range (k + (f + 1))).sum _
+        ∈ (cpfqLoop c A B A.length B.length Z f (k + 1)
+          (CBox.add c.prec S T)
+          (cpfqStepBox c A B A.length B.length Z T k)).1
+      ∧ cpfqTerm A.length B.length a b z (k + (f + 1))
+        ∈ (cpfqLoop c A B A.length B.length Z f (k + 1)
+          (CBox.add c.prec S T)
+          (cpfqStepBox c A B A.length B.length Z T k)).2)
+    have hST : Sr + Tr ∈ CBox.add c.prec S T := CBox.mem_add hS hT
+    have hTk1 : Tr
+        * ((∏ i ∈ Finset.range A.length, (a i + (k : ℂ)))
+          / (∏ j ∈ Finset.range B.length, (b j + (k : ℂ))) * z / ((k : ℂ) + 1))
+        ∈ cpfqStepBox c A B A.length B.length Z T k :=
+      mem_cpfqStep c hc a b A B Z z k hmA hmB hmZ T Tr hT
+    have hTeq1 : Tr
+        * ((∏ i ∈ Finset.range A.length, (a i + (k : ℂ)))
+          / (∏ j ∈ Finset.range B.length, (b j + (k : ℂ))) * z / ((k : ℂ) + 1))
+        = cpfqTerm A.length B.length a b z (k + 1) := by
+      rw [hTeq]
+      exact (cpfqTerm_succ A.length B.length a b z k
+        (fun j hj => hBne j hj k (by omega))).symm
+    rw [hTeq1] at hTk1
+    have hSeq1 : Sr + Tr
+        = (Finset.range (k + 1)).sum (fun j => cpfqTerm A.length B.length a b z j) := by
+      rw [Finset.sum_range_succ, hSeq, hTeq]
+    have e1 : k + (f + 1) = k + 1 + f := by omega
+    rw [e1]
+    exact ih (k + 1) (by omega) _ _ _ _ hST hTk1 hSeq1 rfl
 
 /-- where `cpfqRatio` is the uniform later-term norm ratio
 (`‖T_{k+1}‖/‖T_k‖ ≤ R` for `k ≥ n`), mirroring `pfqRatio`. -/
