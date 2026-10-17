@@ -1864,7 +1864,35 @@ theorem HGFunCoeff_mul_pow_ofComplex (p q : Nat) (a b : ℕ → ℂ) (z : ℂ) (
     (hb : ∀ j : Nat, j < q → ∀ m : ℕ, b j ≠ -(m : ℂ)) :
     HGFunCoeff ((Multiset.range p).map a) ((Multiset.range q).map b) k * z ^ k
       = Lynth.Interval.Fns.cpfqTerm p q a b z k := by
-  sorry
+  have hG : ∀ j ∈ Finset.range q, Complex.Gamma (b j + k)
+      = Complex.Gamma (b j) * ∏ i ∈ Finset.range k, (b j + (i : ℂ)) := by
+    intro j hj
+    have hj' := Finset.mem_range.1 hj
+    have hne : Complex.Gamma (b j) ≠ 0 := Complex.Gamma_ne_zero (hb j hj')
+    rw [← ascPochhammer_eval_eq_prod_range, ← Complex.Gamma_add_nat_div_Gamma_eq _ (hb j hj')]
+    field_simp
+  have hGne : ∏ j ∈ Finset.range q, Complex.Gamma (b j) ≠ 0 :=
+    Finset.prod_ne_zero_iff.2 fun j hj => Complex.Gamma_ne_zero (hb j (Finset.mem_range.1 hj))
+  have hm : ∀ {R : Type} [CommMonoid R] (n : ℕ) (f : ℕ → R),
+      ((Multiset.range n).map f).prod = ∏ i ∈ Finset.range n, f i := fun _ _ => rfl
+  unfold HGFunCoeff Complex.regularizedHGFunCoeff Lynth.Interval.Fns.cpfqTerm
+  simp only [Multiset.map_map, Function.comp_def, hm]
+  rw [Finset.prod_congr rfl hG, Finset.prod_mul_distrib]
+  simp only [ascPochhammer_eval_eq_prod_range]
+  field_simp
+
+/-- FUNCTION BRIDGE (complex): `HGFun` over range-mapped parameters agrees
+with the complex mirror `cpfqComplex`. No convergence hypothesis is needed:
+both sides are the same `tsum` (and both are `0` when the series diverges).
+Mirror `HGFun_ofReal_eq_pfqReal`. -/
+theorem HGFun_eq_cpfqComplex (p q : Nat) (a b : ℕ → ℂ) (z : ℂ)
+    (hb : ∀ j : Nat, j < q → ∀ m : ℕ, b j ≠ -(m : ℂ)) :
+    HGFun ((Multiset.range p).map a) ((Multiset.range q).map b) z
+      = Lynth.Interval.Fns.cpfqComplex p q a b z := by
+  rw [HGFun_eq_tsum]
+  unfold Lynth.Interval.Fns.cpfqComplex
+  refine tsum_congr fun k => ?_
+  exact HGFunCoeff_mul_pow_ofComplex p q a b z k hb
 
 /-- LIST BRIDGE (complex): `HGFun` over coerced lists agrees with
 `cpfqComplex` over the list elements. Consumed by `HGFunL_sound_complex`. -/
@@ -1873,7 +1901,16 @@ theorem HGFun_coe_list_eq_cpfqComplex (ar br : List ℂ) (zr : ℂ)
     Complex.HGFun (↑ar : Multiset ℂ) (↑br : Multiset ℂ) zr
       = Lynth.Interval.Fns.cpfqComplex ar.length br.length
         (fun i => ar.getD i 0) (fun j => br.getD j 0) zr := by
-  sorry
+  have hl : ∀ l : List ℂ, (↑l : Multiset ℂ)
+      = (Multiset.range l.length).map (fun i => l.getD i 0) := by
+    intro l
+    rw [Multiset.range, Multiset.map_coe, Multiset.coe_eq_coe]
+    apply List.Perm.of_eq
+    apply List.ext_getElem (by simp)
+    intro n h1 _
+    simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by simpa using h1)]
+  rw [hl ar, hl br]
+  exact HGFun_eq_cpfqComplex _ _ _ _ zr hb
 
 /-- Pfaff transformation (DLMF 15.8.1): `2F1(a;b;c;z) = (1-z)^{-a} · 2F1(a,c-b;c;z/(z-1))`,
 valid left of the cut. The series version follows by analytic continuation;
