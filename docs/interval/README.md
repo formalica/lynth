@@ -25,6 +25,7 @@ you are working on.
 | `13-progress.md` | living status: milestones, done/next, known gaps |
 | `14-gauss-legendre-plan.md` | FLINT/Petras integration plan, fast Legendre algorithms, benchmark coverage, portable proof handoff |
 | `15-nested-integrals.md` | Recursive real quadrature, dependent bounds, improper transforms, certificate replay and proof handoff |
+| `16-integration-performance.md` | Numerical search/evaluation optimizations, original-tolerance FLINT timings and regression heartbeat caps |
 
 ## Decisions log (binding; from the user, 2026-09-30)
 

@@ -31,11 +31,11 @@ noncomputable def Region.value (k : Region) (f : ℝ → ℝ) (a b : ℝ) : ℝ 
 
 inductive Unary where
   | neg | inv | exp | sin | cos | sinh | cosh | log | sqrt | abs | floor | atan
-deriving Repr, BEq, Inhabited
+deriving Repr, BEq, DecidableEq, Inhabited
 
 inductive Binary where
   | add | sub | mul | div | max | min
-deriving Repr, BEq, Inhabited
+deriving Repr, BEq, DecidableEq, Inhabited
 
 inductive Term where
   | var
@@ -45,7 +45,7 @@ inductive Term where
   | binary (op : Binary) (a b : Term)
   | pow (a : Term) (n : ℕ)
   | rpow (a : Term) (q : ℚ)
-deriving Repr, BEq, Inhabited
+deriving Repr, BEq, DecidableEq, Inhabited
 
 noncomputable def Unary.real : Unary → ℝ → ℝ
   | .neg => Neg.neg | .inv => Inv.inv | .exp => Real.exp

@@ -45,7 +45,7 @@ def rule (c : Ctx) (e : Expr) (env : Array Ival) (w : WorkPiece)
 
 def work (c : Ctx) (e : Expr) (env : Array Ival) (a b : Dy) (depth : Nat) : WorkPiece :=
   let coarse := coarsePanel c e env a b
-  ⟨a,b,depth,coarse,coarse.map intervalWidth |>.getD (1.0/0.0)⟩
+  ⟨a,b,depth,coarse,coarse.map intervalWidth |>.getD (1.0/0.0),none⟩
 
 /-- Accurate values are demanded only on narrow real boxes. The tolerance is
 an absolute local target; final acceptance always uses replayed interval widths. -/

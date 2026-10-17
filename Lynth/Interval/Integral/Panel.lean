@@ -3,6 +3,9 @@ import Lynth.Interval.Integral.Math.GaussError
 import Lynth.Interval.Integral.Math.IntegralBounds
 import Lynth.Interval.Integral.Math.Legendre
 import Lynth.Interval.Integral.Bounds
+import Lynth.Interval.Integral.Magnitude
+import Lynth.Interval.Integral.Endpoint
+import Lynth.Interval.Integral.Memo
 
 /-! Certified direct and analytic Gauss-Legendre panels. -/
 
@@ -11,6 +14,17 @@ namespace Lynth.Interval.Integral
 open Intgrl Fns
 
 def specialize (c : Ctx) (X : Ival) : Term → Option Term
+  | .unary .inv (.unary .cosh a) => do
+    let A ← specialize c X a
+    let V := evalR c A X
+    -- Choose the decaying exponential to bound distant narrow peaks without
+    -- cancellation in a rectangular complex enclosure of cosh.
+    if V.nonneg || V.nonpos then
+      let z := if V.nonneg then .unary .neg A else A
+      let E := Term.unary .exp z
+      return .binary .div (.binary .mul (.rat 2) E)
+        (.binary .add (.rat 1) (.pow E 2))
+    else return .unary .inv (.unary .cosh A)
   | .unary .floor .var =>
     match X.lo, X.hi with
     | some a, some b =>
@@ -19,25 +33,30 @@ def specialize (c : Ctx) (X : Ival) : Term → Option Term
     | _, _ => none
   | .unary op a => do
     let A ← specialize c X a
-    let V := evalR c A X
     match op with
-    | .abs => if V.nonneg then some A else if V.nonpos then some (.unary .neg A) else none
+    | .abs =>
+      let V := evalR c A X
+      if V.nonneg then some A else if V.nonpos then some (.unary .neg A) else none
     | .floor =>
-      match (intFloorIval V).lo, (intFloorIval V).hi with
+      let V := intFloorIval (evalR c A X)
+      match V.lo, V.hi with
       | some a, some b => if a.toRat == b.toRat then some (.rat a.toRat) else none
       | _, _ => none
-    | .log => if V.negv then some (.unary .log (.unary .neg A)) else some (.unary .log A)
-    | .sqrt => if V.nonpos then some (.rat 0) else some (.unary .sqrt A)
+    | .log =>
+      if (evalR c A X).negv then some (.unary .log (.unary .neg A)) else some (.unary .log A)
+    | .sqrt => if (evalR c A X).nonpos then some (.rat 0) else some (.unary .sqrt A)
     | _ => some (.unary op A)
   | .binary op a b => do
     let A ← specialize c X a
     let B ← specialize c X b
-    let VA := evalR c A X
-    let VB := evalR c B X
     match op with
     | .max =>
+      let VA := evalR c A X
+      let VB := evalR c B X
       if Ival.leB VA VB then some B else if Ival.leB VB VA then some A else none
     | .min =>
+      let VA := evalR c A X
+      let VB := evalR c B X
       if Ival.leB VA VB then some A else if Ival.leB VB VA then some B else none
     | _ => some (.binary op A B)
   | .pow a n => do return .pow (← specialize c X a) n
@@ -85,12 +104,17 @@ def balancedSum (p : Nat) (xs : List Ival) : Ival :=
 
 def panelBox (a b : Dy) : Ival := ⟨some a, some b⟩
 
-def directPanel (c : Ctx) (e : Term) (a b : Dy) : Option Ival :=
-  let ext := (specialize c (panelBox a b) e).getD e
-  let V := evalR c ext (panelBox a b)
+def directPanelSpecialized (c : Ctx) (ext : Term) (a b : Dy) : Option Ival :=
+  let V := prepareEval c ext (panelBox a b)
   if V.isFinite then
     some (Ival.mul c.prec (Ival.ofRat c.prec (b.toRat - a.toRat)) V)
   else none
+
+def directPanelCoarse (c : Ctx) (e : Term) (a b : Dy) : Option Ival :=
+  directPanelSpecialized c ((specialize c (panelBox a b) e).getD e) a b
+
+def directPanel (c : Ctx) (e : Term) (a b : Dy) : Option Ival :=
+  (oscillatoryPanel c e a b).orElse fun _ => directPanelCoarse c e a b
 
 def ellipseBox (c : Ctx) (a b ρ : Dy) : CBox :=
   let p := c.prec
@@ -103,7 +127,24 @@ def ellipseBox (c : Ctx) (a b ρ : Dy) : CBox :=
     (CBox.mul p (CBox.ofReal delta)
       ⟨Ival.ofRats p (-x) x, Ival.ofRats p (-y) y⟩)
 
+/-- Search uses binary ellipses. Exact binary scaling replaces repeated
+interval exponentiation in their geometric remainder. Other ellipses keep
+the general interval formula. -/
+def binaryRho (ρ : Dy) : Option Nat :=
+  if ρ.mantissa == 1 && 1 ≤ ρ.exponent && ρ.exponent ≤ 4 then
+    some ρ.exponent.toNat else none
+
+def binaryErrorBase (c : Ctx) (a b M : Dy) (k : Nat) : Dy :=
+  let numerator := Dy.scale2 ((b.add a.neg).mul M) 5
+  Dy.divU c.prec numerator (Dy.ofNat (15 * (2^k-1)))
+
+def binaryError (base : Dy) (k n : Nat) : Dy :=
+  Dy.scale2 base (-((k * (2*n-1) : Nat) : Int))
+
 def errorBound (c : Ctx) (n : Nat) (a b ρ : Dy) (M : Dy) : Option Dy :=
+  if let some k := binaryRho ρ then
+    some (binaryError (binaryErrorBase c a b M k) k n)
+  else
   let p := c.prec
   let r := Ival.pt ρ
   let num := Ival.mul p (Ival.ofRat p 64)
@@ -112,21 +153,27 @@ def errorBound (c : Ctx) (n : Nat) (a b ρ : Dy) (M : Dy) : Option Dy :=
     (Ival.mul p (Ival.sub p r Ival.one) (Ival.npow p r (2*n-1)))
   (Ival.div p num den).hi
 
-/-- Analytic test and remainder do not evaluate any quadrature nodes. -/
-def analyticBound (c : Ctx) (e : Term) (a b ρ : Dy) : Option Dy := do
+/-- Range check for an already selected real branch. Search shares this
+branch across ellipse trials; certificate replay selects it independently. -/
+def analyticBoundSpecialized (c : Ctx) (ext : Term) (a b ρ : Dy) : Option Dy := do
   if !(Dy.ltB Dy.one ρ) then none else do
-    let ext ← specialize c (panelBox a b) e
     let Z := ellipseBox c a b ρ
     if !regularCheck c ext Z then none else
-      (CBox.norm c.prec (evalC c ext Z)).hi
+      analyticMagnitude c ext Z
+
+/-- Analytic test and remainder do not evaluate any quadrature nodes. -/
+def analyticBound (c : Ctx) (e : Term) (a b ρ : Dy) : Option Dy := do
+  let ext ← specialize c (panelBox a b) e
+  analyticBoundSpecialized c ext a b ρ
 
 def gaussSamples (c : Ctx) (e : Term) (a b : Dy)
     (t : NodeTable) (weights : List Ival) : Ival :=
   let p := c.prec
   let mid := Ival.ofRat p ((a.toRat+b.toRat)/2)
   let delta := Ival.ofRat p ((b.toRat-a.toRat)/2)
+  let evaluate := prepareEval c e
   let vals := (t.roots.zip weights).map fun (r,w) =>
-    mulSigned p w (evalR c e (Ival.add p mid (Ival.mul p delta (rootIval r))))
+    mulSigned p w (evaluate (Ival.add p mid (Ival.mul p delta (rootIval r))))
   mulSigned p delta (balancedSum p vals)
 
 def gaussPanel (c : Ctx) (e : Term) (a b ρ : Dy)
@@ -135,13 +182,13 @@ def gaussPanel (c : Ctx) (e : Term) (a b ρ : Dy)
   let err ← errorBound c t.roots.length a b ρ M
   return Ival.widen c.prec (gaussSamples c e a b t weights) err
 
-theorem directPanel_sound {c : Ctx} (hc : c.Valid) {e : Term} {a b : Dy}
+theorem directPanelCoarse_sound {c : Ctx} (hc : c.Valid) {e : Term} {a b : Dy}
     (hab : a.toReal ≤ b.toReal) {I : Ival}
-    (h : directPanel c e a b = some I) :
+    (h : directPanelCoarse c e a b = some I) :
     IntervalIntegrable e.real MeasureTheory.volume a.toReal b.toReal ∧
       (∫ x in a.toReal..b.toReal, e.real x) ∈ I := by
   let ext := (specialize c (panelBox a b) e).getD e
-  let V := evalR c ext (panelBox a b)
+  let V := prepareEval c ext (panelBox a b)
   change (if V.isFinite then
     some (Ival.mul c.prec (Ival.ofRat c.prec (b.toRat-a.toRat)) V)
     else none) = some I at h
@@ -170,12 +217,24 @@ theorem directPanel_sound {c : Ctx} (hc : c.Valid) {e : Term} {a b : Dy}
     have hv : ∀ x ∈ Set.Ioo a.toReal b.toReal, e.real x ∈ V := by
       intro x hx
       rw [← hext x hx]
-      exact evalR_sound hc ext (hxbox x ⟨hx.1.le, hx.2.le⟩)
+      exact prepareEval_sound hc ext (hxbox x ⟨hx.1.le, hx.2.le⟩)
     have hne : ∃ v : ℝ, v ∈ V :=
-      ⟨ext.real a.toReal, evalR_sound hc ext (hxbox _ ⟨le_rfl,hab⟩)⟩
+      ⟨ext.real a.toReal, prepareEval_sound hc ext (hxbox _ ⟨le_rfl,hab⟩)⟩
     have hh := integral_mem_mul (p := c.prec) hab e.measurable hfinite hL hv hne
     exact Option.some.inj h ▸ hh
   · simp at h
+
+theorem directPanel_sound {c : Ctx} (hc : c.Valid) {e : Term} {a b : Dy}
+    (hab : a.toReal ≤ b.toReal) {I : Ival}
+    (h : directPanel c e a b = some I) :
+    IntervalIntegrable e.real MeasureTheory.volume a.toReal b.toReal ∧
+      (∫ x in a.toReal..b.toReal, e.real x) ∈ I := by
+  cases ho : oscillatoryPanel c e a b with
+  | none =>
+    exact directPanelCoarse_sound hc hab (by simpa [directPanel, ho] using h)
+  | some J =>
+    have hI : J = I := by simpa [directPanel, ho] using h
+    exact hI ▸ oscillatoryPanel_sound ho
 
 theorem NodeTable.positive {c : Ctx} {t : NodeTable}
     (h : t.check c = true) : 0 < t.roots.length := by

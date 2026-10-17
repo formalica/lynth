@@ -191,23 +191,25 @@ theorem integration_result_of_check {f : ℝ → ℝ} {a b tol : ℝ}
   subst a; subst b; subst tol
   exact integralCheck_sound hc h
 
-def searchIntegral (c : Ctx) (e A B : Term) (kind : Region)
-    (tol : ℚ) (cfg : SearchCfg := {}) : Option IntegralCertificate := Id.run do
+def searchIntegralEstimate (c : Ctx) (e A B : Term) (kind : Region)
+    (tol : ℚ) (cfg : SearchCfg := {}) : Option (IntegralCertificate × Ival) := Id.run do
   if kind.isFinite then
     if e == .unary .log .var && exactPoint (evalR c A Ival.zero) 0 then
       for bits in [8,16,32,64,128,256,512,1024] do
         let δ : Dy := ⟨1,-(bits : Int)⟩
         let bound : Term := .binary .mul .var (.binary .sub (.rat 1) (.unary .log .var))
         if Ival.ltB (evalR c bound (Ival.pt δ)) (Ival.ofRat c.prec (tol/16)) then
-          let some core := searchFinite c e (.rat δ.toRat) B .interval (tol/2) cfg | return none
-          return some (.logarithm δ core)
+          let some (core,S) := searchFiniteEstimate c e (.rat δ.toRat) B .interval (tol/2) cfg
+            | return none
+          let some err := (evalR c bound (Ival.pt δ)).hi | return none
+          return some (.logarithm δ core,Ival.widen c.prec S err)
       return none
     if let some n := sqrtWeightPower e then
       if exactPoint (evalR c A Ival.zero) (-1) && exactPoint (evalR c B Ival.zero) 1 then
-        let some core := searchFinite c (.pow (.unary .sin .var) n)
+        let some (core,S) := searchFiniteEstimate c (.pow (.unary .sin .var) n)
           negHalfPi halfPi .interval tol cfg | return none
-        return some (.sqrtWeight n core)
-    return (searchFinite c e A B kind tol cfg).map .finite
+        return some (.sqrtWeight n core,S)
+    return (searchFiniteEstimate c e A B kind tol cfg).map fun (core,S) => (.finite core,S)
   let some model := classifyTail e | return none
   if kind == .univ && !model.twoSided then return none
   for exponent in [1:257] do
@@ -216,8 +218,14 @@ def searchIntegral (c : Ctx) (e A B : Term) (kind : Region)
     if Ival.ltB err (Ival.ofRat c.prec (tol/32)) then
       if kind != .univ && !Ival.leB (evalR c A Ival.zero) (Ival.pt R) then continue
       let AA := if kind == .univ then Term.rat (-R.toRat) else A
-      let some core := searchFinite c e AA (.rat R.toRat) .interval (tol/2) cfg | return none
-      return some (.tail R core)
+      let some (core,S) := searchFiniteEstimate c e AA (.rat R.toRat) .interval (tol/2) cfg
+        | return none
+      let some err := err.hi | return none
+      return some (.tail R core,Ival.widen c.prec S (if kind == .univ then Dy.scale2 err 1 else err))
   return none
+
+def searchIntegral (c : Ctx) (e A B : Term) (kind : Region)
+    (tol : ℚ) (cfg : SearchCfg := {}) : Option IntegralCertificate :=
+  (searchIntegralEstimate c e A B kind tol cfg).map Prod.fst
 
 end Lynth.Interval.Integral

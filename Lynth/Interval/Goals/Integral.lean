@@ -73,6 +73,28 @@ def integralCheckCost (prec : Nat) (e : Intgrl.Term) (cert : IntegralCertificate
         n * (32 * ec + 80) + 128 * ec) 0
   checkCost prec (nodes + panels)
 
+/-- Untrusted initial precision hint. Samples away from the midpoint keep
+cancellation from hiding the integrand's scale. Small-valued integrals can
+retain low precision even with tiny absolute tolerances. -/
+def integralPrecSchedule (maxPrec : Nat) (e A B : Intgrl.Term) (kind : Region)
+    (tol : ℚ) : List Nat := Id.run do
+  let schedule := precSchedule maxPrec
+  if !kind.isFinite || tol ≥ (show Dy from ⟨1,-32⟩).toRat then return schedule
+  let c := Ctx.make 64
+  let (some a,some b) := ((evalR c A Ival.zero).mid,(evalR c B Ival.zero).mid)
+    | return schedule
+  let mut magnitude := Dy.zero
+  for i in [0:5] do
+    let x := Ival.ofRat 64 (a.toRat + (b.toRat-a.toRat) * ((i : Nat) : ℚ)/4)
+    let some m := (Ival.abs (evalR c e x)).hi | return schedule
+    magnitude := Dy.max magnitude m
+  let scale := magnitude.toRat * |b.toRat-a.toRat|
+  if scale ≤ tol then return schedule
+  let ratio := scale/tol
+  let bits := ratio.num.natAbs.log2 + 1 - ratio.den.log2
+  let hint := min (schedule.getLast?.getD 64) (max 64 (bits+24))
+  return schedule.filter (· ≥ hint)
+
 partial def parseConverges (t : Lean.Expr) : MetaM (Option IntegralRequest) := do
   let t ← instantiateMVars t
   let args := t.getAppArgs
@@ -127,27 +149,29 @@ def tryIntegralClose (g : MVarId) : IntegralM Bool := do
   let tl ← tolLower tol
   if tl ≤ 0 then return false
   let maxPrec := lynth.interval.maxPrec.get (← getOptions)
-  for prec in precSchedule maxPrec do
+  for prec in integralPrecSchedule maxPrec body.term a.term b.term req.kind tl do
     let ctx := Ctx.make prec
-    let some cert := searchIntegral ctx body.term a.term b.term req.kind tl | continue
-    let some S := integralEncl ctx body.term a.term b.term req.kind cert | continue
+    let some (cert,S) := searchIntegralEstimate ctx body.term a.term b.term req.kind tl | continue
     let (some lo,some hi) := (S.lo,S.hi) | continue
     let mid := (lo.toRat+hi.toRat)/2
     let width := hi.toRat-lo.toRat
     if width ≥ tl then continue
     for candidate in shortRats mid (tl/2-width/2) do
-      unless integralCheck ctx body.term a.term b.term req.kind cert candidate t.term do continue
+      -- Witness selection uses the untrusted search estimate. The certified
+      -- check below independently recomputes every panel and error bound.
+      unless closeCheck ctx S candidate t.term do continue
       let state ← liftM (saveState : TacticM Tactic.SavedState)
       unless ← isDefEq qvar (toExpr candidate) do liftM (state.restore : TacticM Unit); continue
       let ctxE := mkApp (mkConst ``Ctx.make) (toExpr prec)
+      let certE ← quoteIntegralCertShared cert
       let chk := mkAppN (mkConst ``integralCheck)
         #[ctxE,quoteTerm body.term,quoteTerm a.term,quoteTerm b.term,quoteRegion req.kind,
-          quoteIntegralCert cert,toExpr candidate,quoteTerm t.term]
+          certE,toExpr candidate,quoteTerm t.term]
       let hchk ← certify chk (integralCheckCost prec body.term cert)
       let hc := mkApp (mkConst ``Ctx.make_valid) (toExpr prec)
       let pf := mkAppN (mkConst ``integration_result_of_check)
         #[req.f,req.a,req.b,tol,quoteTerm body.term,quoteTerm a.term,quoteTerm b.term,
-          quoteTerm t.term,ctxE,quoteRegion req.kind,quoteIntegralCert cert,toExpr candidate,
+          quoteTerm t.term,ctxE,quoteRegion req.kind,certE,toExpr candidate,
           hc,body.proof,a.proof,b.proof,t.proof,hchk]
       let close ← mkAppM ``And.right #[pf]
       let conv ← mkAppM ``And.left #[pf]

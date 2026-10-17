@@ -37,8 +37,17 @@ def quoteDy (d : Dy) : Lean.Expr :=
   mkApp2 (mkConst ``Vendor.Dyadic.mk) (toExpr d.mantissa) (toExpr d.exponent)
 
 def quoteList (type : Lean.Expr) (xs : List Lean.Expr) : Lean.Expr :=
-  xs.foldr (fun x tail => mkApp3 (mkConst ``List.cons [0]) type x tail)
-    (mkApp (mkConst ``List.nil [0]) type)
+  let rec go : Nat → List Lean.Expr → Lean.Expr
+    | 0, xs => literal xs
+    | fuel+1, xs =>
+      if xs.length ≤ 64 then literal xs else
+        let (a,b) := xs.splitAt (xs.length/2)
+        mkApp3 (mkConst ``List.append [0]) type (go fuel a) (go fuel b)
+  go 64 xs
+where
+  literal (xs : List Lean.Expr) : Lean.Expr :=
+    xs.foldr (fun x tail => mkApp3 (mkConst ``List.cons [0]) type x tail)
+      (mkApp (mkConst ``List.nil [0]) type)
 
 def quoteIval (I : Ival) : Lean.Expr :=
   let endpoint := fun o => match o with
@@ -71,6 +80,37 @@ def quoteIntegralCert : IntegralCertificate → Lean.Expr
   | .tail r c => mkApp2 (mkConst ``IntegralCertificate.tail) (quoteDy r) (quoteCert c)
   | .logarithm r c => mkApp2 (mkConst ``IntegralCertificate.logarithm) (quoteDy r) (quoteCert c)
   | .sqrtWeight n c => mkApp2 (mkConst ``IntegralCertificate.sqrtWeight) (toExpr n) (quoteCert c)
+
+/-- Keep large certificate data in separately checked and compiled constant
+chunks. This prevents native compilation from expanding a many-thousand-cell
+list inside the checker declaration. No assertion is attached to the data. -/
+def quoteIntegralCertShared (cert : IntegralCertificate) : MetaM Lean.Expr := do
+  if cert.core.pieces.length ≤ 512 then return quoteIntegralCert cert
+  let type := mkApp (mkConst ``List [0]) (mkConst ``Piece)
+  let mut remaining := cert.core.pieces
+  let mut chunks : List Lean.Expr := []
+  while !remaining.isEmpty do
+    let (head,tail) := remaining.splitAt 64
+    let name ← mkAuxDeclName `_integral_data
+    let value := quoteList (mkConst ``Piece) (head.map quotePiece)
+    let quoted ← mkAuxDefinition name type value
+    chunks := quoted :: chunks
+    remaining := tail
+  let rec join : List Lean.Expr → Lean.Expr
+    | [] => mkApp (mkConst ``List.nil [0]) (mkConst ``Piece)
+    | [x] => x
+    | x::xs => mkApp3 (mkConst ``List.append [0]) (mkConst ``Piece) x (join xs)
+  let core := cert.core
+  let data := mkApp5 (mkConst ``Certificate.mk) (quoteDy core.a) (quoteDy core.b)
+    (toExpr core.reverse)
+    (mkApp2 (mkConst ``Array.mk [0]) (mkConst ``NodeTable)
+      (quoteList (mkConst ``NodeTable) (core.tables.toList.map quoteTable)))
+    (join chunks.reverse)
+  return match cert with
+  | .finite _ => mkApp (mkConst ``IntegralCertificate.finite) data
+  | .tail R _ => mkApp2 (mkConst ``IntegralCertificate.tail) (quoteDy R) data
+  | .logarithm R _ => mkApp2 (mkConst ``IntegralCertificate.logarithm) (quoteDy R) data
+  | .sqrtWeight n _ => mkApp2 (mkConst ``IntegralCertificate.sqrtWeight) (toExpr n) data
 
 structure Compiled where
   term : Intgrl.Term

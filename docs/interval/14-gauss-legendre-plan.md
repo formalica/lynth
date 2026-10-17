@@ -19,6 +19,12 @@ degree/ellipse search, branch specialization, and explicit tail bounds.
 Evaluator crossover thresholds are provisional: no fastest-implementation
 claim is made before comparative benchmarks.
 
+The subsequent performance pass is documented in
+[16-integration-performance.md](16-integration-performance.md). Previously
+timed-out FLINT cases 8, 9, 12 (at `10⁻⁹²`), 15 and 32 now complete and have
+passing regression tests. Full case 16 computes the correct result but remains
+in TestFailures because its runtime is still about 90 seconds overall.
+
 Node tables carry outward weight intervals as literal certificate data.
 The checker compares them with its computed weight enclosures once, and panels
 reuse those literals. Symmetric brackets and weights use one half of the rule.
@@ -291,8 +297,10 @@ Tail contracts must establish integrability as well as an error estimate.
 Choose truncation points by cheap estimates and verify their bounds.
 Use substitutions where they improve conditioning while retaining GL;
 for x^4/sqrt(1-x²), x=sin(theta) removes the endpoint singularities.
-For bounded sin(1/x), direct global sine bounds certify a tiny endpoint
-strip without evaluating the reciprocal at zero.
+For reciprocal-phase oscillation, use the cancellation estimate
+`|integral_0^delta x^n sin(omega/x)| <= 2 delta^(n+2)/|omega|` for nonzero
+omega and natural n. It establishes integrability and lets direct panels
+discard a much larger endpoint strip. Global sine bounds remain the fallback.
 
 For non-integrability use proved local comparisons against C/x or power
 laws with exponent <=-1 at an endpoint, and harmonic/power comparisons at

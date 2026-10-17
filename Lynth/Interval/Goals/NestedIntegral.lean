@@ -61,7 +61,7 @@ def tryClose (g : MVarId) : IntegralM Bool := do
     let width := hi.toRat-lo.toRat
     if width ≥ tl then continue
     for q in shortRats mid (tl/2-width/2) do
-      unless check c root cert q T.term do continue
+      unless closeCheck c I q T.term do continue
       let st ← liftM (saveState : TacticM Tactic.SavedState)
       unless ← isDefEq qvar (toExpr q) do liftM (st.restore : TacticM Unit); continue
       let ctxE := mkApp (mkConst ``Ctx.make) (toExpr prec)

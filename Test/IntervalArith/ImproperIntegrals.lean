@@ -141,7 +141,7 @@ noncomputable def exponential (x : ℝ) : ℝ :=
 #guard_msgs (whitespace := lax) in
 #print axioms exponential
 
-set_option maxHeartbeats 3128 in -- measured: 2979; +5%
+set_option maxHeartbeats 2844 in -- measured: 2708; +5%
 /-- **IC01** — `∫₀¹ (x³ + 2x) dx`; expected value `1.25`. -/
 def cubicLinearSubtype :
     { x : Rat //
@@ -152,7 +152,7 @@ def cubicLinearSubtype :
 #guard_msgs (whitespace := lax) in
 #print axioms cubicLinearSubtype
 
-set_option maxHeartbeats 4977 in -- measured: 4740; +5%
+set_option maxHeartbeats 4948 in -- measured: 4712; +5%
 /-- **IC02** — `∫₋₁¹ (x⁵ + 3x³ - 2x + 1) dx`; expected value `2`. -/
 def oddPolynomialSubtype :
     { x : Rat //
@@ -163,7 +163,7 @@ def oddPolynomialSubtype :
 #guard_msgs (whitespace := lax) in
 #print axioms oddPolynomialSubtype
 
-set_option maxHeartbeats 3581 in -- measured: 3410; +5%
+set_option maxHeartbeats 1294 in -- measured: 1232; +5%
 /-- **IC03** — `∫₀²π exp (cos θ) dθ`; expected value `7.95492652101284`. -/
 def expCosResult :
     IntegralConvergenceResult expCos (Set.Icc (0 : ℝ) (2 * Real.pi)) integralTolerance := by
@@ -172,7 +172,7 @@ def expCosResult :
 #guard_msgs (whitespace := lax) in
 #print axioms expCosResult
 
-set_option maxHeartbeats 73066 in -- measured: 69586; +5%
+set_option maxHeartbeats 18557 in -- measured: 17673; +5%
 /-- **IC04** — `∫₀^∞ exp (-x) x³ dx`; expected value `6`. -/
 def decayingCubicResult :
     IntegralConvergenceResult decayingCubic (Set.Ioi 0) integralTolerance := by
@@ -181,7 +181,7 @@ def decayingCubicResult :
 #guard_msgs (whitespace := lax) in
 #print axioms decayingCubicResult
 
-set_option maxHeartbeats 4413 in -- measured: 4202; +5%
+set_option maxHeartbeats 3384 in -- measured: 3222; +5%
 /-- **IC05** — `∫₋∞^∞ exp (-x²) x⁴ dx`; expected value `1.32934038817914`. -/
 def gaussianQuarticResult :
     IntegralConvergenceResult gaussianQuartic Set.univ integralTolerance := by
@@ -190,7 +190,7 @@ def gaussianQuarticResult :
 #guard_msgs (whitespace := lax) in
 #print axioms gaussianQuarticResult
 
-set_option maxHeartbeats 31737 in -- measured: 30225; +5%
+set_option maxHeartbeats 11770 in -- measured: 11209; +5%
 /-- **IC06** — `∫₋₁¹ x⁴ / sqrt (1 - x²) dx`; expected value `1.17809724509617`. -/
 def endpointWeightSubtype :
     { x : Rat //
@@ -201,7 +201,7 @@ def endpointWeightSubtype :
 #guard_msgs (whitespace := lax) in
 #print axioms endpointWeightSubtype
 
-set_option maxHeartbeats 5883 in -- measured: 5602; +5%
+set_option maxHeartbeats 3113 in -- measured: 2964; +5%
 /-- **IC07** — `∫₀¹ log x dx`; expected value `-1`. -/
 def logIntegrandResult :
     IntegralConvergenceResult logIntegrand (Set.Ioc (0 : ℝ) 1) integralTolerance := by
@@ -210,7 +210,7 @@ def logIntegrandResult :
 #guard_msgs (whitespace := lax) in
 #print axioms logIntegrandResult
 
-set_option maxHeartbeats 9593 in -- measured: 9136; +5%
+set_option maxHeartbeats 2722 in -- measured: 2592; +5%
 /-- **IC08** — `∫₋₁¹ exp (-1000 (x - 1/2)²) dx`; expected value
 `0.0560499121640`. -/
 def narrowGaussianSubtype :
@@ -294,7 +294,7 @@ theorem identity_not_convergent :
 #guard_msgs (whitespace := lax) in
 #print axioms identity_not_convergent
 
-set_option maxHeartbeats 210 in -- measured: 200; +5%
+set_option maxHeartbeats 212 in -- measured: 201; +5%
 /-- **ID09** — `∫₁^∞ sin x dx`; the partial integrals oscillate and have no limit. -/
 def sineTailResult :
     IntegralConvergenceResult sine (Set.Ici (1 : ℝ)) integralTolerance := by
@@ -329,7 +329,7 @@ namespace IntervalArith.Flint
 
 open MeasureTheory
 
-set_option maxHeartbeats 3992 in -- measured: 3801; +5%
+set_option maxHeartbeats 2358 in -- measured: 2245; +5%
 /-- FLINT 2: the arctangent derivative on the positive half-line. -/
 def atanHalfLine :
     {q : ℚ //
@@ -341,7 +341,7 @@ def atanHalfLine :
 #print axioms atanHalfLine
 #guard |atanHalfLine.val - (15707963267948966 / 10^16 : ℚ)| < 1 / 100000
 
-set_option maxHeartbeats 66898 in -- measured: 63712; +5%
+set_option maxHeartbeats 9807 in -- measured: 9340; +5%
 /-- FLINT 14: the Gaussian half-line integral at absolute tolerance `10⁻⁵`. -/
 def gaussianHalfLine :
     {q : ℚ //
@@ -353,7 +353,7 @@ def gaussianHalfLine :
 #print axioms gaussianHalfLine
 #guard |gaussianHalfLine.val - (88622692545275801 / 10^17 : ℚ)| < 1 / 100000
 
-set_option maxHeartbeats 5478 in -- measured: 5217; +5%
+set_option maxHeartbeats 1911 in -- measured: 1820; +5%
 /-- FLINT 17: the hyperbolic secant on the positive half-line. -/
 def sechHalfLine :
     {q : ℚ //
@@ -365,7 +365,7 @@ def sechHalfLine :
 #print axioms sechHalfLine
 #guard |sechHalfLine.val - (15707963267948966 / 10^16 : ℚ)| < 1 / 100000
 
-set_option maxHeartbeats 6719 in -- measured: 6399; +5%
+set_option maxHeartbeats 2421 in -- measured: 2305; +5%
 /-- FLINT 18: the cube of the hyperbolic secant on the positive half-line. -/
 def sechCubeHalfLine :
     {q : ℚ //

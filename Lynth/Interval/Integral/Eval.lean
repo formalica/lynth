@@ -1,5 +1,6 @@
 import Lynth.Interval.Integral.Math.Integrand
-import Lynth.Interval.Fns.ComplexElem
+import Lynth.Interval.Integral.Powers
+import Lynth.Interval.Integral.Trig
 import Lynth.Interval.Fns.Floor
 
 namespace Lynth.Interval.Integral
@@ -29,8 +30,8 @@ theorem mem_mulSigned {p : Nat} {x y : ℝ} {X Y : Ival}
 def Unary.evalR (c : Ctx) (op : Unary) (X : Ival) : Ival :=
   match op with
   | .neg => Ival.neg X | .inv => Ival.inv c.prec X
-  | .exp => expIval c X | .sin => sinIval c X | .cos => cosIval c X
-  | .sinh => sinhIval c X | .cosh => coshIval c X
+  | .exp => fastExpIval c X | .sin => fastSinIval c X | .cos => fastCosIval c X
+  | .sinh => fastSinhIval c X | .cosh => (fastCoshIval c X).clampLo Dy.one
   | .log => logIval c X | .sqrt => Ival.sqrt c.prec X
   | .abs => Ival.abs X | .floor => intFloorIval X | .atan => atanIval c X
 
@@ -40,13 +41,26 @@ def Binary.evalR (c : Ctx) (op : Binary) (X Y : Ival) : Ival :=
   | .mul => mulSigned c.prec X Y | .div => Ival.div c.prec X Y
   | .max => Ival.max X Y | .min => Ival.min X Y
 
+/-- Shared evaluation and the exact unit-range bound for a fractional part. -/
+def fractionalIval (c : Ctx) (X : Ival) : Ival :=
+  ((Ival.sub c.prec X (intFloorIval X)).clampLo Dy.zero).clampHi Dy.one
+
+theorem mem_fractionalIval {c : Ctx} {x : ℝ} {X : Ival} (hx : x ∈ X) :
+    x - (⌊x⌋ : ℤ) ∈ fractionalIval c X := by
+  apply Ival.mem_clampHi
+  · apply Ival.mem_clampLo (Ival.mem_sub hx (mem_intFloor hx))
+    simpa only [Dy.toReal_def, Dy.toRat_zero, Rat.cast_zero, Int.fract] using Int.fract_nonneg x
+  · simpa only [Dy.toReal_def, Dy.toRat_one, Rat.cast_one, Int.fract] using (Int.fract_lt_one x).le
+
 def evalR (c : Ctx) (e : Term) (X : Ival) : Ival :=
   match e with
   | .var => X | .rat q => Ival.ofRat c.prec q | .pi => c.pi
   | .unary op a => Unary.evalR c op (evalR c a X)
-  | .binary op a b => Binary.evalR c op (evalR c a X) (evalR c b X)
-  | .pow a n => Ival.npow c.prec (evalR c a X) n
-  | .rpow a q => rpowIval c (evalR c a X) (Ival.ofRat c.prec q)
+  | .binary op a b =>
+    if op = .sub ∧ b = .unary .floor a then fractionalIval c (evalR c a X)
+    else Binary.evalR c op (evalR c a X) (evalR c b X)
+  | .pow a n => naturalPowerR c.prec (evalR c a X) n
+  | .rpow a q => rationalPowerR c (evalR c a X) q
 
 theorem unary_evalR_sound {c : Ctx} (hc : c.Valid) (op : Unary)
     {x : ℝ} {X : Ival} (hx : x ∈ X) :
@@ -54,11 +68,13 @@ theorem unary_evalR_sound {c : Ctx} (hc : c.Valid) (op : Unary)
   cases op with
   | neg => exact Ival.mem_neg hx
   | inv => exact Ival.mem_inv hx
-  | exp => exact mem_expIval c hx
-  | sin => exact mem_sinIval hc hx
-  | cos => exact mem_cosIval hc hx
-  | sinh => exact mem_sinhIval c hx
-  | cosh => exact mem_coshIval c hx
+  | exp => exact mem_fastExpIval c hx
+  | sin => exact mem_fastSinIval hc hx
+  | cos => exact mem_fastCosIval hc hx
+  | sinh => exact mem_fastSinhIval c hx
+  | cosh =>
+    apply Ival.mem_clampLo (mem_fastCoshIval c hx)
+    simpa [Dy.toReal_def] using Real.one_le_cosh x
   | log => exact mem_logIval hc hx
   | sqrt => exact Ival.mem_sqrt hx
   | abs => exact Ival.mem_abs hx
@@ -83,9 +99,17 @@ theorem evalR_sound {c : Ctx} (hc : c.Valid) (e : Term)
   | rat q => exact Ival.mem_ofRat _ _
   | pi => exact hc.pi_mem
   | unary op a ih => exact unary_evalR_sound hc op ih
-  | binary op a b ha hb => exact binary_evalR_sound hc op ha hb
-  | pow a n ih => exact Ival.mem_npow ih n
-  | rpow a q ih => exact mem_rpowIval hc ih (Ival.mem_ofRat _ _)
+  | binary op a b ha hb =>
+    change op.real (a.real x) (b.real x) ∈
+      (if op = .sub ∧ b = .unary .floor a then fractionalIval c (evalR c a X)
+       else Binary.evalR c op (evalR c a X) (evalR c b X))
+    split
+    · rename_i h
+      obtain ⟨rfl,rfl⟩ := h
+      exact mem_fractionalIval ha
+    · exact binary_evalR_sound hc op ha hb
+  | pow a n ih => exact mem_naturalPowerR ih n
+  | rpow a q ih => exact mem_rationalPowerR hc ih q
 
 def boundedComplexArg (Z : CBox) : Bool :=
   let bound := Dy.ofNat 16384
@@ -94,15 +118,24 @@ def boundedComplexArg (Z : CBox) : Bool :=
     Dy.leB bound.neg a && Dy.leB b bound && Dy.leB bound.neg c && Dy.leB d bound
   | _,_,_,_ => false
 
+/-- Trigonometric growth depends on the imaginary component. A large real
+phase is harmless; only its representation size needs a work limit. -/
+def boundedTrigArg (Z : CBox) : Bool :=
+  match Z.re.lo, Z.re.hi with
+  | some a, some b =>
+    a.exponent.natAbs ≤ 16384 && b.exponent.natAbs ≤ 16384 &&
+      boundedComplexArg ⟨Ival.zero,Z.im⟩
+  | _, _ => false
+
 def Unary.evalC (c : Ctx) (op : Unary) (Z : CBox) : CBox :=
   match op with
   | .neg => CBox.neg Z | .inv => CBox.inv c.prec Z
-  | .exp => if boundedComplexArg Z then expBox c Z else CBox.top
-  | .sin => if boundedComplexArg Z then sinBox c Z else CBox.top
-  | .cos => if boundedComplexArg Z then cosBox c Z else CBox.top
+  | .exp => if boundedComplexArg Z then fastExpBox c Z else CBox.top
+  | .sin => if boundedTrigArg Z then fastSinBox c Z else CBox.top
+  | .cos => if boundedTrigArg Z then fastCosBox c Z else CBox.top
   | .sinh => if boundedComplexArg Z then sinhBox c Z else CBox.top
   | .cosh => if boundedComplexArg Z then coshBox c Z else CBox.top
-  | .log => logBox c Z | .sqrt => sqrtBox c Z
+  | .log => logBox c Z | .sqrt => sharedSqrtBox c Z
   | .abs => Z | .floor => CBox.ofReal Ival.zero | .atan => arctanC.ev c Z
 
 def Binary.evalC (c : Ctx) (op : Binary) (X Y : CBox) : CBox :=
@@ -117,9 +150,8 @@ def evalC (c : Ctx) (e : Term) (Z : CBox) : CBox :=
   | .pi => CBox.ofReal c.pi
   | .unary op a => Unary.evalC c op (evalC c a Z)
   | .binary op a b => Binary.evalC c op (evalC c a Z) (evalC c b Z)
-  | .pow a n => CBox.npow c.prec (evalC c a Z) n
-  | .rpow a q => expBox c (CBox.mul c.prec
-      (logBox c (evalC c a Z)) (CBox.ofReal (Ival.ofRat c.prec q)))
+  | .pow a n => naturalPowerC c.prec (evalC c a Z) n
+  | .rpow a q => rationalPowerC c (evalC c a Z) q
 
 theorem unary_evalC_sound {c : Ctx} (hc : c.Valid) (op : Unary)
     {z : ℂ} {Z : CBox} (hz : z ∈ Z) :
@@ -129,15 +161,15 @@ theorem unary_evalC_sound {c : Ctx} (hc : c.Valid) (op : Unary)
   | inv => exact CBox.mem_inv hz
   | exp =>
     simp only [Unary.evalC]; split
-    · exact mem_expBox c hc hz
+    · exact mem_fastExpBox hc hz
     · exact CBox.mem_top _
   | sin =>
     simp only [Unary.evalC]; split
-    · exact mem_sinBox c hc hz
+    · exact mem_fastSinBox hc hz
     · exact CBox.mem_top _
   | cos =>
     simp only [Unary.evalC]; split
-    · exact mem_cosBox c hc hz
+    · exact mem_fastCosBox hc hz
     · exact CBox.mem_top _
   | sinh =>
     simp only [Unary.evalC]; split
@@ -148,7 +180,7 @@ theorem unary_evalC_sound {c : Ctx} (hc : c.Valid) (op : Unary)
     · exact mem_coshBox c hc hz
     · exact CBox.mem_top _
   | log => exact mem_logBox c hc hz
-  | sqrt => exact mem_sqrtBox c hc hz
+  | sqrt => exact mem_sharedSqrtBox c hc hz
   | abs => exact hz
   | floor => exact CBox.mem_ofReal Ival.mem_zero
   | atan => exact arctanC.sound c z _ Z hc rfl hz
@@ -193,16 +225,14 @@ theorem evalC_sound {c : Ctx} (hc : c.Valid) (e : Term) {Z : CBox}
     obtain ⟨hab, _⟩ := Bool.and_eq_true_iff.mp hr
     obtain ⟨hA, hB⟩ := Bool.and_eq_true_iff.mp hab
     exact binary_evalC_sound hc op (ha hA) (hb hB)
-  | pow a n ih => exact CBox.mem_npow (ih hr) n
+  | pow a n ih => exact mem_naturalPowerC (ih hr) n
   | rpow a q ih =>
     obtain ⟨ha, hp⟩ := Bool.and_eq_true_iff.mp hr
     have hval := ih ha
     have hpos := Ival.pos_of hp hval.1
     have hne : a.complex z ≠ 0 := by intro h; simp [h] at hpos
     change a.complex z ^ ((q : ℝ) : ℂ) ∈ _
-    rw [Complex.cpow_def_of_ne_zero hne]
-    exact mem_expBox c hc (CBox.mem_mul (mem_logBox c hc hval)
-      (CBox.mem_ofReal (Ival.mem_ofRat c.prec q)))
+    exact mem_rationalPowerC hc hval hne q
 
 theorem regularCheck_sound {c : Ctx} (hc : c.Valid) (e : Term) {Z : CBox}
     (h : regularCheck c e Z = true) : e.Regular {z | z ∈ Z} := by

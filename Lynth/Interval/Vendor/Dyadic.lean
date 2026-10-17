@@ -9,6 +9,7 @@ Adapted for Lynth from LeanCert `LeanCert/Core/Dyadic.lean`
 import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Basic.Real.Basic
+import Lynth.Interval.Num.Math.BitLength
 
 /-!
 # Dyadic Rationals (n * 2^e)
@@ -63,6 +64,22 @@ def shiftLeftInt (m : Int) (n : Nat) : Int :=
 /-- Shift an integer right by n bits (divide by 2^n, floor toward -∞) -/
 def shiftRightInt (m : Int) (n : Nat) : Int :=
   m / (pow2Nat n : Int)
+
+/-- Negative `Int` bit shifts use a predecessor representation in Lean's
+runtime and allocate extra big integers. GMP multiplication/division wins
+there; nonnegative inputs benefit from the direct natural-number shift. -/
+def shiftLeftNative (m : Int) (n : Nat) : Int :=
+  if m < 0 then m * (pow2Nat n : Int) else m <<< n
+def shiftRightNative (m : Int) (n : Nat) : Int :=
+  if m < 0 then m / (pow2Nat n : Int) else m >>> n
+
+@[csimp] theorem shiftLeftInt_eq_native : @shiftLeftInt = @shiftLeftNative := by
+  funext m n
+  simp [shiftLeftInt, pow2Nat, shiftLeftNative, Int.shiftLeft_eq, Nat.shiftLeft_eq]
+
+@[csimp] theorem shiftRightInt_eq_native : @shiftRightInt = @shiftRightNative := by
+  funext m n
+  simp [shiftRightInt, pow2Nat, shiftRightNative, Int.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
 
 /-- Check if any of the low n bits are set -/
 def hasLowBits (m : Int) (n : Nat) : Bool :=
@@ -225,14 +242,6 @@ def shiftUp (d : Dyadic) (newExp : Int) : Dyadic :=
 
 /-! ### Normalization (Mantissa Control) -/
 
-/-- smallest `k ∈ (lo, hi]` with `n >>> k = 0` (binary search; compiled version) -/
-def bitSearchS (n : Nat) : Nat → Nat → Nat → Nat
-  | 0, _, hi => hi
-  | fuel + 1, lo, hi =>
-    cond (hi.ble (lo + 1)) hi
-      (cond ((n >>> ((lo + hi) / 2)).beq 0) (bitSearchS n fuel lo ((lo + hi) / 2))
-        (bitSearchS n fuel ((lo + hi) / 2) hi))
-
 /-- kernel version of `bitSearchS`: raw `Nat.rec`/`Bool.rec` (no `brecOn`
 overhead) over GMP-accelerated primitives; replaced by `bitSearchS` in
 compiled code via `@[csimp]` -/
@@ -263,6 +272,25 @@ this binary search costs `≈ 16` cheap steps.  No proof depends on the exact
 value (any shift is sound for directed rounding). -/
 def natBitLength (n : Nat) : Nat :=
   cond (n.beq 0) 0 (bitSearchK n 20 0 (cond ((n >>> 256).beq 0) 256 65536))
+
+/-- Native `Nat.log2` is a runtime primitive. Kernel reduction continues to
+use the bounded binary search above. -/
+def natBitLengthNative (n : Nat) : Nat :=
+  if n == 0 then 0 else min 65536 (n.log2 + 1)
+
+@[csimp] theorem natBitLength_eq_native : @natBitLength = @natBitLengthNative := by
+  funext n
+  unfold natBitLength natBitLengthNative
+  by_cases hn : n = 0
+  · subst n; rfl
+  · have hz : (n == 0) = false := by simp [hn]
+    have hz' : n.beq 0 = false := by
+      apply Bool.eq_false_iff.mpr
+      intro h
+      exact hn (Nat.eq_of_beq_eq_true h)
+    simp only [hz, hz', Bool.cond_false, Bool.false_eq_true, ↓reduceIte]
+    rw [bitSearchK_eq_S]
+    exact bitSearchS_eq_log2 n hn
 
 /-- Get the bit length of the absolute value of an integer -/
 def bitLength (m : Int) : Nat := natBitLength m.natAbs

@@ -7,18 +7,31 @@ Update at every milestone.  Keep "Next" pointing at the lowest unfinished item.
 The Real Petras/Gauss-Legendre engine is implemented in Integral/ and
 Goals/Integral.lean. It synthesizes rational witnesses, checks integrability,
 handles selected improper endpoints/tails, and proves recognized divergence.
-The 43 one-dimensional regression declarations include the migrated tests,
-selected real FLINT examples, and orientation regressions. The ten-dimensional cube
-remains in TestFailures. Recursive real integrals are now handled by the
+The one-dimensional regressions include the migrated tests, selected real
+FLINT examples, orientation and evaluator regressions. The ten-dimensional
+cube remains in TestFailures. Recursive real integrals are handled by the
 separate fallback described in [15-nested-integrals.md](15-nested-integrals.md):
 dependent bounds, recursive sampling, shared tables and memoized certificate
 replay, half-lines/whole lines, and certified endpoint transformations.
-There are 23 additional nested integration regressions and five certificate
-rejection groups, each with its own measured +5% heartbeat cap. The existing
-43 caps and their source files are unchanged by this extension.
+There are 23 nested integration regressions and five certificate rejection
+groups. The passing integration suite has 87 declarations/groups; full FLINT 16
+remains in TestFailures because of its runtime. Every testcase retains its
+own measured +5% heartbeat cap.
+
+The third performance pass documented in
+[16-integration-performance.md](16-integration-performance.md) completes all
+six formerly slow FLINT targets (8, 9, 12, 15, 16 and 32) at their original
+statements and tolerances. FLINT 8 uses a general reciprocal-phase endpoint
+bound. Cases 8 and 32 are in Test; FLINT 16 retains its full [0,8]
+interval in TestFailures because it still takes about 90 seconds overall. Native bit-length primitives,
+local expression sharing, cheaper powers, reuse of the search estimate and
+chunked certificate compilation reduce numerical work. The final checker
+still independently replays every certificate. A signed-shift allocation
+regression was caught by the existing nested caps and corrected before the
+final measurement. The performance log records timings and validation.
 
 Proof status is explicitly provisional under the user's authorization:
-74 Mathlib-only obligations in /tmp/intgrl and 19 Lynth-dependent adapter gaps.
+78 Mathlib-only obligations in /tmp/intgrl and 19 Lynth-dependent adapter gaps.
 The mathematical packets elaborate independently; no Lynth-dependent theorem
 is included in the proof handoff. Heavy certificates follow the existing
 auto/native trust policy, and their axiom footprints are recorded in tests.
