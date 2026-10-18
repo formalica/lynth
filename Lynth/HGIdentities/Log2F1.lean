@@ -68,10 +68,9 @@ theorem HGFun2F1_1 {z : ℂ} (hz : ‖z‖ < 1) (hz0 : z ≠ 0) :
 /-- The identity `₂F̃₁(1, 1; 2; z) = -log(1-z)/z` fails without the hypothesis `‖z‖ < 1`:
 for `z = 2` the defining series diverges (so its sum is `0` by convention), while the
 right-hand side is `-(π i / 2) ≠ 0`. -/
-theorem not_regularized2F1_1 :
-    ¬ ∀ z : ℂ, z ≠ 0 → regularizedHGFun {1, 1} {2} z = -(Complex.log (1 - z) / z) := by
-  intro h
-  have h1 := h 2 two_ne_zero
+private theorem regularized2F1_1_at_two :
+    regularizedHGFun {1, 1} {2} (2 : ℂ) ≠ -(Complex.log (1 - 2) / 2) := by
+  intro h1
   have hnorm : ∀ N : ℕ, ‖(1 / ((N : ℂ) + 1)) * 2 ^ N‖ = 2 ^ N / ((N : ℝ) + 1) := by
     intro N
     rw [show ((N : ℂ) + 1) = ((N + 1 : ℕ) : ℂ) by push_cast; ring, norm_mul, norm_div, norm_one,
@@ -102,14 +101,18 @@ theorem not_regularized2F1_1 :
     simp [Real.pi_ne_zero, Complex.I_ne_zero]
   exact hpi (by linear_combination 2 * h1)
 
+theorem not_regularized2F1_1 :
+    ¬ ∀ z : ℂ, z ≠ 0 → regularizedHGFun {1, 1} {2} z = -(Complex.log (1 - z) / z) :=
+  fun h => regularized2F1_1_at_two (h 2 two_ne_zero)
+
 /-- The identity `₂F₁(1, 1; 2; z) = -log(1-z)/z` fails without the hypothesis `‖z‖ < 1`, for the
 same reason as in `Complex.not_regularized2F1_1`. -/
 theorem not_HGFun2F1_1 :
     ¬ ∀ z : ℂ, z ≠ 0 → HGFun {1, 1} {2} z = -(Complex.log (1 - z) / z) := by
   intro h
-  refine not_regularized2F1_1 fun z hz0 => ?_
-  rw [← HGFun_eq_regularizedHGFun_of_prod_eq_one (a := {1, 1}) prod_map_Gamma_two]
-  exact h z hz0
+  have h2 := h 2 two_ne_zero
+  rw [HGFun_eq_regularizedHGFun_of_prod_eq_one (a := {1, 1}) (z := 2) prod_map_Gamma_two] at h2
+  exact regularized2F1_1_at_two h2
 
 end Complex
 

@@ -48,7 +48,7 @@ theorem HGFun2F1_atanh {z : ℂ} (hz : ‖z‖ < 1) (hz0 : z ≠ 0) :
   have hsq : Complex.sqrt z ^ 2 = z := sqrt_sq_eq z
   have key := tsum_atanhCoeff_eq hw
   rw [hsq] at key
-  rw [HGFun_eq_tsum]
+  rw [HGFun_eq_tsum _ _ _]
   rw [show (∑' n : ℕ, HGFunCoeff {1 / 2, 1} {3 / 2} n * z ^ n)
       = ∑' n : ℕ, atanhCoeff n * z ^ n from tsum_congr fun n => by rw [HGFunCoeff_atanh]]
   rw [← key]
@@ -70,7 +70,7 @@ theorem not_HGFun2F1_atanh_at_zero :
     ¬ ∀ z : ℂ, HGFun {1 / 2, 1} {3 / 2} z = artanh (Complex.sqrt z) / Complex.sqrt z := by
   intro h
   have h0 := h 0
-  rw [HGFun_eq_tsum] at h0
+  rw [HGFun_eq_tsum {1 / 2, 1} {3 / 2} 0] at h0
   have hzero : (∑' n : ℕ, HGFunCoeff {1 / 2, 1} {3 / 2} n * (0 : ℂ) ^ n) = 1 := by
     rw [tsum_eq_single 0 (fun n hn => by simp [zero_pow hn]), HGFunCoeff_atanh]
     simp [atanhCoeff]

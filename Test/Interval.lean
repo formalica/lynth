@@ -7,12 +7,12 @@
 
 import Test.Interval.Approx
 import Test.Interval.Closed
-import Test.Interval.CustomFn
 import Test.Interval.Digamma
 import Test.Interval.Euler
 import Test.Interval.Exp
 import Test.Interval.Floor
 import Test.Interval.Gamma
+import Test.Interval.GoldenRatio
 import Test.Interval.Hypgeom
 import Test.Interval.Nary
 import Test.Interval.Zeta

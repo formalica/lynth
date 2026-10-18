@@ -6,6 +6,7 @@ import Lynth.Interval.Fns.Trig
 import Lynth.Interval.Fns.Elem
 import Lynth.Interval.Fns.Exact
 import Lynth.Interval.Fns.Const
+import Lynth.Interval.Fns.GoldenRatio
 import Lynth.Interval.Fns.Gamma
 import Lynth.Interval.Fns.ComplexGamma
 import Lynth.Interval.Fns.ComplexZeta

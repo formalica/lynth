@@ -405,7 +405,7 @@ theorem HGFun2F1_cos_arcsin {a z : ℂ} (hz : ‖z‖ < 1) :
   have hsq : Complex.sqrt z ^ 2 = z := sqrt_sq_eq z
   have key := cosSeries_eq (a := a) hw
   rw [cosSeries, cosArcsinFun, hsq] at key
-  rw [HGFun_eq_tsum,
+  rw [HGFun_eq_tsum _ _ _,
     show (∑' n : ℕ, HGFunCoeff {a, -a} {1 / 2} n * z ^ n)
       = ∑' n : ℕ, cosArcsinCoeff a n * z ^ n from
       tsum_congr fun n => by rw [HGFunCoeff_cos_arcsin]]

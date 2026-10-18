@@ -124,7 +124,7 @@ theorem HGFun2F1_2 {a z : ℂ} (hz : ‖z‖ < 1) :
     HGFun {a, a + 1 / 2} {1 / 2} z =
       (Complex.sqrt z + 1) ^ (-2 * a) / 2 + (1 - Complex.sqrt z) ^ (-2 * a) / 2 := by
   have hG : Gamma ((1 : ℂ) / 2) ≠ 0 := Gamma_one_half_ne_zero
-  rw [HGFun_def, regularized2F1_2 hz]
+  rw [HGFun_def _ _ _, regularized2F1_2 hz]
   simp only [Multiset.map_singleton, Multiset.prod_singleton]
   field_simp
 

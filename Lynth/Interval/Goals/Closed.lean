@@ -67,7 +67,7 @@ def propositionWork : PropExpr → Nat
 
 /-- Prove the closed proposition `P`, or return `none`. -/
 def proveClosed? (P : Lean.Expr) : TacticM (Option Lean.Expr) := do
-  let rp ← reifyProp {} P
+  let rp ← try reifyProp {} P catch _ => return none
   let pv ← evalPropExpr rp.expr
   let some prec ← findPrec pv | return none
   let ctxE := mkApp (mkConst ``Ctx.make) (mkNatLit prec)

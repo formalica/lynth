@@ -111,7 +111,7 @@ theorem HGFun2F1_arcsin {z : ℂ} (hz : ‖z‖ < 1) (hz0 : z ≠ 0) :
   have hsq : Complex.sqrt z ^ 2 = z := sqrt_sq_eq z
   have key := tsum_arcsinCoeff_eq hw
   rw [hsq] at key
-  rw [HGFun_eq_tsum,
+  rw [HGFun_eq_tsum _ _ _,
     show (∑' n : ℕ, HGFunCoeff {1 / 2, 1 / 2} {3 / 2} n * z ^ n)
       = ∑' n : ℕ, arcsinCoeff n * z ^ n from tsum_congr fun n => by rw [HGFunCoeff_arcsin],
     ← key]
@@ -132,7 +132,7 @@ theorem not_HGFun2F1_arcsin_at_zero :
     ¬ ∀ z : ℂ, HGFun {1 / 2, 1 / 2} {3 / 2} z = arcsin (Complex.sqrt z) / Complex.sqrt z := by
   intro h
   have h0 := h 0
-  rw [HGFun_eq_tsum] at h0
+  rw [HGFun_eq_tsum {1 / 2, 1 / 2} {3 / 2} 0] at h0
   have hzero : (∑' n : ℕ, HGFunCoeff {1 / 2, 1 / 2} {3 / 2} n * (0 : ℂ) ^ n) = 1 := by
     rw [tsum_eq_single 0 (fun n hn => by simp [zero_pow hn]), HGFunCoeff_arcsin]
     simp [arcsinCoeff]
@@ -271,7 +271,7 @@ theorem HGFun2F1_arcsin_div_sqrt {z : ℂ} (hz : ‖z‖ < 1) (hz0 : z ≠ 0) :
   have hs : Complex.sqrt (1 - z) ≠ 0 := sqrt_ne_zero' hz
   have key := tsum_arcsinDivCoeff_eq hw
   rw [hsq] at key
-  rw [HGFun_eq_tsum,
+  rw [HGFun_eq_tsum _ _ _,
     show (∑' n : ℕ, HGFunCoeff {1, 1} {3 / 2} n * z ^ n)
       = ∑' n : ℕ, arcsinDivCoeff n * z ^ n from tsum_congr fun n => by rw [HGFunCoeff_arcsin_div],
     ← key]
@@ -293,7 +293,7 @@ theorem not_HGFun2F1_arcsin_div_sqrt_at_zero :
       arcsin (Complex.sqrt z) / (Complex.sqrt z * Complex.sqrt (1 - z)) := by
   intro h
   have h0 := h 0
-  rw [HGFun_eq_tsum] at h0
+  rw [HGFun_eq_tsum {1, 1} {3 / 2} 0] at h0
   have hzero : (∑' n : ℕ, HGFunCoeff {1, 1} {3 / 2} n * (0 : ℂ) ^ n) = 1 := by
     rw [tsum_eq_single 0 (fun n hn => by simp [zero_pow hn]), HGFunCoeff_arcsin_div]
     simp [arcsinDivCoeff]

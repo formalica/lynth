@@ -1,14 +1,5 @@
 import Mathlib
 import Lynth
-import Lynth.Interval.Goals.Series
-
-open Lean Elab Tactic in
-elab "lynth_cseries" : tactic => do
-  let g ← getMainGoal
-  let some pf ← Lynth.Interval.Goals.proveSeries? (← Lean.instantiateMVars (← g.getType))
-    | throwError "series: no proof"
-  g.assign pf
-  replaceMainGoal []
 
 /-!
 Complex finite + infinite sums.
@@ -184,7 +175,7 @@ noncomputable def cx_alt_body (k : ℕ) : ℂ :=
 
 set_option maxHeartbeats 606 in
 theorem cx_alt_not_summ : ¬ Summable cx_alt_body := by
-  lynth_cseries
+  lynth
 /-- info: 'ComplexIntervalArith.cx_alt_not_summ' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms cx_alt_not_summ
@@ -194,7 +185,7 @@ noncomputable def cx_const_body (_ : ℕ) : ℂ := 1
 
 set_option maxHeartbeats 195 in
 theorem cx_const_not_summ : ¬ Summable cx_const_body := by
-  lynth_cseries
+  lynth
 /-- info: 'ComplexIntervalArith.cx_const_not_summ' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms cx_const_not_summ
