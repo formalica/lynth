@@ -3,7 +3,7 @@ import Lynth.Interval.Goals.Approx
 import Lynth.Interval.Goals.Discrete
 import Lynth.Interval.Goals.Series
 import Lynth.Interval.Goals.Integral
-import Lynth.Interval.Goals.NestedIntegral
+import Lynth.Interval.Goals.ComplexIntegral
 
 /-!
 # The `interval` procedure of `lynth`
@@ -39,6 +39,10 @@ def run : TacticM ProcedureOutcome := do
       replaceMainGoal []
       return .success
     if let some pf ← Goals.proveNestedIntegral? ty then
+      goal.assign pf
+      replaceMainGoal []
+      return .success
+    if let some pf ← Goals.proveComplexIntegral? ty then
       goal.assign pf
       replaceMainGoal []
       return .success

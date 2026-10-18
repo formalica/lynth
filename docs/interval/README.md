@@ -76,3 +76,5 @@ you are working on.
 [17 — Special functions](17-special-functions.md): separate real/complex erf, Si, eta and Airy evaluators, with real integration.
 
 [18 — Internal integration proofs](18-internal-integration-proofs.md): completed interval-specific proofs and the remaining internal placeholders.
+
+[19 — Complex integrands over real ranges](19-complex-real-integrals.md): component certificates, principal branches, affine primitives, endpoint bounds and measured test coverage.

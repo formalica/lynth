@@ -1,8 +1,14 @@
 import Lynth.Interval.Integral.NestedScaleProof
+import Lynth.Interval.Integral.Math.ComplexEndpoint
 
 /-! The real branch of scaled endpoint evaluation. -/
 namespace Lynth.Interval.Integral.Nested
 open Intgrl Fns
+
+theorem scaledLogRat_real_sound {c : Ctx} (hc : c.Valid) (q : ℚ) (t : ℝ) :
+    (scaleConst (CBox.ofReal (unaryR c .log (Ival.ofRat c.prec q)))).Mem t
+      (Real.log (q:ℝ):ℂ) :=
+  scaleConst_sound (CBox.mem_ofReal (unaryR_sound hc .log (Ival.mem_ofRat c.prec q))) t
 
 theorem Scale.weight_pos (A : Scale) {t : ℝ} (ht : 0 < t) (ht1 : t ≤ 1) :
     0 < t^(A.power:ℝ)*(1-Real.log t)^A.logs := by
@@ -77,6 +83,22 @@ theorem scaleSqrt_real_sound {c : Ctx} (hc : c.Valid) {A : Scale} {V : CBox}
   simp only [Rat.cast_div,Rat.cast_ofNat,pow_zero,mul_one]
   rw [hx,sqrt_power_factor ht,Complex.ofReal_mul]
 
+theorem scaleSqrtLogs_real_sound {c : Ctx} (hc : c.Valid) {A : Scale} {V : CBox}
+    {t x : ℝ} (ht : 0 < t) (ht1 : t ≤ 1) (hA : A.Mem t (x : ℂ))
+    (h : unaryC c .sqrt A.coeff = some V) :
+    (Scale.mk (A.power/2) ((A.logs+1)/2)
+      (CBox.mul c.prec (CBox.ofReal (Ival.ofRats 64 0 1)) V)).Mem t (Real.sqrt x : ℂ) := by
+  obtain ⟨y,hy,hx⟩ := A.real_coeff ht ht1 hA
+  have hyS := unaryC_real_sound hc .sqrt hy h
+  obtain ⟨u,hu0,hu1,he⟩ := real_sqrt_log_scaled (p := (A.power:ℝ))
+    (a := y) (m := A.logs) ht ht1
+  have hu : u ∈ Ival.ofRats 64 0 1 := Ival.mem_ofRats (by simpa using hu0) (by simpa using hu1)
+  have hcU := CBox.mem_mul (p := c.prec) (CBox.mem_ofReal hu) hyS
+  simp only [Unary.real,← Complex.ofReal_mul] at hcU
+  refine ⟨((u*Real.sqrt y:ℝ):ℂ),hcU,?_⟩
+  simp only [Rat.cast_div,Rat.cast_ofNat]
+  rw [hx,he,Complex.ofReal_mul]
+
 theorem scaleLog_real_sound {c : Ctx} (hc : c.Valid) {A : Scale} {V : CBox} {r R : Dy}
     {t x : ℝ} (ht : 0 < t) (ht1 : t ≤ 1) (hA : A.Mem t (x : ℂ))
     (hlogs : A.logs = 0) (hV : unaryC c .log A.coeff = some V)
@@ -110,6 +132,41 @@ theorem scaleLog_real_sound {c : Ctx} (hc : c.Valid) {A : Scale} {V : CBox} {r R
   congr 1
   field_simp
 
+theorem scaleLogLogs_real_sound {c : Ctx} (hc : c.Valid) {A : Scale} {V : CBox} {r R : Dy}
+    {t x : ℝ} (ht : 0 < t) (ht1 : t ≤ 1) (hA : A.Mem t (x : ℂ))
+    (hV : unaryC c .log A.coeff = some V) (hr : boxRadius c V = some r)
+    (hR : (Ival.add c.prec
+      (Ival.add c.prec (Ival.ofRat c.prec |A.power|) (Ival.pt r))
+      (Ival.ofRat c.prec A.logs)).hi = some R) :
+    (Scale.mk 0 1 (symmetricBox R)).Mem t (Real.log x : ℂ) := by
+  obtain ⟨y,hy,hx⟩ := A.real_coeff ht ht1 hA
+  have hyL := unaryC_real_sound hc .log hy hV
+  have hybound : |Real.log y| ≤ r.toReal := by
+    have hh := (CBox.mem_norm (p := c.prec) hyL).2 r hr
+    simpa only [Unary.real,Complex.norm_real,Real.norm_eq_abs] using hh
+  have hpow : |(A.power:ℝ)| ∈ Ival.ofRat c.prec |A.power| := by
+    simpa only [Rat.cast_abs] using Ival.mem_ofRat c.prec |A.power|
+  have hlogs : (A.logs:ℝ) ∈ Ival.ofRat c.prec A.logs := by
+    simpa only [Rat.cast_natCast] using Ival.mem_ofRat c.prec (A.logs:ℚ)
+  have hupper := (Ival.mem_add (p := c.prec)
+    (Ival.mem_add (p := c.prec) hpow (Ival.mem_pt r)) hlogs).2 R hR
+  let L := 1-Real.log t
+  have hL : 0 < L := by dsimp [L]; linarith [Real.log_nonpos ht.le ht1]
+  have hlog : |Real.log x| ≤ (|(A.power:ℝ)|+A.logs+|Real.log y|)*L := by
+    rw [hx]
+    exact real_log_log_scaled_bound ht ht1
+  have hcoef : |Real.log x/L| ≤ R.toReal := by
+    rw [abs_div,abs_of_pos hL]
+    apply (div_le_iff₀ hL).mpr
+    have hs : |(A.power:ℝ)|+A.logs+|Real.log y| ≤ R.toReal := by linarith
+    exact hlog.trans (mul_le_mul_of_nonneg_right hs hL.le)
+  refine ⟨((Real.log x/L:ℝ):ℂ),symmetricBox_real_mem hcoef,?_⟩
+  simp only [Rat.cast_zero,Real.rpow_zero,pow_one,one_mul]
+  change (Real.log x:ℂ) = (L:ℂ)*((Real.log x/L:ℝ):ℂ)
+  rw [← Complex.ofReal_mul]
+  congr 1
+  field_simp
+
 theorem scaleUnary_real_sound {c : Ctx} (hc : c.Valid) {δ : Dy} {decay : Nat}
     {A V : Scale} {op : Unary} {t x : ℝ} (ht : 0 < t)
     (htδ : t ≤ δ.toReal) (ht1 : t ≤ 1) (hA : A.Mem t (x : ℂ))
@@ -129,7 +186,14 @@ theorem scaleUnary_real_sound {c : Ctx} (hc : c.Valid) {δ : Dy} {decay : Nat}
         have he : Scale.mk (A.power/2) 0 U = V := by simpa [hl,hU] using h
         rw [← he]
         exact scaleSqrt_real_sound hc ht ht1 hA hl hU
-    · simp [hl] at h
+    · cases hU : unaryC c .sqrt A.coeff with
+      | none => simp [hl,hU] at h
+      | some U =>
+        have he : Scale.mk (A.power/2) ((A.logs+1)/2)
+            (CBox.mul c.prec (CBox.ofReal (Ival.ofRats 64 0 1)) U) = V := by
+          simpa [hl,hU] using h
+        rw [← he]
+        exact scaleSqrtLogs_real_sound hc ht ht1 hA hU
   case log =>
     by_cases hl : A.logs = 0
     · cases hU : unaryC c .log A.coeff with
@@ -144,7 +208,20 @@ theorem scaleUnary_real_sound {c : Ctx} (hc : c.Valid) {δ : Dy} {decay : Nat}
             have he : Scale.mk 0 1 (symmetricBox R) = V := by simpa [hl,hU,hr,hR] using h
             rw [← he]
             exact scaleLog_real_sound hc ht ht1 hA hl hU hr hR
-    · simp [hl] at h
+    · cases hU : unaryC c .log A.coeff with
+      | none => simp [hl,hU] at h
+      | some U =>
+        cases hr : boxRadius c U with
+        | none => simp [hl,hU,hr] at h
+        | some r =>
+          cases hR : (Ival.add c.prec
+              (Ival.add c.prec (Ival.ofRat c.prec |A.power|) (Ival.pt r))
+              (Ival.ofRat c.prec A.logs)).hi with
+          | none => simp [hl,hU,hr,hR] at h
+          | some R =>
+            have he : Scale.mk 0 1 (symmetricBox R) = V := by simpa [hl,hU,hr,hR] using h
+            rw [← he]
+            exact scaleLogLogs_real_sound hc ht ht1 hA hU hr hR
   case abs =>
     obtain ⟨y,hy,hx⟩ := A.real_coeff ht ht1 hA
     split at h

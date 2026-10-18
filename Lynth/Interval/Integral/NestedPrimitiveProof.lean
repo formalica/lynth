@@ -87,7 +87,8 @@ private def unaryCRaw (c : Ctx) (op : Unary) (Z : CBox) : Option CBox := do
     if let (some a,some b) := (F.lo,F.hi) then
       if dyEq a b then some (CBox.ofReal (Ival.pt a)) else none
     else none
-  | .atan => none
+  | .atan =>
+      if Ival.ltB (Ival.abs Z.im) Ival.one then some (Unary.evalC c .atan Z) else none
   | _ => some (Unary.evalC c op Z)
 
 
@@ -211,7 +212,13 @@ theorem unaryC_real_sound {c : Ctx} (hc : c.Valid) (op : Unary)
           rw [show Unary.real .floor x = a.toReal from hv]
           exact CBox.mem_ofReal (Ival.mem_pt a)
         · simp only [reduceCtorEq] at h'
-  case atan => simp only [reduceCtorEq] at h'
+  case atan =>
+    simp only at h'
+    split at h'
+    · rw [← Option.some.inj h']
+      simpa only [Unary.real,Unary.complex,Complex.ofReal_arctan] using
+        unary_evalC_sound hc .atan hx
+    · simp only [reduceCtorEq] at h'
   all_goals exact unaryC_real_via_evalC hc hx ⟨trivial,trivial⟩ (Option.some.inj h')
 
 private theorem finite_value_eq {W V : CBox}

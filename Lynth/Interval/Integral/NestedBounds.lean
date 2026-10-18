@@ -60,7 +60,8 @@ def unaryC (c : Ctx) (op : Unary) (Z : CBox) : Option CBox := do
       if let (some a,some b) := (F.lo,F.hi) then
         if dyEq a b then some (CBox.ofReal (Ival.pt a)) else none
       else none
-    | .atan => none
+    | .atan =>
+      if Ival.ltB (Ival.abs Z.im) Ival.one then some (Unary.evalC c .atan Z) else none
     | _ => some (Unary.evalC c op Z)
   if V.isFinite then some V else none
 
@@ -143,17 +144,17 @@ def scaleUnary (c : Ctx) (δ : Dy) (decay : Nat) (op : Unary) (A : Scale) : Opti
   match op with
   | .neg => return {A with coeff := CBox.neg A.coeff}
   | .inv => scaleDiv c (scaleConst (CBox.ofReal Ival.one)) A
-  | .sqrt =>
-    if A.logs != 0 then none else do
-      let V ← unaryC c .sqrt A.coeff
-      return ⟨A.power/2,0,V⟩
-  | .log =>
-    if A.logs != 0 then none else do
-      let V ← unaryC c .log A.coeff
-      let r ← boxRadius c V
-      let s := Ival.add c.prec (Ival.ofRat c.prec |A.power|) (Ival.pt r)
-      let h ← s.hi
-      return ⟨0,1,symmetricBox h⟩
+  | .sqrt => do
+    let V ← unaryC c .sqrt A.coeff
+    if A.logs == 0 then return ⟨A.power/2,0,V⟩
+    return ⟨A.power/2,(A.logs+1)/2,CBox.mul c.prec (CBox.ofReal (Ival.ofRats 64 0 1)) V⟩
+  | .log => do
+    let V ← unaryC c .log A.coeff
+    let r ← boxRadius c V
+    let s := Ival.add c.prec (Ival.ofRat c.prec |A.power|) (Ival.pt r)
+    let s := if A.logs == 0 then s else Ival.add c.prec s (Ival.ofRat c.prec A.logs)
+    let h ← s.hi
+    return ⟨0,1,symmetricBox h⟩
   | .exp =>
     if A.logs != 0 then none else
     if A.power < 0 then do
@@ -181,6 +182,26 @@ def scaleUnary (c : Ctx) (δ : Dy) (decay : Nat) (op : Unary) (A : Scale) : Opti
 def scaleGuard (c : Ctx) (δ : Dy) (V : Scale) (strict : Bool) : Bool :=
   if strict then V.coeff.re.pos else V.coeff.re.nonneg
 
+/-- Recognize the distinguished positive real endpoint variable. -/
+def endpointVar (A : Scale) : Bool :=
+  A.power == 1 && A.logs == 0 && exactPoint A.coeff.re 1 && exactPoint A.coeff.im 0
+
+/-- log(t)/(1-log(t)) = -1 + 1/(1-log(t)). Keeping the sign and
+separation from zero permits further logarithms and square roots. -/
+def logEndpointScale (c : Ctx) (δ : Dy) : Option Scale := do
+  if !δ.isPos || !Dy.leB δ (Dy.ofRatD 64 (1/2)) then none else do
+    let L := Ival.sub c.prec Ival.one (unaryR c .log (Ival.pt δ))
+    let h ← (Ival.inv c.prec L).hi
+    let U : Ival := ⟨some Dy.zero,some h⟩
+    return ⟨0,1,CBox.ofReal (Ival.add c.prec (Ival.ofRat c.prec (-1)) U)⟩
+
+/-- A first-order endpoint envelope for log(1-t), without quadrature
+or a Taylor integration algorithm. -/
+def logOneMinusEndpointScale (c : Ctx) (δ : Dy) : Option Scale := do
+  if !δ.isPos || !Dy.leB δ (Dy.ofRatD 64 (1/2)) then none else do
+    let h ← (Ival.inv c.prec (Ival.sub c.prec Ival.one (Ival.pt δ))).hi
+    return ⟨1,0,CBox.ofReal ⟨some h.neg,some Dy.one.neg⟩⟩
+
 /-- A supplied formula is used only after its domain guard is established.
 The zero-width case is handled separately, before looking at singular kernels. -/
 def scaled : Nat → Ctx → Dy → Nat → Expr → Array Scale → Option Scale
@@ -190,6 +211,15 @@ def scaled : Nat → Ctx → Dy → Nat → Expr → Array Scale → Option Scal
     | .var i => env[i]?
     | .rat q => return scaleConst (CBox.ofReal (Ival.ofRat c.prec q))
     | .pi => return scaleConst (CBox.ofReal c.pi)
+    | .unary .log (.var i) =>
+      let A ← env[i]?
+      if endpointVar A then logEndpointScale c δ else scaleUnary c δ decay .log A
+    | .unary .log (.binary .sub (.rat 1) (.var i)) =>
+      let A ← env[i]?
+      if endpointVar A then logOneMinusEndpointScale c δ else
+        scaleUnary c δ decay .log (← scaled fuel c δ decay (.binary .sub (.rat 1) (.var i)) env)
+    | .unary .log (.rat q) =>
+      return scaleConst (CBox.ofReal (unaryR c .log (Ival.ofRat c.prec q)))
     | .unary op a => scaleUnary c δ decay op (← scaled fuel c δ decay a env)
     | .binary op a b =>
       let A ← scaled fuel c δ decay a env

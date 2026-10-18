@@ -2,6 +2,25 @@
 
 Update at every milestone.  Keep "Next" pointing at the lowest unfinished item.
 
+## Complex integrands over real ranges — 2026-10-18
+
+The previous special-function and internal-proof work is committed as `90b9fa5`.
+Complex-valued functions now compile to certified real and imaginary projections
+and reuse real Gauss–Legendre/Petras integration, including real nested bounds
+and absolutely integrable half-lines/whole lines. Exact affine-phase primitives,
+principal-branch splits, and logarithmic endpoint bounds cover ten of the
+seventeen supplied elementary NIntegrate examples. Seven remaining cases are
+tracked in `TestFailures/ComplexIntervalArith/Integrals.lean`; Bessel-J is absent
+from the installed Mathlib and has no Lynth evaluator.
+
+`Test/ComplexIntervalArith/Integrals.lean` adds twenty numerical declarations and
+two convergence-preservation checks. Each passing and failing testcase has its
+own measured heartbeat cap with 5% headroom. Five mathematical obligations and
+their pure supporting syntax are copied to `/tmp/intgrl`; all fourteen standalone
+modules compile with Lynth unavailable. The new local interval adapters are
+proved; the previous three unfinished internal adapters remain unchanged.
+See [19-complex-real-integrals.md](19-complex-real-integrals.md).
+
 ## Internal integration proofs — 2026-10-18
 
 Sixteen of the 19 Lynth-dependent integration placeholders now have proofs,

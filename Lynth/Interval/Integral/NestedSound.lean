@@ -2,7 +2,7 @@ import Lynth.Interval.Integral.NestedCert
 import Lynth.Interval.Integral.NestedPrimitiveProof
 import Lynth.Interval.Integral.NestedFormulaProof
 import Lynth.Interval.Integral.NestedScaleProof
-import Lynth.Interval.Integral.NestedScaledRealProof
+import Lynth.Interval.Integral.NestedLogEndpointProof
 import Lynth.Interval.Integral.NestedMeasurable
 import Lynth.Interval.Integral.NestedSemantics
 import Lynth.Interval.Integral.NestedMemoProof
