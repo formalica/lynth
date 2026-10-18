@@ -2,6 +2,42 @@
 
 Update at every milestone.  Keep "Next" pointing at the lowest unfinished item.
 
+## Internal integration proofs — 2026-10-18
+
+Sixteen of the 19 Lynth-dependent integration placeholders now have proofs,
+including all one-dimensional panel, node-table and finite assembly adapters,
+plus nested samples, direct panels and canonical memo replay. Three nested
+internal placeholders remain: recursive integral range evaluation, analytic
+extensions and assembly. Supporting proofs now cover binder transport,
+complete formula dispatch, real-value complex-fallback arithmetic, scaled
+endpoint arithmetic, and numerical endpoint moments/remainders. A binder-capture
+bug in the power-integral formula recognizer and empty memo environments are
+covered by measured regressions. The 95 previously handed-off portable
+mathematical obligations stay unchanged. See
+[18-internal-integration-proofs.md](18-internal-integration-proofs.md) for the
+exact completed and remaining theorem lists.
+
+The requested extraction adds 16 portable obligations in `NestedEnvelope`
+(Mathlib only) and `NestedChange` (the small pure expression specifications).
+Their standalone copies and dependencies typecheck in `/tmp/intgrl`.
+The local `collapse` and scaled real unary/rational-power proofs now consume
+these contracts. Whole-line split assembly is proved after adding a separate
+check for inner convergence at the split point; its rejection regression uses
+454 heartbeats with an individual cap of 477. The three top-level adapters
+still have unfinished parts, as listed in the proof-status document.
+
+## Special functions — 2026-10-18
+
+Independent real and complex erf, Si, Dirichlet eta and Airy Ai definitions
+and integer evaluators are implemented. Real integration recognizes all four;
+new regression files cover numeric expressions and FLINT 25/26/30/37 at their
+original domains. See [17-special-functions.md](17-special-functions.md).
+There are 27 new numeric checks and eight new integration checks (95 passing
+integration checks in total), each with measured +5% heartbeat caps. Seventeen
+new generic mathematical obligations are mirrored in the Mathlib-only
+SpecialFunctions, SpecialKernel and SpecialBounds packets under /tmp/intgrl. The interval
+adapters and generated problem proofs have no new project-specific gaps.
+
 ## Numerical integration update — 2026-10-17
 
 The Real Petras/Gauss-Legendre engine is implemented in Integral/ and
@@ -31,7 +67,8 @@ regression was caught by the existing nested caps and corrected before the
 final measurement. The performance log records timings and validation.
 
 Proof status is explicitly provisional under the user's authorization:
-78 Mathlib-only obligations in /tmp/intgrl and 19 Lynth-dependent adapter gaps.
+At that milestone there were 78 Mathlib-only obligations in /tmp/intgrl and
+19 Lynth-dependent adapter gaps; the updates above supersede those counts.
 The mathematical packets elaborate independently; no Lynth-dependent theorem
 is included in the proof handoff. Heavy certificates follow the existing
 auto/native trust policy, and their axiom footprints are recorded in tests.

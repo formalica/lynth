@@ -10,6 +10,7 @@ inductive TailFamily where
   | exponential (power : ℕ)
   | sech (power : ℕ)
   | arctan
+  | airyDamped
 deriving Repr, Inhabited
 
 structure TailModel where
@@ -21,6 +22,9 @@ def gaussianTerm : Term := .unary .exp (.unary .neg (.pow .var 2))
 def exponentialTerm : Term := .unary .exp (.unary .neg .var)
 
 def classifyTail : Term → Option TailModel
+  | .binary .mul (.unary .exp (.unary .neg .var)) (.unary .airyAi (.unary .neg .var))
+  | .binary .mul (.unary .airyAi (.unary .neg .var)) (.unary .exp (.unary .neg .var)) =>
+      some ⟨.airyDamped,1⟩
   | .unary .exp (.unary .neg (.pow .var 2)) => some ⟨.gaussian 0,1⟩
   | .unary .exp (.unary .neg .var) => some ⟨.exponential 0,1⟩
   | .binary .mul (.unary .exp (.unary .neg (.pow .var 2))) (.pow .var n) =>
@@ -56,7 +60,8 @@ def TailModel.boundTerm (m : TailModel) : Term :=
             (.pow .var j)) acc) (.rat 0))
     | .sech n => .binary .mul (.rat ((2 : ℚ)^n / n))
         (.unary .exp (.unary .neg (.binary .mul (.rat n) .var)))
-    | .arctan => .unary .inv .var)
+    | .arctan => .unary .inv .var
+    | .airyDamped => exponentialTerm)
 
 def TailModel.twoSided : TailModel → Bool
   | ⟨.gaussian _,_⟩ => true

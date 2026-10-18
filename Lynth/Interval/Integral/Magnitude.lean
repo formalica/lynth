@@ -1,4 +1,4 @@
-import Lynth.Interval.Integral.Eval
+import Lynth.Interval.Integral.SpecialMagnitude
 import Lynth.Interval.Integral.Math.ComplexMagnitude
 
 /-! Direct complex modulus bounds for an outer sine or cosine. -/
@@ -46,6 +46,10 @@ def analyticMagnitude (c : Ctx) (e : Term) (Z : CBox) : Option Dy :=
   match e with
   | .unary .sin a | .unary .cos a => trigMagnitude c (evalC c a Z)
   | .unary .exp a => expMagnitude c (evalC c a Z)
+  | .unary .erf a => specialMagnitude c .erf (evalC c a Z)
+  | .unary .si a => specialMagnitude c .si (evalC c a Z)
+  | .unary .eta a => specialMagnitude c .eta (evalC c a Z)
+  | .unary .airyAi a => specialMagnitude c .airyAi (evalC c a Z)
   | .unary .neg a => analyticMagnitude c a Z
   | .binary .mul a b => do
     let A ← analyticMagnitude c a Z
@@ -67,6 +71,9 @@ theorem analyticMagnitude_sound {c : Ctx} (hc : c.Valid) {e : Term} {Z : CBox}
         (trigMagnitude_sound (evalC_sound hc a (Bool.and_eq_true_iff.mp hr).1 hz) h)
     | exp =>
       exact expMagnitude_sound
+        (evalC_sound hc a (Bool.and_eq_true_iff.mp hr).1 hz) h
+    | erf | si | eta | airyAi =>
+      exact specialMagnitude_sound hc _
         (evalC_sound hc a (Bool.and_eq_true_iff.mp hr).1 hz) h
     | neg =>
       simpa only [Term.complex, Unary.complex, norm_neg] using

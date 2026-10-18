@@ -12,7 +12,8 @@ def quoteUnary (op : Unary) : Lean.Expr :=
     | .neg => ``Unary.neg | .inv => ``Unary.inv | .exp => ``Unary.exp
     | .sin => ``Unary.sin | .cos => ``Unary.cos | .sinh => ``Unary.sinh
     | .cosh => ``Unary.cosh | .log => ``Unary.log | .sqrt => ``Unary.sqrt
-    | .abs => ``Unary.abs | .floor => ``Unary.floor | .atan => ``Unary.atan)
+    | .abs => ``Unary.abs | .floor => ``Unary.floor | .atan => ``Unary.atan
+    | .erf => ``Unary.erf | .si => ``Unary.si | .eta => ``Unary.eta | .airyAi => ``Unary.airyAi)
 
 def quoteBinary (op : Binary) : Lean.Expr :=
   mkConst (match op with
@@ -127,6 +128,10 @@ def unaryHead? (n : Name) : Option Unary :=
   if n == ``Real.log then some .log else
   if n == ``Real.sqrt then some .sqrt else
   if n == ``abs then some .abs else
+  if n == ``Real.erf then some .erf else
+  if n == ``Real.Si then some .si else
+  if n == ``Real.dirichletEta then some .eta else
+  if n == ``Real.airyAi then some .airyAi else
   if n == ``Real.arctan then some .atan else none
 
 def binaryHead? (n : Name) : Option Binary :=

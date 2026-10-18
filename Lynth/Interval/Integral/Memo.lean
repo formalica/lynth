@@ -122,7 +122,8 @@ def expensiveTerms : Term → List Term
   | .unary op a =>
     let rest := expensiveTerms a
     match op with
-    | .exp | .sin | .cos | .log | .sqrt | .sinh | .cosh | .atan => .unary op a :: rest
+    | .exp | .sin | .cos | .log | .sqrt | .sinh | .cosh | .atan
+    | .erf | .si | .eta | .airyAi => .unary op a :: rest
     | _ => rest
   | .binary _ a b => expensiveTerms a ++ expensiveTerms b
   | .pow a _ => expensiveTerms a

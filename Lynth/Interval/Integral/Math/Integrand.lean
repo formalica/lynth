@@ -1,4 +1,4 @@
-import Mathlib
+import Lynth.Analysis.SpecialFunctions
 
 /-!
 Small mathematical expression language used by the integration compiler.
@@ -31,6 +31,7 @@ noncomputable def Region.value (k : Region) (f : ℝ → ℝ) (a b : ℝ) : ℝ 
 
 inductive Unary where
   | neg | inv | exp | sin | cos | sinh | cosh | log | sqrt | abs | floor | atan
+  | erf | si | eta | airyAi
 deriving Repr, BEq, DecidableEq, Inhabited
 
 inductive Binary where
@@ -52,6 +53,7 @@ noncomputable def Unary.real : Unary → ℝ → ℝ
   | .sin => Real.sin | .cos => Real.cos | .sinh => Real.sinh | .cosh => Real.cosh
   | .log => Real.log | .sqrt => Real.sqrt | .abs => fun x => |x|
   | .floor => fun x => (⌊x⌋ : ℤ) | .atan => Real.arctan
+  | .erf => Real.erf | .si => Real.Si | .eta => Real.dirichletEta | .airyAi => Real.airyAi
 
 noncomputable def Binary.real : Binary → ℝ → ℝ → ℝ
   | .add => (· + ·) | .sub => (· - ·) | .mul => (· * ·)
@@ -70,6 +72,8 @@ noncomputable def Unary.complex : Unary → ℂ → ℂ
   | .sinh => Complex.sinh | .cosh => Complex.cosh
   | .log => Complex.log | .sqrt => Complex.sqrt
   | .atan => Complex.arctan
+  | .erf => Complex.erf | .si => Complex.Si
+  | .eta => Complex.dirichletEta | .airyAi => Complex.airyAi
   | .abs => id | .floor => fun _ => 0
 
 noncomputable def Binary.complex : Binary → ℂ → ℂ → ℂ

@@ -54,6 +54,7 @@ def integralEvalCost : Intgrl.Term → Nat
   | .unary op a => integralEvalCost a + match op with
       | .exp | .sin | .cos | .sinh | .cosh | .log | .atan => 60
       | .sqrt => 20
+      | .erf | .si | .eta | .airyAi => 500000
       | _ => 2
   | .binary _ a b => integralEvalCost a + integralEvalCost b + 4
   | .pow a n => integralEvalCost a + 2 * (Nat.log2 (n+1) + 1)

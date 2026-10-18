@@ -59,4 +59,60 @@ run_cmd do
   if (evalWith c memo bad #[]).isSome then
     throwError "a cached zero erased divergence in a bound"
 
+-- A nested endpoint has a different variable level inside the body.
+set_option maxHeartbeats 699 in -- measured: 665; +5%
+run_cmd do
+  let a : NExpr := .integral .interval (.rat 0) (.rat (1/100)) (.var 0)
+  let badBody : NExpr := .pow (.binary .sub (.var 0) a) 1
+  if (formula 0 .interval a (.rat 1) badBody).isSome then
+    throwError "a captured endpoint binder matched the power formula"
+  let goodBody : NExpr := .pow (.binary .sub (.var 0) (a.shift 0 1)) 1
+  unless (formula 0 .interval a (.rat 1) goodBody).isSome do
+    throwError "a correctly shifted endpoint failed to match the power formula"
+  let e : NExpr := .integral .interval a (.rat 1) badBody
+  unless e.scoped 0 do throwError "the binder fixture must be scoped"
+  let some I := boundR (e.size+32) (Ctx.coarse 64) e #[] |
+    throwError "the binder fixture failed to enclose"
+  let exactValue : ℚ := 39599999901/80000000000
+  unless (I.lo.map (fun d => decide (d.toRat ≤ exactValue))).getD true &&
+      (I.hi.map (fun d => decide (exactValue ≤ d.toRat))).getD true do
+    throwError "a nested endpoint produced an incorrect enclosure"
+
+set_option maxHeartbeats 497 in -- measured: 473; +5%
+run_cmd do
+  let c := Ctx.coarse 64
+  let p : Plan := {a := Dy.zero,b := Dy.one,pieces := [⟨Dy.zero,Dy.one,.direct⟩]}
+  let entry : Entry := {
+    expr := .integral .interval (.rat 0) (.rat 1) (.rat 0)
+    env := #[⟨some Dy.one,some Dy.zero⟩]
+    method := .panels p}
+  unless (entryEncl c {} #[] #[] entry).isSome do
+    throwError "the empty-environment fixture must have a valid local enclosure"
+  if (replay c {entries := #[entry]}).isSome then
+    throwError "a vacuous environment was inserted into the canonical memo"
+  unless envCheck #[Ival.top,Ival.pt Dy.zero] do
+    throwError "inhabited unbounded and point intervals were rejected"
+
+-- Open half-lines do not cover the split point. Here the inner integral
+-- of 1/(x^2+y^2) diverges at x=0 despite the outer factor x^2.
+set_option maxHeartbeats 477 in -- measured: 454; +5%
+run_cmd do
+  let c := Ctx.coarse 64
+  let x : NExpr := .var 0
+  let inner : NExpr := .integral .interval (.rat 0) (.rat 1)
+    (.unary .inv (.binary .add (.pow x 2) (.pow (.var 1) 2)))
+  let f : NExpr := .binary .mul
+    (.binary .mul (.pow x 2) (.unary .exp (.unary .neg (.pow x 2)))) inner
+  let r : NExpr := .integral .right (.rat 0) (.rat 0) f
+  let l : NExpr := .integral .left (.rat 0) (.rat 0) f
+  let memo := (({} : Memo).insert (key r #[]) Ival.top).insert (key l #[]) Ival.top
+  unless (evalWith c memo r #[]).isSome && (evalWith c memo l #[]).isSome do
+    throwError "the split-point fixture must have both half-line memo entries"
+  let entry : Entry := {
+    expr := .integral .whole (.rat 0) (.rat 0) f
+    env := #[]
+    method := .split}
+  if (entryEncl c memo #[] #[] entry).isSome then
+    throwError "a divergent inner integral at the split point was accepted"
+
 end IntervalArith.NestedCertificates

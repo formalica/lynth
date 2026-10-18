@@ -76,8 +76,9 @@ checking and an explicitly forced kernel check have axiom-footprint guards.
 The current numerical targets are 10^(-5) and 10^(-6); these test runs are not
 speed comparisons against FLINT's 64-bit or 128-bit benchmark targets.
 
-Still unsupported: integration of the unimplemented erf/Si/Weierstrass and
-other special-function kernels, public complex contours, general product
+The subsequent [special-function extension](17-special-functions.md) adds
+real erf/Si/eta/Airy evaluation and integration. Still unsupported: Weierstrass
+and other unimplemented kernels, public complex contours, general product
 measure domains (including the ten-dimensional cube testcase), and improper
 or singular families for which the uniform majorant classifier fails. A
 supported elementary function alone does not guarantee that every domain or

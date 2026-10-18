@@ -15,6 +15,10 @@ import Lynth.Interval.Fns.Floor
 import Lynth.Interval.Fns.Zeta
 import Lynth.Interval.Fns.Hypgeom
 import Lynth.Interval.Fns.Digamma
+import Lynth.Interval.Fns.Special.Erf
+import Lynth.Interval.Fns.Special.Si
+import Lynth.Interval.Fns.Special.Airy
+import Lynth.Interval.Fns.Special.Eta
 
 /-!
 All registry entries.  Every `Lynth/Interval/Fns/*.lean` file must be imported

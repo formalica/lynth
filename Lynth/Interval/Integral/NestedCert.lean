@@ -51,7 +51,8 @@ structure Cert where
 
 def coarsePanel (c : Ctx) (e : Expr) (env : Array Ival) (a b : Dy) : Option Ival := do
   if dyEq a b then return Ival.zero
-  let V ← boundR (e.size+32) c e (env.push (panelBox a b))
+  let V ← evalWith c {} e (env.push (panelBox a b))
+  if !V.isFinite then return ← none
   return mulSigned c.prec (Ival.ofRat c.prec (b.toRat-a.toRat)) V
 
 def analytic (c : Ctx) (e : Expr) (env : Array Ival) (a b ρ : Dy) : Option Dy := do
@@ -99,6 +100,10 @@ def entryEncl (c : Ctx) (memo : Memo) (tables : Array NodeTable)
   | .split =>
     if k != .whole then none else do
       let anchor := center env.size f
+      -- The half-lines exclude their common endpoint. Recursive convergence
+      -- of an inner integral at that point must be checked separately.
+      let C ← evalWith c memo anchor env
+      let _ ← evalWith c memo f (env.push C)
       let R ← evalWith c memo (.integral .right anchor (.rat 0) f) env
       let L ← evalWith c memo (.integral .left anchor (.rat 0) f) env
       return Ival.add c.prec R L
@@ -132,11 +137,19 @@ def entryEncl (c : Ctx) (memo : Memo) (tables : Array NodeTable)
       let vals ← p.pieces.mapM (piece c memo E env tables weights)
       return Ival.widen c.prec (balancedSum c.prec vals) (Dy.addU c.prec l r)
 
+/-- Every stored environment admits a real parameter assignment. This keeps
+canonical memo reuse meaningful even when unused slots are erased. -/
+def envCheck (env : Array Ival) : Bool := env.all fun I =>
+  match I.lo,I.hi with
+  | some a,some b => Dy.leB a b
+  | _,_ => true
+
 def replay (c : Ctx) (cert : Cert) : Option Memo := do
   if !cert.tables.all (fun t => t.check c) then none else do
     let weights := cert.tables.map (fun t => t.weights c)
     let mut memo : Memo := {}
     for entry in cert.entries do
+      if !envCheck entry.env then return ← none
       let I ← entryEncl c memo cert.tables weights entry
       if !I.isFinite then return ← none
       memo := memo.insert (key entry.expr entry.env) I

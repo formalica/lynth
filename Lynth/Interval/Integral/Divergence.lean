@@ -1,5 +1,6 @@
 import Lynth.Interval.Integral.Cert
 import Lynth.Interval.Integral.Math.DivergenceRules
+import Lynth.Interval.Integral.SyntaxEq
 
 /-! Proof-producing divergence checks, separate from quadrature failure. -/
 
@@ -38,11 +39,55 @@ def divergenceCheck (c : Ctx) (e A B : Term) (kind : Region) : Bool :=
   | some rule => conditionCheck c rule kind A B
   | none => false
 
+theorem leTermCheck_sound {c : Ctx} (hc : c.Valid) {A B : Term}
+    (h : leTermCheck c A B = true) : A.real 0 ≤ B.real 0 := by
+  rcases Bool.or_eq_true_iff.mp h with h | h
+  · have heq : A = B := by simpa [termEq] using h
+    subst B
+    exact le_rfl
+  · exact Ival.le_of_leB (evalR_sound hc A Ival.mem_zero)
+      (evalR_sound hc B Ival.mem_zero) h
+
+theorem ltTermCheck_sound {c : Ctx} (hc : c.Valid) {A B : Term}
+    (h : ltTermCheck c A B = true) : A.real 0 < B.real 0 :=
+  Ival.lt_of_ltB (evalR_sound hc A Ival.mem_zero) (evalR_sound hc B Ival.mem_zero) h
+
 theorem conditionCheck_sound {c : Ctx} (hc : c.Valid)
     {rule : DivergenceRule} {kind : Region} {A B : Term}
     (h : conditionCheck c rule kind A B = true) :
     rule.Condition kind (A.real 0) (B.real 0) := by
-  sorry
+  cases rule with
+  | invPower n =>
+    by_cases hk : kind.isFinite = true
+    · simp only [conditionCheck, hk, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq] at h
+      simp only [DivergenceRule.Condition, hk, ↓reduceIte]
+      exact ⟨ltTermCheck_sound hc h.1.1.1, by simpa [Term.real] using leTermCheck_sound hc h.1.1.2,
+        by simpa [Term.real] using leTermCheck_sound hc h.1.2, h.2⟩
+    · have hk' : kind.isFinite = false := Bool.eq_false_iff.mpr hk
+      by_cases hu : kind == .univ
+      · simpa only [conditionCheck, DivergenceRule.Condition, hk', hu, ↓reduceIte, Bool.false_eq_true,
+          decide_eq_true_eq] using h
+      · simp only [conditionCheck, hk', hu, ↓reduceIte, Bool.false_eq_true,
+          Bool.or_eq_true, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+        simp only [DivergenceRule.Condition, hk', hu, Bool.false_eq_true, ↓reduceIte]
+        exact h.imp id (fun h => ⟨by simpa [Term.real] using leTermCheck_sound hc h.1,h.2⟩)
+  | shiftedInv q =>
+    by_cases hk : kind.isFinite = true
+    · simp only [conditionCheck, hk, ↓reduceIte, Bool.and_eq_true] at h
+      simp only [DivergenceRule.Condition, hk, ↓reduceIte]
+      exact ⟨ltTermCheck_sound hc h.1.1, by simpa [Term.real] using leTermCheck_sound hc h.1.2,
+        by simpa [Term.real] using leTermCheck_sound hc h.2⟩
+    · simp [DivergenceRule.Condition, hk]
+  | tangent =>
+    by_cases hk : kind.isFinite = true
+    · simp only [conditionCheck, hk, ↓reduceIte, Bool.and_eq_true] at h
+      simp only [DivergenceRule.Condition, hk, ↓reduceIte]
+      exact ⟨ltTermCheck_sound hc h.1.1,
+        by simpa [Term.real, Binary.real] using leTermCheck_sound hc h.1.2,
+        by simpa [Term.real, Binary.real] using leTermCheck_sound hc h.2⟩
+    · simp [DivergenceRule.Condition, hk]
+  | constant q | linear | sine | exponential =>
+    simpa only [conditionCheck, DivergenceRule.Condition, Bool.not_eq_true, Bool.not_eq_true'] using h
 
 theorem divergenceCheck_sound {c : Ctx} (hc : c.Valid) {e A B : Term} {kind : Region}
     (h : divergenceCheck c e A B kind = true) :

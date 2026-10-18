@@ -42,6 +42,29 @@ def emptyIEnvExpr : Lean.Expr :=
 /-- rough cost of checking at precision `prec` (kernel budget units) -/
 def checkCost (prec : Nat) (size : Nat) : Nat := size * (prec / 64 + 1) ^ 2
 
+/- Function records carry their evaluator cost. Include it in auto trust
+selection so a large special-function kernel is not replayed as a tiny
+arithmetic expression just because its AST has few nodes. -/
+mutual
+  def expressionWork : {t : Ty} → Expr t → Nat
+    | _, .call f xs => f.cost + argumentWork xs
+    | _, .sum _ n b => expressionWork n + expressionWork b
+    | _, .clist xs => listWork xs
+    | _, _ => 0
+  def argumentWork : {ts : List Ty} → CArg ts → Nat
+    | _, .nil => 0
+    | _, .cons _ x xs => expressionWork x + argumentWork xs
+  def listWork : {t : Ty} → ExprList t → Nat
+    | _, .nil => 0
+    | _, .cons x xs => expressionWork x + listWork xs
+end
+
+def propositionWork : PropExpr → Nat
+  | .lt a b | .le a b => expressionWork a + expressionWork b
+  | .and p q | .or p q | .imp p q => propositionWork p + propositionWork q
+  | .not p => propositionWork p
+  | .tt | .ff => 0
+
 /-- Prove the closed proposition `P`, or return `none`. -/
 def proveClosed? (P : Lean.Expr) : TacticM (Option Lean.Expr) := do
   let rp ← reifyProp {} P
@@ -49,7 +72,7 @@ def proveClosed? (P : Lean.Expr) : TacticM (Option Lean.Expr) := do
   let some prec ← findPrec pv | return none
   let ctxE := mkApp (mkConst ``Ctx.make) (mkNatLit prec)
   let lhs := mkApp3 (mkConst ``PropExpr.check) ctxE rp.expr emptyIEnvExpr
-  let h ← certify lhs (checkCost prec (rp.expr.approxDepth.toNat * 8))
+  let h ← certify lhs (max (checkCost prec (rp.expr.approxDepth.toNat * 8)) (propositionWork pv))
   return some <| mkAppN (mkConst ``PropExpr.of_check)
     #[P, rp.expr, ctxE, mkApp (mkConst ``Ctx.make_valid) (mkNatLit prec), rp.proof, h]
 

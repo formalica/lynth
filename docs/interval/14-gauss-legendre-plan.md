@@ -40,9 +40,11 @@ These adapters consume the actual panel and mathematical tail proofs.
 Current API limits: the integration compiler covers the elementary expression
 language in Math/Integrand.lean. General registry extension metadata, nested
 integrals inside arithmetic expressions, pure relative goals, multivariate
-integrals, special-function integrands and complex contour goals remain work
+integrals, other special-function integrands and complex contour goals remain work
 for later milestones. Failure of quadrature never selects divergence;
 only a separately checked analytic non-integrability rule does that.
+Real erf/Si/eta/Airy integration is covered by the 2026-10-18 extension in
+[17-special-functions.md](17-special-functions.md).
 
 T15-T21 compile through lynth with their original tolerances and are moved
 to Test/IntervalArith/Integrals.lean. The portable handoff has 50 obligations
@@ -328,7 +330,8 @@ value for 1/x on [-1,1] is not convergence in these goal types.
 | FLINT 0,1,4,10,12,13,15,31,32 | Finite elementary GL; oscillation, cancellation, large/small magnitudes, narrow peaks |
 | FLINT 3,5,6,8,9,16,24,27 | Bounded endpoint singularities and piecewise extensions; floor/abs/max, direct residual strips |
 | FLINT 2,14,17,18,19,20 | Elementary improper integrals with verified explicit truncation |
-| FLINT 23,25,26,30,33,34,36,37,38 | Real special-function evaluators and domain/tail certificates |
+| FLINT 25,26,30,37 | Implemented real erf, Airy and Si evaluators, analytic bounds and Airy tail |
+| FLINT 23,33,34,36,38 | Remaining real special-function evaluators and domain/tail certificates |
 | FLINT 7,11,21,22,28,29,35 | Complex-valued integrands/paths and branch-aware extensions |
 
 These groups partition the 39 FLINT cases. There are 32 real-valued cases;
@@ -338,7 +341,7 @@ the integration algorithm. Parameterize straight complex segments by a
 real t, including the complex path derivative. Piecewise paths compose.
 
 Additional special-function work is substantial and separate from GL:
-Lambert W, erf, Airy, Si, ordinary and scaled modified Bessel evaluators;
+Lambert W, ordinary and scaled modified Bessel evaluators;
 reciprocal Gamma across its removable zeros; and zeta derivative/quotient,
 Weierstrass p and Hardy theta for the contour examples. Gamma/zeta numerical
 support exists; the general pFq interval evaluator is currently real-valued.

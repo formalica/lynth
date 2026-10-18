@@ -2,6 +2,10 @@ import Lynth.Interval.Integral.Math.Integrand
 import Lynth.Interval.Integral.Powers
 import Lynth.Interval.Integral.Trig
 import Lynth.Interval.Fns.Floor
+import Lynth.Interval.Fns.Special.Erf
+import Lynth.Interval.Fns.Special.Si
+import Lynth.Interval.Fns.Special.Airy
+import Lynth.Interval.Fns.Special.Eta
 
 namespace Lynth.Interval.Integral
 
@@ -34,6 +38,8 @@ def Unary.evalR (c : Ctx) (op : Unary) (X : Ival) : Ival :=
   | .sinh => fastSinhIval c X | .cosh => (fastCoshIval c X).clampLo Dy.one
   | .log => logIval c X | .sqrt => Ival.sqrt c.prec X
   | .abs => Ival.abs X | .floor => intFloorIval X | .atan => atanIval c X
+  | .erf => erfIval c X | .si => siIval c X
+  | .eta => etaIval c X | .airyAi => airyAiIval c X
 
 def Binary.evalR (c : Ctx) (op : Binary) (X Y : Ival) : Ival :=
   match op with
@@ -80,6 +86,10 @@ theorem unary_evalR_sound {c : Ctx} (hc : c.Valid) (op : Unary)
   | abs => exact Ival.mem_abs hx
   | floor => exact mem_intFloor hx
   | atan => exact mem_atanIval hc hx
+  | erf => exact mem_erfIval hc hx
+  | si => exact mem_siIval hc hx
+  | eta => exact mem_etaIval hc hx
+  | airyAi => exact mem_airyAiIval c hx
 
 theorem binary_evalR_sound {c : Ctx} (_hc : c.Valid) (op : Binary)
     {x y : ℝ} {X Y : Ival} (hx : x ∈ X) (hy : y ∈ Y) :
@@ -137,6 +147,8 @@ def Unary.evalC (c : Ctx) (op : Unary) (Z : CBox) : CBox :=
   | .cosh => if boundedComplexArg Z then coshBox c Z else CBox.top
   | .log => logBox c Z | .sqrt => sharedSqrtBox c Z
   | .abs => Z | .floor => CBox.ofReal Ival.zero | .atan => arctanC.ev c Z
+  | .erf => erfCBox c Z | .si => siCBox c Z
+  | .eta => etaCBox c Z | .airyAi => airyAiCBox c Z
 
 def Binary.evalC (c : Ctx) (op : Binary) (X Y : CBox) : CBox :=
   match op with
@@ -184,6 +196,10 @@ theorem unary_evalC_sound {c : Ctx} (hc : c.Valid) (op : Unary)
   | abs => exact hz
   | floor => exact CBox.mem_ofReal Ival.mem_zero
   | atan => exact arctanC.sound c z _ Z hc rfl hz
+  | erf => exact mem_erfCBox hc hz
+  | si => exact mem_siCBox c hz
+  | eta => exact mem_etaCBox hc hz
+  | airyAi => exact mem_airyAiCBox c hz
 
 theorem binary_evalC_sound {c : Ctx} (_hc : c.Valid) (op : Binary)
     {z w : ℂ} {Z W : CBox} (hz : z ∈ Z) (hw : w ∈ W) :

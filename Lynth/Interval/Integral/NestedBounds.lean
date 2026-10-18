@@ -238,10 +238,6 @@ def endpointErrorBound (c : Ctx) (δ : Dy) (A : Scale) : Option Dy := do
     let D := rpowIval c (Ival.pt δ) (Ival.ofRat c.prec k)
     (Ival.mul c.prec (Ival.pt r) (Ival.mul c.prec D sum)).hi
 
-/-- Endpoint-distance expression, with a fresh variable at env.size. -/
-def endpointExpr (n : Nat) (right : Bool) (e : Expr) : Expr :=
-  if right then simplify (e.replace n (sub (.rat 1) (.var n))) else e
-
 def endpointBound (c : Ctx) (e : Expr) (env : Array CBox) (δ : Dy)
     (right : Bool) (decay : Nat) : Option Dy := do
   if !Dy.isPos δ || !Dy.leB δ (Dy.ofRatD 64 (1/2)) then none else do
@@ -283,6 +279,10 @@ def boundC : Nat → Ctx → Expr → Array CBox → Option CBox
         if good then return ← boundC fuel c form.value env
       if k == .whole then
         let anchor := center env.size f
+        -- Recursive convergence includes the split point, although its
+        -- contribution to the outer integral has measure zero.
+        let C ← boundC fuel c anchor env
+        let _ ← boundC fuel c f (env.push C)
         let r ← boundC fuel c (.integral .right anchor (.rat 0) f) env
         let l ← boundC fuel c (.integral .left anchor (.rat 0) f) env
         return CBox.add c.prec r l
