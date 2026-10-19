@@ -67,6 +67,13 @@ Complex analytic bounds for real `arctan` are enabled on boxes with imaginary
 part strictly between -1 and 1. This provides Gauss–Legendre error bounds for the
 real argument formulas used by complex logarithms.
 
+The projection theorem also requires `CExpr.LogProjectionSafe` recursively.
+This excludes logarithms whose real projection is syntactically `.rat 0` while
+their imaginary projection is not syntactically `.rat 0`: the current formula
+for that branch reverses the argument sign, as in `log(I)`. Real-valued logarithm
+operands and operands with a nonzero rational real projection remain eligible.
+The tactic supplies this safety proof when applying the component certificates.
+
 `lynth.interval.complexIntegralSteps` bounds subdivisions and recursive integral
 searches per component (default 16384). `lynth.interval.maxPrec` retains its
 existing meaning. These are search controls; the checker independently verifies

@@ -97,6 +97,7 @@ def tryClose (g : MVarId) : IntegralM Bool := do
   let tl ← tolLower tol
   if tl ≤ 0 then return false
   let hs ← mkDecideProof (mkApp (mkConst ``CExpr.Supported) (ComplexReify.quote body))
+  let hlog ← mkDecideProof (mkApp (mkConst ``CExpr.LogProjectionSafe) (ComplexReify.quote body))
   for prec in precSchedule (lynth.interval.maxPrec.get (← getOptions)) do
     let some r ← liftM (component prec re T tl : TacticM _) | continue
     let some i ← liftM (component prec im T tl : TacticM _) | continue
@@ -109,7 +110,7 @@ def tryClose (g : MVarId) : IntegralM Bool := do
     let pf := mkAppN (mkConst ``complex_result_of_parts)
       #[req.f,req.a,req.b,tolE,ComplexReify.quote body,
         Nested.quoteExpr a.term,Nested.quoteExpr b.term,Nested.quoteDomain req.kind,
-        toExpr r.q,toExpr i.q,hs,hf,a.proof,b.proof,r.proof,i.proof]
+        toExpr r.q,toExpr i.q,hs,hlog,hf,a.proof,b.proof,r.proof,i.proof]
     let conv ← mkAppM ``And.left #[pf]
     let close ← mkAppM ``And.right #[pf]
     let close ← mkAppM ``lt_of_lt_of_eq #[close,← mkEqSymm t.proof]

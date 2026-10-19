@@ -217,4 +217,20 @@ def inverseInside : {p : ℚ × ℚ //
   lynth
 #guard inverseInside.val = (0,1)
 
+-- The current pure-imaginary logarithm projection has a reversed argument sign.
+-- The theorem's safety condition must reject it through every enclosing binder
+-- and arithmetic operation while retaining real logs and nonzero real parts.
+#guard !decide (Intgrl.CExpr.unary .log .i).LogProjectionSafe
+#guard !decide (Intgrl.CExpr.unary .log (.unary .neg .i)).LogProjectionSafe
+#guard !decide (Intgrl.CExpr.unary .exp (.unary .log .i)).LogProjectionSafe
+#guard !decide (Intgrl.CExpr.binary .add (.real (.rat 1))
+  (.unary .log .i)).LogProjectionSafe
+#guard !decide (Intgrl.CExpr.integral .interval (.rat 0) (.rat 1)
+  (.unary .log .i)).LogProjectionSafe
+#guard decide (Intgrl.CExpr.unary .log (.real (.rat 0))).LogProjectionSafe
+#guard decide (Intgrl.CExpr.unary .log (.real (.rat (-1)))).LogProjectionSafe
+#guard decide (Intgrl.CExpr.unary .log (.real (.var 0))).LogProjectionSafe
+#guard decide (Intgrl.CExpr.unary .log
+  (.binary .add (.real (.rat 1)) .i)).LogProjectionSafe
+
 end ComplexIntervalArith.Integrals
