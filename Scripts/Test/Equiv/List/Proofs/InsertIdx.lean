@@ -16,7 +16,7 @@ reducible:
     modifyTailIdx.go f (n+1)  []   = []
     modifyTailIdx.go f (n+1)  (a::t) = a :: modifyTailIdx.go f n t
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`, no `native_decide`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.insertIdx

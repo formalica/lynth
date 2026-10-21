@@ -10,7 +10,7 @@ empty list does.  Every proof therefore has to discharge both the past-the-end
 case and the empty-list case, which is why each is a two-dimensional induction (on
 the list, then on the index) rather than a one-line `cases`.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`.
 -/
 
 namespace Alt.List.getD

@@ -12,7 +12,7 @@ the new largest element appended — because the `finRange` recursion and the
 `range` recursion disagree about whether the new element goes at the front or
 the back.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`, no `native_decide`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.range

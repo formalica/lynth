@@ -20,7 +20,7 @@ because `List.range (m + 1) = List.range m ++ [m]`, *not* `0 :: List.range m`.
 That is the trap: the identity one reaches for first is false (`range 3 = [0,1,2]`
 but `0 :: range 2 = [0,0,1]`).
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`, no `native_decide`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.zipIdx
@@ -101,7 +101,7 @@ theorem byCounter_eq_orig (l : List α) : byCounter l = orig l := byCounter_eq_z
 /-!
 The theorems below are the remaining routes.  Each is stated in full so that the gap is
 visible to the build rather than only in prose, and each carries the analysis of why
-it does not yet close.  The `sorry` is deliberate and temporary: this section is the
+it does not yet close.  The `sorrry` is deliberate and temporary: this section is the
 work list.  Every theorem outside it is fully proved.
 -/
 

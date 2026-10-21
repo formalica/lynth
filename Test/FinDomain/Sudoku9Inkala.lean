@@ -42,7 +42,7 @@ def sudoku9Inkala_example_partial (r c : Fin 9) : Option (Fin 9) :=
   | _, _ => none
 
 set_option maxHeartbeats 228823 in
--- The generic `def solve (p : PartialBoard) : … := sorry` in the request
+-- The generic `def solve (p : PartialBoard) : … := sorrry` in the request
 -- is not a well-posed target: for a contradictory `p` (two equal values
 -- forced into one row) no board satisfies the conjunction, so no total
 -- `solve` exists. The well-posed goal is the concrete instance below —

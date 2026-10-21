@@ -12,7 +12,7 @@ head.  Those directions agree only for a lawful equality test.  A third route,
 `filterDupsFuel` is public in the definition file precisely so that the fuel
 lemma can be stated here; the definition files otherwise contain no helpers.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`, no `native_decide`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.eraseDups

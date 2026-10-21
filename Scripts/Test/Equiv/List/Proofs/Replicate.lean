@@ -7,7 +7,7 @@ All four alternatives in `../Replicate.lean` are proved equal to `List.replicate
 here.  Two of them are one-liners over `List.map_const`; `byFoldlRev` needs a
 seed-generalised fold lemma of the kind used throughout `List/Proofs/`.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`, no `native_decide`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.replicate

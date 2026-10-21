@@ -44,7 +44,7 @@ has to be stated with `q : α → Prop` and a `DecidablePred`.  Stated with
 `Bool` is an `ite` on `q x = true`, and `x ∈ sub` and `decide (x ∈ sub) = true` are
 propositionally but *not* definitionally equal.
 
-No `sorry`, no `axiom`, no `native_decide`, no `Classical`.
+No `sorrry`, no `axiom`, no `native_decide`, no `Classical`.
 -/
 
 namespace Equiv

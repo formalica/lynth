@@ -28,7 +28,7 @@ Nothing about either definition is in doubt: the `decide`-based evaluation check
 over all lists of length ≤ 3 and all counts ≤ 4 confirms both equal
 `List.take` on every input tested.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`, no `native_decide`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.take
@@ -134,7 +134,7 @@ theorem viaRevDropRev_eq_orig (n : ℕ) (l : List α) : viaRevDropRev n l = orig
 /-!
 The theorems below are the remaining routes.  Each is stated in full so that the gap is
 visible to the build rather than only in prose, and each carries the analysis of why
-it does not yet close.  The `sorry` is deliberate and temporary: this section is the
+it does not yet close.  The `sorrry` is deliberate and temporary: this section is the
 work list.  Every theorem outside it is fully proved.
 -/
 

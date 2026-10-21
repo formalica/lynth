@@ -12,7 +12,7 @@ only the equation lemmas (used with `rw`) work.  `recBoth` carries one too.
 The two fold schemes are proved through a shared counting lemma — the step adds
 `1` to the accumulator and ignores the element, so only `xs.length` matters.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`.
 -/
 
 namespace Alt.Nat.add

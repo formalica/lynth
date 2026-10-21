@@ -380,29 +380,30 @@ def proveComplexTele1? (goalTy : Lean.Expr) : TacticM (Option Lean.Expr) := do
   let tolV ← evalExprVal .real rt.expr
   let tl ← tolLower tol
   let maxPrec := lynth.interval.maxPrec.get (← getOptions)
+  let some (c0, w1) := Series.matchTele1 body | return none
+  trace[lynth.interval] "cx tele1: matched c0={c0}, w1={w1}"
+  let c0E := toExpr c0
+  let w1E := toExpr w1
+  let res ← withLocalDeclD `k (mkConst ``Nat) fun k => do
+    try
+      let fk := mkApp f k
+      let rhs ← mkTele1Rhs c0E w1E k
+      let eq ← mkAppM ``Eq #[fk, rhs]
+      let mvar ← mkFreshExprSyntheticOpaqueMVar eq
+      runBridgeFam? mvar.mvarId! f k (fun hopen => mkLambdaFVars #[k] hopen)
+    catch ex =>
+      if ex.isInterrupt then throw ex
+      return (none : Option Lean.Expr)
+  let some hbridge := res | return none
+  let oneR ← Term.elabTerm (← `(OfNat.ofNat 1)) (mkConst ``Real)
+  let w1R ← mkRatReal w1E
+  let hwTy ← mkAppM ``LE.le #[oneR, w1R]
+  let hmvar ← mkFreshExprSyntheticOpaqueMVar hwTy
+  unless ← runNormNum? hmvar.mvarId! do
+    return none
+  let hw ← instantiateMVars hmvar
   for prec in precSchedule maxPrec do
     let c := Ctx.make prec
-    let some (c0, w1) := Series.matchTele1 body | continue
-    trace[lynth.interval] "cx tele1: matched c0={c0}, w1={w1}"
-    let c0E := toExpr c0
-    let w1E := toExpr w1
-    let res ← withLocalDeclD `k (mkConst ``Nat) fun k => do
-      try
-        let fk := mkApp f k
-        let rhs ← mkTele1Rhs c0E w1E k
-        let eq ← mkAppM ``Eq #[fk, rhs]
-        let mvar ← mkFreshExprSyntheticOpaqueMVar eq
-        runBridgeFam? mvar.mvarId! f k (fun hopen => mkLambdaFVars #[k] hopen)
-      catch e =>
-        return (none : Option Lean.Expr)
-    let some hbridge := res | continue
-    let oneR ← Term.elabTerm (← `(OfNat.ofNat 1)) (mkConst ``Real)
-    let w1R ← mkRatReal w1E
-    let hwTy ← mkAppM ``LE.le #[oneR, w1R]
-    let hmvar ← mkFreshExprSyntheticOpaqueMVar hwTy
-    unless ← runNormNum? hmvar.mvarId! do
-      continue
-    let hw ← instantiateMVars hmvar
     let B := Series.tele1Box c c0 w1
     let (some lo1, some hi1, some lo2, some hi2) :=
       (B.re.lo, B.re.hi, B.im.lo, B.im.hi) | continue
@@ -452,29 +453,30 @@ def proveComplexTele2n? (goalTy : Lean.Expr) : TacticM (Option Lean.Expr) := do
   let tolV ← evalExprVal .real rt.expr
   let tl ← tolLower tol
   let maxPrec := lynth.interval.maxPrec.get (← getOptions)
+  let some (c0, b0) := Series.matchTele2n body | return none
+  trace[lynth.interval] "cx tele2: matched c0={c0}, b0={b0}"
+  let c0E := toExpr c0
+  let b0E := toExpr b0
+  let res ← withLocalDeclD `k (mkConst ``Nat) fun k => do
+    try
+      let fk := mkApp f k
+      let rhs ← mkTele2Rhs c0E b0E k
+      let eq ← mkAppM ``Eq #[fk, rhs]
+      let mvar ← mkFreshExprSyntheticOpaqueMVar eq
+      runBridgeFam? mvar.mvarId! f k (fun hopen => mkLambdaFVars #[k] hopen)
+    catch ex =>
+      if ex.isInterrupt then throw ex
+      return (none : Option Lean.Expr)
+  let some hbridge := res | return none
+  let oneR ← Term.elabTerm (← `(OfNat.ofNat 1)) (mkConst ``Real)
+  let b0R ← mkRatReal b0E
+  let hwTy ← mkAppM ``LE.le #[oneR, b0R]
+  let hmvar ← mkFreshExprSyntheticOpaqueMVar hwTy
+  unless ← runNormNum? hmvar.mvarId! do
+    return none
+  let hw ← instantiateMVars hmvar
   for prec in precSchedule maxPrec do
     let c := Ctx.make prec
-    let some (c0, b0) := Series.matchTele2n body | continue
-    trace[lynth.interval] "cx tele2: matched c0={c0}, b0={b0}"
-    let c0E := toExpr c0
-    let b0E := toExpr b0
-    let res ← withLocalDeclD `k (mkConst ``Nat) fun k => do
-      try
-        let fk := mkApp f k
-        let rhs ← mkTele2Rhs c0E b0E k
-        let eq ← mkAppM ``Eq #[fk, rhs]
-        let mvar ← mkFreshExprSyntheticOpaqueMVar eq
-        runBridgeFam? mvar.mvarId! f k (fun hopen => mkLambdaFVars #[k] hopen)
-      catch e =>
-        return (none : Option Lean.Expr)
-    let some hbridge := res | continue
-    let oneR ← Term.elabTerm (← `(OfNat.ofNat 1)) (mkConst ``Real)
-    let b0R ← mkRatReal b0E
-    let hwTy ← mkAppM ``LE.le #[oneR, b0R]
-    let hmvar ← mkFreshExprSyntheticOpaqueMVar hwTy
-    unless ← runNormNum? hmvar.mvarId! do
-      continue
-    let hw ← instantiateMVars hmvar
     let B := Series.tele2Box c c0 b0
     let (some lo1, some hi1, some lo2, some hi2) :=
       (B.re.lo, B.re.hi, B.im.lo, B.im.hi) | continue
@@ -524,21 +526,22 @@ def proveComplexFact? (goalTy : Lean.Expr) : TacticM (Option Lean.Expr) := do
   let tolV ← evalExprVal .real rt.expr
   let tl ← tolLower tol
   let maxPrec := lynth.interval.maxPrec.get (← getOptions)
+  let some c0 := Series.matchFact body | return none
+  unless c0 == 1 do return none
+  trace[lynth.interval] "cx fact: matched c0={c0}"
+  let res ← withLocalDeclD `k (mkConst ``Nat) fun k => do
+    try
+      let fk := mkApp f k
+      let rhs ← mkFactRhs k
+      let eq ← mkAppM ``Eq #[fk, rhs]
+      let mvar ← mkFreshExprSyntheticOpaqueMVar eq
+      runBridgeSimple? mvar.mvarId! f k (fun hopen => mkLambdaFVars #[k] hopen)
+    catch ex =>
+      if ex.isInterrupt then throw ex
+      return (none : Option Lean.Expr)
+  let some hbridge := res | return none
   for prec in precSchedule maxPrec do
     let c := Ctx.make prec
-    let some c0 := Series.matchFact body | continue
-    unless c0 == 1 do continue
-    trace[lynth.interval] "cx fact: matched c0={c0}"
-    let res ← withLocalDeclD `k (mkConst ``Nat) fun k => do
-      try
-        let fk := mkApp f k
-        let rhs ← mkFactRhs k
-        let eq ← mkAppM ``Eq #[fk, rhs]
-        let mvar ← mkFreshExprSyntheticOpaqueMVar eq
-        runBridgeSimple? mvar.mvarId! f k (fun hopen => mkLambdaFVars #[k] hopen)
-      catch e =>
-        return (none : Option Lean.Expr)
-    let some hbridge := res | continue
     for N in [8, 12, 16, 24, 32] do
       let B := Series.factEncl c body N
       let (some lo1, some hi1, some lo2, some hi2) :=
@@ -590,21 +593,22 @@ def proveComplexSelf? (goalTy : Lean.Expr) : TacticM (Option Lean.Expr) := do
   let tolV ← evalExprVal .real rt.expr
   let tl ← tolLower tol
   let maxPrec := lynth.interval.maxPrec.get (← getOptions)
+  let some c0 := Series.matchSelf body | return none
+  unless c0 == 1 do return none
+  trace[lynth.interval] "cx self: matched c0={c0}"
+  let res ← withLocalDeclD `k (mkConst ``Nat) fun k => do
+    try
+      let fk := mkApp f k
+      let rhs ← mkSelfRhs k
+      let eq ← mkAppM ``Eq #[fk, rhs]
+      let mvar ← mkFreshExprSyntheticOpaqueMVar eq
+      runBridgeSimple? mvar.mvarId! f k (fun hopen => mkLambdaFVars #[k] hopen)
+    catch ex =>
+      if ex.isInterrupt then throw ex
+      return (none : Option Lean.Expr)
+  let some hbridge := res | return none
   for prec in precSchedule maxPrec do
     let c := Ctx.make prec
-    let some c0 := Series.matchSelf body | continue
-    unless c0 == 1 do continue
-    trace[lynth.interval] "cx self: matched c0={c0}"
-    let res ← withLocalDeclD `k (mkConst ``Nat) fun k => do
-      try
-        let fk := mkApp f k
-        let rhs ← mkSelfRhs k
-        let eq ← mkAppM ``Eq #[fk, rhs]
-        let mvar ← mkFreshExprSyntheticOpaqueMVar eq
-        runBridgeSimple? mvar.mvarId! f k (fun hopen => mkLambdaFVars #[k] hopen)
-      catch e =>
-        return (none : Option Lean.Expr)
-    let some hbridge := res | continue
     for N in [8, 12, 16, 24, 32] do
       let B := Series.selfEncl c body N
       let (some lo1, some hi1, some lo2, some hi2) :=
@@ -656,21 +660,22 @@ def proveComplexMers? (goalTy : Lean.Expr) : TacticM (Option Lean.Expr) := do
   let tolV ← evalExprVal .real rt.expr
   let tl ← tolLower tol
   let maxPrec := lynth.interval.maxPrec.get (← getOptions)
+  let some c0 := Series.matchMers body | return none
+  unless c0 == 1 do return none
+  trace[lynth.interval] "cx mers: matched c0={c0}"
+  let res ← withLocalDeclD `k (mkConst ``Nat) fun k => do
+    try
+      let fk := mkApp f k
+      let rhs ← mkMersRhs k
+      let eq ← mkAppM ``Eq #[fk, rhs]
+      let mvar ← mkFreshExprSyntheticOpaqueMVar eq
+      runBridgeSimple? mvar.mvarId! f k (fun hopen => mkLambdaFVars #[k] hopen)
+    catch ex =>
+      if ex.isInterrupt then throw ex
+      return (none : Option Lean.Expr)
+  let some hbridge := res | return none
   for prec in precSchedule maxPrec do
     let c := Ctx.make prec
-    let some c0 := Series.matchMers body | continue
-    unless c0 == 1 do continue
-    trace[lynth.interval] "cx mers: matched c0={c0}"
-    let res ← withLocalDeclD `k (mkConst ``Nat) fun k => do
-      try
-        let fk := mkApp f k
-        let rhs ← mkMersRhs k
-        let eq ← mkAppM ``Eq #[fk, rhs]
-        let mvar ← mkFreshExprSyntheticOpaqueMVar eq
-        runBridgeSimple? mvar.mvarId! f k (fun hopen => mkLambdaFVars #[k] hopen)
-      catch e =>
-        return (none : Option Lean.Expr)
-    let some hbridge := res | continue
     for N in [8, 12, 16, 24, 32] do
       let B := Series.mersEncl c body N
       let (some lo1, some hi1, some lo2, some hi2) :=
@@ -722,21 +727,22 @@ def proveComplexFib? (goalTy : Lean.Expr) : TacticM (Option Lean.Expr) := do
   let tolV ← evalExprVal .real rt.expr
   let tl ← tolLower tol
   let maxPrec := lynth.interval.maxPrec.get (← getOptions)
+  let some c0 := Series.matchFib body | return none
+  unless c0 == 1 do return none
+  trace[lynth.interval] "cx fib: matched c0={c0}"
+  let res ← withLocalDeclD `k (mkConst ``Nat) fun k => do
+    try
+      let fk := mkApp f k
+      let rhs ← mkFibRhs k
+      let eq ← mkAppM ``Eq #[fk, rhs]
+      let mvar ← mkFreshExprSyntheticOpaqueMVar eq
+      runBridgeSimple? mvar.mvarId! f k (fun hopen => mkLambdaFVars #[k] hopen)
+    catch ex =>
+      if ex.isInterrupt then throw ex
+      return (none : Option Lean.Expr)
+  let some hbridge := res | return none
   for prec in precSchedule maxPrec do
     let c := Ctx.make prec
-    let some c0 := Series.matchFib body | continue
-    unless c0 == 1 do continue
-    trace[lynth.interval] "cx fib: matched c0={c0}"
-    let res ← withLocalDeclD `k (mkConst ``Nat) fun k => do
-      try
-        let fk := mkApp f k
-        let rhs ← mkFibRhs k
-        let eq ← mkAppM ``Eq #[fk, rhs]
-        let mvar ← mkFreshExprSyntheticOpaqueMVar eq
-        runBridgeSimple? mvar.mvarId! f k (fun hopen => mkLambdaFVars #[k] hopen)
-      catch e =>
-        return (none : Option Lean.Expr)
-    let some hbridge := res | continue
     for N in [8, 12, 16, 24, 32] do
       let oneN : Lean.Expr := toExpr (1 : ℕ)
       let hNTy ← mkAppM ``LE.le #[oneN, toExpr N]

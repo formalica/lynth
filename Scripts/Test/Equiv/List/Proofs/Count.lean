@@ -12,7 +12,7 @@ meaningful.  Without the law they are genuinely false: a `BEq` with
 `direct f [t] = 0`.  `viaEraseLoop` is the exception — it already guards with
 `x == a`, so it is proved for a bare `[BEq α]`.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`.
 -/
 
 namespace Alt.List.count

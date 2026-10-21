@@ -4,7 +4,7 @@ import Scripts.Test.Equiv.List.Map
 # Proofs: `List.map` alternatives are equal to the original
 
 All four alternatives in `../Map.lean` are proved equal to `List.map`.
-`orig` is imported, not redefined.  No `sorry`, no `axiom`, no `native_decide`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.map

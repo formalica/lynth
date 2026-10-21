@@ -78,3 +78,5 @@ you are working on.
 [18 — Internal integration proofs](18-internal-integration-proofs.md): completed interval-specific proofs and the remaining internal placeholders.
 
 [19 — Complex integrands over real ranges](19-complex-real-integrals.md): component certificates, principal branches, affine primitives, endpoint bounds and measured test coverage.
+
+[20 — Composition](20-composition.md): real arithmetic containing integrals and finite/infinite sums, binder handling, uniform tails and regression coverage.

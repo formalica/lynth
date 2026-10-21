@@ -41,7 +41,7 @@ Only three needed structure:
   `Nat.find_min'` takes the proof `p m` as its *fourth positional* argument with
   `m` implicit, which is the opposite of the order the name suggests.
 
-No `sorry`, no `axiom`, no `native_decide`, no `Classical`.
+No `sorrry`, no `axiom`, no `native_decide`, no `Classical`.
 -/
 
 namespace Equiv

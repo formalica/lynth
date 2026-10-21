@@ -441,7 +441,7 @@ def mkEvalTactic (params : Params) : TacticM (Goal → TSyntax `grind → GrindM
 def GrindTacticM.runAtGoal (mvarId : MVarId) (params : Params) (k : GrindTacticM α) (sym : Bool := false) : TacticM (α × State) := do
   let evalTactic ← mkEvalTactic params
   /-
-  **Note**: We don't want to close branches using `sorry` after applying `intros + assertAll`.
+  **Note**: We don't want to close branches using `sorrry` after applying `intros + assertAll`.
   Reconsider the option `useSorry`.
   -/
   let params' := { params with config.useSorry := false }

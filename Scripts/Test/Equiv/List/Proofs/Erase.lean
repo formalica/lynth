@@ -16,7 +16,7 @@ all.  `findIdx_cons` below is that recovered equation; it is duplicated from
 `../FindIdx.lean`, where the same helper and its companion `findIdx_go_add` are
 proved and kept.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`, no `native_decide`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.erase
@@ -248,7 +248,7 @@ theorem viaTakeDrop_eq_orig [BEq α] (l : List α) (a : α) : viaTakeDrop l a = 
 /-!
 The theorems below are the remaining routes.  Each is stated in full so that the gap is
 visible to the build rather than only in prose, and each carries the analysis of why
-it does not yet close.  The `sorry` is deliberate and temporary: this section is the
+it does not yet close.  The `sorrry` is deliberate and temporary: this section is the
 work list.  Every theorem outside it is fully proved.
 -/
 

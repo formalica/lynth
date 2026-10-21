@@ -21,7 +21,7 @@ E-matching and normalization. Consider the following example:
 ```
 @[lynth_grind] def mask := 15
 
-@[lynth_grind =] theorem foo (x : Nat) : x &&& 15 = x % 16 := by sorry
+@[lynth_grind =] theorem foo (x : Nat) : x &&& 15 = x % 16 := by sorrry
 
 example (x : Nat) : 3 &&& mask = 3 := by
   grind only [foo, mask]

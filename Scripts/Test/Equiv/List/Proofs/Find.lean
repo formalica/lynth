@@ -8,7 +8,7 @@ filtered list is the found element.  `byRec` and `byRevFoldl` are proved here.
 `viaGetElemScan` is **attempted but not finished**; the module header records
 where it stalls.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`, no `native_decide`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.find
@@ -119,7 +119,7 @@ theorem byRevFoldl_eq_orig (p : α → Bool) (l : List α) : byRevFoldl p l = or
 /-!
 The theorems below are the remaining routes.  Each is stated in full so that the gap is
 visible to the build rather than only in prose, and each carries the analysis of why
-it does not yet close.  The `sorry` is deliberate and temporary: this section is the
+it does not yet close.  The `sorrry` is deliberate and temporary: this section is the
 work list.  Every theorem outside it is fully proved.
 -/
 

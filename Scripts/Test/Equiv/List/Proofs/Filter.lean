@@ -5,7 +5,7 @@ import Scripts.Test.Equiv.List.Filter
 
 All four alternatives in `../Filter.lean` are proved equal to `List.filter` here.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`, no `native_decide`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.filter

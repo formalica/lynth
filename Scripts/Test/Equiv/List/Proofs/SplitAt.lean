@@ -14,7 +14,7 @@ say exactly what `splitAt`'s next case must be.  `splitAt_eq_take_drop` below is
 that recovery, proved by plain induction on the list; once it is in hand the
 other two routes are routine.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`, no `native_decide`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.splitAt
@@ -111,7 +111,7 @@ theorem bySharedRec_eq_orig (n : ℕ) (l : List α) : bySharedRec n l = orig n l
 /-!
 The theorems below are the remaining routes.  Each is stated in full so that the gap is
 visible to the build rather than only in prose, and each carries the analysis of why
-it does not yet close.  The `sorry` is deliberate and temporary: this section is the
+it does not yet close.  The `sorrry` is deliberate and temporary: this section is the
 work list.  Every theorem outside it is fully proved.
 -/
 

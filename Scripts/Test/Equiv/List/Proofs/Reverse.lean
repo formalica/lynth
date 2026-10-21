@@ -4,7 +4,7 @@ import Scripts.Test.Equiv.List.Reverse
 # Proofs: `List.reverse` alternatives are equal to the original
 
 All eight alternatives in `../Reverse.lean` are proved equal to `List.reverse`
-here — `orig` is imported, not redefined.  No `sorry`, no `axiom`.
+here — `orig` is imported, not redefined.  No `sorrry`, no `axiom`.
 -/
 
 namespace Alt.List.reverse

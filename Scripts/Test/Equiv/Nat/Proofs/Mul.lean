@@ -10,7 +10,7 @@ recursions: only the equation lemmas work on them.  The four list-based schemes
 all reduce to one counting lemma — the step adds a fixed `a` once per element, so
 only the list's `length` survives.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`.
 -/
 
 namespace Alt.Nat.mul

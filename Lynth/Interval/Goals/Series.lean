@@ -1,5 +1,6 @@
 import Lynth.Interval.Goals.Approx
 import Lynth.Interval.Goals.ComplexSeries
+import Lynth.Interval.Goals.Support
 import Lynth.Interval.Series.Cert
 
 /-!
@@ -67,7 +68,14 @@ def proveSeriesSubtype? (goalTy : Lean.Expr) : TacticM (Option Lean.Expr) := do
     let P := pbody.instantiate1 x
     let_expr And S I := P | return none
     let some f ← seqArg? S ``Summable | return none
-    let_expr LT.lt _ _ _ tol := I | return none
+    let_expr LT.lt _ _ lhs tol := I | return none
+    unless lhs.getAppFn.isConstOf ``abs do return none
+    let diff := lhs.getAppArgs.back!
+    unless diff.isAppOf ``HSub.hSub do return none
+    let args := diff.getAppArgs
+    unless isCastOf x args.back! do return none
+    let some valueFn ← seqArg? args[args.size-2]! ``tsum | return none
+    unless ← isDefEq f valueFn do return none
     if tol.hasFVar then return none
     return some (f, tol)
   let some (f, tol) := found | return none
@@ -80,6 +88,13 @@ def proveSeriesSubtype? (goalTy : Lean.Expr) : TacticM (Option Lean.Expr) := do
   let maxPrec := lynth.interval.maxPrec.get (← getOptions)
   for prec in precSchedule maxPrec do
     let c := Ctx.make prec
+    -- A missing tail rule cannot be repaired by trying every prefix and
+    -- precision. Check the largest prefix, allowing finite singular regions.
+    unless summableShape (body.asy c (seriesNs.getLast?.getD 8)) do
+      let rounding ← withLocalDeclD `k (mkConst ``Nat) fun k =>
+        tailNeedsPrecision (mkApp f k).headBeta k prec
+      unless rounding do return none
+      continue
     for N in seriesNs do
       let some S := Series.seriesEncl c body N | continue
       let (some lo, some hi) := (S.lo, S.hi) | continue
@@ -116,14 +131,26 @@ def proveNotSummable? (P : Lean.Expr) : TacticM (Option Lean.Expr) := do
         bodyE, mkNatLit N, hbody, hchk])
   return none
 
+/-- An unsupported summand leaves the goal available to the compositional
+enclosure handler, including summands containing integrals. -/
+private def trySeriesSubtype? (goalTy : Lean.Expr) : TacticM (Option Lean.Expr) := do
+  let saved ← saveState
+  try
+    if let some proof ← proveSeriesSubtype? goalTy then return some proof
+  catch ex =>
+    if ex.isInterrupt then throw ex
+  saved.restore
+  return none
+
 /-- series goals, including `A ⊕' B` alternatives -/
 partial def proveSeries? (goalTy : Lean.Expr) : TacticM (Option Lean.Expr) := do
   if let some pf ← proveNotSummable? goalTy then return some pf
-  if let some pf ← proveSeriesSubtype? goalTy then return some pf
+  if let some pf ← trySeriesSubtype? goalTy then return some pf
   if let some pf ← proveComplexSeries? goalTy then return some pf
   let ty ← whnf goalTy
-  if let some pf ← proveSeriesSubtype? ty then return some pf
-  if let some pf ← proveComplexSeries? ty then return some pf
+  if ty != goalTy then
+    if let some pf ← trySeriesSubtype? ty then return some pf
+    if let some pf ← proveComplexSeries? ty then return some pf
   let_expr PSum A B := ty | return none
   let s ← saveState
   try

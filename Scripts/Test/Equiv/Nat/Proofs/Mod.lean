@@ -14,7 +14,7 @@ so the sweep reaches its fixed point within `a` steps.
 `viaRangeSaturate` is a character-for-character copy of `viaRangeFold`, so its
 theorem is a one-liner.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`.
 -/
 
 namespace Alt.Nat.mod

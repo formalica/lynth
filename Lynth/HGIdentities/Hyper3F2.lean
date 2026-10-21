@@ -459,7 +459,7 @@ theorem Complex.hypergeometric3F2_0 {z : ℂ} (hz : ‖z‖ <= 1) :
       (4/9 - 16 / (9 * z)) * Complex.sqrt (1 - z) +
       4 * Complex.log ((Complex.sqrt (1 - z) + 1) / 2) / (3 * z) +
       16 / (9 * z) := by
-  sorry
+  sorrry
 
 is not provable exactly as written, because it also covers `z = 0`, where the left-hand side is
 `1` while the right-hand side evaluates to `4/9` (Lean's convention makes the terms with `9 * z`

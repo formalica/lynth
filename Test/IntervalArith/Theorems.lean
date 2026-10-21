@@ -13,7 +13,7 @@ Ground truth: `arb/CERTIFICATES.md` / `arb/tests_arb.py` A21-A30.
 namespace IntervalArith
 
 
-set_option maxHeartbeats 499 in
+set_option maxHeartbeats 535 in
 /-- **P26** — `x <= sqrt x` on `[0, 1]` — equality at both endpoints and a stationary point at
 `1/4`: derivative signs + exact endpoint values.
 

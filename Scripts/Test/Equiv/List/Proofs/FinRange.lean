@@ -8,7 +8,7 @@ here.  `byOfFnId` is free — `List.ofFn_id` says exactly that `List.finRange` *
 the enumeration of the identity, which is worth recording because it means the
 equality there is the definitional one.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`, no `native_decide`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.finRange

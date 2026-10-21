@@ -12,7 +12,7 @@ next door, so that these files stay pure `def`.
 Rules followed by every file here:
 
 * one `def` per alternative, all inside `namespace Alt.<fn>`;
-* every `def` is genuinely computable — no `Classical`, no `sorry`, no
+* every `def` is genuinely computable — no `Classical`, no `sorrry`, no
   hand-rolled `Decidable`;
 * an alternative may reuse the original function as a substep, but must add
   something new: a different algorithm, a different decomposition, or a

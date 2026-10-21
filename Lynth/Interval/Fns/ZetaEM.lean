@@ -44,7 +44,7 @@ the prover here works directly with Mathlib `bernoulli`.
 
 ## Task
 
-Replace each `sorry` below with a real proof. Statements must stay
+Replace each `sorrry` below with a real proof. Statements must stay
 byte-identical (they will be mirrored into Lynth as axioms first, then
 as theorems). Difficulty labels: the MAIN bound is the hard one; the
 rest is scaffolding of increasing easiness.
@@ -52,7 +52,7 @@ rest is scaffolding of increasing easiness.
 ## Acceptance criteria
 
 * Toolchain `leanprover/lean4:v4.34.0`, Mathlib `v4.34.0`.
-* No `sorry`, no new `axiom` (any Mathlib lemmas may be used).
+* No `sorrry`, no new `axiom` (any Mathlib lemmas may be used).
 * Constants (`2`, side condition) follow the sketch above; the prover may
   adjust them with justification if the proof needs it.
 -/
@@ -704,7 +704,7 @@ theorem emDirect_eq (s : ℝ) (N : Nat) :
 `∫_{N+1}^∞ x^{-s} dx = (N+1)^{1-s}/(s-1)` for `0 < s ≠ 1`. -/
 theorem emIntegral_eq {s : ℝ} (hs : 0 < s) (hs1 : s ≠ 1) (N : Nat) :
     (∫ x in ((N + 1 : ℕ) : ℝ)..∞, x ^ (-s)) = ((N + 1 : ℕ) : ℝ) ^ (1 - s) / (s - 1) := by
-  sorry
+  sorrry
 
 This cannot be kept as written:
 * `∫ x in a..∞, f x` is not Lean/Mathlib syntax (neither in Mathlib `v4.28.0`

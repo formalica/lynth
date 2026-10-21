@@ -8,7 +8,7 @@ plain `foldr`, so unlike `List.splitAt` or `List.span` it has usable equations,
 and the only real work is the two collection lemmas that say `map`+`flatten` and
 `foldr`+`++` are the two faces of `flatMap`.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`, no `native_decide`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.sublists

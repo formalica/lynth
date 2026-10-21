@@ -12,6 +12,16 @@ and a non-convergence proof in its right branch. Expected values are kept in
 comments, not in the predicates.
 -/
 
+open Lean Elab Command in
+elab "#check_improper_axioms " decl:ident : command => do
+  let name ← liftCoreM <| realizeGlobalConstNoOverloadWithInfo decl
+  let axioms ← Lean.collectAxioms name
+  let standard := #[``propext, ``Classical.choice, ``Quot.sound]
+  let unexpected := axioms.filter fun ax =>
+    !standard.contains ax && !(ax.toString.contains "native_decide.ax")
+  unless unexpected.isEmpty do
+    throwError "unexpected axiom dependencies for {name}: {axioms}"
+
 namespace IntervalArith
 
 /-- A one-dimensional integral is convergent when its integrand is integrable
@@ -148,9 +158,7 @@ def cubicLinearSubtype :
       IntegralConverges cubicLinear (Set.Icc (0 : ℝ) 1) ∧
       abs ((∫ y in Set.Icc (0 : ℝ) 1, cubicLinear y) - x) < integralTolerance } := by
   lynth
-/-- info: 'IntervalArith.cubicLinearSubtype' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms cubicLinearSubtype
+#check_improper_axioms cubicLinearSubtype
 
 set_option maxHeartbeats 4948 in -- measured: 4712; +5%
 /-- **IC02** — `∫₋₁¹ (x⁵ + 3x³ - 2x + 1) dx`; expected value `2`. -/
@@ -159,36 +167,28 @@ def oddPolynomialSubtype :
       IntegralConverges oddPolynomial (Set.Icc (-1 : ℝ) 1) ∧
       abs ((∫ y in Set.Icc (-1 : ℝ) 1, oddPolynomial y) - x) < integralTolerance } := by
   lynth
-/-- info: 'IntervalArith.oddPolynomialSubtype' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms oddPolynomialSubtype
+#check_improper_axioms oddPolynomialSubtype
 
 set_option maxHeartbeats 1294 in -- measured: 1232; +5%
 /-- **IC03** — `∫₀²π exp (cos θ) dθ`; expected value `7.95492652101284`. -/
 def expCosResult :
     IntegralConvergenceResult expCos (Set.Icc (0 : ℝ) (2 * Real.pi)) integralTolerance := by
   lynth
-/-- info: 'IntervalArith.expCosResult' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, expCosResult._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms expCosResult
+#check_improper_axioms expCosResult
 
 set_option maxHeartbeats 18557 in -- measured: 17673; +5%
 /-- **IC04** — `∫₀^∞ exp (-x) x³ dx`; expected value `6`. -/
 def decayingCubicResult :
     IntegralConvergenceResult decayingCubic (Set.Ioi 0) integralTolerance := by
   lynth
-/-- info: 'IntervalArith.decayingCubicResult' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms decayingCubicResult
+#check_improper_axioms decayingCubicResult
 
 set_option maxHeartbeats 3384 in -- measured: 3222; +5%
 /-- **IC05** — `∫₋∞^∞ exp (-x²) x⁴ dx`; expected value `1.32934038817914`. -/
 def gaussianQuarticResult :
     IntegralConvergenceResult gaussianQuartic Set.univ integralTolerance := by
   lynth
-/-- info: 'IntervalArith.gaussianQuarticResult' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, gaussianQuarticResult._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms gaussianQuarticResult
+#check_improper_axioms gaussianQuarticResult
 
 set_option maxHeartbeats 11770 in -- measured: 11209; +5%
 /-- **IC06** — `∫₋₁¹ x⁴ / sqrt (1 - x²) dx`; expected value `1.17809724509617`. -/
@@ -197,18 +197,14 @@ def endpointWeightSubtype :
       IntegralConverges endpointWeight (Set.Icc (-1 : ℝ) 1) ∧
       abs ((∫ y in Set.Icc (-1 : ℝ) 1, endpointWeight y) - x) < integralTolerance } := by
   lynth
-/-- info: 'IntervalArith.endpointWeightSubtype' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms endpointWeightSubtype
+#check_improper_axioms endpointWeightSubtype
 
 set_option maxHeartbeats 3113 in -- measured: 2964; +5%
 /-- **IC07** — `∫₀¹ log x dx`; expected value `-1`. -/
 def logIntegrandResult :
     IntegralConvergenceResult logIntegrand (Set.Ioc (0 : ℝ) 1) integralTolerance := by
   lynth
-/-- info: 'IntervalArith.logIntegrandResult' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, logIntegrandResult._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms logIntegrandResult
+#check_improper_axioms logIntegrandResult
 
 set_option maxHeartbeats 2722 in -- measured: 2592; +5%
 /-- **IC08** — `∫₋₁¹ exp (-1000 (x - 1/2)²) dx`; expected value
@@ -218,99 +214,77 @@ def narrowGaussianSubtype :
       IntegralConverges narrowGaussian (Set.Icc (-1 : ℝ) 1) ∧
       abs ((∫ y in Set.Icc (-1 : ℝ) 1, narrowGaussian y) - x) < integralTolerance } := by
   lynth
-/-- info: 'IntervalArith.narrowGaussianSubtype' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, narrowGaussianSubtype._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms narrowGaussianSubtype
+#check_improper_axioms narrowGaussianSubtype
 
 set_option maxHeartbeats 264 in -- measured: 251; +5%
 /-- **ID01** — `∫₀¹ 1/x dx`; the improper integral diverges. -/
 def reciprocalXPositiveResult :
     IntegralConvergenceResult reciprocalX (Set.Ioc (0 : ℝ) 1) integralTolerance := by
   lynth
-/-- info: 'IntervalArith.reciprocalXPositiveResult' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms reciprocalXPositiveResult
+#check_improper_axioms reciprocalXPositiveResult
 
 set_option maxHeartbeats 100 in -- measured: 95; +5%
 /-- **ID02** — `∫₀¹ 1/x² dx`; the improper integral diverges. -/
 theorem reciprocalXSquaredPositive_not_convergent :
     ¬ IntegralConverges reciprocalXSquared (Set.Ioc (0 : ℝ) 1) := by
   lynth
-/-- info: 'IntervalArith.reciprocalXSquaredPositive_not_convergent' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms reciprocalXSquaredPositive_not_convergent
+#check_improper_axioms reciprocalXSquaredPositive_not_convergent
 
 set_option maxHeartbeats 133 in -- measured: 126; +5%
 /-- **ID03** — `∫₋₁¹ 1/x dx`; the two one-sided improper integrals diverge. -/
 theorem reciprocalXSymmetric_not_convergent :
     ¬ IntegralConverges reciprocalX (Set.Icc (-1 : ℝ) 1) := by
   lynth
-/-- info: 'IntervalArith.reciprocalXSymmetric_not_convergent' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms reciprocalXSymmetric_not_convergent
+#check_improper_axioms reciprocalXSymmetric_not_convergent
 
 set_option maxHeartbeats 270 in -- measured: 257; +5%
 /-- **ID04** — `∫₀¹ 1/(1-x) dx`; the improper integral diverges. -/
 def reciprocalOneMinusXResult :
     IntegralConvergenceResult reciprocalOneMinusX (Set.Ioc (0 : ℝ) 1) integralTolerance := by
   lynth
-/-- info: 'IntervalArith.reciprocalOneMinusXResult' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms reciprocalOneMinusXResult
+#check_improper_axioms reciprocalOneMinusXResult
 
 set_option maxHeartbeats 1701 in -- measured: 1620; +5%
 /-- **ID05** — `∫₀^(π/2) tan x dx`; the improper integral diverges. -/
 theorem tangent_not_convergent :
     ¬ IntegralConverges tangent (Set.Ioc (0 : ℝ) (Real.pi / 2)) := by
   lynth
-/-- info: 'IntervalArith.tangent_not_convergent' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms tangent_not_convergent
+#check_improper_axioms tangent_not_convergent
 
 set_option maxHeartbeats 231 in -- measured: 220; +5%
 /-- **ID06** — `∫₁^∞ 1/x dx`; the improper integral diverges. -/
 def reciprocalXTailResult :
     IntegralConvergenceResult reciprocalX (Set.Ici (1 : ℝ)) integralTolerance := by
   lynth
-/-- info: 'IntervalArith.reciprocalXTailResult' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms reciprocalXTailResult
+#check_improper_axioms reciprocalXTailResult
 
 set_option maxHeartbeats 53 in -- measured: 50; +5%
 /-- **ID07** — `∫₀^∞ 1 dx`; the improper integral diverges. -/
 theorem one_not_convergent :
     ¬ IntegralConverges one (Set.Ioi (0 : ℝ)) := by
   lynth
-/-- info: 'IntervalArith.one_not_convergent' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms one_not_convergent
+#check_improper_axioms one_not_convergent
 
 set_option maxHeartbeats 23 in -- measured: 21; +5%
 /-- **ID08** — `∫₋∞^∞ x dx`; the two-sided improper integral diverges. -/
 theorem identity_not_convergent :
     ¬ IntegralConverges identity Set.univ := by
   lynth
-/-- info: 'IntervalArith.identity_not_convergent' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms identity_not_convergent
+#check_improper_axioms identity_not_convergent
 
 set_option maxHeartbeats 212 in -- measured: 201; +5%
 /-- **ID09** — `∫₁^∞ sin x dx`; the partial integrals oscillate and have no limit. -/
 def sineTailResult :
     IntegralConvergenceResult sine (Set.Ici (1 : ℝ)) integralTolerance := by
   lynth
-/-- info: 'IntervalArith.sineTailResult' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms sineTailResult
+#check_improper_axioms sineTailResult
 
 set_option maxHeartbeats 30 in -- measured: 28; +5%
 /-- **ID10** — `∫₀^∞ exp x dx`; the improper integral diverges. -/
 theorem exponential_not_convergent :
     ¬ IntegralConverges exponential (Set.Ioi (0 : ℝ)) := by
   lynth
-/-- info: 'IntervalArith.exponential_not_convergent' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms exponential_not_convergent
+#check_improper_axioms exponential_not_convergent
 
 -- Axiom footprint checks.
 
@@ -336,9 +310,7 @@ def atanHalfLine :
       IntegrableOn (fun x : ℝ => 1 / (1 + x^2)) (Set.Ioi 0) ∧
       |(∫ x in Set.Ioi (0 : ℝ), 1 / (1 + x^2)) - (q : ℝ)| < 1 / 100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.atanHalfLine' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, atanHalfLine._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms atanHalfLine
+#check_improper_axioms atanHalfLine
 #guard |atanHalfLine.val - (15707963267948966 / 10^16 : ℚ)| < 1 / 100000
 
 set_option maxHeartbeats 9807 in -- measured: 9340; +5%
@@ -348,9 +320,7 @@ def gaussianHalfLine :
       IntegrableOn (fun x : ℝ => Real.exp (-(x^2))) (Set.Ioi 0) ∧
       |(∫ x in Set.Ioi (0 : ℝ), Real.exp (-(x^2))) - (q : ℝ)| < 1 / 100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.gaussianHalfLine' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms gaussianHalfLine
+#check_improper_axioms gaussianHalfLine
 #guard |gaussianHalfLine.val - (88622692545275801 / 10^17 : ℚ)| < 1 / 100000
 
 set_option maxHeartbeats 1911 in -- measured: 1820; +5%
@@ -360,9 +330,7 @@ def sechHalfLine :
       IntegrableOn (fun x : ℝ => (Real.cosh x)⁻¹) (Set.Ioi 0) ∧
       |(∫ x in Set.Ioi (0 : ℝ), (Real.cosh x)⁻¹) - (q : ℝ)| < 1 / 100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.sechHalfLine' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, sechHalfLine._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms sechHalfLine
+#check_improper_axioms sechHalfLine
 #guard |sechHalfLine.val - (15707963267948966 / 10^16 : ℚ)| < 1 / 100000
 
 set_option maxHeartbeats 2421 in -- measured: 2305; +5%
@@ -372,9 +340,7 @@ def sechCubeHalfLine :
       IntegrableOn (fun x : ℝ => ((Real.cosh x)⁻¹)^3) (Set.Ioi 0) ∧
       |(∫ x in Set.Ioi (0 : ℝ), ((Real.cosh x)⁻¹)^3) - (q : ℝ)| < 1 / 100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.sechCubeHalfLine' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, sechCubeHalfLine._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms sechCubeHalfLine
+#check_improper_axioms sechCubeHalfLine
 #guard |sechCubeHalfLine.val - (78539816339744831 / 10^17 : ℚ)| < 1 / 100000
 
 end IntervalArith.Flint

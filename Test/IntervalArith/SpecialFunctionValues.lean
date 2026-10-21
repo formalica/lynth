@@ -13,7 +13,7 @@ open Lean Elab Command in
 elab "#check_special_axioms " decl:ident : command => do
   let name ← liftCoreM <| realizeGlobalConstNoOverloadWithInfo decl
   let axioms ← Lean.collectAxioms name
-  let base := #[``propext, ``sorryAx, ``Classical.choice, ``Quot.sound]
+  let base := #[``propext, ``Classical.choice, ``Quot.sound]
   let extra := axioms.filter fun a => !base.contains a
   unless base.all axioms.contains && extra.size == 1 &&
       (name ++ `_native.native_decide).isPrefixOf extra[0]! do

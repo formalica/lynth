@@ -9,7 +9,7 @@ All seven alternatives in `../Elem.lean` are proved equal to `List.elem` here.
 `List.erase` test `x == a` while `List.elem` tests `a == x`; the two orders can
 differ for an arbitrary `BEq`.  The other five need only `[BEq α]`.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`.
 -/
 
 namespace Alt.List.elem

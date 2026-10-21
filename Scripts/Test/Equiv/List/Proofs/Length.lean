@@ -28,7 +28,7 @@ made every `def` a copy-paste drift hazard, so the library was added instead.
 * Proofs are by structural induction unless a generalised helper is genuinely
   needed — the seed of a `foldl` shifts as the induction proceeds, so those two
   cases get an `init`-generalised lemma.
-* No `sorry`, no `axiom`, no `native_decide`.
+* No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.length

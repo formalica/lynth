@@ -1265,7 +1265,7 @@ norm-based ratio bound (`acb_hypgeom/pfq_bound_factor.c`, complex form:
 shortcut. `HGFunL_ev` uses it when any parameter (or `z`) is genuinely
 complex; all-real inputs keep the real core above (same enclosures, same
 heartbeats). Soundness is proved in place layer by layer (each lemma
-mirrors its proved real counterpart); still-`sorry`'d parts are handed
+mirrors its proved real counterpart); still-`sorrry`'d parts are handed
 off in `/tmp/hyperc` (each docstring names the mirror to follow).
 -/
 

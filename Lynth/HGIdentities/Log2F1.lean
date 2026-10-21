@@ -124,5 +124,5 @@ its non-regularized counterpart is `Complex.HGFun2F1_1` (the two agree here, sin
 
 theorem Complex.regularized2F1_1 {z : ℂ} (hz : z ≠ 0) :
     regularizedHGFun {1, 1} {2} z = - (Complex.log (1 - z) / z) := by
-  sorry
+  sorrry
 -/

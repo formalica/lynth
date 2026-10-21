@@ -7,8 +7,10 @@
 * `¬ Summable f`.
 * `f` is a user definition `f : ℕ → ℝ` (unfold) or a lambda; complex-valued
   series `f : ℕ → ℂ` analogous with norms (10 §5).
-* tsum/Summable nested in larger expressions: not supported in the `Expr` AST
-  (handled only at goal level).
+* Real `tsum` values can occur inside arithmetic and finite interval integrals;
+  summands can themselves contain integrals. The compositional enclosure
+  handler supplies certified real atoms to `Expr` and preserves parameter
+  bounds in its tail analysis. See [20 — Composition](20-composition.md).
 
 ## 2. Idea: asymptotic enclosures on `[N, ∞)`
 

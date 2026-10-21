@@ -4,6 +4,7 @@ import Lynth.Interval.Goals.Discrete
 import Lynth.Interval.Goals.Series
 import Lynth.Interval.Goals.Integral
 import Lynth.Interval.Goals.ComplexIntegral
+import Lynth.Interval.Composition.Eval
 
 /-!
 # The `interval` procedure of `lynth`
@@ -75,6 +76,10 @@ def run : TacticM ProcedureOutcome := do
         goal.assign pf
         replaceMainGoal []
         return .success
+    if let some pf ← Goals.Composition.run? ty then
+      goal.assign pf
+      replaceMainGoal []
+      return .success
   catch e =>
     trace[lynth.interval] "interval: {e.toMessageData}"
   s.restore

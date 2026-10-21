@@ -21,7 +21,7 @@ The one analytic input — the Stirling expansion with remainder on
 `stirling_logGamma` (see its docstring).  It is used at every runtime
 evaluation, so proving it once (however long that takes) fixes the
 soundness of all Gamma goals; everything in this file is proved from
-Mathlib facts, with no axioms and no `sorry`.
+Mathlib facts, with no axioms and no `sorrry`.
 
 Speed notes (runtime matters more than proof length here):
 * the hot loop is Horner in `z⁻²` (`stirlingAcc`, structural recursion on a
@@ -185,7 +185,7 @@ explicit remainder — is proved here via `StirlingExpansion` (Euler–Maclaurin
 summation on `log`, transferred from `log (n!)` to `log Γ` by Bohr–Mollerup).
 The Bernoulli recurrence and the 24-entry table are verified against
 Mathlib's `bernoulli` below, so every coefficient the kernel evaluates is
-the Bernoulli quotient the analysis is about.  No axioms, no `sorry`.
+the Bernoulli quotient the analysis is about.  No axioms, no `sorrry`.
 -/
 
 lemma pascalAdd_choose (L : ℕ) : ∀ r a : ℕ, a + r = L →

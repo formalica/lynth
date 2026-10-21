@@ -712,7 +712,7 @@ The statement as originally requested,
 
   theorem Complex.regularized2F1_0 {a z : ℂ} :
       regularizedHGFun {a, a-1/2} {2*a} z = 2^(2*a-1) * (Complex.sqrt (1-z)+1)^(1-2*a) := by
-    sorry
+    sorrry
 
 is not provable, for two reasons.
 

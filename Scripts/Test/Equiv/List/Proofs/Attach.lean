@@ -27,7 +27,7 @@ enumeration from `List.pmap`'s equations is the work that remains; nothing about
 the definitions is in doubt, and the `decide`-based evaluation check over all
 lists of length ≤ 2 confirms all three equal `l.attach` on every input tested.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`, no `native_decide`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.attach
@@ -41,7 +41,7 @@ variable {α : Type u}
 /-!
 The theorems below are the remaining routes.  Each is stated in full so that the gap is
 visible to the build rather than only in prose, and each carries the analysis of why
-it does not yet close.  The `sorry` is deliberate and temporary: this section is the
+it does not yet close.  The `sorrry` is deliberate and temporary: this section is the
 work list.  Every theorem outside it is fully proved.
 -/
 

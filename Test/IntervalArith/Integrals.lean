@@ -5,13 +5,23 @@ import Lynth
 T15-T21: adaptive Gauss-Legendre/Petras integration, improper Gaussian
 tails, and proof-producing divergence. The historical Arb bounds below are
 reference data; `lynth` computes its own certificates and rational witnesses.
-The integration proof obligations currently use the explicitly permitted `sorry`.
+The integration proof obligations currently use the explicitly permitted `sorrry`.
 
 Each integration testcase has its own finite heartbeat limit. The recorded
 counts come from Mathlib's `#count_heartbeats in` on a temporary copy; each
 limit is `ceil(count * 105 / 100)`. The counting wrapper is deliberately absent
 here because it disables the limit. Heartbeats do not bound native wall time.
 -/
+
+open Lean Elab Command in
+elab "#check_flint_integral_axioms " decl:ident : command => do
+  let name ← liftCoreM <| realizeGlobalConstNoOverloadWithInfo decl
+  let axioms ← Lean.collectAxioms name
+  let standard := #[``propext, ``Classical.choice, ``Quot.sound]
+  let unexpected := axioms.filter fun ax =>
+    !standard.contains ax && !(ax.toString.contains "native_decide.ax")
+  unless unexpected.isEmpty do
+    throwError "unexpected axiom dependencies for {name}: {axioms}"
 
 namespace IntervalArith
 
@@ -44,9 +54,7 @@ def integral_exp_neg_sq :
       IntervalIntegrable expNegSq volume 0 1 ∧
       |(∫ y in (0 : ℝ)..1, expNegSq y) - (x : ℝ)| < 1 / 100000 } := by
   lynth
-/-- info: 'IntervalArith.integral_exp_neg_sq' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms integral_exp_neg_sq
+#check_flint_integral_axioms integral_exp_neg_sq
 
 set_option maxHeartbeats 5195 in -- measured: 4947; +5%
 /-- **T16** — `integral_0^pi sin = 2` — the integration endpoint is `Real.pi` itself.
@@ -59,9 +67,7 @@ exact value 2; quadrature on [0, arb pi] = [1.99999938736232712394, 2.0001010132
 Arb ground truth: `arb/CERTIFICATES.md` (`arb/validate_lean_tests.py`). -/
 def integral_sin : { x : Rat // abs ((∫ y in (0 : ℝ)..Real.pi, Real.sin y) - x) < 1 / 100000 } := by
   lynth
-/-- info: 'IntervalArith.integral_sin' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms integral_sin
+#check_flint_integral_axioms integral_sin
 
 /-- **T17** — `integral_0^pi x * sin x = pi` — irrational value, irrational endpoint.
 
@@ -82,9 +88,7 @@ def integral_x_sin :
       |(∫ y in (0 : ℝ)..Real.pi, xSin y) - (x : ℝ)| < 1 / 10000 }
     ⊕' ¬ IntervalIntegrable xSin volume 0 Real.pi := by
   lynth
-/-- info: 'IntervalArith.integral_x_sin' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms integral_x_sin
+#check_flint_integral_axioms integral_x_sin
 
 /-- **T18** — `integral_0^1 1/x` diverges (non-integrable singularity at `0`). -/
 noncomputable def invFun (y : ℝ) : ℝ := y⁻¹
@@ -92,9 +96,7 @@ noncomputable def invFun (y : ℝ) : ℝ := y⁻¹
 set_option maxHeartbeats 204 in -- measured: 194; +5%
 def integral_inv : IntegralAnswer invFun 0 1 (1 / 10000) := by
   lynth
-/-- info: 'IntervalArith.integral_inv' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms integral_inv
+#check_flint_integral_axioms integral_inv
 
 /-- **T19** — `integral_0^(pi/2) tan` diverges (non-integrable singularity at `pi/2`). -/
 noncomputable def tanFun (y : ℝ) : ℝ := Real.tan y
@@ -102,9 +104,7 @@ noncomputable def tanFun (y : ℝ) : ℝ := Real.tan y
 set_option maxHeartbeats 1842 in -- measured: 1754; +5%
 def integral_tan : IntegralAnswer tanFun 0 (Real.pi / 2) (1 / 10000) := by
   lynth
-/-- info: 'IntervalArith.integral_tan' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms integral_tan
+#check_flint_integral_axioms integral_tan
 
 inductive IntegralAnswerOn (f : ℝ → ℝ) (S : Set ℝ) (ε : ℚ) : Type
   | approx (x : ℚ)
@@ -121,18 +121,14 @@ def integral_exp_neg_sq_inf :
       |(∫ y in Set.Ioi (0 : ℝ), expNegSq y) - (x : ℝ)| < 1 / 1000 }
     ⊕' ¬ IntegrableOn expNegSq (Set.Ioi 0) volume := by
   lynth
-/-- info: 'IntervalArith.integral_exp_neg_sq_inf' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms integral_exp_neg_sq_inf
+#check_flint_integral_axioms integral_exp_neg_sq_inf
 
 set_option maxHeartbeats 174 in -- measured: 165; +5%
 /-- **T21** — `integral_1^∞ 1/y` diverges (harmonic tail). -/
 def integral_inv_inf :
     IntegralAnswerOn invFun (Set.Ioi 1) (1 / 100) := by
   lynth
-/-- info: 'IntervalArith.integral_inv_inf' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs in
-#print axioms integral_inv_inf
+#check_flint_integral_axioms integral_inv_inf
 
 -- Axiom footprint checks.
 
@@ -159,9 +155,7 @@ def atan01 :
       IntervalIntegrable (fun x : ℝ => 1 / (1 + x^2)) volume (0) (1) ∧
       |(∫ x in (0 : ℝ)..(1), 1 / (1 + x^2)) - (q : ℝ)| < 1/100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.atan01' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms atan01
+#check_flint_integral_axioms atan01
 
 set_option maxHeartbeats 1276 in -- measured: 1215; +5%
 /-- FLINT 3: a quarter circle, with a square-root endpoint. -/
@@ -170,9 +164,7 @@ def circle01 :
       IntervalIntegrable (fun x : ℝ => Real.sqrt (1-x^2)) volume (0) (1) ∧
       |(∫ x in (0 : ℝ)..(1), Real.sqrt (1-x^2)) - (q : ℝ)| < 1/100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.circle01' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, circle01._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms circle01
+#check_flint_integral_axioms circle01
 
 set_option maxHeartbeats 8580 in -- measured: 8171; +5%
 /-- FLINT 5: integer jumps; the integral is 5050. -/
@@ -181,9 +173,7 @@ def floor101 :
       IntervalIntegrable (fun x : ℝ => ((⌊x⌋ : ℤ) : ℝ)) volume (1) (101) ∧
       |(∫ x in (1 : ℝ)..(101), ((⌊x⌋ : ℤ) : ℝ)) - (q : ℝ)| < 1/1000} := by
   lynth
-/-- info: 'IntervalArith.Flint.floor101' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms floor101
+#check_flint_integral_axioms floor101
 
 set_option maxHeartbeats 1588 in -- measured: 1512; +5%
 /-- FLINT 24: switching analytic branches. -/
@@ -192,9 +182,7 @@ def maxSinCos :
       IntervalIntegrable (fun x : ℝ => max (Real.sin x) (Real.cos x)) volume (0) (Real.pi) ∧
       |(∫ x in (0 : ℝ)..(Real.pi), max (Real.sin x) (Real.cos x)) - (q : ℝ)| < 1/100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.maxSinCos' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, maxSinCos._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms maxSinCos
+#check_flint_integral_axioms maxSinCos
 
 set_option maxHeartbeats 3788 in -- measured: 3607; +5%
 /-- Reversed interval orientation. -/
@@ -203,9 +191,7 @@ def reverseGaussian :
       IntervalIntegrable (fun x : ℝ => Real.exp (-(x^2))) volume (1) (0) ∧
       |(∫ x in (1 : ℝ)..(0), Real.exp (-(x^2))) - (q : ℝ)| < 1/100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.reverseGaussian' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms reverseGaussian
+#check_flint_integral_axioms reverseGaussian
 
 set_option maxHeartbeats 599 in -- measured: 570; +5%
 /-- An interval with equal endpoints. -/
@@ -214,9 +200,7 @@ def zeroWidth :
       IntervalIntegrable (fun x : ℝ => Real.exp (-(x^2))) volume (1) (1) ∧
       |(∫ x in (1 : ℝ)..(1), Real.exp (-(x^2))) - (q : ℝ)| < 1/100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.zeroWidth' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms zeroWidth
+#check_flint_integral_axioms zeroWidth
 
 set_option maxHeartbeats 1521 in -- measured: 1448; +5%
 /-- FLINT 31: a rational trigonometric expression. -/
@@ -225,9 +209,7 @@ def trigRational :
       IntervalIntegrable (fun x : ℝ => x * Real.sin x / (1 + (Real.cos x)^2)) volume (0) (Real.pi) ∧
       |(∫ x in (0 : ℝ)..(Real.pi), x * Real.sin x / (1 + (Real.cos x)^2)) - (q : ℝ)| < 1/100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.trigRational' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, trigRational._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms trigRational
+#check_flint_integral_axioms trigRational
 
 set_option maxHeartbeats 2414 in -- measured: 2299; +5%
 /-- FLINT 6: absolute values of a polynomial times exp. -/
@@ -236,9 +218,7 @@ def helfgott01 :
       IntervalIntegrable (fun x : ℝ => |x^4 + 10*x^3 + 19*x^2 - 6*x - 6| * Real.exp x) volume (0) (1) ∧
       |(∫ x in (0 : ℝ)..(1), |x^4 + 10*x^3 + 19*x^2 - 6*x - 6| * Real.exp x) - (q : ℝ)| < 1/100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.helfgott01' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, helfgott01._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms helfgott01
+#check_flint_integral_axioms helfgott01
 
 set_option maxHeartbeats 2461 in -- measured: 2343; +5%
 /-- FLINT 0: oscillation over a long interval. -/
@@ -247,9 +227,7 @@ def sin100 :
       IntervalIntegrable (fun x : ℝ => Real.sin x) volume (0) (100) ∧
       |(∫ x in (0 : ℝ)..(100), Real.sin x) - (q : ℝ)| < 1/100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.sin100' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, sin100._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms sin100
+#check_flint_integral_axioms sin100
 
 set_option maxHeartbeats 12787 in -- measured: 12178; +5%
 /-- FLINT 4: Rump's increasingly oscillatory example. -/
@@ -258,9 +236,7 @@ def rump08 :
       IntervalIntegrable (fun x : ℝ => Real.sin (x + Real.exp x)) volume (0) (8) ∧
       |(∫ x in (0 : ℝ)..(8), Real.sin (x + Real.exp x)) - (q : ℝ)| < 1/100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.rump08' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, rump08._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms rump08
+#check_flint_integral_axioms rump08
 
 set_option maxHeartbeats 1609 in -- measured: 1532; +5%
 /-- FLINT 12: cancellation on a symmetric interval at absolute tolerance `10⁻⁵`.
@@ -272,9 +248,7 @@ def cancellationAbsolute :
       |(∫ x in (-10 : ℝ)..10, Real.sin x + Real.exp (-200-x^2)) - (q : ℝ)| <
         1 / 100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.cancellationAbsolute' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, cancellationAbsolute._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms cancellationAbsolute
+#check_flint_integral_axioms cancellationAbsolute
 #guard |cancellationAbsolute.val| < 1 / 100000
 
 set_option maxHeartbeats 11220 in -- measured: 10685; +5%
@@ -286,9 +260,7 @@ def factorial1000 :
       IntervalIntegrable (fun x : ℝ => x^1000 * Real.exp (-x)) volume 0 10000 ∧
       |(∫ x in (0 : ℝ)..10000, x^1000 * Real.exp (-x)) - (q : ℝ)| < (10 : ℝ)^2562} := by
   lynth
-/-- info: 'IntervalArith.Flint.factorial1000' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, factorial1000._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms factorial1000
+#check_flint_integral_axioms factorial1000
 #guard |factorial1000.val / (Nat.factorial 1000 : ℚ) - 1| < 1 / 100000
 
 set_option maxHeartbeats 11573 in -- measured: 11021; +5%
@@ -299,9 +271,7 @@ def tinyExp :
       IntervalIntegrable Real.exp volume (-1020) (-1010) ∧
       |(∫ x in (-1020 : ℝ)..(-1010), Real.exp x) - (q : ℝ)| < 1 / (10 : ℝ)^445} := by
   lynth
-/-- info: 'IntervalArith.Flint.tinyExp' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound] -/
-#guard_msgs (whitespace := lax) in
-#print axioms tinyExp
+#check_flint_integral_axioms tinyExp
 #guard 0 < tinyExp.val
 #guard |tinyExp.val * 10^439 - (23043771509493634424 / 10^19 : ℚ)| < 1 / 1000000
 
@@ -317,9 +287,7 @@ def floorMax :
         (x - ((⌊x⌋ : ℤ) : ℝ) - 1/2) * max (Real.sin x) (Real.cos x)) - (q : ℝ)| <
           1 / 100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.floorMax' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, floorMax._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms floorMax
+#check_flint_integral_axioms floorMax
 #guard |floorMax.val - (-14281864202632808 / 10^17 : ℚ)| < 1 / 100000
 
 set_option maxHeartbeats 12698 in -- measured: 12093; +5%
@@ -330,9 +298,7 @@ def essentialSin :
       IntervalIntegrable (fun x : ℝ => Real.sin (1/x)) volume 0 1 ∧
       |(∫ x in (0 : ℝ)..1, Real.sin (1/x)) - (q : ℝ)| < 1/100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.essentialSin' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, essentialSin._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms essentialSin
+#check_flint_integral_axioms essentialSin
 #guard |essentialSin.val - (5040670619/10^10 : ℚ)| < 1/100000
 
 set_option maxHeartbeats 6749 in -- measured: 6427; +5%
@@ -342,9 +308,7 @@ def essentialXSin :
       IntervalIntegrable (fun x : ℝ => x * Real.sin (1/x)) volume 0 1 ∧
       |(∫ x in (0 : ℝ)..1, x * Real.sin (1/x)) - (q : ℝ)| < 1/100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.essentialXSin' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, essentialXSin._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms essentialXSin
+#check_flint_integral_axioms essentialXSin
 #guard |essentialXSin.val - (37853/100000 : ℚ)| < 1/100000
 
 set_option maxHeartbeats 16007 in -- measured: 15244; +5%
@@ -355,9 +319,7 @@ def cancellationResolved :
       |(∫ x in (-10 : ℝ)..10, Real.sin x + Real.exp (-200-x^2)) - (q : ℝ)| <
         1/(10 : ℝ)^92} := by
   lynth
-/-- info: 'IntervalArith.Flint.cancellationResolved' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, cancellationResolved._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms cancellationResolved
+#check_flint_integral_axioms cancellationResolved
 #guard 0 < cancellationResolved.val
 #guard |cancellationResolved.val * 10^87 - (2453/1000 : ℚ)| < 1/1000
 
@@ -371,9 +333,7 @@ def threeSpikes :
         ((Real.cosh (100*x-40))⁻¹)^4 + ((Real.cosh (1000*x-600))⁻¹)^6) - (q : ℝ)| <
           1/100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.threeSpikes' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, threeSpikes._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms threeSpikes
+#check_flint_integral_axioms threeSpikes
 #guard |threeSpikes.val - (210802735501/10^12 : ℚ)| < 1/100000
 
 set_option maxHeartbeats 62851 in -- measured: 59858; +5%
@@ -385,9 +345,7 @@ def nearEssentialSin :
       |(∫ x in (0 : ℝ)..3, Real.sin ((1/1000 + (1-x)^2)^(-3/2 : ℝ))) - (q : ℝ)| <
         1/100000} := by
   lynth
-/-- info: 'IntervalArith.Flint.nearEssentialSin' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound, nearEssentialSin._native.native_decide.ax_1] -/
-#guard_msgs (whitespace := lax) in
-#print axioms nearEssentialSin
+#check_flint_integral_axioms nearEssentialSin
 #guard |nearEssentialSin.val - (7499744/10^7 : ℚ)| < 1/100000
 
 end IntervalArith.Flint

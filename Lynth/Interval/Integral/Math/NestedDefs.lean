@@ -89,10 +89,44 @@ theorem NDomain.value_congr (k : NDomain) {f g : ℝ → ℝ} {a b c d : ℝ}
 /-- Open and closed endpoint conventions agree for Lebesgue measure. -/
 theorem NDomain.right_closed (f : ℝ → ℝ) (a : ℝ) :
     (∫ x in Set.Ici a, f x) = NDomain.right.value f a 0 := by
-  sorry
+  have key : Set.Ici a \ Set.Ioi a = ({a} : Set ℝ) := by
+    ext x
+    simp only [Set.mem_sdiff, Set.mem_Ici, Set.mem_Ioi, Set.mem_singleton_iff, not_lt]
+    constructor
+    · rintro ⟨h1, h2⟩
+      exact (le_antisymm h1 h2).symm
+    · rintro rfl
+      exact ⟨le_rfl, le_rfl⟩
+  have hset : Set.Ici a =ᵐ[MeasureTheory.volume] Set.Ioi a := by
+    rw [MeasureTheory.ae_eq_set]
+    constructor
+    · rw [key, Real.volume_singleton]
+    · have hsub : (Set.Ioi a : Set ℝ) \ Set.Ici a = ∅ := by
+        rw [Set.eq_empty_iff_forall_notMem]
+        intro x hx
+        exact hx.2 (Set.mem_Ici.2 (le_of_lt hx.1))
+      rw [hsub, MeasureTheory.measure_empty]
+  exact MeasureTheory.setIntegral_congr_set hset
 
 theorem NDomain.left_closed (f : ℝ → ℝ) (a : ℝ) :
     (∫ x in Set.Iic a, f x) = NDomain.left.value f a 0 := by
-  sorry
+  have key : Set.Iic a \ Set.Iio a = ({a} : Set ℝ) := by
+    ext x
+    simp only [Set.mem_sdiff, Set.mem_Iic, Set.mem_Iio, Set.mem_singleton_iff, not_lt]
+    constructor
+    · rintro ⟨h1, h2⟩
+      exact (le_antisymm h2 h1).symm
+    · rintro rfl
+      exact ⟨le_rfl, le_rfl⟩
+  have hset : Set.Iic a =ᵐ[MeasureTheory.volume] Set.Iio a := by
+    rw [MeasureTheory.ae_eq_set]
+    constructor
+    · rw [key, Real.volume_singleton]
+    · have hsub : (Set.Iio a : Set ℝ) \ Set.Iic a = ∅ := by
+        rw [Set.eq_empty_iff_forall_notMem]
+        intro x hx
+        exact hx.2 (Set.mem_Iic.2 (le_of_lt hx.1))
+      rw [hsub, MeasureTheory.measure_empty]
+  exact MeasureTheory.setIntegral_congr_set hset
 
 end Intgrl

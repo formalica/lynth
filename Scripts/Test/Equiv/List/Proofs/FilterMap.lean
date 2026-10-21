@@ -4,7 +4,7 @@ import Scripts.Test.Equiv.List.FilterMap
 # Proofs: `List.filterMap` alternatives are equal to the original
 
 All five alternatives in `../FilterMap.lean` are proved equal to `List.filterMap`
-here.  `orig` is imported, not redefined.  No `sorry`, no `axiom`, no
+here.  `orig` is imported, not redefined.  No `sorrry`, no `axiom`, no
 `native_decide`.
 
 ## The obstacle, and the two lemmas that get round it

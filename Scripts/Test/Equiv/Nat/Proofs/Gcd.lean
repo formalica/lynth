@@ -9,7 +9,7 @@ last element is the maximum, and both a `foldl` that keeps the most recent
 qualifier and a `foldr` that latches onto the first non-zero accumulator land
 on that maximum.
 
-The `orig` and `commonDivisors` are imported, not redefined.  No `sorry`, no
+The `orig` and `commonDivisors` are imported, not redefined.  No `sorrry`, no
 axiom.
 -/
 

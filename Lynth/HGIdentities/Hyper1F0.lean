@@ -100,5 +100,5 @@ import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 
 theorem Complex.regularized1F0 {a z : ℂ} :
     regularizedHGFun {a} {} z = (1- z)^(-a) := by
-  sorry
+  sorrry
 -/

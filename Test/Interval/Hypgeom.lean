@@ -5,7 +5,7 @@ open Lynth.Interval
 open Lynth.Interval.Fns
 
 -- Hypergeometric interval checks run native (per-declaration native axioms),
--- as in `Test/Interval/Zeta.lean`: analytic bounds are `sorry`'d and the
+-- as in `Test/Interval/Zeta.lean`: analytic bounds are `sorrry`'d and the
 -- enclosures are wide enough that kernel certification recurses too deep.
 set_option lynth.interval.trust "native"
 
@@ -15,7 +15,7 @@ Single engine (`Fns/Hypgeom.lean`, `HGFunL` entry): goals write
 `Complex.HGFun` over multisets; the reifier normalizes literal spines to
 lists. Ground truths are closed forms, parameter cancellation, terminating
 prefixes, and direct-series cross-checks in Python.  Analytic bounds are
-`sorry`'d (pure analysis mirrored Mathlib-only in `/tmp/pfq_thm_proof.lean`).
+`sorrry`'d (pure analysis mirrored Mathlib-only in `/tmp/pfq_thm_proof.lean`).
 -/
 
 set_option maxHeartbeats 2935 in

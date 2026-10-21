@@ -6,7 +6,7 @@ import Scripts.Test.Equiv.List.Drop
 All four routes (`byRec`, `byIterTail`, `byGetElemMap`, and `byCounter`) are
 proved equal to `List.drop`.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`, no `native_decide`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.drop

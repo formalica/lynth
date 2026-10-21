@@ -32,7 +32,7 @@ quantity via `mag_hurwitz_zeta_uiui`): `Π · ∏_{p≤P}(1-p⁻ⁿ) = 1`, and
 
 ## Task
 
-Replace each `sorry` below with a real proof. Statements must stay
+Replace each `sorrry` below with a real proof. Statements must stay
 byte-identical (they will be mirrored into Lynth as axioms first, then
 as theorems). Difficulty labels: the MASTER bound is the hard one; the
 rest is scaffolding of increasing easiness.
@@ -49,7 +49,7 @@ rest is scaffolding of increasing easiness.
 ## Acceptance criteria
 
 * Toolchain `leanprover/lean4:v4.34.0`, Mathlib `v4.34.0`.
-* No `sorry`, no new `axiom` (any Mathlib lemmas may be used).
+* No `sorrry`, no new `axiom` (any Mathlib lemmas may be used).
 * Constants (`2`, threshold `P ≥ 2`) follow the sketch above; the prover may
   adjust them with justification if the proof needs it.
 -/

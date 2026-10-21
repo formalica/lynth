@@ -2,6 +2,24 @@
 
 Update at every milestone.  Keep "Next" pointing at the lowest unfinished item.
 
+## Real integral and sum composition — 2026-10-20
+
+Real arithmetic can now contain integral and finite/infinite sum values. A
+recursive enclosure handler combines membership proofs, preserves local real
+parameter boxes, expands finite binders hygienically, and composes uniform
+geometric/power tail bounds. Both nesting orders are covered, including
+index-dependent bounded integration endpoints and arithmetic around aggregates.
+
+`Test/IntervalArith/IntegralInExpression.lean` covers these shapes, shadowed
+binders, local hypotheses, long prefixes, higher precision, kernel checking,
+integrability/summability fields, and rejection of a divergent series.
+It compiles alongside the existing `Integrals`, `InfiniteSums`,
+`NestedIntegrals`, and `IntegralKernelCertificates` regressions. The axiom
+audit confirms standard axioms for the new tail and remainder lemmas.
+The new lemmas introduce no admissions; the existing nested integration
+checker still has its documented mathematical proof dependencies. See
+[20 — Composition](20-composition.md) for the supported scope and limits.
+
 ## Complex integrands over real ranges — 2026-10-18
 
 The previous special-function and internal-proof work is committed as `90b9fa5`.

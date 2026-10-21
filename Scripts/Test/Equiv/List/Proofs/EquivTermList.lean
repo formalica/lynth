@@ -37,7 +37,7 @@ no equations at all in this Mathlib — `List.transpose` (no `transpose_singleto
 (no `permutations_succ`, no `insertAll`).  Both are `#eval`-confirmed correct; only
 the proofs are missing.  See the note at the end of the file.
 
-No `sorry`, no `axiom`, no `native_decide`, no `Classical`.
+No `sorrry`, no `axiom`, no `native_decide`, no `Classical`.
 -/
 
 namespace Equiv

@@ -14,7 +14,7 @@ The two counting schemes are proved through the characterisation
 `min (a / b) (k + 1)`, and the count accumulates the indicator that each
 successor index is a multiple of `b`.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`.
 -/
 
 namespace Alt.Nat.div

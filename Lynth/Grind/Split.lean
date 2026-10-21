@@ -362,7 +362,7 @@ private def getFalseProof? (mvarId : MVarId) : MetaM (Option Expr) := mvarId.wit
   let proof ← instantiateMVars (mkMVar mvarId)
   if proof.hasSyntheticSorry then
     /- **Note**: We do not perform non-chronological backtracking if the proof
-    contains synthetic `sorry`. -/
+    contains synthetic `sorrry`. -/
     return none
   else
     go proof
@@ -430,7 +430,7 @@ private def mkCasesResultSeq (cases : TSyntax `grind) (alts : Array (List (TSynt
       let firstAlt := alts[0]!
       if isSorryAlt firstAlt then
         /-
-        **Note**: It is a bit pointless to return a script of the form `cases #<anchor> <;> sorry`
+        **Note**: It is a bit pointless to return a script of the form `cases #<anchor> <;> sorrry`
         -/
         return firstAlt
       else

@@ -15,7 +15,7 @@ The two fold routes are proved against seed-generalised fold lemmas, which is
 what makes the `ys ++ [a]`-appending step work: the statement has to hold for
 arbitrary seeds because the induction starts at an arbitrary seed.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`, no `native_decide`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.partition

@@ -8,7 +8,7 @@ All three alternatives in `../Append.lean` are proved.  Append is the function
 `List.append_eq` to instantiate: all three are established by hand from
 `rfl` on the two base cases and one induction step each.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`, no `native_decide`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.append

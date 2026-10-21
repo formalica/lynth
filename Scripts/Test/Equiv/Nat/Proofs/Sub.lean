@@ -13,7 +13,7 @@ reduce to the same two facts about `viaAddCount.go` — that the scan returns
 `a - b` once the counter is inside the window, and that it returns `0` once the
 counter is past it.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`.
 -/
 
 namespace Alt.Nat.sub

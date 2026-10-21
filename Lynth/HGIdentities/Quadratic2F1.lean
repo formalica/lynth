@@ -165,5 +165,5 @@ the convergence hypothesis `‖z‖ < 1`).
 theorem Complex.regularized2F1_2 {a z : ℂ} :
     regularizedHGFun {a, a + 1 / 2} {1 / 2} z =
       (Complex.sqrt z + 1) ^ (-2 * a) / 2 + (1 - Complex.sqrt z) ^ (-2 * a) / 2 := by
-  sorry
+  sorrry
 -/

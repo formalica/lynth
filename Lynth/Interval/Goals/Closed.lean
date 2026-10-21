@@ -27,7 +27,10 @@ def precSchedule (maxPrec : Nat) : List Nat :=
 def findPrec (p : PropExpr) (σ : IEnv := {}) : CoreM (Option Nat) := do
   let maxPrec := lynth.interval.maxPrec.get (← getOptions)
   for prec in precSchedule maxPrec do
-    if p.check (Ctx.make prec) σ then return some prec
+    match p.eval3 (Ctx.make prec) σ with
+    | .yes => return some prec
+    | .no => return none
+    | .unk => pure ()
   return none
 
 def emptyIEnvExpr : Lean.Expr :=

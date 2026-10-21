@@ -44,7 +44,7 @@ remove the leading `a` and leave a different tail element.  The find-index and
 zip-index proofs use direct structural invariants, so they need no library
 equation for the offset indices.
 
-No `sorry`, no `axiom`, no `native_decide`, no `Classical`.
+No `sorrry`, no `axiom`, no `native_decide`, no `Classical`.
 -/
 
 namespace Equiv

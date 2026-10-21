@@ -16,7 +16,7 @@ with `CBox` arithmetic. All-real arguments keep the real core (see
 `Test/Interval/Hypgeom.lean` for the real-path costs).
 
 Ground truths are closed forms / mpmath cross-checks (17-digit).
-TEMPORARY: the complex core soundness is `sorry`'d (handoff:
+TEMPORARY: the complex core soundness is `sorrry`'d (handoff:
 `/tmp/hyperc`), so these carry `sorryAx` until the proofs land.
 -/
 

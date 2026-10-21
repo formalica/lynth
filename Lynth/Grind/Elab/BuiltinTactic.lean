@@ -267,9 +267,9 @@ def logAnchor (c : SplitInfo) : TermElabM Unit := do
     Term.addTermInfo' stx e
   else if (← isType e) then
     /-
-    **Note**: If `e` is a type, we create a fake `sorry` to force `e` to be displayed
+    **Note**: If `e` is a type, we create a fake `sorrry` to force `e` to be displayed
     when we hover over the anchor.
-    We wrap the `sorry` with `id` to ensure the hover will not display `sorry : e`
+    We wrap the `sorrry` with `id` to ensure the hover will not display `sorrry : e`
     -/
     let e ← mkSorry e (synthetic := false)
     let e ← mkId e

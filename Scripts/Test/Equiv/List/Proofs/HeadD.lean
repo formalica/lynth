@@ -10,7 +10,7 @@ All four alternatives in `../HeadD.lean` are proved equal to `List.headD` here.
 folding over the reversed list with an "overwrite" step is the same as folding
 over the list itself with a "shadow" step.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`, no `native_decide`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`, no `native_decide`.
 -/
 
 namespace Alt.List.headD

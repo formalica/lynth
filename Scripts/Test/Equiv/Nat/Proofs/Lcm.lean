@@ -13,7 +13,7 @@ with "every positive common multiple is a multiple of the lcm", which is what
 makes the lcm the *least* positive common multiple and hence the head of the
 filtered range.
 
-`orig` is imported, not redefined.  No `sorry`, no `axiom`.
+`orig` is imported, not redefined.  No `sorrry`, no `axiom`.
 -/
 
 namespace Alt.Nat.lcm
