@@ -1,4 +1,11 @@
-import Lynth.Sat.Syntax
+module
+
+public import Init.Data.Int.Basic
+public import Init.Data.List.Basic
+public import Init.GetElem
+public import Init.Prelude
+public import Lynth.Sat.Syntax
+import all Lynth.Sat.Syntax
 
 /-!
 DPLL SAT solver over `Lynth.Sat.Syntax.CNF`.
@@ -17,10 +24,10 @@ by `Lynth.Sat.Reconstruct`.
 namespace Lynth.Sat
 
 /-- Assignment: `List (Option Bool)` indexed by `var - 1`. -/
-abbrev Assignment := List (Option Bool)
+public abbrev Assignment := List (Option Bool)
 
 /-- Look up variable `v` (1-based) in an assignment. -/
-def lookup (a : Assignment) (v : Nat) : Option Bool :=
+@[expose] public def lookup (a : Assignment) (v : Nat) : Option Bool :=
   if _h : 0 < v ∧ v ≤ a.length then a[v - 1]'(by omega) else none
 
 /-- Set variable `v` (1-based) to `b`, extending the assignment if needed. -/
@@ -32,7 +39,7 @@ def assign (a : Assignment) (v : Nat) (b : Bool) : Assignment :=
   else a
 
 /-- Value of a literal under an assignment. -/
-def evalLit (a : Assignment) (l : Lit) : Option Bool :=
+@[expose] public def evalLit (a : Assignment) (l : Lit) : Option Bool :=
   match lookup a (varOf l) with
   | none => none
   | some b => if 0 < l then some b else some (!b)
@@ -120,13 +127,13 @@ def dpll (cnf : CNF) (a : Assignment) : Nat → Option Assignment
         | none => dpll cnf' (assign a' v false) fuel
 
 /-- Solver result. -/
-inductive SatResult where
+public inductive SatResult where
   | sat : Assignment → SatResult
   | unsat : SatResult
-  deriving Repr, DecidableEq
+  deriving Repr, @[expose] DecidableEq
 
 /-- Top-level solver: `fuel` bounds the search. -/
-def solve (cnf : CNF) (fuel : Nat := 10000) : SatResult :=
+public def solve (cnf : CNF) (fuel : Nat := 10000) : SatResult :=
   match dpll cnf [] fuel with
   | some a => .sat a
   | none =>
@@ -136,7 +143,7 @@ def solve (cnf : CNF) (fuel : Nat := 10000) : SatResult :=
 /-- Verify an assignment satisfies a CNF (certificate checker).
 Array-backed single pass: the naive `lookup` per literal is `O(n)`
 linked-list indexing, which costs seconds on 85k-clause inputs. -/
-def checkSat (cnf : CNF) (a : Assignment) : Bool :=
+@[expose] public def checkSat (cnf : CNF) (a : Assignment) : Bool :=
   let arr := a.toArray
   cnf.all fun cl => cl.any fun l =>
     let v := varOf l

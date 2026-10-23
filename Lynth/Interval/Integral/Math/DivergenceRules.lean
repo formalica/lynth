@@ -1,11 +1,18 @@
-import Lynth.Interval.Integral.Math.Integrand
-import Lynth.Interval.Integral.Math.Divergence
+module
+
+public import Init.Core
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Lynth.Interval.Integral.Math.Integrand
+import all Lynth.Interval.Integral.Math.Integrand
+import all Lynth.Interval.Integral.Math.Divergence
 
 /-! Portable semantic rules for recognized non-integrable families. -/
 
 namespace Intgrl
 
-inductive DivergenceRule where
+public inductive DivergenceRule where
   | invPower (n : ℕ)
   | shiftedInv (q : ℚ)
   | tangent
@@ -13,7 +20,7 @@ inductive DivergenceRule where
   | linear | sine | exponential
 deriving Repr, Inhabited
 
-def classifyDivergence : Term → Option DivergenceRule
+@[expose] public def classifyDivergence : Term → Option DivergenceRule
   | .unary .inv .var => some (.invPower 1)
   | .unary .inv (.pow .var n) => if 0 < n then some (.invPower n) else none
   | .binary .div (.rat q) .var =>
@@ -30,7 +37,7 @@ def classifyDivergence : Term → Option DivergenceRule
   | .unary .exp .var => some .exponential
   | _ => none
 
-def Region.isFinite : Region → Bool
+@[expose] public def Region.isFinite : Region → Bool
   | .interval | .icc | .ioc | .ico | .ioo => true
   | _ => false
 

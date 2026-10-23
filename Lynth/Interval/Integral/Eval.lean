@@ -1,11 +1,36 @@
-import Lynth.Interval.Integral.Math.Integrand
-import Lynth.Interval.Integral.Powers
-import Lynth.Interval.Integral.Trig
-import Lynth.Interval.Fns.Floor
-import Lynth.Interval.Fns.Special.Erf
-import Lynth.Interval.Fns.Special.Si
-import Lynth.Interval.Fns.Special.Airy
-import Lynth.Interval.Fns.Special.Eta
+module
+
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.ComplexElem
+public import Lynth.Interval.Fns.Elem
+public import Lynth.Interval.Fns.Floor
+public import Lynth.Interval.Fns.Log
+public import Lynth.Interval.Fns.Special.Airy
+public import Lynth.Interval.Fns.Special.Erf
+public import Lynth.Interval.Fns.Special.Eta
+public import Lynth.Interval.Fns.Special.Si
+public import Lynth.Interval.Integral.Exp
+public import Lynth.Interval.Integral.Math.Integrand
+public import Lynth.Interval.Integral.Powers
+public import Lynth.Interval.Integral.Trig
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Integral.Math.Integrand
+import all Lynth.Interval.Integral.Powers
+import all Lynth.Interval.Integral.Trig
+import all Lynth.Interval.Fns.Floor
+import all Lynth.Interval.Fns.Special.Erf
+import all Lynth.Interval.Fns.Special.Si
+import all Lynth.Interval.Fns.Special.Airy
+import all Lynth.Interval.Fns.Special.Eta
 
 namespace Lynth.Interval.Integral
 
@@ -13,7 +38,7 @@ open Intgrl Fns
 
 /-- Normalize signs before multiplying. The existing nonnegative kernel needs
 two endpoint products; the finite four-corner fallback needs eight. -/
-def mulSigned (p : Nat) (X Y : Ival) : Ival :=
+@[expose] public def mulSigned (p : Nat) (X Y : Ival) : Ival :=
   if X.nonpos then
     if Y.nonpos then Ival.mul p (Ival.neg X) (Ival.neg Y)
     else Ival.neg (Ival.mul p (Ival.neg X) Y)
@@ -31,7 +56,7 @@ theorem mem_mulSigned {p : Nat} {x y : ℝ} {X Y : Ival}
     · simpa using Ival.mem_neg (Ival.mem_mul (p := p) hx (Ival.mem_neg hy))
     · exact Ival.mem_mul hx hy
 
-def Unary.evalR (c : Ctx) (op : Unary) (X : Ival) : Ival :=
+@[expose] public def Unary.evalR (c : Ctx) (op : Unary) (X : Ival) : Ival :=
   match op with
   | .neg => Ival.neg X | .inv => Ival.inv c.prec X
   | .exp => fastExpIval c X | .sin => fastSinIval c X | .cos => fastCosIval c X
@@ -41,14 +66,14 @@ def Unary.evalR (c : Ctx) (op : Unary) (X : Ival) : Ival :=
   | .erf => erfIval c X | .si => siIval c X
   | .eta => etaIval c X | .airyAi => airyAiIval c X
 
-def Binary.evalR (c : Ctx) (op : Binary) (X Y : Ival) : Ival :=
+@[expose] public def Binary.evalR (c : Ctx) (op : Binary) (X Y : Ival) : Ival :=
   match op with
   | .add => Ival.add c.prec X Y | .sub => Ival.sub c.prec X Y
   | .mul => mulSigned c.prec X Y | .div => Ival.div c.prec X Y
   | .max => Ival.max X Y | .min => Ival.min X Y
 
 /-- Shared evaluation and the exact unit-range bound for a fractional part. -/
-def fractionalIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def fractionalIval (c : Ctx) (X : Ival) : Ival :=
   ((Ival.sub c.prec X (intFloorIval X)).clampLo Dy.zero).clampHi Dy.one
 
 theorem mem_fractionalIval {c : Ctx} {x : ℝ} {X : Ival} (hx : x ∈ X) :
@@ -58,7 +83,7 @@ theorem mem_fractionalIval {c : Ctx} {x : ℝ} {X : Ival} (hx : x ∈ X) :
     simpa only [Dy.toReal_def, Dy.toRat_zero, Rat.cast_zero, Int.fract] using Int.fract_nonneg x
   · simpa only [Dy.toReal_def, Dy.toRat_one, Rat.cast_one, Int.fract] using (Int.fract_lt_one x).le
 
-def evalR (c : Ctx) (e : Term) (X : Ival) : Ival :=
+@[expose] public def evalR (c : Ctx) (e : Term) (X : Ival) : Ival :=
   match e with
   | .var => X | .rat q => Ival.ofRat c.prec q | .pi => c.pi
   | .unary op a => Unary.evalR c op (evalR c a X)
@@ -121,7 +146,7 @@ theorem evalR_sound {c : Ctx} (hc : c.Valid) (e : Term)
   | pow a n ih => exact mem_naturalPowerR ih n
   | rpow a q ih => exact mem_rationalPowerR hc ih q
 
-def boundedComplexArg (Z : CBox) : Bool :=
+@[expose] public def boundedComplexArg (Z : CBox) : Bool :=
   let bound := Dy.ofNat 16384
   match Z.re.lo,Z.re.hi,Z.im.lo,Z.im.hi with
   | some a,some b,some c,some d =>
@@ -130,14 +155,14 @@ def boundedComplexArg (Z : CBox) : Bool :=
 
 /-- Trigonometric growth depends on the imaginary component. A large real
 phase is harmless; only its representation size needs a work limit. -/
-def boundedTrigArg (Z : CBox) : Bool :=
+@[expose] public def boundedTrigArg (Z : CBox) : Bool :=
   match Z.re.lo, Z.re.hi with
   | some a, some b =>
     a.exponent.natAbs ≤ 16384 && b.exponent.natAbs ≤ 16384 &&
       boundedComplexArg ⟨Ival.zero,Z.im⟩
   | _, _ => false
 
-def Unary.evalC (c : Ctx) (op : Unary) (Z : CBox) : CBox :=
+@[expose] public def Unary.evalC (c : Ctx) (op : Unary) (Z : CBox) : CBox :=
   match op with
   | .neg => CBox.neg Z | .inv => CBox.inv c.prec Z
   | .exp => if boundedComplexArg Z then fastExpBox c Z else CBox.top
@@ -150,13 +175,13 @@ def Unary.evalC (c : Ctx) (op : Unary) (Z : CBox) : CBox :=
   | .erf => erfCBox c Z | .si => siCBox c Z
   | .eta => etaCBox c Z | .airyAi => airyAiCBox c Z
 
-def Binary.evalC (c : Ctx) (op : Binary) (X Y : CBox) : CBox :=
+@[expose] public def Binary.evalC (c : Ctx) (op : Binary) (X Y : CBox) : CBox :=
   match op with
   | .add => CBox.add c.prec X Y | .sub => CBox.sub c.prec X Y
   | .mul => CBox.mul c.prec X Y | .div => CBox.div c.prec X Y
   | .max | .min => X
 
-def evalC (c : Ctx) (e : Term) (Z : CBox) : CBox :=
+@[expose] public def evalC (c : Ctx) (e : Term) (Z : CBox) : CBox :=
   match e with
   | .var => Z | .rat q => CBox.ofReal (Ival.ofRat c.prec q)
   | .pi => CBox.ofReal c.pi
@@ -213,7 +238,7 @@ theorem binary_evalC_sound {c : Ctx} (_hc : c.Valid) (op : Binary)
   | min => exact hz
 
 /-- The power kernel needs a nonzero input to use the exponential definition. -/
-def regularCheck (c : Ctx) : Term → CBox → Bool
+@[expose] public def regularCheck (c : Ctx) : Term → CBox → Bool
   | .var, _ | .rat _, _ | .pi, _ => true
   | .pow a _, Z => regularCheck c a Z
   | .rpow a _, Z => regularCheck c a Z && (evalC c a Z).re.pos

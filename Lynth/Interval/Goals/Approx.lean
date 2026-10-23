@@ -1,4 +1,7 @@
-import Lynth.Interval.Goals.Closed
+module
+
+meta import all Lynth.Interval.Goals.Closed
+import all Lynth.Interval.Goals.Closed
 
 /-!
 # Rational witnesses `{x : ℚ // P x}` and `{p : ℚ × ℚ // P p}`
@@ -9,6 +12,8 @@ evaluated and short rationals near their midpoints are tried; each candidate
 `P q` is then proved as a closed proposition.
 See `docs/interval/05-point-goals.md §2`.
 -/
+
+meta section
 
 namespace Lynth.Interval.Goals
 

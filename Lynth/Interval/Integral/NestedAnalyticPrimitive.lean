@@ -1,5 +1,7 @@
-import Lynth.Interval.Integral.NestedPrimitiveProof
-import Lynth.Interval.Integral.Math.NestedEnvelope
+module
+
+import all Lynth.Interval.Integral.NestedPrimitiveProof
+import all Lynth.Interval.Integral.Math.NestedEnvelope
 
 /-! Analytic branches for the guarded complex arithmetic primitives. -/
 

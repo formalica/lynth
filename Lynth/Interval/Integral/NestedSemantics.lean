@@ -1,5 +1,7 @@
-import Lynth.Interval.Integral.NestedExpr
-import Lynth.Interval.Integral.Math.NestedSyntaxProof
+module
+
+import all Lynth.Interval.Integral.NestedExpr
+import all Lynth.Interval.Integral.Math.NestedSyntaxProof
 
 /-! Semantic facts about the scoped expression operations used by memo keys. -/
 namespace Lynth.Interval.Integral.Nested

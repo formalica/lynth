@@ -1,4 +1,18 @@
-import Lynth.Interval.Core.Fn
+module
+
+public import Init.Data.Int.Basic
+public import Init.Data.List.BasicAux
+public import Init.Data.Rat.Basic
+public import Init.Data.Zero
+public import Init.Prelude
+public import Mathlib.Basic.Complex.Basic
+public import Mathlib.Basic.Real.Basic
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Num.NIval
+public import Lynth.Interval.Num.ZIval
+import all Lynth.Interval.Core.Fn
 
 /-!
 # Variable environments
@@ -10,7 +24,7 @@ enclosure (out-of-range lookups give `0` and `top`, which is consistent).
 
 namespace Lynth.Interval
 
-structure SEnv where
+public structure SEnv where
   n : List ℕ := []
   z : List ℤ := []
   r : List ℝ := []
@@ -19,7 +33,7 @@ structure SEnv where
 
 namespace SEnv
 
-def get (ρ : SEnv) : (t : Ty) → ℕ → t.Val
+@[expose] public def get (ρ : SEnv) : (t : Ty) → ℕ → t.Val
   | .nat, i => ρ.n.getD i 0
   | .int, i => ρ.z.getD i 0
   | .real, i => ρ.r.getD i 0
@@ -27,7 +41,7 @@ def get (ρ : SEnv) : (t : Ty) → ℕ → t.Val
   | .rat, i => ρ.q.getD i 0
   | .list _, _ => []
 
-def push (ρ : SEnv) : (t : Ty) → t.Val → SEnv
+@[expose] public def push (ρ : SEnv) : (t : Ty) → t.Val → SEnv
   | .nat, v => { ρ with n := v :: ρ.n }
   | .int, v => { ρ with z := v :: ρ.z }
   | .real, v => { ρ with r := v :: ρ.r }
@@ -37,7 +51,7 @@ def push (ρ : SEnv) : (t : Ty) → t.Val → SEnv
 
 end SEnv
 
-structure IEnv where
+public structure IEnv where
   n : List NIval := []
   z : List ZIval := []
   r : List Ival := []
@@ -47,7 +61,7 @@ deriving Inhabited
 
 namespace IEnv
 
-def get (σ : IEnv) : (t : Ty) → ℕ → t.Enc
+@[expose] public def get (σ : IEnv) : (t : Ty) → ℕ → t.Enc
   | .nat, i => σ.n.getD i NIval.top
   | .int, i => σ.z.getD i ZIval.top
   | .real, i => σ.r.getD i Ival.top
@@ -55,7 +69,7 @@ def get (σ : IEnv) : (t : Ty) → ℕ → t.Enc
   | .rat, i => σ.q.getD i none
   | .list _, _ => none
 
-def push (σ : IEnv) : (t : Ty) → t.Enc → IEnv
+@[expose] public def push (σ : IEnv) : (t : Ty) → t.Enc → IEnv
   | .nat, v => { σ with n := v :: σ.n }
   | .int, v => { σ with z := v :: σ.z }
   | .real, v => { σ with r := v :: σ.r }
@@ -64,7 +78,7 @@ def push (σ : IEnv) : (t : Ty) → t.Enc → IEnv
   | .list _, _ => σ
 
 /-- every variable value lies in its enclosure -/
-def Holds (σ : IEnv) (ρ : SEnv) : Prop := ∀ (t : Ty) (i : ℕ), t.Mem (σ.get t i) (ρ.get t i)
+@[expose] public def Holds (σ : IEnv) (ρ : SEnv) : Prop := ∀ (t : Ty) (i : ℕ), t.Mem (σ.get t i) (ρ.get t i)
 
 private theorem getD_mem {α β : Type} {R : α → β → Prop} {l₁ : List β} {l₂ : List α} {d₁ : β} {d₂ : α}
     (hd : R d₂ d₁) (h : ∀ i, R (l₂.getD i d₂) (l₁.getD i d₁)) (x : β) (X : α) (hx : R X x) :
@@ -85,7 +99,7 @@ theorem Holds.push {σ : IEnv} {ρ : SEnv} (h : σ.Holds ρ) {t : Ty} {X : t.Enc
     | exact getD_mem (R := fun (o : Option ℚ) (q : ℚ) => ∀ q', o = some q' → q = q')
         (fun (q' : ℚ) (h : (none : Option ℚ) = some q') => nomatch h) (h .rat) v X hv i
 
-theorem holds_empty : (({} : IEnv)).Holds ({} : SEnv) := by
+public theorem holds_empty : (({} : IEnv)).Holds ({} : SEnv) := by
   unfold Holds
   intro t i
   cases t

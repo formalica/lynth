@@ -6,10 +6,26 @@ Authors: LeanCert Contributors
 Adapted for Lynth from LeanCert `LeanCert/Core/Dyadic.lean`
 (namespace `LeanCert.Core` renamed to `Lynth.Interval.Vendor`; otherwise unchanged).
 -/
+module
+
+public import Batteries.Classes.RatCast
+public import Init.Core
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.Int.Bitwise.Basic
+public import Init.Data.Int.DivMod.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Nat.Log2
+public import Init.Data.Ord.Basic
+public import Init.Data.Rat.Basic
+public import Init.Data.Zero
+public import Init.Prelude
+public import Mathlib.Basic.Real.Basic
 import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Basic.Real.Basic
-import Lynth.Interval.Num.Math.BitLength
+public import Lynth.Interval.Num.Math.BitLength
+import all Lynth.Interval.Num.Math.BitLength
 
 /-!
 # Dyadic Rationals (n * 2^e)
@@ -43,46 +59,46 @@ namespace Lynth.Interval.Vendor
 /-- A Dyadic rational number: `mantissa * 2^exponent`
 
 This representation allows fast arithmetic without GCD normalization. -/
-structure Dyadic where
+public structure Dyadic where
   /-- The significand/mantissa -/
   mantissa : Int
   /-- The exponent (power of 2) -/
   exponent : Int
-  deriving Repr, DecidableEq, Inhabited
+  deriving Repr, @[expose] DecidableEq, Inhabited
 
 namespace Dyadic
 
 /-! ### Helper: Power of 2 -/
 
 /-- Compute 2^n for natural n -/
-def pow2Nat (n : Nat) : Nat := Nat.shiftLeft 1 n
+@[expose] public def pow2Nat (n : Nat) : Nat := Nat.shiftLeft 1 n
 
 /-- Shift an integer left by n bits (multiply by 2^n) -/
-def shiftLeftInt (m : Int) (n : Nat) : Int :=
+@[expose] public def shiftLeftInt (m : Int) (n : Nat) : Int :=
   m * (pow2Nat n : Int)
 
 /-- Shift an integer right by n bits (divide by 2^n, floor toward -∞) -/
-def shiftRightInt (m : Int) (n : Nat) : Int :=
+@[expose] public def shiftRightInt (m : Int) (n : Nat) : Int :=
   m / (pow2Nat n : Int)
 
 /-- Negative `Int` bit shifts use a predecessor representation in Lean's
 runtime and allocate extra big integers. GMP multiplication/division wins
 there; nonnegative inputs benefit from the direct natural-number shift. -/
-def shiftLeftNative (m : Int) (n : Nat) : Int :=
+@[expose] public def shiftLeftNative (m : Int) (n : Nat) : Int :=
   if m < 0 then m * (pow2Nat n : Int) else m <<< n
-def shiftRightNative (m : Int) (n : Nat) : Int :=
+@[expose] public def shiftRightNative (m : Int) (n : Nat) : Int :=
   if m < 0 then m / (pow2Nat n : Int) else m >>> n
 
-@[csimp] theorem shiftLeftInt_eq_native : @shiftLeftInt = @shiftLeftNative := by
+@[csimp] public theorem shiftLeftInt_eq_native : @shiftLeftInt = @shiftLeftNative := by
   funext m n
   simp [shiftLeftInt, pow2Nat, shiftLeftNative, Int.shiftLeft_eq, Nat.shiftLeft_eq]
 
-@[csimp] theorem shiftRightInt_eq_native : @shiftRightInt = @shiftRightNative := by
+@[csimp] public theorem shiftRightInt_eq_native : @shiftRightInt = @shiftRightNative := by
   funext m n
   simp [shiftRightInt, pow2Nat, shiftRightNative, Int.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
 
 /-- Check if any of the low n bits are set -/
-def hasLowBits (m : Int) (n : Nat) : Bool :=
+@[expose] public def hasLowBits (m : Int) (n : Nat) : Bool :=
   m % (pow2Nat n : Int) ≠ 0
 
 /-! ### Conversion to Rat -/
@@ -91,7 +107,7 @@ def hasLowBits (m : Int) (n : Nat) : Bool :=
 
 For non-negative exponents: `mantissa * 2^exponent`
 For negative exponents: `mantissa / 2^(-exponent)` -/
-def toRat (d : Dyadic) : ℚ :=
+@[expose] public def toRat (d : Dyadic) : ℚ :=
   if d.exponent ≥ 0 then
     d.mantissa * (pow2Nat d.exponent.toNat : ℤ)
   else
@@ -100,7 +116,7 @@ def toRat (d : Dyadic) : ℚ :=
 instance : Coe Dyadic ℚ where coe := toRat
 
 /-- Equality of represented values, ignoring noncanonical mantissa/exponent pairs. -/
-def ValueEq (d₁ d₂ : Dyadic) : Prop := d₁.toRat = d₂.toRat
+@[expose] public def ValueEq (d₁ d₂ : Dyadic) : Prop := d₁.toRat = d₂.toRat
 
 instance (d₁ d₂ : Dyadic) : Decidable (d₁.ValueEq d₂) :=
   inferInstanceAs (Decidable (d₁.toRat = d₂.toRat))
@@ -113,7 +129,7 @@ instance : Setoid Dyadic where
     trans := fun h₁ h₂ => h₁.trans h₂
   }
 
-@[simp] theorem valueEq_iff (d₁ d₂ : Dyadic) :
+@[simp] public theorem valueEq_iff (d₁ d₂ : Dyadic) :
     d₁.ValueEq d₂ ↔ d₁.toRat = d₂.toRat := Iff.rfl
 
 /-- A lawful identity key for caches, sets, serialization, and deduplication.
@@ -121,14 +137,14 @@ instance : Setoid Dyadic where
 Arithmetic keeps the fast, noncanonical `Dyadic` representation. Converting at
 an identity boundary collapses all representations of the same rational value.
 -/
-structure CanonicalKey where
+public structure CanonicalKey where
   value : ℚ
-  deriving Repr, DecidableEq, BEq, Hashable
+  deriving Repr, @[expose] DecidableEq, @[expose] BEq, Hashable
 
 /-- Convert a dyadic value to its canonical identity key. -/
-def canonicalKey (d : Dyadic) : CanonicalKey := ⟨d.toRat⟩
+@[expose] public def canonicalKey (d : Dyadic) : CanonicalKey := ⟨d.toRat⟩
 
-@[simp] theorem canonicalKey_value (d : Dyadic) : d.canonicalKey.value = d.toRat := rfl
+@[simp] public theorem canonicalKey_value (d : Dyadic) : d.canonicalKey.value = d.toRat := rfl
 
 /-- Canonical keys agree exactly when represented dyadic values agree. -/
 theorem canonicalKey_eq_iff (d₁ d₂ : Dyadic) :
@@ -136,7 +152,7 @@ theorem canonicalKey_eq_iff (d₁ d₂ : Dyadic) :
   simp only [canonicalKey, ValueEq, CanonicalKey.mk.injEq]
 
 /-- Cast a Dyadic to ℝ by going through ℚ -/
-def toReal (d : Dyadic) : ℝ := Rat.cast (toRat d)
+@[expose] public def toReal (d : Dyadic) : ℝ := Rat.cast (toRat d)
 
 instance : Coe Dyadic ℝ where coe := toReal
 
@@ -153,13 +169,13 @@ def ofInt (i : Int) : Dyadic := ⟨i, 0⟩
 def pow2 (n : Int) : Dyadic := ⟨1, n⟩
 
 /-- Zero as a Dyadic -/
-def zero : Dyadic := ⟨0, 0⟩
+@[expose] public def zero : Dyadic := ⟨0, 0⟩
 
 /-- One as a Dyadic -/
-def one : Dyadic := ⟨1, 0⟩
+@[expose] public def one : Dyadic := ⟨1, 0⟩
 
-instance : Zero Dyadic where zero := Dyadic.zero
-instance : One Dyadic where one := Dyadic.one
+public instance : Zero Dyadic where zero := Dyadic.zero
+public instance : One Dyadic where one := Dyadic.one
 
 theorem toRat_ofInt (i : Int) : (ofInt i).toRat = i := by
   simp only [ofInt, toRat, pow2Nat, Int.toNat_zero, le_refl, ↓reduceIte]
@@ -167,23 +183,23 @@ theorem toRat_ofInt (i : Int) : (ofInt i).toRat = i := by
   simp only [h, Nat.cast_one, Int.cast_one, mul_one]
 
 @[simp]
-theorem toRat_zero : (0 : Dyadic).toRat = 0 := by
+public theorem toRat_zero : (0 : Dyadic).toRat = 0 := by
   have h := toRat_ofInt 0; rw [Int.cast_zero] at h; exact h
 
 @[simp]
-theorem toRat_one : (1 : Dyadic).toRat = 1 := by
+public theorem toRat_one : (1 : Dyadic).toRat = 1 := by
   have h := toRat_ofInt 1; rw [Int.cast_one] at h; exact h
 
 /-! ### Arithmetic Operations -/
 
 /-- Negation of a Dyadic -/
-def neg (d : Dyadic) : Dyadic := ⟨-d.mantissa, d.exponent⟩
+@[expose] public def neg (d : Dyadic) : Dyadic := ⟨-d.mantissa, d.exponent⟩
 
 instance : Neg Dyadic where neg := Dyadic.neg
 
 /-- Addition of Dyadics. Aligns exponents by shifting the mantissa with
 larger exponent to match the smaller one. -/
-def add (d₁ d₂ : Dyadic) : Dyadic :=
+@[expose] public def add (d₁ d₂ : Dyadic) : Dyadic :=
   if d₁.exponent ≤ d₂.exponent then
     let shift := (d₂.exponent - d₁.exponent).toNat
     ⟨d₁.mantissa + shiftLeftInt d₂.mantissa shift, d₁.exponent⟩
@@ -194,12 +210,12 @@ def add (d₁ d₂ : Dyadic) : Dyadic :=
 instance : Add Dyadic where add := Dyadic.add
 
 /-- Subtraction of Dyadics -/
-def sub (d₁ d₂ : Dyadic) : Dyadic := add d₁ (neg d₂)
+@[expose] public def sub (d₁ d₂ : Dyadic) : Dyadic := add d₁ (neg d₂)
 
 instance : Sub Dyadic where sub := Dyadic.sub
 
 /-- Multiplication of Dyadics. Simply multiplies mantissas and adds exponents. -/
-def mul (d₁ d₂ : Dyadic) : Dyadic :=
+@[expose] public def mul (d₁ d₂ : Dyadic) : Dyadic :=
   ⟨d₁.mantissa * d₂.mantissa, d₁.exponent + d₂.exponent⟩
 
 instance : Mul Dyadic where mul := Dyadic.mul
@@ -208,7 +224,7 @@ instance : Mul Dyadic where mul := Dyadic.mul
 def abs (d : Dyadic) : Dyadic := ⟨Int.natAbs d.mantissa, d.exponent⟩
 
 /-- Scale by a power of 2 (efficient: just adjusts exponent) -/
-def scale2 (d : Dyadic) (n : Int) : Dyadic := ⟨d.mantissa, d.exponent + n⟩
+@[expose] public def scale2 (d : Dyadic) (n : Int) : Dyadic := ⟨d.mantissa, d.exponent + n⟩
 
 /-! ### Directed Rounding for Interval Arithmetic -/
 
@@ -216,7 +232,7 @@ def scale2 (d : Dyadic) (n : Int) : Dyadic := ⟨d.mantissa, d.exponent + n⟩
 
 If `newExp > d.exponent`, we lose precision by right-shifting the mantissa.
 Bits are discarded (floor division toward -∞). -/
-def shiftDown (d : Dyadic) (newExp : Int) : Dyadic :=
+@[expose] public def shiftDown (d : Dyadic) (newExp : Int) : Dyadic :=
   if newExp ≤ d.exponent then
     d -- already at or below target precision
   else
@@ -228,7 +244,7 @@ def shiftDown (d : Dyadic) (newExp : Int) : Dyadic :=
 
 If `newExp > d.exponent`, we lose precision by right-shifting the mantissa.
 If any bits are lost, we add 1 to ensure upward rounding (ceiling toward +∞). -/
-def shiftUp (d : Dyadic) (newExp : Int) : Dyadic :=
+@[expose] public def shiftUp (d : Dyadic) (newExp : Int) : Dyadic :=
   if newExp ≤ d.exponent then
     d -- already at or below target precision
   else
@@ -245,7 +261,7 @@ def shiftUp (d : Dyadic) (newExp : Int) : Dyadic :=
 /-- kernel version of `bitSearchS`: raw `Nat.rec`/`Bool.rec` (no `brecOn`
 overhead) over GMP-accelerated primitives; replaced by `bitSearchS` in
 compiled code via `@[csimp]` -/
-noncomputable def bitSearchK (n : Nat) (fuel : Nat) : Nat → Nat → Nat :=
+@[expose] public noncomputable def bitSearchK (n : Nat) (fuel : Nat) : Nat → Nat → Nat :=
   fuel.rec (motive := fun _ => Nat → Nat → Nat) (fun _ hi => hi)
     (fun _ ih lo hi => Bool.rec (motive := fun _ => Nat)
       (Bool.rec (motive := fun _ => Nat) (ih ((lo + hi) / 2) hi) (ih lo ((lo + hi) / 2))
@@ -262,7 +278,7 @@ theorem bitSearchK_eq_S (n : Nat) : ∀ fuel lo hi, bitSearchK n fuel lo hi = bi
     rw [bitSearchK_eq_S n k, bitSearchK_eq_S n k]
     cases hi.ble (lo + 1) <;> cases (n >>> ((lo + hi) / 2)).beq 0 <;> rfl
 
-@[csimp] theorem bitSearchK_eq_S' : @bitSearchK = @bitSearchS := by
+@[csimp] public theorem bitSearchK_eq_S' : @bitSearchK = @bitSearchS := by
   funext n fuel lo hi; exact bitSearchK_eq_S n fuel lo hi
 
 /-- Get the bit length of a natural number (exact for `n < 2^65536`).
@@ -270,15 +286,15 @@ theorem bitSearchK_eq_S (n : Nat) : ∀ fuel lo hi, bitSearchK n fuel lo hi = bi
 Lynth change: the original `Nat.log2 n + 1` costs one kernel step per bit;
 this binary search costs `≈ 16` cheap steps.  No proof depends on the exact
 value (any shift is sound for directed rounding). -/
-def natBitLength (n : Nat) : Nat :=
+@[expose] public def natBitLength (n : Nat) : Nat :=
   cond (n.beq 0) 0 (bitSearchK n 20 0 (cond ((n >>> 256).beq 0) 256 65536))
 
 /-- Native `Nat.log2` is a runtime primitive. Kernel reduction continues to
 use the bounded binary search above. -/
-def natBitLengthNative (n : Nat) : Nat :=
+@[expose] public def natBitLengthNative (n : Nat) : Nat :=
   if n == 0 then 0 else min 65536 (n.log2 + 1)
 
-@[csimp] theorem natBitLength_eq_native : @natBitLength = @natBitLengthNative := by
+@[csimp] public theorem natBitLength_eq_native : @natBitLength = @natBitLengthNative := by
   funext n
   unfold natBitLength natBitLengthNative
   by_cases hn : n = 0
@@ -293,7 +309,7 @@ def natBitLengthNative (n : Nat) : Nat :=
     exact bitSearchS_eq_log2 n hn
 
 /-- Get the bit length of the absolute value of an integer -/
-def bitLength (m : Int) : Nat := natBitLength m.natAbs
+@[expose] public def bitLength (m : Int) : Nat := natBitLength m.natAbs
 
 /-- Normalize a Dyadic to keep the mantissa within a reasonable bit-limit.
 
@@ -302,7 +318,7 @@ Similar to how hardware floats work, but with directed rounding.
 
 - `maxBits`: Maximum allowed bits for mantissa (default 256)
 - `roundUp`: If true, round toward +∞; if false, round toward -∞ -/
-def normalize (d : Dyadic) (maxBits : Nat := 256) (roundUp : Bool := false) : Dyadic :=
+@[expose] public def normalize (d : Dyadic) (maxBits : Nat := 256) (roundUp : Bool := false) : Dyadic :=
   let bits := bitLength d.mantissa
   if bits ≤ maxBits then d
   else
@@ -312,17 +328,17 @@ def normalize (d : Dyadic) (maxBits : Nat := 256) (roundUp : Bool := false) : Dy
     else shiftDown d newExp
 
 /-- Normalize for lower bounds (round down) -/
-def normalizeDown (d : Dyadic) (maxBits : Nat := 256) : Dyadic :=
+@[expose] public def normalizeDown (d : Dyadic) (maxBits : Nat := 256) : Dyadic :=
   normalize d maxBits false
 
 /-- Normalize for upper bounds (round up) -/
-def normalizeUp (d : Dyadic) (maxBits : Nat := 256) : Dyadic :=
+@[expose] public def normalizeUp (d : Dyadic) (maxBits : Nat := 256) : Dyadic :=
   normalize d maxBits true
 
 /-! ### Comparison -/
 
 /-- Compare two Dyadics (decidable) -/
-def compare (d₁ d₂ : Dyadic) : Ordering :=
+@[expose] public def compare (d₁ d₂ : Dyadic) : Ordering :=
   -- Align to smaller exponent for comparison
   if d₁.exponent ≤ d₂.exponent then
     let shift := (d₂.exponent - d₁.exponent).toNat
@@ -334,10 +350,10 @@ def compare (d₁ d₂ : Dyadic) : Ordering :=
 instance : Ord Dyadic where compare := Dyadic.compare
 
 /-- Less-than-or-equal for Dyadics -/
-def le (d₁ d₂ : Dyadic) : Bool := compare d₁ d₂ != .gt
+@[expose] public def le (d₁ d₂ : Dyadic) : Bool := compare d₁ d₂ != .gt
 
 /-- Less-than for Dyadics -/
-def lt (d₁ d₂ : Dyadic) : Bool := compare d₁ d₂ == .lt
+@[expose] public def lt (d₁ d₂ : Dyadic) : Bool := compare d₁ d₂ == .lt
 
 instance : LE Dyadic where le d₁ d₂ := le d₁ d₂
 instance : LT Dyadic where lt d₁ d₂ := lt d₁ d₂

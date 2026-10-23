@@ -1,3 +1,8 @@
+module
+
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Basic
+public import Init.Prelude
 
 
 /-!
@@ -12,25 +17,25 @@ namespace Lynth.Sat
 
 /-- A literal: nonzero `Int`. `n > 0` means variable `n` is true,
 `n < 0` means variable `n` is false. `0` is never a valid literal. -/
-abbrev Lit := Int
+public abbrev Lit := Int
 
 /-- A clause is a disjunction of literals. -/
-abbrev Clause := List Lit
+public abbrev Clause := List Lit
 
 /-- CNF is a conjunction of clauses. Empty CNF = `True`,
 CNF containing `[]` = `False`. -/
-abbrev CNF := List Clause
+public abbrev CNF := List Clause
 
 /-- Variable of a literal (absolute value as `Nat`). -/
-def varOf : Lit → Nat
+@[expose] public def varOf : Lit → Nat
   | n => n.natAbs
 
 /-- Number of distinct variables in a CNF. -/
-def numVars (cnf : CNF) : Nat :=
+@[expose] public def numVars (cnf : CNF) : Nat :=
   cnf.foldl (fun acc cl => cl.foldl (fun acc lit => Nat.max acc (varOf lit)) acc) 0
 
 /-- Negation of a literal. -/
-def negLit : Lit → Lit
+@[expose] public def negLit : Lit → Lit
   | n => -n
 
 end Lynth.Sat

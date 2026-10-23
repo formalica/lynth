@@ -1,4 +1,6 @@
-import Lean
+module
+
+public import Lean
 
 /-!
 # `lynth_exact` simp set

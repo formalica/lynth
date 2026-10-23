@@ -1,6 +1,8 @@
+module
+
 import Lean
 import Mathlib.Tactic.Linarith
-import Lynth.Procedure
+import all Lynth.Procedure
 
 /-!
 Nonlinear arithmetic procedure: polynomial inequalities by `nlinarith`.

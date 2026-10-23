@@ -1,12 +1,27 @@
-import Lynth.Interval.Fns.Special.Kernel
-import Lynth.Interval.Integral.Trig
-import Lynth.Interval.Fns.Gamma
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Sqrt.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Data.Rat.Defs
+public import Lynth.Analysis.SpecialFunctionsDefs
+public import Lynth.Interval.Fns.Special.Kernel
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Fns.Special.Kernel
+import all Lynth.Interval.Integral.Trig
+import all Lynth.Interval.Fns.Gamma
 
 namespace Lynth.Interval.Fns
 
 open SpecialFunctions
 
-def specialSeriesR (p : ℕ) (kind : SeriesKind) (x : ℚ) : Ival :=
+@[expose] public def specialSeriesR (p : ℕ) (kind : SeriesKind) (x : ℚ) : Ival :=
   match realSeriesBounds kind p x with
   | some (a,b) => ⟨some ⟨a,-(p : ℤ)⟩, some ⟨b,-(p : ℤ)⟩⟩
   | none => Ival.top
@@ -21,7 +36,7 @@ theorem mem_specialSeriesR (p : ℕ) (kind : SeriesKind) (x : ℚ) :
       realSeriesBounds_sound kind p x (a,b) h
   · exact Ival.mem_top _
 
-def specialSeriesC (p : ℕ) (kind : SeriesKind) (re im : ℚ) : CBox :=
+@[expose] public def specialSeriesC (p : ℕ) (kind : SeriesKind) (re im : ℚ) : CBox :=
   match complexSeriesBounds kind p re im with
   | some ((a,b),(c,d)) =>
     ⟨⟨some ⟨a,-(p : ℤ)⟩,some ⟨b,-(p : ℤ)⟩⟩,
@@ -40,7 +55,7 @@ theorem mem_specialSeriesC (p : ℕ) (kind : SeriesKind) (re im : ℚ) :
       Rat.cast_ofNat] using h'
   · exact CBox.mem_top _
 
-def specialWiden (p : ℕ) (X E : Ival) : Ival :=
+@[expose] public def specialWiden (p : ℕ) (X E : Ival) : Ival :=
   match E.hi with
   | some r => X.widen p r
   | none => Ival.top
@@ -53,7 +68,7 @@ theorem mem_specialWiden {p : ℕ} {x v e : ℝ} {X E : Ival}
     exact Ival.mem_widen hv (h.trans (he.2 r hr))
   · exact Ival.mem_top _
 
-def specialWidenC (p : ℕ) (X : CBox) (E : Ival) : CBox :=
+@[expose] public def specialWidenC (p : ℕ) (X : CBox) (E : Ival) : CBox :=
   ⟨specialWiden p X.re E, specialWiden p X.im E⟩
 
 theorem mem_specialWidenC {p : ℕ} {z v : ℂ} {e : ℝ} {X : CBox} {E : Ival}
@@ -62,7 +77,7 @@ theorem mem_specialWidenC {p : ℕ} {z v : ℂ} {e : ℝ} {X : CBox} {E : Ival}
     mem_specialWiden hv.2 he ((Complex.abs_im_le_norm (z-v)).trans h)⟩
 
 /-- Work precision accounts for cancellation before the final enclosure is rounded. -/
-def specialPrec (p : ℕ) (kind : SeriesKind) (r : ℚ) : ℕ :=
+@[expose] public def specialPrec (p : ℕ) (kind : SeriesKind) (r : ℚ) : ℕ :=
   let n := r.ceil.toNat
   p + 48 + match kind with
     | .erf => 2*n*n
@@ -70,12 +85,12 @@ def specialPrec (p : ℕ) (kind : SeriesKind) (r : ℚ) : ℕ :=
     | .airy0 | .airy1 => 4*n*(n.sqrt+1)
 
 /-- Exact rational complex arithmetic is used only once to form the series argument. -/
-def specialPower (kind : SeriesKind) (a b : ℚ) : ℚ × ℚ :=
+@[expose] public def specialPower (kind : SeriesKind) (a b : ℚ) : ℚ × ℚ :=
   match kind with
   | .erf | .si => (b*b-a*a,-2*a*b)
   | .airy0 | .airy1 => (a^3-3*a*b*b,3*a*a*b-b^3)
 
-def rationalBox (p : ℕ) (a b : ℚ) : CBox := ⟨Ival.ofRat p a,Ival.ofRat p b⟩
+@[expose] public def rationalBox (p : ℕ) (a b : ℚ) : CBox := ⟨Ival.ofRat p a,Ival.ofRat p b⟩
 
 theorem mem_rationalBox (p : ℕ) (a b : ℚ) :
     (a : ℂ)+(b : ℂ)*Complex.I ∈ rationalBox p a b := by

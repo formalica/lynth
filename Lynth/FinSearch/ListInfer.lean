@@ -1,10 +1,12 @@
+module
+
 import Lean
-import Lynth.Procedure
-import Lynth.Witness
-import Lynth.Euf.Procedure
-import Lynth.FinSearch.Detect
-import Lynth.FinSearch.Recognize
-import Lynth.FinSearch.Procedure
+import all Lynth.Procedure
+import all Lynth.Witness
+import all Lynth.Euf.Procedure
+import all Lynth.FinSearch.Detect
+import all Lynth.FinSearch.Recognize
+import all Lynth.FinSearch.Procedure
 
 /-!
 List-bound inference for synthesis over `List Nat` goals

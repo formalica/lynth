@@ -1,5 +1,7 @@
-import Lynth.Interval.Check.AiryContext
-import Lynth.Interval.Check.AiryBernoulli
+module
+
+import all Lynth.Interval.Check.AiryContext
+import all Lynth.Interval.Check.AiryBernoulli
 
 /-! Sound enclosures used to certify the Airy normalization constants. -/
 

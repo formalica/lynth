@@ -1,7 +1,28 @@
-import Lynth.Interval.Integral.Search
-import Lynth.Interval.Integral.Math.Tails
-import Lynth.Interval.Integral.Math.DivergenceRules
-import Lynth.Interval.Integral.SyntaxEq
+module
+
+public import Batteries.Classes.RatCast
+public import Init.Control.Basic
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Option.Basic
+public import Init.Data.Rat.Basic
+public import Init.Data.Zero
+public import Init.Prelude
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Basic.Real.Basic
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Integral.Cert
+public import Lynth.Interval.Integral.Eval
+public import Lynth.Interval.Integral.Math.DivergenceRules
+public import Lynth.Interval.Integral.Math.Integrand
+public import Lynth.Interval.Integral.Math.Tails
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Integral.Search
+import all Lynth.Interval.Integral.Math.Tails
+import all Lynth.Interval.Integral.Math.DivergenceRules
+import all Lynth.Interval.Integral.SyntaxEq
 
 /-! Proper quadrature, explicit tail bounds, and endpoint transformations. -/
 
@@ -9,7 +30,7 @@ namespace Lynth.Interval.Integral
 
 open Intgrl
 
-inductive IntegralCertificate where
+public inductive IntegralCertificate where
   | finite (core : Certificate)
   | tail (cutoff : Dy) (core : Certificate)
   | logarithm (cutoff : Dy) (core : Certificate)
@@ -19,7 +40,7 @@ deriving Repr, Inhabited
 def IntegralCertificate.core : IntegralCertificate → Certificate
   | .finite c | .tail _ c | .logarithm _ c | .sqrtWeight _ c => c
 
-def exactPoint (I : Ival) (q : ℚ) : Bool :=
+@[expose] public def exactPoint (I : Ival) (q : ℚ) : Bool :=
   match I.lo,I.hi with
   | some a,some b => a.toRat == q && b.toRat == q
   | _,_ => false
@@ -37,7 +58,7 @@ theorem exactPoint_sound {I : Ival} {q : ℚ} {x : ℝ}
       · simpa only [Dy.toReal_def, hh.2] using hx.2 hi hhi
       · simpa only [Dy.toReal_def, hh.1] using hx.1 lo hlo
 
-def sqrtWeightPower : Term → Option Nat
+@[expose] public def sqrtWeightPower : Term → Option Nat
   | .binary .div (.pow .var n)
       (.unary .sqrt (.binary .sub (.rat q) (.pow .var 2))) =>
       if q == 1 then some n else none
@@ -51,10 +72,10 @@ theorem sqrtWeightPower_sound {e : Term} {n : Nat} (h : sqrtWeightPower e = some
   · split at h <;> simp_all
   · simp at h
 
-def halfPi : Term := .binary .div .pi (.rat 2)
-def negHalfPi : Term := .unary .neg halfPi
+@[expose] public def halfPi : Term := .binary .div .pi (.rat 2)
+@[expose] public def negHalfPi : Term := .unary .neg halfPi
 
-def tailEncl (c : Ctx) (e A : Term) (kind : Region)
+@[expose] public def tailEncl (c : Ctx) (e A : Term) (kind : Region)
     (R : Dy) (cert : Certificate) : Option Ival := do
   if !R.isPos then none else do
     let model ← classifyTail e
@@ -70,7 +91,7 @@ def tailEncl (c : Ctx) (e A : Term) (kind : Region)
         return Ival.widen c.prec core (Dy.scale2 err 1)
     | _ => none
 
-def logarithmEncl (c : Ctx) (e A B : Term) (kind : Region)
+@[expose] public def logarithmEncl (c : Ctx) (e A B : Term) (kind : Region)
     (δ : Dy) (cert : Certificate) : Option Ival := do
   if !(e == .unary .log .var && kind.isFinite && exactPoint (evalR c A Ival.zero) 0 &&
       δ.isPos && Dy.leB δ Dy.one && Ival.leB (Ival.pt δ) (evalR c B Ival.zero)) then none else do
@@ -79,13 +100,13 @@ def logarithmEncl (c : Ctx) (e A B : Term) (kind : Region)
     let err ← (evalR c bound (Ival.pt δ)).hi
     return Ival.widen c.prec core err
 
-def sqrtWeightEncl (c : Ctx) (e A B : Term) (kind : Region)
+@[expose] public def sqrtWeightEncl (c : Ctx) (e A B : Term) (kind : Region)
     (n : Nat) (cert : Certificate) : Option Ival := do
   if !(sqrtWeightPower e == some n && kind.isFinite &&
       exactPoint (evalR c A Ival.zero) (-1) && exactPoint (evalR c B Ival.zero) 1) then none else
     finiteEncl c (.pow (.unary .sin .var) n) negHalfPi halfPi .interval cert
 
-def integralEncl (c : Ctx) (e A B : Term) (kind : Region)
+@[expose] public def integralEncl (c : Ctx) (e A B : Term) (kind : Region)
     (cert : IntegralCertificate) : Option Ival :=
   match cert with
   | .finite core => finiteEncl c e A B kind core
@@ -320,7 +341,7 @@ theorem sqrtWeightEncl_sound {c : Ctx} (hc : c.Valid) {e A B : Term} {kind : Reg
   sqrtWeightEncl_transport hc (finiteCoreSound hc _ core)
     (sqrt_weight_substitution (continuous_id.pow n).continuousOn) h
 
-def integralCheck (c : Ctx) (e A B : Term) (kind : Region)
+@[expose] public def integralCheck (c : Ctx) (e A B : Term) (kind : Region)
     (cert : IntegralCertificate) (q : ℚ) (tol : Term) : Bool :=
   match cert with
   | .finite core => finiteCheck c e A B kind core q tol
@@ -356,7 +377,7 @@ theorem integralCheck_sound {c : Ctx} (hc : c.Valid) {e A B : Term}
       have hh := sqrtWeightEncl_sound hc hs
       exact ⟨hh.1, closeCheck_sound hc hh.2 (by simpa [integralCheck, integralEncl, hs] using h)⟩
 
-theorem integration_result_of_check {f : ℝ → ℝ} {a b tol : ℝ}
+public theorem integration_result_of_check {f : ℝ → ℝ} {a b tol : ℝ}
     {e A B T : Term} {c : Ctx} {kind : Region} {cert : IntegralCertificate} {q : ℚ}
     (hc : c.Valid) (hf : ∀ x, f x = e.real x)
     (ha : a = A.real 0) (hb : b = B.real 0) (htol : tol = T.real 0)

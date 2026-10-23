@@ -1,11 +1,12 @@
-import Lynth.Interval.Integral.NestedAnalyticModels
+module
+
+import all Lynth.Interval.Integral.NestedAnalyticModels
 
 /-! Analytic soundness of endpoint evaluation and the integrable tail models. -/
 
 namespace Lynth.Interval.Integral.Nested.AnalyticWork
 open Intgrl Fns MeasureTheory Set Metric
 open scoped Topology
-open private unit from Lynth.Interval.Integral.NestedBounds
 
 set_option maxHeartbeats 2400000 in
 lemma scaled_analytic_model {c : Ctx} (hc : c.Valid) {S : Set ℂ} (hS : Convex ℝ S)
@@ -421,7 +422,6 @@ end Lynth.Interval.Integral.Nested.AnalyticWork
 namespace Lynth.Interval.Integral.Nested.AnalyticWork
 open Intgrl Fns MeasureTheory Set Metric
 open scoped Topology
-open private unit from Lynth.Interval.Integral.NestedBounds
 
 namespace BoxModel
 variable {S : Set ℂ} {α : Type} [TopologicalSpace α] {T : Set α}

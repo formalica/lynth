@@ -1,5 +1,20 @@
-import Lynth.Interval.Series.Tail
-import Lynth.Interval.Reify.Registry
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Prelude
+public import Mathlib.Analysis.Complex.Exponential
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Series.Tail
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Series.Tail
+import all Lynth.Interval.Reify.Registry
 import Mathlib.Analysis.SpecialFunctions.Exponential
 
 /-!
@@ -18,20 +33,20 @@ open Lynth.Interval Dy
 theorem hasSum_exp_series (x : ℝ) : HasSum (fun n => x ^ n / (n.factorial : ℝ)) (Real.exp x) := by
   rw [Real.exp_eq_exp_ℝ]; exact NormedSpace.expSeries_div_hasSum_exp x
 
-def half : Dy := ⟨1, -1⟩
-def negHalf : Dy := ⟨-1, -1⟩
+@[expose] public def half : Dy := ⟨1, -1⟩
+@[expose] public def negHalf : Dy := ⟨-1, -1⟩
 
 theorem half_toReal : half.toReal = 1 / 2 := by simp [half, toReal_def]
 theorem negHalf_toReal : negHalf.toReal = -(1 / 2) := by simp [negHalf, toReal_def]
 
 /-- the term is below `2^-w` in magnitude -/
-def smallTerm (w : Nat) (T : Ival) : Bool :=
+@[expose] public def smallTerm (w : Nat) (T : Ival) : Bool :=
   match Ival.magHi T with
   | some m => Dy.ltB m ⟨1, -(w : Int)⟩
   | none => false
 
 /-- `r` lies in `[-1/2, 1/2]` -/
-def isSmallArg (r : Dy) : Bool := Dy.leB r half && Dy.leB negHalf r
+@[expose] public def isSmallArg (r : Dy) : Bool := Dy.leB r half && Dy.leB negHalf r
 
 theorem abs_le_half_of_isSmallArg {r : Dy} (h : isSmallArg r = true) : |r.toReal| ≤ 1 / 2 := by
   simp only [isSmallArg, Bool.and_eq_true] at h
@@ -40,11 +55,11 @@ theorem abs_le_half_of_isSmallArg {r : Dy} (h : isSmallArg r = true) : |r.toReal
   rw [half_toReal] at h1; rw [negHalf_toReal] at h2
   exact abs_le.2 ⟨h2, h1⟩
 
-def expStep (w : Nat) (r : Dy) (k : Nat) (T : Ival) : Ival :=
+@[expose] public def expStep (w : Nat) (r : Dy) (k : Nat) (T : Ival) : Ival :=
   Ival.divNat w (Ival.mul w T (Ival.pt r)) (k + 1)
 
 /-- `exp r` for `|r| ≤ 1/2` (else the trivial enclosure `[0, ∞)`) -/
-def expSmall (w : Nat) (r : Dy) : Ival :=
+@[expose] public def expSmall (w : Nat) (r : Dy) : Ival :=
   if isSmallArg r then
     ((serLoop w (expStep w r) (smallTerm w) (w + 16) (SerState.start Ival.one)).encl w
       (Dy.ofNat 2)).clampLo Dy.zero
@@ -82,7 +97,7 @@ theorem mem_expSmall (w : Nat) (r : Dy) : Real.exp r.toReal ∈ expSmall w r := 
   · exact ⟨by simp [toReal_def]; exact hpos.le, by simp⟩
 
 /-- repeated squaring -/
-def sqIter (p : Nat) (E : Ival) : Nat → Ival
+@[expose] public def sqIter (p : Nat) (E : Ival) : Nat → Ival
   | 0 => E
   | s + 1 => sqIter p (Ival.sq p E) s
 
@@ -94,10 +109,10 @@ theorem mem_sqIter {p : Nat} {x : ℝ} {E : Ival} (hx : x ∈ E) : ∀ s, x ^ (2
     exact this
 
 /-- reduction exponent `s` with `|a| / 2^s ≤ 1/2` (when possible) -/
-def expRed (a : Dy) : Nat := Int.toNat ((bits a.mantissa : Int) + a.exponent + 1)
+@[expose] public def expRed (a : Dy) : Nat := Int.toNat ((bits a.mantissa : Int) + a.exponent + 1)
 
 /-- point enclosure of `exp a` at working precision about `w` bits -/
-def expPt (w : Nat) (a : Dy) : Ival :=
+@[expose] public def expPt (w : Nat) (a : Dy) : Ival :=
   let s := expRed a
   sqIter (w + s) (expSmall (w + s + 8) (Dy.scale2 a (-(s : Int)))) s
 
@@ -112,7 +127,7 @@ theorem mem_expPt (w : Nat) (a : Dy) : Real.exp a.toReal ∈ expPt w a := by
   exact mem_sqIter (mem_expSmall _ _) s
 
 /-- interval extension of `exp` (monotone) -/
-def expIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def expIval (c : Ctx) (X : Ival) : Ival :=
   let w := c.prec + 8
   ⟨some (match X.lo with
       | some a => (expPt w a).lo.getD Dy.zero
@@ -143,10 +158,10 @@ theorem mem_expIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) : Real.exp x �
       exact le_trans hxb (hm.2 h hh)
     · simp
 
-@[lynth_cfn] def expR : Fn1 .real .real where
+@[expose, lynth_cfn] public def expR : Fn1 .real .real where
   name := "exp"
   graph x y := y = Real.exp x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := expIval
   sound := fun c _ _ _ _ hy hx => by obtain rfl := hy; exact mem_expIval c hx
   cost := 40

@@ -1,8 +1,12 @@
+module
+public import Lynth
 import Mathlib
-import Lynth.Interval.Goals.Series
+
+local syntax (name := lynthSeries) "lynth_series" : tactic
 
 open Lean Elab Tactic in
-elab "lynth_series" : tactic => do
+@[local tactic lynthSeries]
+private meta def lynthSeriesImpl : Tactic := fun _ => do
   let g ← getMainGoal
   let some pf ← Lynth.Interval.Goals.proveSeries? (← Lean.instantiateMVars (← g.getType))
     | throwError "series: no proof"
@@ -12,15 +16,15 @@ elab "lynth_series" : tactic => do
 namespace IntervalArith
 
 set_option maxHeartbeats 27 in
-noncomputable def scratchSeries_infiniteSumTolerance : ℝ := 1 / 100000
+public noncomputable def scratchSeries_infiniteSumTolerance : ℝ := 1 / 100000
 
 set_option maxHeartbeats 46 in
-noncomputable def scratchSeries_alternatingHarmonic (k : ℕ) : ℝ :=
+public noncomputable def scratchSeries_alternatingHarmonic (k : ℕ) : ℝ :=
   ((-1 : ℝ) ^ k) / ((k : ℝ) + 1)
 
 set_option maxHeartbeats 567 in
 set_option profiler true in
-theorem alternatingHarmonic_not_summable :
+public theorem alternatingHarmonic_not_summable :
     ¬ Summable scratchSeries_alternatingHarmonic := by
   lynth_series
 /-- info: 'IntervalArith.alternatingHarmonic_not_summable' depends on axioms: [propext, Classical.choice, Quot.sound] -/

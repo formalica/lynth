@@ -1,5 +1,6 @@
 -- Tseitin encoding + tautology oracle checks (pure, no axioms).
-import Lynth.Sat.Encode
+module
+import Lynth
 
 open Lynth.Sat.Encode
 

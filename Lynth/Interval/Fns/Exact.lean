@@ -1,7 +1,26 @@
-import Lynth.Interval.Reify.ExactAttr
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Algebra.Polynomial.Basic
+public import Mathlib.Algebra.Ring.Defs
+public import Mathlib.Combinatorics.Enumerative.Bell
+public import Mathlib.Data.Finset.Range
+public import Mathlib.Data.Nat.Cast.Defs
+public import Mathlib.Data.Nat.Choose.Basic
+public import Mathlib.Data.Nat.Init
+public import Mathlib.Data.Rat.Defs
+public import Mathlib.NumberTheory.Bernoulli
+public import Mathlib.RingTheory.Polynomial.Chebyshev
+import all Lynth.Interval.Reify.ExactAttr
 import Mathlib.RingTheory.Polynomial.Chebyshev
-import Mathlib.RingTheory.Polynomial.Pochhammer
-import Mathlib.NumberTheory.BernoulliPolynomials
+public import Mathlib.RingTheory.Polynomial.Pochhammer
+public import Mathlib.NumberTheory.BernoulliPolynomials
 import Mathlib.Combinatorics.Enumerative.Bell
 
 /-!
@@ -17,7 +36,7 @@ namespace Lynth.Interval.Exact
 
 open Polynomial
 
-theorem cheb_T_ofNat (R : Type*) [CommRing R] (n : ℕ) [n.AtLeastTwo] :
+public theorem cheb_T_ofNat (R : Type*) [CommRing R] (n : ℕ) [n.AtLeastTwo] :
     Chebyshev.T R (ofNat(n) : ℤ) =
       2 * X * Chebyshev.T R ((ofNat(n) : ℤ) - 1) - Chebyshev.T R ((ofNat(n) : ℤ) - 2) := by
   have := Chebyshev.T_add_two R ((ofNat(n) : ℤ) - 2)
@@ -25,7 +44,7 @@ theorem cheb_T_ofNat (R : Type*) [CommRing R] (n : ℕ) [n.AtLeastTwo] :
     show (ofNat(n) : ℤ) - 2 + 1 = ofNat(n) - 1 by ring] at this
   exact this
 
-theorem cheb_U_ofNat (R : Type*) [CommRing R] (n : ℕ) [n.AtLeastTwo] :
+public theorem cheb_U_ofNat (R : Type*) [CommRing R] (n : ℕ) [n.AtLeastTwo] :
     Chebyshev.U R (ofNat(n) : ℤ) =
       2 * X * Chebyshev.U R ((ofNat(n) : ℤ) - 1) - Chebyshev.U R ((ofNat(n) : ℤ) - 2) := by
   have := Chebyshev.U_add_two R ((ofNat(n) : ℤ) - 2)
@@ -33,11 +52,11 @@ theorem cheb_U_ofNat (R : Type*) [CommRing R] (n : ℕ) [n.AtLeastTwo] :
     show (ofNat(n) : ℤ) - 2 + 1 = ofNat(n) - 1 by ring] at this
   exact this
 
-theorem bell_succ_range (n : ℕ) :
+public theorem bell_succ_range (n : ℕ) :
     Nat.bell (n + 1) = ∑ i ∈ Finset.range (n + 1), n.choose i * Nat.bell (n - i) := by
   rw [Nat.bell_succ]; congr 1; ext i; simp
 
-theorem bernoulli'_succ_def (n : ℕ) :
+public theorem bernoulli'_succ_def (n : ℕ) :
     bernoulli' (n + 1) =
       1 - ∑ k ∈ Finset.range (n + 1), ((n + 1).choose k : ℚ) / (((n + 1 : ℕ) : ℚ) - k + 1) * bernoulli' k :=
   bernoulli'_def (n + 1)

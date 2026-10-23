@@ -1,4 +1,6 @@
-import Lynth.Interval.Integral.Math.NestedDefs
+module
+
+import all Lynth.Interval.Integral.Math.NestedDefs
 
 /-! Measurability of binder-aware real expressions, including variable limits. -/
 namespace Intgrl

@@ -1,41 +1,20 @@
+module
+
+public import Lynth.Basic
+public import Lynth.ProofInterface
+public import Lynth.Options
+public import Lynth.ComplexFuncs
+public import Lynth.Hypergeometric.Defs
+public import Lynth.Analysis.SpecialFunctionsDefs
+public import Lynth.Analysis.RealFunctions
+public import Lynth.Analysis.ClassicalFunctions
+
 import Lynth.Certificates
-import Lynth.Procedure
-import Lynth.FinSearch.Syntax
-import Lynth.FinSearch.Theory
-import Lynth.FinSearch.Encode
-import Lynth.FinSearch.Detect
-import Lynth.FinSearch.Recognize
-import Lynth.FinSearch.Procedure
-import Lynth.Sat.Syntax
-import Lynth.Sat.Solver
-import Lynth.Sat.Watch
-import Lynth.Sat.Cdcl
-import Lynth.Sat.Encode
-import Lynth.Sat.Abstract
-import Lynth.Sat.Reconstruct
-import Lynth.Sat.Procedure
-import Lynth.Arith.Linear
-import Lynth.Arith.Fourier
-import Lynth.Arith.FarkasSound
-import Lynth.Arith.Simplex
-import Lynth.Arith.Explain
-import Lynth.Arith.BranchBound
-import Lynth.Arith.Recognize
-import Lynth.Arith.Procedure
-import Lynth.Euf.Closure
-import Lynth.Euf.Procedure
-import Lynth.Quant.Trigger
-import Lynth.Quant.Procedure
-import Lynth.Array.Rules
-import Lynth.Array.Procedure
-import Lynth.Datatypes.Procedure
-import Lynth.BV.Blast
-import Lynth.BV.Recognize
-import Lynth.BV.Procedure
-import Lynth.Ring.Procedure
-import Lynth.Nlin.Procedure
-import Lynth.Witness
-import Lynth.Interval
 import Lynth.Frontend
-import Lynth.Basic
 import Lynth.HyperGeomIdentities
+
+/-! The public entry point for `lynth`, its options, mathematical functions, and
+the declarations needed to check generated proofs.
+The selected internal helpers exercised by unit tests are also exported here.
+The separate `lynth_grind` API uses `Lynth.Grind.Tactic`.
+-/

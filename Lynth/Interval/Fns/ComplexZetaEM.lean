@@ -1,7 +1,30 @@
-import Lynth.Interval.Fns.EMCore.Zeta
-import Lynth.Interval.Fns.ComplexGamma
-import Lynth.Interval.Fns.ComplexElem
-import Lynth.Interval.Fns.Zeta
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.List.Basic
+public import Init.Data.Nat.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Algebra.Order.Ring.Unbundled.Rat
+public import Mathlib.Data.Nat.Factorial.Basic
+public import Mathlib.Data.Rat.Defs
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Fns.ComplexElem
+public import Lynth.Interval.Fns.ComplexGamma
+public import Lynth.Interval.Fns.Elem
+public import Lynth.Interval.Fns.Gamma
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Series.Tail
+public import Lynth.Interval.Vendor.Dyadic
+import Mathlib
+import all Lynth.Interval.Fns.EMCore.Zeta
+import all Lynth.Interval.Fns.ComplexGamma
+import all Lynth.Interval.Fns.ComplexElem
+import all Lynth.Interval.Fns.Zeta
 
 /-!
 # Complex Euler–Maclaurin zeta (`0 < Re ≠ 1`).
@@ -92,8 +115,8 @@ theorem zeta_em_bound_corrected (s : ℂ) (hs : 0 < s.re) (hs1 : s ≠ 1) (N M :
     push_cast
     field_simp
 
-/-- info: 'Complex.zeta_em_bound_corrected' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+/-- info: '_private.Lynth.Interval.Fns.ComplexZetaEM.0.Complex.zeta_em_bound_corrected' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
 #print axioms Complex.zeta_em_bound_corrected
 
 end Complex
@@ -115,7 +138,7 @@ theorem risingCx_eq_prod (x : ℂ) (r : Nat) :
 /-! ### Correction boxes -/
 
 /-- one correction box `Q·R/(Np1^{s+2r-1})`. -/
-def emCorrBoxC (c : Ctx) (S Np1 : CBox) (Q : ℚ) (r : Nat) : CBox :=
+@[expose] public def emCorrBoxC (c : Ctx) (S Np1 : CBox) (Q : ℚ) (r : Nat) : CBox :=
   let w := c.prec + 16
   CBox.div w
     (CBox.mul w (CBox.ofReal (Ival.ofRat w Q)) (risingC w S (2 * r - 1)))
@@ -124,7 +147,7 @@ def emCorrBoxC (c : Ctx) (S Np1 : CBox) (Q : ℚ) (r : Nat) : CBox :=
 
 /-- interval enclosing the EM correction factor
 `‖z + 2M+1‖ / (Re z + 2M+1)` (which is `1` on the real axis). -/
-def emTailFactorC (c : Ctx) (S : CBox) (M : Nat) : Ival :=
+@[expose] public def emTailFactorC (c : Ctx) (S : CBox) (M : Nat) : Ival :=
   let w := c.prec + 16
   let Q : ℚ := 2 * ((M : Nat) : ℚ) + 1
   Ival.div w
@@ -160,7 +183,7 @@ theorem mem_emTailFactorC {c : Ctx} {z : ℂ} {S : CBox} {M : Nat}
   exact Ival.mem_div hnum hden
 
 /-- Euler–Maclaurin enclosure at `S ∋ s` (`0 < Re s ≠ 1` from the guard). -/
-def zetaEMC (c : Ctx) (S : CBox) (N M : Nat) : CBox :=
+@[expose] public def zetaEMC (c : Ctx) (S : CBox) (N M : Nat) : CBox :=
   let w := c.prec + 16
   let Np1 := CBox.ofReal (Ival.ofRat w ((N + 1 : Nat) : ℚ))
   let terms : List CBox := (List.range N).map fun k =>
@@ -444,7 +467,7 @@ theorem mem_zetaEMC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox} {N M : Nat}
 
 /-- EM guard: `0 < Re ≠ 1` enclosures → Euler–Maclaurin with adaptive `N`;
 everything else → `⊤` (mirror of `zetaEMGuard`). -/
-def zetaEMGuardC (c : Ctx) (S : CBox) (relo rehi : Dy) : CBox :=
+@[expose] public def zetaEMGuardC (c : Ctx) (S : CBox) (relo rehi : Dy) : CBox :=
   if _hpos : 0 < relo.toRat ∧ (rehi.toRat < 1 ∨ 1 < relo.toRat) then
     let M := 4 + c.prec / 8
     let sHi := rehi.toRat.num.toNat

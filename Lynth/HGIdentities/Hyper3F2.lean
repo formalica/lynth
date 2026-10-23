@@ -1,7 +1,9 @@
+module
+
 import Mathlib
 import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
-import Lynth.HGIdentities.Common
-import Lynth.Hypergeometric
+import all Lynth.HGIdentities.Common
+import all Lynth.Hypergeometric
 
 /-!
 # The closed form of `₃F̃₂(-1/2, 1, 1; 2, 2; z)`

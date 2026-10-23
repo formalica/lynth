@@ -1,7 +1,9 @@
+module
+
 import Lean
-import Lynth.Procedure
-import Lynth.Euf.Procedure
-import Lynth.Array.Rules
+import all Lynth.Procedure
+import all Lynth.Euf.Procedure
+import all Lynth.Array.Rules
 
 /-!
 Array theory procedure: extensional-array reasoning as an EUF

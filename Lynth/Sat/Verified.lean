@@ -1,5 +1,16 @@
+module
+
+public import Init.Core
+public import Init.Data.Hashable
+public import Init.Data.Option.Basic
+public import Init.Prelude
+public import Mathlib.Data.Nat.Find
+public import Std.Data.HashSet.Basic
+public import Lynth.Sat.Cdcl
+public import Lynth.Sat.Solver
+public import Lynth.Sat.Syntax
 import Lean
-import Lynth.Sat.Cdcl
+import all Lynth.Sat.Cdcl
 import Mathlib.Data.Nat.Find
 
 /-!
@@ -81,7 +92,7 @@ sharing between levels (geometric re-solving costs ≈2× the final
 run; sharing learned clauses is a later optimization). Level `0`
 runs at the base fuel, level `k + 1` at `fuel * 2 ^ (k + 1)`.
 Total (structural match, no recursion). -/
-def cdclLoop (cnf : CNF) (fuel restartBase : Nat) (branch : Std.HashSet Nat) :
+@[expose] public def cdclLoop (cnf : CNF) (fuel restartBase : Nat) (branch : Std.HashSet Nat) :
     Nat → Option SatResult
   | 0 => (Cdcl.cdclSolve cnf fuel restartBase branch).result
   | n + 1 =>
@@ -100,12 +111,12 @@ is erased at runtime, so evaluation just runs levels `0, 1, 2, …`
 until one decides — which happens in practice by the mathematical
 fact behind axiom #2), then its answer. There is no unknown case:
 the `none` branch is contradictory by `Nat.find_spec`. -/
-def solveTotal (cnf : CNF) (fuel restartBase : Nat)
+@[expose] public def solveTotal (cnf : CNF) (fuel restartBase : Nat)
     (branch : Std.HashSet Nat) : SatResult :=
   match ho : (cdclLoop cnf fuel restartBase branch
-      (Nat.find (cdcl_fuel_suffices cnf fuel restartBase branch))) with
+      (Nat.find (show ∃ caps, cdclLoop cnf fuel restartBase branch caps ≠ none from by exact cdcl_fuel_suffices cnf fuel restartBase branch))) with
   | some r => r
-  | none => absurd ho (Nat.find_spec (cdcl_fuel_suffices cnf fuel restartBase branch))
+  | none => absurd ho (by exact Nat.find_spec (cdcl_fuel_suffices cnf fuel restartBase branch))
 
 /-- Loop soundness at any level (every level is one exact solver run,
 so this is just axiom #1 after casing the level). -/
@@ -153,7 +164,7 @@ theorem solveTotal_eq_of_loop (cnf : CNF) (fuel restartBase : Nat)
 Cases the deciding loop outcome (reusing its equation); the absurd
 branches are contradictory by constructor discrimination or by
 fuel sufficiency. -/
-theorem solveTotal_sound (cnf : CNF) (fuel restartBase : Nat)
+public theorem solveTotal_sound (cnf : CNF) (fuel restartBase : Nat)
     (branch : Std.HashSet Nat) (m : Assignment)
     (h : solveTotal cnf fuel restartBase branch = .sat m) :
     checkSat cnf m = true := by
@@ -173,7 +184,7 @@ theorem solveTotal_sound (cnf : CNF) (fuel restartBase : Nat)
       (cdcl_fuel_suffices cnf fuel restartBase branch)) hR).elim
 
 /-- Total-solver completeness: `unsat` means unsatisfiable. -/
-theorem solveTotal_complete (cnf : CNF) (fuel restartBase : Nat)
+public theorem solveTotal_complete (cnf : CNF) (fuel restartBase : Nat)
     (branch : Std.HashSet Nat) (a : Assignment)
     (h : solveTotal cnf fuel restartBase branch = .unsat) :
     checkSat cnf a = false := by

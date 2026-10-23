@@ -39,6 +39,7 @@ import Test.FarkasSound
 import Test.FinFuzz
 import Test.FinSearch
 import Test.FinSearchAlt
+import Test.ModuleInterface
 import Test.Nlin
 import Test.Quant
 import Test.Readme

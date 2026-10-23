@@ -7,6 +7,8 @@ defaultTargets = ["Lynth"]
 pp.unicode.fun = true # pretty-prints `fun a ↦ b`
 relaxedAutoImplicit = false
 weak.linter.mathlibStandardSet = true
+# Implementation modules intentionally have no public declarations.
+weak.linter.privateModule = false
 maxSynthPendingDepth = 3
 
 [[require]]
@@ -67,6 +69,7 @@ globs = [
   "Test.FinFuzz",
   "Test.FinSearch",
   "Test.FinSearchAlt",
+  "Test.ModuleInterface",
   "Test.Nlin",
   "Test.Quant",
   "Test.Readme",

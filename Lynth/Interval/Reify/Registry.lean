@@ -1,5 +1,7 @@
+module
+
 import Lean
-import Lynth.Interval.Core.Prop
+import all Lynth.Interval.Core.Prop
 
 /-! # The unified function registry (`@[lynth_cfn]`)
 

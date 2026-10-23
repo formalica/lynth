@@ -1,5 +1,7 @@
-import Lynth.Interval.Integral.NestedAnalyticScale
-import Lynth.Interval.Integral.NestedBoundCSound
+module
+
+import all Lynth.Interval.Integral.NestedAnalyticScale
+import all Lynth.Interval.Integral.NestedBoundCSound
 
 /-! Box models, scoped parameter environments, and finite integration of analytic families. -/
 
@@ -7,7 +9,6 @@ namespace Lynth.Interval.Integral.Nested.AnalyticWork
 open Intgrl Fns MeasureTheory Set Metric
 open scoped Topology
 open private finite_value_eq from Lynth.Interval.Integral.NestedPrimitiveProof
-open private unit from Lynth.Interval.Integral.NestedBounds
 
 namespace BoxModel
 variable {S : Set ℂ} {α : Type} [TopologicalSpace α] {T : Set α}
@@ -327,7 +328,6 @@ end Lynth.Interval.Integral.Nested.AnalyticWork
 namespace Lynth.Interval.Integral.Nested.AnalyticWork
 open Intgrl Fns MeasureTheory Set Metric
 open scoped Topology
-open private unit from Lynth.Interval.Integral.NestedBounds
 
 lemma finite_value_affine {k : NDomain} (hk : k.finite = true) {a b : ℝ}
     (horder : k ≠ .interval → a ≤ b) (f : ℝ → ℝ) :

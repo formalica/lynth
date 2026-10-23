@@ -1,5 +1,6 @@
+module
 import Mathlib
-import Lynth
+public import Lynth
 
 open Lynth.Interval
 open Lynth.Interval.Fns
@@ -23,7 +24,7 @@ adds per-declaration axioms.
 
 set_option maxHeartbeats 60000 in
 -- D1: ψ(1) = -γ. -0.5772156649
-def dig_one : { x : Rat //
+public def dig_one : { x : Rat //
     abs (Real'.digamma 1 - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'dig_one' depends on axioms: [propext, Classical.choice, Quot.sound, dig_one._native.native_decide.ax_1] -/
@@ -33,7 +34,7 @@ def dig_one : { x : Rat //
 
 set_option maxHeartbeats 60000 in
 -- D2: ψ(2) = 1-γ. 0.4227843351
-def dig_two : { x : Rat //
+public def dig_two : { x : Rat //
     abs (Real'.digamma 2 - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'dig_two' depends on axioms: [propext, Classical.choice, Quot.sound, dig_two._native.native_decide.ax_1] -/
@@ -43,7 +44,7 @@ def dig_two : { x : Rat //
 
 set_option maxHeartbeats 60000 in
 -- D3: ψ(1/2) = -γ-2ln2. -1.9635100260
-def dig_half : { x : Rat //
+public def dig_half : { x : Rat //
     abs (Real'.digamma (1 / 2) - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'dig_half' depends on axioms: [propext, Classical.choice, Quot.sound, dig_half._native.native_decide.ax_1] -/
@@ -53,7 +54,7 @@ def dig_half : { x : Rat //
 
 set_option maxHeartbeats 60000 in
 -- D4: ψ(2.5) via shifts. 0.7031566407
-def dig_five_halves : { x : Rat //
+public def dig_five_halves : { x : Rat //
     abs (Real'.digamma (5 / 2) - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'dig_five_halves' depends on axioms: [propext, Classical.choice, Quot.sound, dig_five_halves._native.native_decide.ax_1] -/
@@ -63,7 +64,7 @@ def dig_five_halves : { x : Rat //
 
 set_option maxHeartbeats 60000 in
 -- D5: ψ(-1/2) via reflection. 0.0364899740
-def dig_neg_half : { x : Rat //
+public def dig_neg_half : { x : Rat //
     abs (Real'.digamma (-1 / 2) - x) < 1 / 1000 } := by
   lynth
 /-- info: 'dig_neg_half' depends on axioms: [propext, Classical.choice, Quot.sound, dig_neg_half._native.native_decide.ax_1] -/
@@ -73,7 +74,7 @@ def dig_neg_half : { x : Rat //
 
 set_option maxHeartbeats 60000 in
 -- D6: ψ(3) = 3/2-γ. 0.9227843351
-def dig_three : { x : Rat //
+public def dig_three : { x : Rat //
     abs (Real'.digamma 3 - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'dig_three' depends on axioms: [propext, Classical.choice, Quot.sound, dig_three._native.native_decide.ax_1] -/

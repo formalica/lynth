@@ -1,7 +1,36 @@
-import Lynth.Interval.Fns.Gamma
-import Lynth.Interval.Fns.ZetaEulerProd
-import Lynth.Interval.Fns.ZetaEM
-import Lynth.Interval.Fns.Trig
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.List.Basic
+public import Init.Data.Nat.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Algebra.Order.Ring.Unbundled.Rat
+public import Mathlib.Data.Nat.Factorial.Basic
+public import Mathlib.Data.Rat.Defs
+public import Lynth.Interval.Core.Expr
+public import Lynth.Analysis.RealFunctions
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.Elem
+public import Lynth.Interval.Fns.Gamma
+public import Lynth.Interval.Fns.Trig
+public import Lynth.Interval.Fns.ZetaEulerProd
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Analysis.RealFunctions
+import all Lynth.Interval.Fns.Gamma
+import all Lynth.Interval.Fns.ZetaEulerProd
+import all Lynth.Interval.Fns.ZetaEM
+import all Lynth.Interval.Fns.Trig
 import Mathlib.NumberTheory.LSeries.RiemannZeta
 
 /-!
@@ -33,15 +62,10 @@ namespace Lynth.Interval.Fns
 
 open BigOperators
 
-namespace Real'
 
-/-- real zeta as a real-valued function (graph for the registry entry). -/
-noncomputable def zeta (s : ℝ) : ℝ := (riemannZeta (s : ℂ)).re
-
-end Real'
 
 /-- fold `Ival.add` over interval summands. -/
-def isum (c : Ctx) : List Ival → Ival
+@[expose] public def isum (c : Ctx) : List Ival → Ival
   | [] => Ival.ofRat c.prec 0
   | I :: Is => Ival.add c.prec I (isum c Is)
 
@@ -55,7 +79,7 @@ theorem mem_isum (c : Ctx) (hc : c.Valid) (xs : List ℝ) (Is : List Ival)
     exact Ival.mem_add hx (ih)
 
 /-- fold `Ival.mul` over interval factors. -/
-def iprod (c : Ctx) : List Ival → Ival
+@[expose] public def iprod (c : Ctx) : List Ival → Ival
   | [] => Ival.ofRat c.prec 1
   | I :: Is => Ival.mul c.prec I (iprod c Is)
 
@@ -69,7 +93,7 @@ theorem mem_iprod (c : Ctx) (hc : c.Valid) (xs : List ℝ) (Is : List Ival)
     exact Ival.mem_mul hx (ih)
 
 /-- one Euler factor `1/(1 - p⁻ⁿ)` at integer `n`, as an interval. -/
-def eulerFactor (c : Ctx) (n p : Nat) : Ival :=
+@[expose] public def eulerFactor (c : Ctx) (n p : Nat) : Ival :=
   Ival.div c.prec (Ival.ofRat c.prec 1)
     (Ival.sub c.prec (Ival.ofRat c.prec 1)
       (Ival.ofRat c.prec ((1 : ℚ) / (p ^ n : Nat))))
@@ -84,7 +108,7 @@ theorem mem_eulerFactor (c : Ctx) (hc : c.Valid) (n p : Nat) :
   simpa [h] using Ival.mem_ofRat c.prec ((1 : ℚ) / (p ^ n : Nat))
 
 /-- Euler-product enclosure at integer `n ≥ 2` (cutoff `P`). -/
-def zetaEulerProdIval (c : Ctx) (n P : Nat) : Ival :=
+@[expose] public def zetaEulerProdIval (c : Ctx) (n P : Nat) : Ival :=
   let ps := eulerPrimes P
   let prod := iprod c (ps.map fun p => eulerFactor c n p)
   let E : ℚ := 2 / (((P ^ (n - 1) : Nat) : ℚ) * ((n : ℚ) - 1))
@@ -130,7 +154,7 @@ theorem zetaEulerProd_sound (c : Ctx) (hc : c.Valid) (n P : Nat) (hn : 2 ≤ n)
 
 /-- local rising product with soundness stated directly in `emRising` form
 (avoids translating Gamma's `risingReal`). -/
-def risingZ (c : Ctx) (S : Ival) : Nat → Ival
+@[expose] public def risingZ (c : Ctx) (S : Ival) : Nat → Ival
   | 0 => Ival.ofRat c.prec 1
   | k + 1 => Ival.mul c.prec (risingZ c S k)
     (Ival.add c.prec S (Ival.ofRat c.prec (k : ℚ)))
@@ -151,21 +175,21 @@ theorem mem_risingZ (c : Ctx) (hc : c.Valid) (S : Ival) (s : ℝ) (hS : s ∈ S)
 
 /-- one Bernoulli correction
 `B_{2r}/(2r)! · rising(s,2r-1)/(N+1)^{s+2r-1}` (all interval ops). -/
-def emCorrTerm (c : Ctx) (S Np1 : Ival) (r : Nat) : Ival :=
+@[expose] public def emCorrTerm (c : Ctx) (S Np1 : Ival) (r : Nat) : Ival :=
   let B : ℚ := bernoulliQ (2 * r) / (Nat.factorial (2 * r) : ℚ)
   Ival.div c.prec
     (Ival.mul c.prec (Ival.ofRat c.prec B) (risingZ c S (2 * r - 1)))
     (rpowIval c Np1 (Ival.add c.prec S (Ival.ofRat c.prec ((2 * (r : ℚ)) - 1))))
 
 /-- interval for `2·emTailScale` (mirrors the analytic scale). -/
-def emTailIval (c : Ctx) (S Np1 : Ival) (M : Nat) : Ival :=
+@[expose] public def emTailIval (c : Ctx) (S Np1 : Ival) (M : Nat) : Ival :=
   let B : ℚ := 2 * |(bernoulliQ (2 * (M + 1)))| / (Nat.factorial (2 * (M + 1)) : ℚ)
   Ival.div c.prec
     (Ival.mul c.prec (Ival.ofRat c.prec B) (risingZ c S (2 * (M + 1) - 1)))
     (rpowIval c Np1 (Ival.add c.prec S (Ival.ofRat c.prec ((2 * (((M + 1 : Nat) : ℚ))) - 1))))
 
 /-- Euler–Maclaurin enclosure at `S ∋ s` (`0 < s ≠ 1` from the guard). -/
-def zetaEMIval (c : Ctx) (S : Ival) (N M : Nat) : Ival :=
+@[expose] public def zetaEMIval (c : Ctx) (S : Ival) (N M : Nat) : Ival :=
   let terms : List Ival := (List.range N).map fun k =>
     Ival.div c.prec (Ival.ofRat c.prec 1)
       (rpowIval c (Ival.ofRat c.prec ((k + 1 : Nat) : ℚ)) S)
@@ -459,7 +483,7 @@ theorem zeta_neg_fe (s : ℝ) (hs : s < 0) :
 
 /-- EM guard: `0 < s ≠ 1` enclosures → Euler–Maclaurin with adaptive `N`;
 everything else → `⊤`. -/
-def zetaEMGuard (c : Ctx) (X : Ival) (lo hi : Dy) : Ival :=
+@[expose] public def zetaEMGuard (c : Ctx) (X : Ival) (lo hi : Dy) : Ival :=
   if _hpos : 0 < lo.toRat ∧ (hi.toRat < 1 ∨ 1 < lo.toRat) then
     -- `N` adapts to the enclosure size so `s + 2M + 2 ≤ N + 1` is provable
     let M := 4 + c.prec / 8
@@ -471,7 +495,7 @@ def zetaEMGuard (c : Ctx) (X : Ival) (lo hi : Dy) : Ival :=
 /-- positive dispatch: integer points `n ≥ 6` → Euler product;
 `0 < s ≠ 1` enclosures → Euler–Maclaurin; everything else → `⊤`.
 Non-recursive (the negative branch reuses it for `1 - s > 1`). -/
-def zetaPosIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def zetaPosIval (c : Ctx) (X : Ival) : Ival :=
   match X.lo, X.hi with
   | some lo, some hi =>
     if _hpt : lo = hi then
@@ -484,7 +508,7 @@ def zetaPosIval (c : Ctx) (X : Ival) : Ival :=
 /-- FE factor enclosure for `s < 0`:
 `2^s·π^{s-1}·sin(πs/2)·Γ(1-s)·ζ(1-s)` (inner `1-s > 1` reuses the
 proved positive dispatch; recursion depth exactly 1). -/
-def zetaNegIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def zetaNegIval (c : Ctx) (X : Ival) : Ival :=
   let A := rpowIval c (Ival.ofRat c.prec 2) X
   let B := rpowIval c c.pi (Ival.sub c.prec X (Ival.ofRat c.prec 1))
   let C := sinIval c
@@ -497,7 +521,7 @@ def zetaNegIval (c : Ctx) (X : Ival) : Ival :=
 /-- dispatcher: integer points `n ≥ 6` → Euler product; strictly
 negative enclosures → functional equation; `0 < s ≠ 1` enclosures →
 Euler–Maclaurin; everything else → `⊤`. -/
-def zetaIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def zetaIval (c : Ctx) (X : Ival) : Ival :=
   match X.lo, X.hi with
   | some lo, some hi =>
     if _hneg : hi.toRat < 0 then zetaNegIval c X
@@ -703,10 +727,10 @@ theorem zetaIval_sound (c : Ctx) (hc : c.Valid) (s : ℝ) (X : Ival)
       · rename_i hnegH
         exact zetaPosIval_sound c hc s X (Ival.mem_def.mpr ⟨hxlo, hxhi⟩)
 
-@[lynth_cfn] def zetaR : Fn1 .real .real where
+@[expose, lynth_cfn] public def zetaR : Fn1 .real .real where
   name := "zeta"
   graph x y := y = Real'.zeta x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c X := zetaIval c X
   sound := fun c x _ X hc hy hx => by
     obtain rfl := hy

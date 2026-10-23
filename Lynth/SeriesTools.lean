@@ -1,4 +1,7 @@
+module
+
 import Mathlib
+import all Mathlib.Basic.Complex.Basic
 
 /-!
 # Power series on the unit disc

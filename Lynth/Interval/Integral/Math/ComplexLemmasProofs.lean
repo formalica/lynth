@@ -1,5 +1,7 @@
-import Lynth.Interval.Integral.Math.ComplexBranch
-import Lynth.Interval.Integral.Math.NestedSyntaxLemmas
+module
+
+import all Lynth.Interval.Integral.Math.ComplexBranch
+import all Lynth.Interval.Integral.Math.NestedSyntaxLemmas
 
 /-! Real semantics of the complex-projection normalizers and branch
 resolution used by the complex integral reduction. -/

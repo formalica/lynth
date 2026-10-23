@@ -1,4 +1,6 @@
-import Lynth.Interval.Integral.Legendre
+module
+
+import all Lynth.Interval.Integral.Legendre
 
 /-! Exact integer coefficient generation for the endpoint expansion. -/
 namespace Lynth.Interval.Integral

@@ -1,9 +1,10 @@
 -- Differential fuzz: CDCL vs DPLL over generated CNFs, models checked.
-import Lynth.Sat.Solver
-import Lynth.Sat.Cdcl
+module
+import Lynth
 
 open Lynth.Sat
 
+-- These internal checks load the full facade rather than a narrow implementation module.
 set_option maxHeartbeats 55 in
 /-- Deterministic PRNG (LCG). -/
 def cdclFuzz_lcg (s : Nat) : Nat := (1103515245 * s + 12345) % 2147483648

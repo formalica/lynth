@@ -1,5 +1,25 @@
-import Lynth.Interval.Integral.Panel
-import Lynth.Interval.Integral.SyntaxEq
+module
+
+public import Init.Control.Basic
+public import Init.Core
+public import Init.Data.Array.Basic
+public import Init.Data.List.Basic
+public import Init.Data.List.Control
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Option.Basic
+public import Init.Data.Rat.Basic
+public import Init.GetElem
+public import Init.Prelude
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Integral.Eval
+public import Lynth.Interval.Integral.Legendre
+public import Lynth.Interval.Integral.Math.Integrand
+public import Lynth.Interval.Integral.Panel
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Integral.Panel
+import all Lynth.Interval.Integral.SyntaxEq
 
 /-! Replayable quadrature partitions and final strict accuracy checks. -/
 
@@ -7,18 +27,18 @@ namespace Lynth.Interval.Integral
 
 open Intgrl
 
-inductive Method where
+public inductive Method where
   | direct
   | gauss (table : Nat) (rho : Dy)
 deriving Repr, Inhabited
 
-structure Piece where
+public structure Piece where
   a : Dy
   b : Dy
   method : Method
 deriving Repr, Inhabited
 
-structure Certificate where
+public structure Certificate where
   a : Dy
   b : Dy
   reverse : Bool := false
@@ -26,9 +46,9 @@ structure Certificate where
   pieces : List Piece
 deriving Repr, Inhabited
 
-def dyEq (a b : Dy) : Bool := a.toRat == b.toRat
+@[expose] public def dyEq (a b : Dy) : Bool := a.toRat == b.toRat
 
-def partitionCheck (cert : Certificate) : Bool :=
+@[expose] public def partitionCheck (cert : Certificate) : Bool :=
   match cert.pieces with
   | [] => false
   | p :: ps =>
@@ -37,7 +57,7 @@ def partitionCheck (cert : Certificate) : Bool :=
     cert.pieces.all (fun p => Dy.leB p.a p.b) &&
     (cert.pieces.zip cert.pieces.tail).all (fun (p,q) => dyEq p.b q.a)
 
-def pieceEncl (c : Ctx) (e : Term) (tables : Array NodeTable)
+@[expose] public def pieceEncl (c : Ctx) (e : Term) (tables : Array NodeTable)
     (weights : Array (List Ival)) (p : Piece) : Option Ival :=
   match p.method with
   | .direct => if dyEq p.a p.b then some Ival.zero else directPanel c e p.a p.b
@@ -45,10 +65,10 @@ def pieceEncl (c : Ctx) (e : Term) (tables : Array NodeTable)
     if !Dy.ltB p.a p.b then none else
       gaussPanel c e p.a p.b ρ (← tables[i]?) (← weights[i]?)
 
-def hullPoint (I : Ival) (x : Dy) : Ival :=
+@[expose] public def hullPoint (I : Ival) (x : Dy) : Ival :=
   ⟨I.lo.map (Dy.min x), I.hi.map (Dy.max x)⟩
 
-def endpointError (c : Ctx) (e : Term) (I : Ival) (anchor : Dy) : Option Dy :=
+@[expose] public def endpointError (c : Ctx) (e : Term) (I : Ival) (anchor : Dy) : Option Dy :=
   match I.lo, I.hi with
   | some a, some b =>
     if dyEq a anchor && dyEq b anchor then some Dy.zero else
@@ -148,7 +168,7 @@ theorem piece_chain_integral {f : ℝ → ℝ} (p : Piece) (ps : List Piece)
     simpa only [List.getLastD_cons, heq, hq.2, List.map_cons, List.sum_cons] using
       (intervalIntegral.integral_add_adjacent_intervals hp htail).symm
 
-def finiteEncl (c : Ctx) (e A B : Term) (kind : Region)
+@[expose] public def finiteEncl (c : Ctx) (e A B : Term) (kind : Region)
     (cert : Certificate) : Option Ival := do
   if !partitionCheck cert then none else do
     if !(cert.tables.all (fun t => t.check c)) then none else do
@@ -354,7 +374,7 @@ theorem finiteEncl_sound {c : Ctx} (hc : c.Valid) {e A B : Term}
   exact finiteAssembly_sound hc hkind
     (fun _ _ hab _ hp => pieceEncl_sound hc ht hab hp) h
 
-def closeCheck (c : Ctx) (S : Ival) (q : ℚ) (tol : Term) : Bool :=
+@[expose] public def closeCheck (c : Ctx) (S : Ival) (q : ℚ) (tol : Term) : Bool :=
   Ival.ltB (Ival.abs (Ival.sub c.prec S (Ival.ofRat c.prec q))) (evalR c tol Ival.zero)
 
 theorem closeCheck_sound {c : Ctx} (hc : c.Valid) {S : Ival} {v : ℝ}
@@ -363,7 +383,7 @@ theorem closeCheck_sound {c : Ctx} (hc : c.Valid) {S : Ival} {v : ℝ}
   Ival.lt_of_ltB (Ival.mem_abs (Ival.mem_sub hv (Ival.mem_ofRat _ _)))
     (evalR_sound hc tol Ival.mem_zero) h
 
-def finiteCheck (c : Ctx) (e A B : Term) (kind : Region)
+@[expose] public def finiteCheck (c : Ctx) (e A B : Term) (kind : Region)
     (cert : Certificate) (q : ℚ) (tol : Term) : Bool :=
   match kind with
   | .interval | .icc | .ioc | .ico | .ioo =>

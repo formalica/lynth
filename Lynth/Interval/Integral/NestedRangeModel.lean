@@ -1,12 +1,13 @@
-import Lynth.Interval.Integral.NestedLogEndpointProof
-import Lynth.Interval.Integral.NestedRealBoundsProof
-import Lynth.Interval.Integral.Math.NestedChange
+module
+
+import all Lynth.Interval.Integral.NestedLogEndpointProof
+import all Lynth.Interval.Integral.NestedRealBoundsProof
+import all Lynth.Interval.Integral.Math.NestedChange
 
 /-! Parameter paths and integral averaging lemmas for recursive range evaluation. -/
 namespace Lynth.Interval.Integral.Nested
 open Intgrl Fns MeasureTheory Set Filter
 open scoped Topology
-open private unit from Lynth.Interval.Integral.NestedBounds
 
 lemma intervalIntegral_mem_unit {f : ℝ → ℝ} {V : Ival}
     (hi : IntervalIntegrable f volume 0 1)

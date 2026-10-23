@@ -1,4 +1,6 @@
-import Lynth.Analysis.SpecialFunctions
+module
+
+import all Lynth.Analysis.SpecialFunctions
 
 /-! Portable analytic bounds used by integration, without interval encodings.
 Mirrored in /tmp/intgrl/SpecialBounds.lean. -/

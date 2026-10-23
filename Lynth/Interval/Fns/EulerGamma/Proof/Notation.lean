@@ -1,4 +1,6 @@
-import Lynth.Interval.Fns.EulerGamma.SeriesBounds
+module
+
+import all Lynth.Interval.Fns.EulerGamma.SeriesBounds
 
 /-!
 # Basic objects for the proof of the Brent–McMillan error bound

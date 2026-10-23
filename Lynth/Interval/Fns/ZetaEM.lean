@@ -1,3 +1,5 @@
+module
+
 import Mathlib
 
 /-! Ported from `/tmp/zeta/zeta_em_thm.lean` (external prover, complete).

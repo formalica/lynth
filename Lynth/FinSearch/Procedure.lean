@@ -1,14 +1,16 @@
+module
+
 import Lean
 import Std.Tactic.BVDecide
 import Batteries.Data.HashMap
 import Batteries.Lean.HashSet
-import Lynth.Procedure
-import Lynth.Witness
-import Lynth.FinSearch.Syntax
-import Lynth.FinSearch.Theory
-import Lynth.FinSearch.Encode
-import Lynth.FinSearch.Detect
-import Lynth.FinSearch.Recognize
+import all Lynth.Procedure
+import all Lynth.Witness
+import all Lynth.FinSearch.Syntax
+import all Lynth.FinSearch.Theory
+import all Lynth.FinSearch.Encode
+import all Lynth.FinSearch.Detect
+import all Lynth.FinSearch.Recognize
 
 /-!
 Finite-domain synthesis procedure: constraint puzzles with subtype

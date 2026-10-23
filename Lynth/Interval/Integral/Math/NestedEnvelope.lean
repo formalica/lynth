@@ -1,3 +1,5 @@
+module
+
 import Mathlib
 
 /-! Mathematical lemmas for endpoint envelopes and parameter integrals.

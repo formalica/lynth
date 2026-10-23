@@ -1,10 +1,19 @@
-import Lynth.Procedure
-import Lynth.Interval.Goals.Approx
-import Lynth.Interval.Goals.Discrete
-import Lynth.Interval.Goals.Series
-import Lynth.Interval.Goals.Integral
-import Lynth.Interval.Goals.ComplexIntegral
-import Lynth.Interval.Composition.Eval
+module
+
+meta import all Lynth.Procedure
+import all Lynth.Procedure
+meta import all Lynth.Interval.Goals.Approx
+import all Lynth.Interval.Goals.Approx
+meta import all Lynth.Interval.Goals.Discrete
+import all Lynth.Interval.Goals.Discrete
+meta import all Lynth.Interval.Goals.Series
+import all Lynth.Interval.Goals.Series
+meta import all Lynth.Interval.Goals.Integral
+import all Lynth.Interval.Goals.Integral
+meta import all Lynth.Interval.Goals.ComplexIntegral
+import all Lynth.Interval.Goals.ComplexIntegral
+meta import all Lynth.Interval.Composition.Eval
+import all Lynth.Interval.Composition.Eval
 
 /-!
 # The `interval` procedure of `lynth`
@@ -14,6 +23,8 @@ goal handlers in `Lynth/Interval/Goals`.  Yields (`.failure []`, goal
 untouched) on anything it does not handle.
 See `docs/interval/01-architecture.md §3, §6`.
 -/
+
+meta section
 
 namespace Lynth.Interval.Procedure
 

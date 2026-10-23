@@ -2,10 +2,11 @@
 -- per-family validation, and extension without touching existing code
 -- (the sum-equation family below is defined wholly in this file).
 import Lynth
-import Lynth.FinSearch.Patterns
 
-open Lean Elab Tactic Meta
-open Lynth.FinSearch.Patterns
+open Lean (Name Expr FVarId mkConst mkNatLit getLCtx)
+open Lean.Meta (MetaM mkAppM whnfR)
+open Lean.Elab.Tactic (TacticM getMainGoal)
+open Lynth.FinSearch.Patterns (Registry wildApp seedLenEq matchLenEq seedNodup matchNodup)
 
 set_option maxHeartbeats 355 in
 /-- Find a goal-local free variable by name. -/

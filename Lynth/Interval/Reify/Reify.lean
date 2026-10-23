@@ -1,14 +1,21 @@
-import Lynth.Interval.Reify.Registry
-import Lynth.Interval.Reify.ExactAttr
-import Lynth.Interval.Fns.Arith
-import Mathlib.Tactic.NormNum.Core
-import Mathlib.Tactic.NormNum.Basic
-import Mathlib.Tactic.NormNum.DivMod
-import Mathlib.Tactic.NormNum.Pow
-import Mathlib.Tactic.NormNum.Inv
-import Mathlib.Tactic.NormNum.OfScientific
-import Mathlib.Analysis.Complex.Basic
-import Qq
+module
+
+public meta import Lean
+public meta import Lynth.Interval.Core.Ty
+meta import all Lynth.Interval.Reify.Registry
+import all Lynth.Interval.Reify.Registry
+meta import all Lynth.Interval.Reify.ExactAttr
+import all Lynth.Interval.Reify.ExactAttr
+meta import all Lynth.Interval.Fns.Arith
+import all Lynth.Interval.Fns.Arith
+meta import Mathlib.Tactic.NormNum.Core
+meta import Mathlib.Tactic.NormNum.Basic
+meta import Mathlib.Tactic.NormNum.DivMod
+meta import Mathlib.Tactic.NormNum.Pow
+meta import Mathlib.Tactic.NormNum.Inv
+meta import Mathlib.Tactic.NormNum.OfScientific
+meta import Mathlib.Analysis.Complex.Basic
+meta import Qq
 
 /-!
 # Reifier: Lean terms → typed `Expr` with denotation proofs
@@ -18,6 +25,8 @@ import Qq
 variables, exact numerals (norm_num), finite sums, registry patterns,
 unfolding of user definitions, atoms.
 -/
+
+meta section
 
 namespace Lynth.Interval.Reify
 

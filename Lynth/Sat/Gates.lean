@@ -1,4 +1,10 @@
-import Lynth.Sat.Solver
+module
+
+public import Init.Data.List.Basic
+public import Init.Prelude
+public import Lynth.Sat.Solver
+public import Lynth.Sat.Syntax
+import all Lynth.Sat.Solver
 import Mathlib
 
 /-!
@@ -73,7 +79,7 @@ theorem checkSat_mem (a : Assignment) (cnf : CNF) (c : Clause)
     · exact ih hm (checkSat_cons_tail a d ds h)
 
 /-- A CNF holds when every singleton does (clause aggregation). -/
-theorem checkSat_of_all_single (a : Assignment) (cs : CNF)
+public theorem checkSat_of_all_single (a : Assignment) (cs : CNF)
     (h : ∀ c ∈ cs, checkSat [c] a = true) : checkSat cs a = true := by
   induction cs with
   | nil => simp [checkSat]
@@ -87,7 +93,7 @@ theorem checkSat_of_all_single (a : Assignment) (cs : CNF)
 
 /-- A flatMapped CNF holds when every piece does (generic lifter for
 cell/edge-iterated encodings — no problem-specific content). -/
-theorem checkSat_flatMap (a : Assignment) (l : List α) (f : α → CNF)
+public theorem checkSat_flatMap (a : Assignment) (l : List α) (f : α → CNF)
     (h : ∀ x ∈ l, checkSat (f x) a = true) :
     checkSat (l.flatMap f) a = true := by
   apply checkSat_of_all_single
@@ -98,7 +104,7 @@ theorem checkSat_flatMap (a : Assignment) (l : List α) (f : α → CNF)
 /-- Conditional clauses: emit `cls` iff the (possibly stuck) Boolean
 `b` holds. Lets encodings branch on input data without evaluating
 it; proofs case-split on `b` instead. -/
-def condClauses (b : Bool) (cls : CNF) : CNF :=
+@[expose] public def condClauses (b : Bool) (cls : CNF) : CNF :=
   if b then cls else []
 
 /-- Conditional emission, positive direction. -/
@@ -120,7 +126,7 @@ theorem condClauses_elim (a : Assignment) (b : Bool) (cls : CNF)
 
 /-- Sub-CNF extraction: a held flatMap's every piece holds.
 Generic splitter for all compiled encodings. -/
-theorem checkSat_piece (m : Assignment) (l : List α) (f : α → CNF)
+public theorem checkSat_piece (m : Assignment) (l : List α) (f : α → CNF)
     (x : α) (hx : x ∈ l)
     (h : checkSat (l.flatMap f) m = true) :
     checkSat (f x) m = true := by
@@ -130,7 +136,7 @@ theorem checkSat_piece (m : Assignment) (l : List α) (f : α → CNF)
     (List.mem_flatMap.mpr ⟨x, hx, hc⟩) h
 
 /-- Append combination: held parts make a held whole. -/
-theorem appendHeld (a b : CNF) (m : Assignment)
+public theorem appendHeld (a b : CNF) (m : Assignment)
     (h1 : checkSat a m = true) (h2 : checkSat b m = true) :
     checkSat (a ++ b) m = true := by
   have h3 := checkSat_append m a b
@@ -138,13 +144,13 @@ theorem appendHeld (a b : CNF) (m : Assignment)
   simp [h1, h2]
 
 /-- Append splitting: a held whole makes held parts. -/
-theorem checkSat_appendHeld (a b : CNF) (m : Assignment)
+public theorem checkSat_appendHeld (a b : CNF) (m : Assignment)
     (h : checkSat (a ++ b) m = true) :
     checkSat a m = true ∧ checkSat b m = true := by
   have h3 := checkSat_append m a b
   rw [h3] at h
   exact (Bool.and_eq_true_iff.mp h)
-theorem checkSat_condFlatMap (m : Assignment) (l : List α)
+public theorem checkSat_condFlatMap (m : Assignment) (l : List α)
     (f : α → CNF) (g : α → Bool) (x : α)
     (hx : x ∈ l) (hgx : g x = true)
     (h : checkSat (l.flatMap fun a => condClauses (g a) (f a)) m = true) :
@@ -161,10 +167,10 @@ theorem checkSat_condFlatMap (m : Assignment) (l : List α)
   exact checkSat_mem m _ _ hmem h
 
 /-- At-least-one clause over literals. -/
-def atLeastOneCNF (lits : List Lit) : CNF := [lits]
+@[expose] public def atLeastOneCNF (lits : List Lit) : CNF := [lits]
 
 /-- At-least-one converse: a true member satisfies the clause. -/
-theorem atLeastOne_of_true (a : Assignment) (lits : List Lit) (l : Lit)
+public theorem atLeastOne_of_true (a : Assignment) (lits : List Lit) (l : Lit)
     (hm : l ∈ lits) (ht : evalLit a l = some true) :
     checkSat (atLeastOneCNF lits) a = true := by
   unfold atLeastOneCNF checkSat
@@ -175,7 +181,7 @@ theorem atLeastOne_of_true (a : Assignment) (lits : List Lit) (l : Lit)
   grind
 
 /-- At-least-one correctness: a satisfied clause has a true member. -/
-theorem atLeastOne_correct (a : Assignment) (lits : List Lit)
+public theorem atLeastOne_correct (a : Assignment) (lits : List Lit)
     (h : checkSat (atLeastOneCNF lits) a = true) :
     ∃ l ∈ lits, evalLit a l = some true := by
   unfold atLeastOneCNF checkSat at h
@@ -185,13 +191,13 @@ theorem atLeastOne_correct (a : Assignment) (lits : List Lit)
   exact ⟨l, hm, by unfold evalLit lookup; grind⟩
 
 /-- At-most-one clauses (pairwise mutual exclusion) over literals. -/
-def atMostOneCNF : List Lit → CNF
+@[expose] public def atMostOneCNF : List Lit → CNF
   | [] => []
   | x :: xs => (xs.map fun y => [negLit x, negLit y]) ++ atMostOneCNF xs
 
 /-- At-most-one membership: every clause is a negated distinct pair
 (needs `Nodup`: otherwise `[¬x, ¬x]` pairs could occur). -/
-theorem mem_atMostOne (lits : List Lit) (nd : lits.Nodup) (c : Clause)
+public theorem mem_atMostOne (lits : List Lit) (nd : lits.Nodup) (c : Clause)
     (h : c ∈ atMostOneCNF lits) :
     ∃ x y, x ∈ lits ∧ y ∈ lits ∧ x ≠ y ∧ c = [negLit x, negLit y] := by
   revert h
@@ -231,13 +237,13 @@ theorem checkSat_pair_eval (a : Assignment) (x y : Lit)
 /-- Converse: a true side satisfies the 2-clause (generic lifter for
 completeness directions — proved once via the same unfolding as
 `checkSat_single`, so callers never re-prove array reasoning). -/
-theorem checkSat_pair_of_true_left (a : Assignment) (x y : Lit)
+public theorem checkSat_pair_of_true_left (a : Assignment) (x y : Lit)
     (h : evalLit a x = some true) : checkSat [[x, y]] a = true := by
   unfold checkSat evalLit lookup at *
   grind
 
 /-- Converse, right side. -/
-theorem checkSat_pair_of_true_right (a : Assignment) (x y : Lit)
+public theorem checkSat_pair_of_true_right (a : Assignment) (x y : Lit)
     (h : evalLit a y = some true) : checkSat [[x, y]] a = true := by
   unfold checkSat evalLit lookup at *
   grind
@@ -268,7 +274,7 @@ theorem checkSat_pair_swap (a : Assignment) (x y : Lit) :
   exact Bool.or_comm _ _
 
 /-- At-most-one correctness: no two distinct members are true. -/
-theorem atMostOne_correct (a : Assignment) (lits : List Lit)
+public theorem atMostOne_correct (a : Assignment) (lits : List Lit)
     (h : checkSat (atMostOneCNF lits) a = true) :
     ∀ x ∈ lits, ∀ y ∈ lits, x ≠ y →
       evalLit a x = some true → evalLit a y = some false := by
@@ -313,11 +319,11 @@ theorem atMostOne_correct (a : Assignment) (lits : List Lit)
       · exact ih hrest y hy z hz hne hty
 
 /-- One-hot row: at-least-one plus at-most-one. -/
-def oneHotRowCNF (lits : List Lit) : CNF :=
+@[expose] public def oneHotRowCNF (lits : List Lit) : CNF :=
   atLeastOneCNF lits ++ atMostOneCNF lits
 
 /-- One-hot correctness: exactly one member is true. -/
-theorem oneHotRow_correct (a : Assignment) (lits : List Lit)
+public theorem oneHotRow_correct (a : Assignment) (lits : List Lit)
     (h : checkSat (oneHotRowCNF lits) a = true) :
     (∃ w ∈ lits, evalLit a w = some true) ∧
     (∀ x ∈ lits, ∀ y ∈ lits, x ≠ y →
@@ -335,11 +341,11 @@ theorem oneHotRow_correct (a : Assignment) (lits : List Lit)
     fun x hx y hy hne htx => atMostOne_correct a lits h2 x hx y hy hne htx⟩
 
 /-- N-ary Tseitin AND: `o ↔ ∧ ins`. -/
-def andGateCNF (o : Lit) (ins : List Lit) : CNF :=
+public def andGateCNF (o : Lit) (ins : List Lit) : CNF :=
   (ins.map fun x => [negLit o, x]) ++ [[o] ++ ins.map fun x => negLit x]
 
 /-- AND-gate correctness. -/
-theorem andGate_correct (a : Assignment) (o : Lit) (ins : List Lit)
+public theorem andGate_correct (a : Assignment) (o : Lit) (ins : List Lit)
     (h : checkSat (andGateCNF o ins) a = true) :
     (evalLit a o = some true) ↔ (∀ l ∈ ins, evalLit a l = some true) := by
   unfold andGateCNF at h
@@ -379,11 +385,11 @@ theorem andGate_correct (a : Assignment) (o : Lit) (ins : List Lit)
       simp at ht2
 
 /-- N-ary Tseitin OR: `o ↔ ∨ ins`. -/
-def orGateCNF (o : Lit) (ins : List Lit) : CNF :=
+public def orGateCNF (o : Lit) (ins : List Lit) : CNF :=
   (ins.map fun x => [negLit x, o]) ++ [[negLit o] ++ ins]
 
 /-- OR-gate correctness. -/
-theorem orGate_correct (a : Assignment) (o : Lit) (ins : List Lit)
+public theorem orGate_correct (a : Assignment) (o : Lit) (ins : List Lit)
     (h : checkSat (orGateCNF o ins) a = true) :
     (evalLit a o = some true) ↔ (∃ l ∈ ins, evalLit a l = some true) := by
   unfold orGateCNF at h
@@ -420,10 +426,10 @@ theorem orGate_correct (a : Assignment) (o : Lit) (ins : List Lit)
     · exact ho2
 
 /-- Tseitin NOT: `o ↔ ¬x`. -/
-def notGateCNF (o x : Lit) : CNF := [[negLit o, negLit x], [o, x]]
+public def notGateCNF (o x : Lit) : CNF := [[negLit o, negLit x], [o, x]]
 
 /-- NOT-gate correctness. -/
-theorem notGate_correct (a : Assignment) (o x : Lit)
+public theorem notGate_correct (a : Assignment) (o x : Lit)
     (h : checkSat (notGateCNF o x) a = true) :
     (evalLit a o = some true) ↔ (evalLit a x = some false) := by
   unfold notGateCNF at h
@@ -461,12 +467,12 @@ def mkAnds (t x y : Lit) : CNF :=
 /-- Disjunction-of-conjunctions: `o ↔ ∨ (x ∧ y)` over caller-built
 triples. Covers one-hot equality (diagonal triples) and one-hot
 ordering (`i<j` triples) with a single lemma. -/
-def orOfAndsCNF (o : Lit) (trips : List (Lit × Lit × Lit)) : CNF :=
+public def orOfAndsCNF (o : Lit) (trips : List (Lit × Lit × Lit)) : CNF :=
   (trips.flatMap fun tr => mkAnds tr.1 tr.2.1 tr.2.2) ++
   orGateCNF o (trips.map fun tr => tr.1)
 
 /-- Disjunction-of-conjunctions correctness. -/
-theorem orOfAnds_correct (a : Assignment) (o : Lit)
+public theorem orOfAnds_correct (a : Assignment) (o : Lit)
     (trips : List (Lit × Lit × Lit))
     (h : checkSat (orOfAndsCNF o trips) a = true) :
     (evalLit a o = some true) ↔

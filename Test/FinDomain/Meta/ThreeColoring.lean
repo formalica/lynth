@@ -66,8 +66,8 @@ def coloringSolver :
 /-- info: 'FinDomain.Meta.coloringSolver' depends on axioms: [propext,
  Classical.choice,
  Quot.sound,
- Lynth.Sat.cdcl_correct,
- Lynth.Sat.cdcl_fuel_suffices] -/
+ Lynth.Sat.cdcl_correct✝,
+ Lynth.Sat.cdcl_fuel_suffices✝] -/
 #guard_msgs in
 #print axioms coloringSolver
 

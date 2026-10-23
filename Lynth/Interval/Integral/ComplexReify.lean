@@ -1,7 +1,13 @@
-import Lynth.Interval.Integral.NestedReify
-import Lynth.Interval.Integral.Math.ComplexIntegral
+module
+
+meta import all Lynth.Interval.Integral.NestedReify
+import all Lynth.Interval.Integral.NestedReify
+meta import all Lynth.Interval.Integral.Math.ComplexIntegral
+import all Lynth.Interval.Integral.Math.ComplexIntegral
 
 /-! Compile complex functions while keeping every integration variable real. -/
+meta section
+
 namespace Lynth.Interval.Integral.ComplexReify
 open Lean Meta Elab Tactic Intgrl Qq
 

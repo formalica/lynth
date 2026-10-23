@@ -1,8 +1,14 @@
-import Lynth.Interval.Integral.Reify
-import Lynth.Interval.Series.Cert
+module
+
+meta import all Lynth.Interval.Integral.Reify
+import all Lynth.Interval.Integral.Reify
+meta import all Lynth.Interval.Series.Cert
+import all Lynth.Interval.Series.Cert
 
 /-! Structural tail support and rounding-sensitive boundaries, shared by the
 ordinary and compositional series handlers. -/
+meta section
+
 namespace Lynth.Interval.Goals
 open Lean Meta Elab Tactic Qq Integral
 

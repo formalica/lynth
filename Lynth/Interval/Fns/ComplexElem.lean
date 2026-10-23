@@ -1,7 +1,38 @@
-import Lynth.Interval.Fns.Exp
-import Lynth.Interval.Fns.Trig
-import Lynth.Interval.Fns.Elem
-import Lynth.Interval.Fns.EulerGamma.Eval
+module
+
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Analysis.Complex.Exponential
+public import Mathlib.Analysis.Complex.Trigonometric
+public import Mathlib.Analysis.RCLike.Sqrt
+public import Mathlib.Analysis.SpecialFunctions.Complex.Arctan
+public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+public import Mathlib.Analysis.SpecialFunctions.Complex.Log
+public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import Mathlib.Basic.Complex.Basic
+public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.Elem
+public import Lynth.Interval.Fns.EulerGamma.Eval
+public import Lynth.Interval.Fns.Exp
+public import Lynth.Interval.Fns.Log
+public import Lynth.Interval.Fns.Trig
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Series.Tail
+public import Lynth.Interval.Vendor.Dyadic
+import Mathlib
+import all Lynth.Interval.Fns.Exp
+import all Lynth.Interval.Fns.Trig
+import all Lynth.Interval.Fns.Elem
+import all Lynth.Interval.Fns.EulerGamma.Eval
 
 /-!
 # Complex elementary functions via real/imaginary components.
@@ -131,8 +162,8 @@ theorem arg_of_pos {z : ℂ} (hx : 0 < z.re) :
   have h := abs_lt.1 (Complex.abs_arg_lt_pi_div_two_iff.2 (Or.inl hx))
   rw [← Complex.tan_arg, Real.arctan_tan h.1 h.2]
 
-/-- info: 'Complex.arg_of_pos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+/-- info: '_private.Lynth.Interval.Fns.ComplexElem.0.Complex.arg_of_pos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
 #print axioms Complex.arg_of_pos
 
 /-- ARG, left half-plane, nonnegative imag (ported from the same handoff). -/
@@ -147,8 +178,8 @@ theorem arg_of_neg_nonneg {z : ℂ} (hx : z.re < 0) (hy : 0 ≤ z.im) :
     linarith
   rw [← Complex.tan_arg, ← Real.tan_sub_pi, Real.arctan_tan] <;> linarith
 
-/-- info: 'Complex.arg_of_neg_nonneg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+/-- info: '_private.Lynth.Interval.Fns.ComplexElem.0.Complex.arg_of_neg_nonneg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
 #print axioms Complex.arg_of_neg_nonneg
 
 /-- ARG, left half-plane, negative imag (ported from the same handoff). -/
@@ -163,8 +194,8 @@ theorem arg_of_neg_neg {z : ℂ} (hx : z.re < 0) (hy : z.im < 0) :
     linarith
   rw [← Complex.tan_arg, ← Real.tan_add_pi, Real.arctan_tan] <;> linarith
 
-/-- info: 'Complex.arg_of_neg_neg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+/-- info: '_private.Lynth.Interval.Fns.ComplexElem.0.Complex.arg_of_neg_neg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
 #print axioms Complex.arg_of_neg_neg
 
 /-- ARG, pure imaginary positive axis. -/
@@ -206,8 +237,8 @@ theorem sqrt_components_of_pos {z : ℂ} (hx : 0 < z.re) :
   · simp; rw [abs_of_nonneg h] at key; linarith
   · simp; rw [abs_of_neg (by linarith)] at key; linarith
 
-/-- info: 'Complex.sqrt_components_of_pos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+/-- info: '_private.Lynth.Interval.Fns.ComplexElem.0.Complex.sqrt_components_of_pos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
 #print axioms Complex.sqrt_components_of_pos
 
 end Complex
@@ -217,7 +248,7 @@ namespace Lynth.Interval.Fns
 open Lynth.Interval
 
 /-- `exp` on rectangles. -/
-def expBox (c : Ctx) (B : CBox) : CBox :=
+@[expose] public def expBox (c : Ctx) (B : CBox) : CBox :=
   ⟨Ival.mul c.prec (expIval c B.re) (cosIval c B.im),
    Ival.mul c.prec (expIval c B.re) (sinIval c B.im)⟩
 
@@ -229,7 +260,7 @@ theorem mem_expBox (c : Ctx) (hc : c.Valid) {x : ℂ} {B : CBox} (hx : x ∈ B) 
     Ival.mem_mul (mem_expIval c hx.1) (mem_sinIval hc hx.2)⟩
 
 /-- `sin` on rectangles. -/
-def sinBox (c : Ctx) (B : CBox) : CBox :=
+@[expose] public def sinBox (c : Ctx) (B : CBox) : CBox :=
   ⟨Ival.mul c.prec (sinIval c B.re) (coshIval c B.im),
    Ival.mul c.prec (cosIval c B.re) (sinhIval c B.im)⟩
 
@@ -241,7 +272,7 @@ theorem mem_sinBox (c : Ctx) (hc : c.Valid) {x : ℂ} {B : CBox} (hx : x ∈ B) 
     Ival.mem_mul (mem_cosIval hc hx.1) (mem_sinhIval c hx.2)⟩
 
 /-- `cos` on rectangles. -/
-def cosBox (c : Ctx) (B : CBox) : CBox :=
+@[expose] public def cosBox (c : Ctx) (B : CBox) : CBox :=
   ⟨Ival.mul c.prec (cosIval c B.re) (coshIval c B.im),
    Ival.neg (Ival.mul c.prec (sinIval c B.re) (sinhIval c B.im))⟩
 
@@ -253,7 +284,7 @@ theorem mem_cosBox (c : Ctx) (hc : c.Valid) {x : ℂ} {B : CBox} (hx : x ∈ B) 
     Ival.mem_neg (Ival.mem_mul (mem_sinIval hc hx.1) (mem_sinhIval c hx.2))⟩
 
 /-- `sinh` on rectangles. -/
-def sinhBox (c : Ctx) (B : CBox) : CBox :=
+@[expose] public def sinhBox (c : Ctx) (B : CBox) : CBox :=
   ⟨Ival.mul c.prec (sinhIval c B.re) (cosIval c B.im),
    Ival.mul c.prec (coshIval c B.re) (sinIval c B.im)⟩
 
@@ -265,7 +296,7 @@ theorem mem_sinhBox (c : Ctx) (hc : c.Valid) {x : ℂ} {B : CBox} (hx : x ∈ B)
     Ival.mem_mul (mem_coshIval c hx.1) (mem_sinIval hc hx.2)⟩
 
 /-- `cosh` on rectangles. -/
-def coshBox (c : Ctx) (B : CBox) : CBox :=
+@[expose] public def coshBox (c : Ctx) (B : CBox) : CBox :=
   ⟨Ival.mul c.prec (coshIval c B.re) (cosIval c B.im),
    Ival.mul c.prec (sinhIval c B.re) (sinIval c B.im)⟩
 
@@ -276,40 +307,40 @@ theorem mem_coshBox (c : Ctx) (hc : c.Valid) {x : ℂ} {B : CBox} (hx : x ∈ B)
   exact ⟨Ival.mem_mul (mem_coshIval c hx.1) (mem_cosIval hc hx.2),
     Ival.mem_mul (mem_sinhIval c hx.1) (mem_sinIval hc hx.2)⟩
 
-@[lynth_cfn] def expC : Fn1 .cplx .cplx where
+@[expose, lynth_cfn] public def expC : Fn1 .cplx .cplx where
   name := "Complex.exp"
   graph x y := y = Complex.exp x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c B := expBox c B
   sound := fun c _ _ _ hc hy hx => by
     obtain rfl := hy
     exact mem_expBox c hc hx
   cost := 100
 
-@[lynth_cfn] def sinC : Fn1 .cplx .cplx where
+@[expose, lynth_cfn] public def sinC : Fn1 .cplx .cplx where
   name := "Complex.sin"
   graph x y := y = Complex.sin x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c B := sinBox c B
   sound := fun c _ _ _ hc hy hx => by
     obtain rfl := hy
     exact mem_sinBox c hc hx
   cost := 100
 
-@[lynth_cfn] def cosC : Fn1 .cplx .cplx where
+@[expose, lynth_cfn] public def cosC : Fn1 .cplx .cplx where
   name := "Complex.cos"
   graph x y := y = Complex.cos x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c B := cosBox c B
   sound := fun c _ _ _ hc hy hx => by
     obtain rfl := hy
     exact mem_cosBox c hc hx
   cost := 100
 
-@[lynth_cfn] def tanC : Fn1 .cplx .cplx where
+@[expose, lynth_cfn] public def tanC : Fn1 .cplx .cplx where
   name := "Complex.tan"
   graph x y := y = Complex.tan x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c B := CBox.div c.prec (sinBox c B) (cosBox c B)
   sound := fun c _ _ _ hc hy hx => by
     obtain rfl := hy
@@ -317,30 +348,30 @@ theorem mem_coshBox (c : Ctx) (hc : c.Valid) {x : ℂ} {B : CBox} (hx : x ∈ B)
     exact CBox.mem_div (mem_sinBox c hc hx) (mem_cosBox c hc hx)
   cost := 100
 
-@[lynth_cfn] def sinhC : Fn1 .cplx .cplx where
+@[expose, lynth_cfn] public def sinhC : Fn1 .cplx .cplx where
   name := "Complex.sinh"
   graph x y := y = Complex.sinh x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c B := sinhBox c B
   sound := fun c _ _ _ hc hy hx => by
     obtain rfl := hy
     exact mem_sinhBox c hc hx
   cost := 100
 
-@[lynth_cfn] def coshC : Fn1 .cplx .cplx where
+@[expose, lynth_cfn] public def coshC : Fn1 .cplx .cplx where
   name := "Complex.cosh"
   graph x y := y = Complex.cosh x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c B := coshBox c B
   sound := fun c _ _ _ hc hy hx => by
     obtain rfl := hy
     exact mem_coshBox c hc hx
   cost := 100
 
-@[lynth_cfn] def tanhC : Fn1 .cplx .cplx where
+@[expose, lynth_cfn] public def tanhC : Fn1 .cplx .cplx where
   name := "Complex.tanh"
   graph x y := y = Complex.tanh x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c B := CBox.div c.prec (sinhBox c B) (coshBox c B)
   sound := fun c _ _ _ hc hy hx => by
     obtain rfl := hy
@@ -363,7 +394,7 @@ theorem mem_le_hi {x : ℝ} {X : Ival} {hi : Dy} (hx : x ∈ X) (hhi : X.hi = so
   simpa [Ival.leHi_some, Dy.toReal_def] using h
 
 /-- argument enclosure by quadrants (`⊤` outside the three exact cases). -/
-def argBox (c : Ctx) (X Y : Ival) : Ival :=
+@[expose] public def argBox (c : Ctx) (X Y : Ival) : Ival :=
   match X.lo, X.hi with
   | some xl, _ =>
     if 0 < xl.toRat then atanIval c (Ival.div c.prec Y X)
@@ -495,7 +526,7 @@ theorem mem_argBox (c : Ctx) (hc : c.Valid) {z : ℂ} {X Y : Ival}
                     rw [hev]; exact Ival.mem_top _
 
 /-- `log` on rectangles (unconditional: `logIval`/`argBox` both widen to `⊤`). -/
-def logBox (c : Ctx) (B : CBox) : CBox :=
+@[expose] public def logBox (c : Ctx) (B : CBox) : CBox :=
   ⟨logIval c (CBox.norm c.prec B), argBox c B.re B.im⟩
 
 theorem mem_logBox (c : Ctx) (hc : c.Valid) {z : ℂ} {B : CBox} (hx : z ∈ B) :
@@ -505,7 +536,7 @@ theorem mem_logBox (c : Ctx) (hc : c.Valid) {z : ℂ} {B : CBox} (hx : z ∈ B) 
   exact ⟨mem_logIval hc (CBox.mem_norm hx), mem_argBox c hc hx.1 hx.2⟩
 
 /-- `sqrt` on rectangles (right half-plane interior, else `⊤`). -/
-def sqrtBox (c : Ctx) (B : CBox) : CBox :=
+@[expose] public def sqrtBox (c : Ctx) (B : CBox) : CBox :=
   match B.re.lo with
   | some xl =>
     if 0 < xl.toRat then
@@ -552,40 +583,40 @@ theorem mem_sqrtBox (c : Ctx) (hc : c.Valid) {z : ℂ} {B : CBox} (hx : z ∈ B)
     · have hev : sqrtBox c B = CBox.top := by simp [sqrtBox, hlo, hpos]
       rw [hev]; exact CBox.mem_top _
 
-@[lynth_cfn] def logC : Fn1 .cplx .cplx where
+@[expose, lynth_cfn] public def logC : Fn1 .cplx .cplx where
   name := "Complex.log"
   graph x y := y = Complex.log x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c B := logBox c B
   sound := fun c _ _ _ hc hy hx => by
     obtain rfl := hy
     exact mem_logBox c hc hx
   cost := 200
 
-@[lynth_cfn] def sqrtC : Fn1 .cplx .cplx where
+@[expose, lynth_cfn] public def sqrtC : Fn1 .cplx .cplx where
   name := "Complex.sqrt"
   graph x y := y = Complex.sqrt x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c B := sqrtBox c B
   sound := fun c _ _ _ hc hy hx => by
     obtain rfl := hy
     exact mem_sqrtBox c hc hx
   cost := 200
 
-@[lynth_cfn] def argC : Fn1 .cplx .real where
+@[expose, lynth_cfn] public def argC : Fn1 .cplx .real where
   name := "Complex.arg"
   graph x y := y = x.arg
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c B := argBox c B.re B.im
   sound := fun c _ _ _ hc hy hx => by
     obtain rfl := hy
     exact mem_argBox c hc hx.1 hx.2
   cost := 200
 
-@[lynth_cfn] def cpowC : Fn2 .cplx .cplx .cplx where
+@[expose, lynth_cfn] public def cpowC : Fn2 .cplx .cplx .cplx where
   name := "Complex.cpow"
   graph x y z := z = x ^ y
-  exu := exu_eq₂ _
+  exu := by exact exu_eq₂ _
   ev c X Y :=
     match (CBox.norm c.prec X).lo with
     | some lo =>
@@ -619,7 +650,7 @@ theorem mem_sqrtBox (c : Ctx) (hc : c.Valid) {z : ℂ} {B : CBox} (hx : z ∈ B)
   cost := 200
 
 /-- the constant `-I/2` box. -/
-def negHalfI (c : Ctx) : CBox := ⟨Ival.zero, Ival.ofRat c.prec (-1 / 2)⟩
+@[expose] public def negHalfI (c : Ctx) : CBox := ⟨Ival.zero, Ival.ofRat c.prec (-1 / 2)⟩
 
 theorem mem_negHalfI (c : Ctx) : (-Complex.I / 2 : ℂ) ∈ negHalfI c := by
   have hre : (-Complex.I / 2 : ℂ).re = 0 := by simp
@@ -630,10 +661,10 @@ theorem mem_negHalfI (c : Ctx) : (-Complex.I / 2 : ℂ) ∈ negHalfI c := by
   rw [CBox.mem_def, hre, him]
   exact ⟨h0, h1⟩
 
-@[lynth_cfn] def arctanC : Fn1 .cplx .cplx where
+@[expose, lynth_cfn] public def arctanC : Fn1 .cplx .cplx where
   name := "Complex.arctan"
   graph x y := y = Complex.arctan x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c X :=
     CBox.mul c.prec (negHalfI c)
       (logBox c (CBox.div c.prec
@@ -652,10 +683,10 @@ theorem mem_negHalfI (c : Ctx) : (-Complex.I / 2 : ℂ) ∈ negHalfI c := by
         (CBox.mem_add h1c hXI) (CBox.mem_sub h1c hXI)))
   cost := 200
 
-@[lynth_cfn] def cotC : Fn1 .cplx .cplx where
+@[expose, lynth_cfn] public def cotC : Fn1 .cplx .cplx where
   name := "Complex.cot"
   graph x y := y = Complex.cot x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c B := CBox.div c.prec (cosBox c B) (sinBox c B)
   sound := fun c x _ _ hc hy hx => by
     obtain rfl := hy
@@ -663,20 +694,20 @@ theorem mem_negHalfI (c : Ctx) : (-Complex.I / 2 : ℂ) ∈ negHalfI c := by
     exact CBox.mem_div (mem_cosBox c hc hx) (mem_sinBox c hc hx)
   cost := 100
 
-@[lynth_cfn] def piC : Fn0 .cplx where
+@[expose, lynth_cfn] public def piC : Fn0 .cplx where
   name := "Complex.pi"
   graph y := y = (Real.pi : ℂ)
-  exu := exu_eq₀ _
+  exu := by exact exu_eq₀ _
   ev c := CBox.ofReal c.pi
   sound := fun _ _ hc hy => by
     obtain rfl := hy
     exact CBox.mem_ofReal hc.pi_mem
   cost := 50
 
-@[lynth_cfn] def eulerC : Fn0 .cplx where
+@[expose, lynth_cfn] public def eulerC : Fn0 .cplx where
   name := "Complex.eulerMascheroni"
   graph y := y = ((Real.eulerMascheroniConstant : ℝ) : ℂ)
-  exu := exu_eq₀ _
+  exu := by exact exu_eq₀ _
   ev c := CBox.ofReal (eulerBMIval c)
   sound := fun _ _ hc hy => by
     obtain rfl := hy

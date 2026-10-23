@@ -1,4 +1,53 @@
-import Lynth.Interval.Integral.Math.NestedSyntaxProof
+module
+
+public import Batteries.Classes.RatCast
+public import Init.Core
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.List.Basic
+public import Init.Data.Nat.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Nat.Coprime
+public import Init.Data.Rat.Basic
+public import Init.Data.Zero
+public import Init.Prelude
+public import Mathlib.Algebra.Field.Defs
+public import Mathlib.Algebra.Field.Rat
+public import Mathlib.Algebra.Group.DivInvMonoid
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Order.Floor.Defs
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Algebra.Order.Ring.Unbundled.Rat
+public import Mathlib.Algebra.Ring.Defs
+public import Mathlib.Analysis.CStarAlgebra.Classes
+public import Mathlib.Analysis.Complex.Norm
+public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Analysis.InnerProductSpace.Defs
+public import Mathlib.Analysis.Normed.Group.Continuity
+public import Mathlib.Analysis.Normed.Group.Defs
+public import Mathlib.Analysis.Normed.Ring.Basic
+public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
+public import Mathlib.Basic.Complex.Basic
+public import Mathlib.Basic.Real.Basic
+public import Mathlib.Data.Nat.Cast.Defs
+public import Mathlib.Data.Nat.Init
+public import Mathlib.Data.Rat.Defs
+public import Mathlib.Data.Rat.Floor
+public import Mathlib.MeasureTheory.Function.L1Space.Integrable
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+public import Mathlib.MeasureTheory.Measure.MeasureSpaceDef
+public import Mathlib.MeasureTheory.Measure.Restrict
+public import Mathlib.Order.Interval.Set.Defs
+public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+public import Mathlib.Topology.UniformSpace.Defs
+public import Lynth.Interval.Integral.Math.Integrand
+public import Lynth.Interval.Integral.Math.NestedDefs
+public import Lynth.Interval.Integral.Math.NestedSyntax
+import all Lynth.Interval.Integral.Math.NestedSyntaxProof
 
 /-! Mathematical specification of complex-valued integrals over real variables.
 No interval encodings, numerical evaluators or tactic implementation occur here.
@@ -6,7 +55,7 @@ The real projections are verified below, including recursive convergence. -/
 namespace Intgrl
 open Lynth.Interval.Integral.Nested
 
-noncomputable def NDomain.cvalue (k : NDomain) (f : ℝ → ℂ) (a b : ℝ) : ℂ :=
+@[expose] public noncomputable def NDomain.cvalue (k : NDomain) (f : ℝ → ℂ) (a b : ℝ) : ℂ :=
   match k with
   | .interval => ∫ x in a..b, f x
   | .icc => ∫ x in Set.Icc a b, f x
@@ -17,7 +66,7 @@ noncomputable def NDomain.cvalue (k : NDomain) (f : ℝ → ℂ) (a b : ℝ) : �
   | .left => ∫ x in Set.Iio a, f x
   | .whole => ∫ x, f x
 
-noncomputable def NDomain.CConverges (k : NDomain) (f : ℝ → ℂ) (a b : ℝ) : Prop :=
+@[expose] public noncomputable def NDomain.CConverges (k : NDomain) (f : ℝ → ℂ) (a b : ℝ) : Prop :=
   match k with
   | .interval => IntervalIntegrable f MeasureTheory.volume a b
   | .icc => MeasureTheory.IntegrableOn f (Set.Icc a b)
@@ -28,7 +77,7 @@ noncomputable def NDomain.CConverges (k : NDomain) (f : ℝ → ℂ) (a b : ℝ)
   | .left => MeasureTheory.IntegrableOn f (Set.Iio a)
   | .whole => MeasureTheory.Integrable f
 
-inductive CExpr where
+public inductive CExpr where
   | real (a : NExpr)
   | i
   | unary (op : Unary) (a : CExpr)
@@ -38,7 +87,7 @@ inductive CExpr where
   | integral (kind : NDomain) (a b : NExpr) (body : CExpr)
   deriving Repr, Inhabited
 
-noncomputable def CExpr.value : CExpr → List ℝ → ℂ
+@[expose] public noncomputable def CExpr.value : CExpr → List ℝ → ℂ
   | .real a, env => a.real env
   | .i, _ => Complex.I
   | .unary op a, env => op.complex (a.value env)
@@ -49,20 +98,20 @@ noncomputable def CExpr.value : CExpr → List ℝ → ℂ
       k.cvalue (fun x => f.value (env ++ [x])) (a.real env) (b.real env)
 
 namespace CParts
-abbrev Parts := NExpr × NExpr
-private def zero : NExpr := .rat 0
-private def one : NExpr := .rat 1
+public abbrev Parts := NExpr × NExpr
+@[expose] public def zero : NExpr := .rat 0
+@[expose] public def one : NExpr := .rat 1
 
 /-- Simplify only arithmetic free of integrals. In particular, multiplying
 by zero must not erase a divergent inner integral's convergence obligation. -/
-def clean (e : NExpr) : NExpr := if e.hasIntegral then e else simplify e
+@[expose] public def clean (e : NExpr) : NExpr := if e.hasIntegral then e else simplify e
 
-def add (a b : NExpr) : NExpr := clean (.binary .add a b)
-def sub (a b : NExpr) : NExpr := clean (.binary .sub a b)
-def mul (a b : NExpr) : NExpr := clean (.binary .mul a b)
-def div (a b : NExpr) : NExpr := clean (.binary .div a b)
-def neg (a : NExpr) : NExpr := clean (.unary .neg a)
-def un (op : Unary) (a : NExpr) : NExpr :=
+@[expose] public def add (a b : NExpr) : NExpr := clean (.binary .add a b)
+@[expose] public def sub (a b : NExpr) : NExpr := clean (.binary .sub a b)
+@[expose] public def mul (a b : NExpr) : NExpr := clean (.binary .mul a b)
+@[expose] public def div (a b : NExpr) : NExpr := clean (.binary .div a b)
+@[expose] public def neg (a : NExpr) : NExpr := clean (.unary .neg a)
+@[expose] public def un (op : Unary) (a : NExpr) : NExpr :=
   match a with
   | .rat 0 => match op with
     | .exp | .cos | .cosh => .rat 1
@@ -72,14 +121,14 @@ def un (op : Unary) (a : NExpr) : NExpr :=
     | .neg => .rat (-q) | .inv => .rat q⁻¹ | .abs => .rat |q|
     | .floor => .rat (Int.floor q) | _ => clean (.unary op a)
   | _ => clean (.unary op a)
-def sq (a : NExpr) : NExpr := clean (.pow a 2)
+@[expose] public def sq (a : NExpr) : NExpr := clean (.pow a 2)
 
-def plus (a b : Parts) : Parts := (add a.1 b.1, add a.2 b.2)
-def minus (a b : Parts) : Parts := (sub a.1 b.1, sub a.2 b.2)
-def times (a b : Parts) : Parts :=
+@[expose] public def plus (a b : Parts) : Parts := (add a.1 b.1, add a.2 b.2)
+@[expose] public def minus (a b : Parts) : Parts := (sub a.1 b.1, sub a.2 b.2)
+@[expose] public def times (a b : Parts) : Parts :=
   (sub (mul a.1 b.1) (mul a.2 b.2), add (mul a.1 b.2) (mul a.2 b.1))
 
-def inverse (a : Parts) : Parts :=
+@[expose] public def inverse (a : Parts) : Parts :=
   if a.2 == zero then (un .inv a.1, zero)
   else if a.1 == zero then (zero, neg (un .inv a.2))
   else let d := add (sq a.1) (sq a.2)
@@ -87,19 +136,19 @@ def inverse (a : Parts) : Parts :=
 
 /-- -1 on negative inputs, 0 otherwise. Bounded arithmetic avoids an
 unbounded intermediate inverse at the branch crossing. -/
-def negative (a : NExpr) : NExpr :=
+@[expose] public def negative (a : NExpr) : NExpr :=
   un .floor (div a (un .sqrt (add one (sq a))))
 
-def signUpper (a : NExpr) : NExpr := add one (mul (.rat 2) (negative a))
-def isZero (a : NExpr) : NExpr := add one (add (negative a) (negative (neg a)))
+@[expose] public def signUpper (a : NExpr) : NExpr := add one (mul (.rat 2) (negative a))
+@[expose] public def isZero (a : NExpr) : NExpr := add one (add (negative a) (negative (neg a)))
 
-def squareRoot (a : Parts) : Parts :=
+@[expose] public def squareRoot (a : Parts) : Parts :=
   if a.2 == zero then (un .sqrt a.1, un .sqrt (neg a.1))
   else let r := un .sqrt (add (sq a.1) (sq a.2))
        (un .sqrt (div (add r a.1) (.rat 2)),
         mul (signUpper a.2) (un .sqrt (div (sub r a.1) (.rat 2))))
 
-def logarithm (a : Parts) : Parts :=
+@[expose] public def logarithm (a : Parts) : Parts :=
   if a.2 == zero then (un .log a.1, neg (mul .pi (negative a.1)))
   else
     let r := un .sqrt (add (sq a.1) (sq a.2))
@@ -116,10 +165,10 @@ def logarithm (a : Parts) : Parts :=
     let onAxis := sub (neg (mul .pi (negative a.1))) halfPi
     (un .log r, add arg (mul (isZero a.2) onAxis))
 
-def exponential (a : Parts) : Parts :=
+@[expose] public def exponential (a : Parts) : Parts :=
   (mul (un .exp a.1) (un .cos a.2), mul (un .exp a.1) (un .sin a.2))
 
-def unary (op : Unary) (a : Parts) : Parts :=
+@[expose] public def unary (op : Unary) (a : Parts) : Parts :=
   match op with
   | .neg => (neg a.1, neg a.2)
   | .inv => inverse a
@@ -132,19 +181,19 @@ def unary (op : Unary) (a : Parts) : Parts :=
   | .cosh => (mul (un .cosh a.1) (un .cos a.2), mul (un .sinh a.1) (un .sin a.2))
   | _ => a -- Not emitted by the compiler; excluded by Supported below.
 
-def binary (op : Binary) (a b : Parts) : Parts :=
+@[expose] public def binary (op : Binary) (a b : Parts) : Parts :=
   match op with
   | .add => plus a b | .sub => minus a b | .mul => times a b
   | .div => times a (inverse b)
   | _ => a
 
-def power (a : Parts) : Nat → Parts
+@[expose] public def power (a : Parts) : Nat → Parts
   | 0 => (one,zero)
   | n+1 => times a (power a n)
 end CParts
 
 open CParts in
-def CExpr.parts : CExpr → NExpr × NExpr
+@[expose] public def CExpr.parts : CExpr → NExpr × NExpr
   | .real a => (a,.rat 0)
   | .i => (.rat 0,.rat 1)
   | .unary .inv (.unary .sqrt a) =>
@@ -161,7 +210,7 @@ def CExpr.parts : CExpr → NExpr × NExpr
   | .integral k a b f =>
       (.integral k a b f.parts.1, .integral k a b f.parts.2)
 
-def CExpr.Supported : CExpr → Prop
+@[expose] public def CExpr.Supported : CExpr → Prop
   | .real _ | .i => True
   | .unary op a => a.Supported ∧ (match op with
       | .neg | .inv | .exp | .sqrt | .log | .sin | .cos | .sinh | .cosh => true
@@ -200,7 +249,7 @@ instance (e : CExpr) : Decidable e.Supported := e.decSupported
 When the real projection is syntactically zero, the imaginary projection must
 also be syntactically zero, so `CParts.logarithm` takes its real-axis branch.
 The condition is required recursively, including inside integral bodies. -/
-def CExpr.LogProjectionSafe : CExpr → Prop
+@[expose] public def CExpr.LogProjectionSafe : CExpr → Prop
   | .real _ | .i => True
   | .unary op a => a.LogProjectionSafe ∧
       (op = .log → (a.parts.1 == .rat 0) = true → (a.parts.2 == .rat 0) = true)
@@ -240,65 +289,65 @@ noncomputable def CExpr.Converges : CExpr → List ℝ → Prop
 
 namespace CParts
 
-@[simp] theorem clean_real (a : NExpr) (env : List ℝ) :
+@[simp] public theorem clean_real (a : NExpr) (env : List ℝ) :
     (clean a).real env = a.real env := by
   simp only [clean]
   split
   · rfl
   · rw [(simplify_semantics a).1]
 
-@[simp] theorem clean_converges (a : NExpr) (env : List ℝ) :
+@[simp] public theorem clean_converges (a : NExpr) (env : List ℝ) :
     (clean a).Converges env ↔ a.Converges env := by
   simp only [clean]
   split
   · rfl
   · rw [(simplify_semantics a).2]
 
-@[simp] theorem add_real (a b : NExpr) (env : List ℝ) :
+@[simp] public theorem add_real (a b : NExpr) (env : List ℝ) :
     (add a b).real env = a.real env + b.real env := by
   simp [add, NExpr.real, Binary.real]
 
-@[simp] theorem sub_real (a b : NExpr) (env : List ℝ) :
+@[simp] public theorem sub_real (a b : NExpr) (env : List ℝ) :
     (sub a b).real env = a.real env - b.real env := by
   simp [sub, NExpr.real, Binary.real]
 
-@[simp] theorem mul_real (a b : NExpr) (env : List ℝ) :
+@[simp] public theorem mul_real (a b : NExpr) (env : List ℝ) :
     (mul a b).real env = a.real env * b.real env := by
   simp [mul, NExpr.real, Binary.real]
 
-@[simp] theorem div_real (a b : NExpr) (env : List ℝ) :
+@[simp] public theorem div_real (a b : NExpr) (env : List ℝ) :
     (div a b).real env = a.real env / b.real env := by
   simp [div, NExpr.real, Binary.real]
 
-@[simp] theorem neg_real (a : NExpr) (env : List ℝ) :
+@[simp] public theorem neg_real (a : NExpr) (env : List ℝ) :
     (neg a).real env = -a.real env := by
   simp [neg, NExpr.real, Unary.real]
 
-@[simp] theorem sq_real (a : NExpr) (env : List ℝ) :
+@[simp] public theorem sq_real (a : NExpr) (env : List ℝ) :
     (sq a).real env = a.real env ^ 2 := by
   simp [sq, NExpr.real]
 
-@[simp] theorem add_converges (a b : NExpr) (env : List ℝ) :
+@[simp] public theorem add_converges (a b : NExpr) (env : List ℝ) :
     (add a b).Converges env ↔ a.Converges env ∧ b.Converges env := by
   simp [add, NExpr.Converges]
 
-@[simp] theorem sub_converges (a b : NExpr) (env : List ℝ) :
+@[simp] public theorem sub_converges (a b : NExpr) (env : List ℝ) :
     (sub a b).Converges env ↔ a.Converges env ∧ b.Converges env := by
   simp [sub, NExpr.Converges]
 
-@[simp] theorem mul_converges (a b : NExpr) (env : List ℝ) :
+@[simp] public theorem mul_converges (a b : NExpr) (env : List ℝ) :
     (mul a b).Converges env ↔ a.Converges env ∧ b.Converges env := by
   simp [mul, NExpr.Converges]
 
-@[simp] theorem div_converges (a b : NExpr) (env : List ℝ) :
+@[simp] public theorem div_converges (a b : NExpr) (env : List ℝ) :
     (div a b).Converges env ↔ a.Converges env ∧ b.Converges env := by
   simp [div, NExpr.Converges]
 
-@[simp] theorem neg_converges (a : NExpr) (env : List ℝ) :
+@[simp] public theorem neg_converges (a : NExpr) (env : List ℝ) :
     (neg a).Converges env ↔ a.Converges env := by
   simp [neg, NExpr.Converges]
 
-@[simp] theorem sq_converges (a : NExpr) (env : List ℝ) :
+@[simp] public theorem sq_converges (a : NExpr) (env : List ℝ) :
     (sq a).Converges env ↔ a.Converges env := by
   simp [sq, NExpr.Converges]
 
@@ -309,7 +358,7 @@ private theorem un_zero (op : Unary) : un op (.rat 0) =
     | _ => clean (.unary op (.rat 0)) := by
   cases op <;> rfl
 
-@[simp] theorem un_real (op : Unary) (a : NExpr) (env : List ℝ) :
+@[simp] public theorem un_real (op : Unary) (a : NExpr) (env : List ℝ) :
     (un op a).real env = op.real (a.real env) := by
   cases a with
   | rat q =>
@@ -321,7 +370,7 @@ private theorem un_zero (op : Unary) : un op (.rat 0) =
   | var | pi | unary | binary | pow | rpow | integral =>
     simp [un, NExpr.real]
 
-@[simp] theorem un_converges (op : Unary) (a : NExpr) (env : List ℝ) :
+@[simp] public theorem un_converges (op : Unary) (a : NExpr) (env : List ℝ) :
     (un op a).Converges env ↔ a.Converges env := by
   cases a with
   | rat q =>
@@ -427,28 +476,28 @@ end CParts
 
 namespace CParts
 
-@[simp] theorem negative_real (a : NExpr) (env : List ℝ) :
+@[simp] public theorem negative_real (a : NExpr) (env : List ℝ) :
     (negative a).real env = if a.real env < 0 then -1 else 0 := by
   change (un .floor (div a (un .sqrt (add (.rat 1) (sq a))))).real env = _
   simpa only [un_real, div_real, add_real, sq_real, NExpr.real, Unary.real,
     Rat.cast_one] using floor_normalized (a.real env)
 
-@[simp] theorem negative_converges (a : NExpr) (env : List ℝ) :
+@[simp] public theorem negative_converges (a : NExpr) (env : List ℝ) :
     (negative a).Converges env ↔ a.Converges env := by
   change (un .floor (div a (un .sqrt (add (.rat 1) (sq a))))).Converges env ↔ _
   simp [NExpr.Converges]
 
-@[simp] theorem signUpper_real (a : NExpr) (env : List ℝ) :
+@[simp] public theorem signUpper_real (a : NExpr) (env : List ℝ) :
     (signUpper a).real env = if a.real env < 0 then -1 else 1 := by
   change (add (.rat 1) (mul (.rat 2) (negative a))).real env = _
   by_cases h : a.real env < 0 <;> norm_num [h, NExpr.real]
 
-@[simp] theorem signUpper_converges (a : NExpr) (env : List ℝ) :
+@[simp] public theorem signUpper_converges (a : NExpr) (env : List ℝ) :
     (signUpper a).Converges env ↔ a.Converges env := by
   change (add (.rat 1) (mul (.rat 2) (negative a))).Converges env ↔ _
   simp [NExpr.Converges]
 
-@[simp] theorem isZero_real (a : NExpr) (env : List ℝ) :
+@[simp] public theorem isZero_real (a : NExpr) (env : List ℝ) :
     (isZero a).real env = if a.real env = 0 then 1 else 0 := by
   change (add (.rat 1) (add (negative a) (negative (neg a)))).real env = _
   simp only [add_real, negative_real, neg_real, NExpr.real, Rat.cast_one]
@@ -457,7 +506,7 @@ namespace CParts
   · simp [hx]
   · norm_num [hx, not_lt_of_ge hx.le, ne_of_gt hx]
 
-@[simp] theorem isZero_converges (a : NExpr) (env : List ℝ) :
+@[simp] public theorem isZero_converges (a : NExpr) (env : List ℝ) :
     (isZero a).Converges env ↔ a.Converges env := by
   change (add (.rat 1) (add (negative a) (negative (neg a)))).Converges env ↔ _
   simp [NExpr.Converges]
@@ -482,21 +531,21 @@ theorem times_value (a b : Parts) (env : List ℝ) :
     ((times a b).1.real env : ℂ) + ((times a b).2.real env : ℂ) * Complex.I := by
   apply Complex.ext <;> simp [times, Complex.mul_re, Complex.mul_im] <;> ring
 
-@[simp] theorem plus_converges (a b : Parts) (env : List ℝ) :
+@[simp] public theorem plus_converges (a b : Parts) (env : List ℝ) :
     ((plus a b).1.Converges env ∧ (plus a b).2.Converges env) ↔
       (a.1.Converges env ∧ a.2.Converges env) ∧
       (b.1.Converges env ∧ b.2.Converges env) := by
   simp only [plus, add_converges]
   tauto
 
-@[simp] theorem minus_converges (a b : Parts) (env : List ℝ) :
+@[simp] public theorem minus_converges (a b : Parts) (env : List ℝ) :
     ((minus a b).1.Converges env ∧ (minus a b).2.Converges env) ↔
       (a.1.Converges env ∧ a.2.Converges env) ∧
       (b.1.Converges env ∧ b.2.Converges env) := by
   simp only [minus, sub_converges]
   tauto
 
-@[simp] theorem times_converges (a b : Parts) (env : List ℝ) :
+@[simp] public theorem times_converges (a b : Parts) (env : List ℝ) :
     ((times a b).1.Converges env ∧ (times a b).2.Converges env) ↔
       (a.1.Converges env ∧ a.2.Converges env) ∧
       (b.1.Converges env ∧ b.2.Converges env) := by
@@ -527,7 +576,7 @@ theorem inverse_value (a : Parts) (env : List ℝ) :
         Complex.neg_re, Complex.neg_im, mul_zero, zero_mul, mul_one, zero_add,
         add_zero, sub_zero, zero_sub, pow_two, neg_div]
 
-@[simp] theorem inverse_converges (a : Parts) (env : List ℝ) :
+@[simp] public theorem inverse_converges (a : Parts) (env : List ℝ) :
     ((inverse a).1.Converges env ∧ (inverse a).2.Converges env) ↔
       a.1.Converges env ∧ a.2.Converges env := by
   rcases a with ⟨p, q⟩
@@ -593,7 +642,7 @@ theorem squareRoot_value (a : Parts) (env : List ℝ) :
     by_cases hy : q.real env < 0 <;> simp [hy, le_of_not_gt, Complex.ofReal_mul,
       not_le_of_gt, *]
 
-@[simp] theorem squareRoot_converges (a : Parts) (env : List ℝ) :
+@[simp] public theorem squareRoot_converges (a : Parts) (env : List ℝ) :
     ((squareRoot a).1.Converges env ∧ (squareRoot a).2.Converges env) ↔
       a.1.Converges env ∧ a.2.Converges env := by
   rcases a with ⟨p, q⟩
@@ -610,7 +659,7 @@ theorem exponential_value (a : Parts) (env : List ℝ) :
   apply Complex.ext <;> simp [exponential, Unary.real, Complex.exp_re, Complex.exp_im,
     Complex.cos_ofReal_re, Complex.sin_ofReal_re]
 
-@[simp] theorem exponential_converges (a : Parts) (env : List ℝ) :
+@[simp] public theorem exponential_converges (a : Parts) (env : List ℝ) :
     ((exponential a).1.Converges env ∧ (exponential a).2.Converges env) ↔
       a.1.Converges env ∧ a.2.Converges env := by
   simp [exponential]
@@ -698,7 +747,7 @@ theorem logarithm_value (a : Parts) (env : List ℝ)
         Rat.cast_ofNat]
       exact log_vertical (p.real env) (q.real env)
 
-@[simp] theorem logarithm_converges (a : Parts) (env : List ℝ) :
+@[simp] public theorem logarithm_converges (a : Parts) (env : List ℝ) :
     ((logarithm a).1.Converges env ∧ (logarithm a).2.Converges env) ↔
       a.1.Converges env ∧ a.2.Converges env := by
   rcases a with ⟨p, q⟩
@@ -749,7 +798,7 @@ theorem unary_value (op : Unary) (a : Parts) (env : List ℝ)
     simp [mul_assoc]
   | abs | floor | atan | erf | si | eta | airyAi => cases hs
 
-@[simp] theorem unary_converges (op : Unary) (a : Parts) (env : List ℝ) :
+@[simp] public theorem unary_converges (op : Unary) (a : Parts) (env : List ℝ) :
     ((unary op a).1.Converges env ∧ (unary op a).2.Converges env) ↔
       a.1.Converges env ∧ a.2.Converges env := by
   cases op <;> simp [unary]
@@ -769,7 +818,7 @@ theorem binary_value (op : Binary) (a b : Parts) (env : List ℝ)
     exact times_value a (inverse b) env
   | max | min => cases hs
 
-@[simp] theorem binary_converges (op : Binary) (a b : Parts) (env : List ℝ)
+@[simp] public theorem binary_converges (op : Binary) (a b : Parts) (env : List ℝ)
     (hs : (match op with | .add | .sub | .mul | .div => true | _ => false) = true) :
     ((binary op a b).1.Converges env ∧ (binary op a b).2.Converges env) ↔
       (a.1.Converges env ∧ a.2.Converges env) ∧
@@ -787,7 +836,7 @@ theorem power_value (a : Parts) (n : Nat) (env : List ℝ) :
     rw [pow_succ', ih]
     exact times_value a (power a n) env
 
-@[simp] theorem power_converges (a : Parts) (n : Nat) (env : List ℝ) :
+@[simp] public theorem power_converges (a : Parts) (n : Nat) (env : List ℝ) :
     ((power a n).1.Converges env ∧ (power a n).2.Converges env) ↔
       n = 0 ∨ (a.1.Converges env ∧ a.2.Converges env) := by
   induction n with
@@ -1004,7 +1053,7 @@ theorem CExpr.parts_sound {e : CExpr} {env : List ℝ} (hs : e.Supported)
     exact ⟨⟨hr.1, hr.2.1, hp.1,
       fun x hx => (ih hs hlog (hr.2.2.2 x hx) (hi.2.2.2 x hx)).1⟩, hp.2⟩
 
-theorem NDomain.cvalue_congr (k : NDomain) {f g : ℝ → ℂ} {a b c d : ℝ}
+public theorem NDomain.cvalue_congr (k : NDomain) {f g : ℝ → ℂ} {a b c d : ℝ}
     (hf : ∀ x, f x = g x) (ha : a = c) (hb : b = d) :
     k.cvalue f a b = k.cvalue g c d := by rw [funext hf,ha,hb]
 
@@ -1026,7 +1075,7 @@ theorem CExpr.close_of_parts {e : CExpr} {env : List ℝ} {q r : ℚ} {tol : ℝ
   have hp : 0 < tol := by linarith [abs_nonneg (e.parts.1.real env-(q:ℝ))]
   exact lt_of_le_of_lt hn (by linarith [hr.2,hi.2])
 
-theorem complex_result_of_parts {f : ℝ → ℂ} {a b tol : ℝ}
+public theorem complex_result_of_parts {f : ℝ → ℂ} {a b tol : ℝ}
     {e : CExpr} {A B : NExpr} {k : NDomain} {q r : ℚ}
     (hs : e.Supported) (hlog : e.LogProjectionSafe) (hf : ∀ x, f x = e.value [x])
     (ha : a = A.real []) (hb : b = B.real [])

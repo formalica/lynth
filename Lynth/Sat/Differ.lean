@@ -1,4 +1,14 @@
-import Lynth.Sat.FinVal
+module
+
+public import Lynth.Sat.Solver
+
+public import Init.Data.Int.Basic
+public import Init.Data.List.FinRange
+public import Init.Prelude
+public import Lynth.Sat.FinVal
+public import Lynth.Sat.Gates
+public import Lynth.Sat.Syntax
+import all Lynth.Sat.FinVal
 
 /-!
 Generic difference bridge: inequality over finite values.
@@ -18,17 +28,17 @@ open Lynth.Sat.Gates
 open Lynth.Sat.FinVal
 
 /-- Binary difference clause at one value. -/
-def diffClause (k u v c : Nat) : Clause :=
+@[expose] public def diffClause (k u v c : Nat) : Clause :=
   [-Int.ofNat (idxVar k u c), -Int.ofNat (idxVar k v c)]
 
 /-- Difference CNF over explicit cell pairs (closed, usual goals). -/
-def diffCNF (k : Nat) (pairs : List (Nat × Nat)) : CNF :=
+@[expose] public def diffCNF (k : Nat) (pairs : List (Nat × Nat)) : CNF :=
   pairs.flatMap fun p =>
     (List.finRange k).map fun c => diffClause k p.1 p.2 c.val
 
 /-- Guarded difference family for one pair (parameterized, meta
 solver-functions): emitted iff the stuck guard holds. -/
-def condDiffPair (k u v : Nat) (guard : Bool) : CNF :=
+@[expose] public def condDiffPair (k u v : Nat) (guard : Bool) : CNF :=
   condClauses guard (diffCNF k [(u, v)])
 
 /-- Guarded difference CNF over many pairs with per-pair guards. -/
@@ -36,33 +46,33 @@ def condDiffCNF (k : Nat) (guards : List (Nat × Nat × Bool)) : CNF :=
   guards.flatMap fun g => condDiffPair k g.1 g.2.1 g.2.2
 
 /-- Equality clauses at one value: `xu ↔ xv` (both directions). -/
-def eqClausePair (k u v c : Nat) : CNF :=
+@[expose] public def eqClausePair (k u v c : Nat) : CNF :=
   [[-Int.ofNat (idxVar k u c), Int.ofNat (idxVar k v c)],
    [-Int.ofNat (idxVar k v c), Int.ofNat (idxVar k u c)]]
 
 /-- Equality CNF over explicit cell pairs (closed, usual goals). -/
-def eqCNF (k : Nat) (pairs : List (Nat × Nat)) : CNF :=
+@[expose] public def eqCNF (k : Nat) (pairs : List (Nat × Nat)) : CNF :=
   pairs.flatMap fun p =>
     (List.finRange k).flatMap fun c => eqClausePair k p.1 p.2 c.val
 
 /-- Guarded equality family for one pair (parameterized, meta
 solver-functions): emitted iff the stuck guard holds. -/
-def condEqPair (k u v : Nat) (guard : Bool) : CNF :=
+@[expose] public def condEqPair (k u v : Nat) (guard : Bool) : CNF :=
   condClauses guard (eqCNF k [(u, v)])
 
 /-- Required-guard unit: forbid value `c` at cell `u` unless `guard`
 holds. Used for edge-coverage shapes (`t i = v → g i v`). -/
-def condUnitNeg (k u c : Nat) (guard : Bool) : CNF :=
+@[expose] public def condUnitNeg (k u c : Nat) (guard : Bool) : CNF :=
   condClauses (!guard) [[-Int.ofNat (idxVar k u c)]]
 
 /-- Forced-value unit: require value `c` at cell `u` when `guard`
 holds. Used for givens (`p r c = some v → b r c = v`). -/
-def condUnitPos (k u c : Nat) (guard : Bool) : CNF :=
+@[expose] public def condUnitPos (k u c : Nat) (guard : Bool) : CNF :=
   condClauses guard [[Int.ofNat (idxVar k u c)]]
 
 /-- Required-guard soundness: a held unit family forces the guard
 at the decoded value. -/
-theorem unitNeg_sound (n k : Nat) (guard : Fin n → Fin k → Bool) (hk : 0 < k)
+public theorem unitNeg_sound (n k : Nat) (guard : Fin n → Fin k → Bool) (hk : 0 < k)
     (m : Assignment) (u : Fin n)
     (hrow : checkSat (oneHotRowCNF (rowLits k u.val)) m = true)
     (h : ∀ c : Fin k,
@@ -86,7 +96,7 @@ theorem unitNeg_sound (n k : Nat) (guard : Fin n → Fin k → Bool) (hk : 0 < k
     simp at hev
 
 /-- Required-guard completeness: guard-holding values satisfy the family. -/
-theorem unitNeg_complete (n k : Nat) (guard : Fin n → Fin k → Bool) (hk : 0 < k)
+public theorem unitNeg_complete (n k : Nat) (guard : Fin n → Fin k → Bool) (hk : 0 < k)
     (f : Fin n → Fin k) (u : Fin n)
     (h : guard u (f u) = true) :
     ∀ c : Fin k, checkSat
@@ -116,7 +126,7 @@ theorem unitNeg_complete (n k : Nat) (guard : Fin n → Fin k → Bool) (hk : 0 
     exact (checkSat_single _ _).mpr hev
 
 /-- Forced-value soundness: held positive units pin the decoded value. -/
-theorem unitPos_sound (n k : Nat) (guard : Fin n → Fin k → Bool)
+public theorem unitPos_sound (n k : Nat) (guard : Fin n → Fin k → Bool)
     (hk : 0 < k) (m : Assignment) (u : Fin n)
     (hrow : checkSat (oneHotRowCNF (rowLits k u.val)) m = true)
     (h : ∀ c : Fin k,
@@ -133,7 +143,7 @@ theorem unitPos_sound (n k : Nat) (guard : Fin n → Fin k → Bool)
   exact Fin.ext huniq.symm
 
 /-- Forced-value completeness: pinned values satisfy the units. -/
-theorem unitPos_complete (n k : Nat) (guard : Fin n → Fin k → Bool)
+public theorem unitPos_complete (n k : Nat) (guard : Fin n → Fin k → Bool)
     (hk : 0 < k) (f : Fin n → Fin k) (u : Fin n)
     (h : ∀ c : Fin k, guard u c = true → f u = c) :
     ∀ c : Fin k, checkSat
@@ -159,7 +169,7 @@ theorem unitPos_complete (n k : Nat) (guard : Fin n → Fin k → Bool)
 
 /-- Soundness (single value): a satisfied difference clause rules out
 both cells reading true at that value. -/
-theorem diffClause_sound (m : Assignment) (k u v c : Nat)
+public theorem diffClause_sound (m : Assignment) (k u v c : Nat)
     (h : checkSat [diffClause k u v c] m = true)
     (hu : evalLit m (Int.ofNat (idxVar k u c)) = some true)
     (hv : evalLit m (Int.ofNat (idxVar k v c)) = some true) :
@@ -175,7 +185,7 @@ theorem diffClause_sound (m : Assignment) (k u v c : Nat)
 
 /-- Soundness (decoded): satisfied difference families decode to
 genuinely different values. -/
-theorem diff_sound (n k : Nat) (hk : 0 < k) (m : Assignment)
+public theorem diff_sound (n k : Nat) (hk : 0 < k) (m : Assignment)
     (u v : Fin n) (c : Fin k)
     (h : checkSat [diffClause k u.val v.val c.val] m = true)
     (hu : checkSat [[Int.ofNat (idxVar k u.val
@@ -193,7 +203,7 @@ theorem diff_sound (n k : Nat) (hk : 0 < k) (m : Assignment)
 
 /-- Completeness (single clause): distinct values satisfy the clause
 under the canonical model. -/
-theorem diffClause_complete (n k : Nat) (_hk : 0 < k)
+public theorem diffClause_complete (n k : Nat) (_hk : 0 < k)
     (f : Fin n → Fin k) (u v : Fin n) (c : Fin k)
     (hne : f u ≠ f v) :
     checkSat [diffClause k u.val v.val c.val] (modelOf n k f) = true := by
@@ -219,7 +229,7 @@ theorem diffClause_complete (n k : Nat) (_hk : 0 < k)
     exact checkSat_pair_of_true_left _ _ _ heu
 
 /-- Equality modus ponens: a held equivalence pair transfers truth. -/
-theorem eqClause_imp (m : Assignment) (k u v c : Nat)
+public theorem eqClause_imp (m : Assignment) (k u v c : Nat)
     (h : checkSat (eqClausePair k u v c) m = true)
     (hu : evalLit m (Int.ofNat (idxVar k u c)) = some true) :
     evalLit m (Int.ofNat (idxVar k v c)) = some true := by
@@ -235,7 +245,7 @@ theorem eqClause_imp (m : Assignment) (k u v c : Nat)
   · exact h2
 
 /-- Equality soundness (decoded): held families decode to equal values. -/
-theorem eq_sound_decode (n k : Nat) (hk : 0 < k) (m : Assignment)
+public theorem eq_sound_decode (n k : Nat) (hk : 0 < k) (m : Assignment)
     (u v : Fin n)
     (hrowU : checkSat (oneHotRowCNF (rowLits k u.val)) m = true)
     (hrowV : checkSat (oneHotRowCNF (rowLits k v.val)) m = true)
@@ -260,7 +270,7 @@ theorem eq_sound_decode (n k : Nat) (hk : 0 < k) (m : Assignment)
   exact Fin.ext huniq
 
 /-- Equality completeness (single): equal values satisfy the pair. -/
-theorem eqClause_complete (n k : Nat) (_hk : 0 < k)
+public theorem eqClause_complete (n k : Nat) (_hk : 0 < k)
     (f : Fin n → Fin k) (u v : Fin n) (c : Fin k)
     (heq : f u = f v) :
     checkSat (eqClausePair k u.val v.val c.val) (modelOf n k f)
@@ -338,7 +348,7 @@ theorem eqClause_complete (n k : Nat) (_hk : 0 < k)
     · exact c1
     · exact c2
 
-theorem diff_sound_decode (n k : Nat) (hk : 0 < k) (m : Assignment)
+public theorem diff_sound_decode (n k : Nat) (hk : 0 < k) (m : Assignment)
     (u v : Fin n)
     (hrowU : checkSat (oneHotRowCNF (rowLits k u.val)) m = true)
     (hrowV : checkSat (oneHotRowCNF (rowLits k v.val)) m = true)
@@ -356,7 +366,7 @@ theorem diff_sound_decode (n k : Nat) (hk : 0 < k) (m : Assignment)
   exact diffClause_sound m k u.val v.val _ (h _) huE hvE
 
 /-- Difference completeness (family): distinct values satisfy the row. -/
-theorem diffCNF_complete (n k : Nat) (_hk : 0 < k)
+public theorem diffCNF_complete (n k : Nat) (_hk : 0 < k)
     (f : Fin n → Fin k) (u v : Fin n)
     (hne : f u ≠ f v) :
     checkSat (diffCNF k [(u.val, v.val)]) (modelOf n k f) = true := by
@@ -371,7 +381,7 @@ theorem diffCNF_complete (n k : Nat) (_hk : 0 < k)
   exact diffClause_complete n k _hk f u v c hne
 
 /-- Equality completeness (family): equal values satisfy the rows. -/
-theorem eqCNF_complete (n k : Nat) (hk : 0 < k)
+public theorem eqCNF_complete (n k : Nat) (hk : 0 < k)
     (f : Fin n → Fin k) (u v : Fin n)
     (heq : f u = f v) :
     checkSat (eqCNF k [(u.val, v.val)]) (modelOf n k f) = true := by

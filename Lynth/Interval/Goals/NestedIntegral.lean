@@ -1,9 +1,16 @@
-import Lynth.Interval.Goals.Integral
-import Lynth.Interval.Integral.NestedReify
-import Lynth.Interval.Integral.NestedSound
+module
+
+meta import all Lynth.Interval.Goals.Integral
+import all Lynth.Interval.Goals.Integral
+meta import all Lynth.Interval.Integral.NestedReify
+import all Lynth.Interval.Integral.NestedReify
+meta import all Lynth.Interval.Integral.NestedSound
+import all Lynth.Interval.Integral.NestedSound
 
 /-! Recursive integral fallback. The existing one-dimensional solver is tried
 first, preserving its certificates, trust decisions and heartbeat budgets. -/
+meta section
+
 namespace Lynth.Interval.Goals
 open Lean Meta Elab Tactic Intgrl Integral Qq
 namespace NI

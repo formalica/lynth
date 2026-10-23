@@ -74,12 +74,17 @@ Lynth/Interval/
   Goals/Box.lean  Goals/Range.lean  Goals/Root.lean  Goals/Extrema.lean
   Goals/Integral.lean  Goals/Series.lean  Goals/Meta.lean
   Procedure.lean                -- `Lynth.Interval.Procedure.run : TacticM ProcedureOutcome`
-Lynth/Interval.lean             -- umbrella import (added to Lynth.lean)
+Lynth/Interval.lean             -- internal umbrella import for the dispatcher
 ```
 
-`Lynth.lean` gets `import Lynth.Interval`.  All `Lynth/Interval` modules are
-built with `precompileModules = true` (already set for the `Lynth` library), so
-search code runs natively in the elaborator.
+Consumers use `import Lynth`. The facade exports the tactic, options, mathematical
+functions, and `Lynth.ProofInterface`, which supplies the declarations and
+computational definitions needed to check generated proofs. Procedures and
+lemmas used only inside theorem proofs stay private. Library implementation
+files use `module` and `import all` for package access.
+
+All `Lynth/Interval` modules are built with `precompileModules = true` (already
+set for the `Lynth` library), so search code runs natively in the elaborator.
 
 ## 3. Data flow for one goal
 
@@ -166,6 +171,10 @@ def certify (trust : Trust) (lhs : Lean.Expr) (cost : Nat) : MetaM Lean.Expr := 
   check stays ≲ 30 s (measured: ≈ 4000 Taylor steps/s at 200 bits).
 * Test files pin axioms; tests run with default config.  If a test needs native
   checking under `auto`, its pin lists the auxiliary native axiom.
+* Array/Range compatibility lemmas are proved once in
+  `Check/ReductionLemmas.lean`. Kernel certificates apply those shared theorems;
+  their supporting equality proofs remain in the private library proof bodies.
+  Executable checker definitions and native evaluation are unchanged.
 
 ## 6. Relevance gate & recognition order (`Procedure.lean`)
 

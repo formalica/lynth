@@ -1,3 +1,5 @@
+module
+
 import Mathlib
 
 /-! Portable real endpoint bounds needed by principal complex projections. -/

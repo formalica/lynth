@@ -1,3 +1,10 @@
+module
+
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Algebra.Ring.Rat
+public import Mathlib.Data.Fintype.Fin
+public import Lynth.Arith.Fourier
+
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.BigOperators.Fin
@@ -7,7 +14,7 @@ import Mathlib.Algebra.Ring.Rat
 import Mathlib.Algebra.Order.Ring.Unbundled.Rat
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
-import Lynth.Arith.Fourier
+import all Lynth.Arith.Fourier
 
 /-!
 Soundness of Farkas combinations (the mathematics behind
@@ -25,7 +32,7 @@ open Lynth.Arith.Fourier
 /-- Farkas combination soundness: if every row holds under `v`, no
 nonnegative weighting can combine them to a positive constant with a
 vanishing left-hand side. -/
-theorem farkas_sound {n m : Nat} (A : Fin m → Fin n → Rat)
+public theorem farkas_sound {n m : Nat} (A : Fin m → Fin n → Rat)
     (b : Fin m → Rat) (w : Fin m → Rat) (v : Fin n → Rat)
     (hw : ∀ i, 0 ≤ w i)
     (hsys : ∀ i, ∑ j, A i j * v j + b i ≤ 0)
@@ -88,7 +95,7 @@ def wconst (sys : List LeC) (w : List Rat) : Rat :=
 iff weights are nonnegative, the weighted LHS vanishes, and the
 weighted constant is positive (`0 < 0` derived). Decidable: this is the
 checker the reconstruction theorem consumes in `checkCert_sound`. -/
-def checkCert (sys : List LeC) (w : List Rat) : Bool :=
+public def checkCert (sys : List LeC) (w : List Rat) : Bool :=
   ((w.length == sys.length) &&
   ((w.all fun k => decide (0 ≤ k)) &&
   (((List.range (nVars sys)).all fun j => wsum sys w j == 0) &&
@@ -99,7 +106,7 @@ def evalLeC (c : LeC) (v : Nat → Rat) : Prop :=
   (∑ j ∈ Finset.range c.coeffs.length, coeffAt c j * v j) + c.const ≤ 0
 
 /-- Denotation of a system: every constraint holds. -/
-def denoteSys (sys : List LeC) (v : Nat → Rat) : Prop :=
+public def denoteSys (sys : List LeC) (v : Nat → Rat) : Prop :=
   ∀ c ∈ sys, evalLeC c v
 
 /-- Every member's width fits under `nVars`. -/
@@ -157,7 +164,7 @@ theorem sum_range_getD_univ {m : Nat} (F : Nat → Rat) :
 /-- Soundness of validated certificates: a passing `checkCert` means
 the denoted system is unsatisfiable. The finite witnesses are read off
 the runtime lists (`getD` with defaults past the end). -/
-theorem checkCert_sound (sys : List LeC) (w : List Rat) (v : Nat → Rat)
+public theorem checkCert_sound (sys : List LeC) (w : List Rat) (v : Nat → Rat)
     (hlen : w.length = sys.length)
     (hcert : checkCert sys w = true)
     (hsys : denoteSys sys v) : False := by

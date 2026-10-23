@@ -1,4 +1,8 @@
-import Lynth.Interval.Goals.Approx
+module
+
+meta import all Lynth.Interval.Goals.Approx
+import all Lynth.Interval.Goals.Approx
+meta import Mathlib.Basic.Real.Sign
 import Mathlib.Basic.Real.Sign
 
 /-!
@@ -21,6 +25,8 @@ forces them (both bounds round the same way); the `= 0` fallback is tried
 first only when a cheap peek suggests `E < 1` (resp. `E ≤ 0`).  This keeps
 expensive goals (e.g. Gamma) to one enclosure schedule plus one check.
 -/
+
+meta section
 
 namespace Lynth.Interval.Goals
 

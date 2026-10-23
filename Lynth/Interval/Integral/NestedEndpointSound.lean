@@ -1,12 +1,13 @@
-import Lynth.Interval.Integral.NestedScaledSound
-import Lynth.Interval.Integral.NestedHalflineProof
-import Lynth.Interval.Integral.NestedMemoProof
-import Lynth.Interval.Integral.NestedSemantics
+module
+
+import all Lynth.Interval.Integral.NestedScaledSound
+import all Lynth.Interval.Integral.NestedHalflineProof
+import all Lynth.Interval.Integral.NestedMemoProof
+import all Lynth.Interval.Integral.NestedSemantics
 
 namespace Lynth.Interval.Integral.Nested
 open Intgrl Fns MeasureTheory Set Filter
 open scoped Topology
-open private unit from Lynth.Interval.Integral.NestedBounds
 
 lemma endpointExpr_scoped {n : Nat} {e : Expr} {right : Bool}
     (hs : e.scoped (n+1) = true) : (endpointExpr n right e).scoped (n+1) = true := by

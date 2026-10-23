@@ -1,12 +1,14 @@
+module
+
 import Lean
-import Lynth.Procedure
-import Lynth.Arith.Linear
-import Lynth.Arith.Fourier
-import Lynth.Arith.FarkasSound
-import Lynth.Arith.Simplex
-import Lynth.Arith.Explain
-import Lynth.Arith.BranchBound
-import Lynth.Arith.Recognize
+import all Lynth.Procedure
+import all Lynth.Arith.Linear
+import all Lynth.Arith.Fourier
+import all Lynth.Arith.FarkasSound
+import all Lynth.Arith.Simplex
+import all Lynth.Arith.Explain
+import all Lynth.Arith.BranchBound
+import all Lynth.Arith.Recognize
 
 /-!
 Arithmetic procedure: linear (in)equalities over `Nat`/`Int`.

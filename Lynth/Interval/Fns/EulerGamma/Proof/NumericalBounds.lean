@@ -1,4 +1,6 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.Coefficients
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.Coefficients
 
 /-!
 # Elementary numerical bounds on `c_j`, `n!` and `p_j`

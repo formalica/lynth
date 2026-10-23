@@ -1,7 +1,6 @@
 -- Simplex checks: units, models verify, differential vs FM.
-import Lynth.Arith.Simplex
-import Lynth.Arith.Explain
-import Lynth.Arith.Fourier
+module
+import Lynth
 
 open Lynth.Arith.Simplex
 open Lynth.Arith.Fourier hiding solve

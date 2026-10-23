@@ -1,4 +1,6 @@
-import Lynth.Sat.Syntax
+module
+
+import all Lynth.Sat.Syntax
 
 /-!
 Finite-domain internal language: terms and propositions over finite
@@ -17,7 +19,7 @@ namespace Lynth.FinSearch
 open Lynth.Sat
 
 /-- Finite-domain term: variable or literal at a cardinality. -/
-inductive FTerm where
+public inductive FTerm where
   | var : Nat → Nat → FTerm
   | lit : Nat → Nat → FTerm
   deriving Repr, DecidableEq
@@ -38,7 +40,7 @@ def evalTerm (t : FTerm) (assign : Nat → Nat) : Nat :=
 kept out of the CNF, checked against candidate models by `evalProp`
 and learned back as blocking clauses. Never nested inside another
 `atom` (the splitter only cuts non-`atom` pieces). -/
-inductive FProp where
+public inductive FProp where
   | eq : FTerm → FTerm → FProp
   | ne : FTerm → FTerm → FProp
   | distinct : List FTerm → FProp
@@ -84,7 +86,7 @@ mutual
 /-- Reference evaluation of propositions. `av` answers opaque `atom`
 ids (the lazy loop evaluates atom contents separately, so the top
 level never needs it; tests pass `fun _ => false`). -/
-def evalProp : FProp → (Nat → Nat) → (Nat → Bool) → Bool
+public def evalProp : FProp → (Nat → Nat) → (Nat → Bool) → Bool
   | .eq a b, v, _ => decide (evalTerm a v == evalTerm b v)
   | .ne a b, v, _ => decide (evalTerm a v != evalTerm b v)
   | .distinct ts, v, _ =>

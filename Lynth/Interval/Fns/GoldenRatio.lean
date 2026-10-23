@@ -1,4 +1,14 @@
-import Lynth.Interval.Fns.Arith
+module
+
+public import Init.Prelude
+public import Mathlib.NumberTheory.Real.GoldenRatio
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+import all Lynth.Interval.Fns.Arith
 import Mathlib.NumberTheory.Real.GoldenRatio
 
 /-!
@@ -15,7 +25,7 @@ namespace Lynth.Interval.Fns
 open Lynth.Interval Dy
 
 /-- enclosure of `(1 + √5) / 2`. -/
-def goldenRatioIval (c : Ctx) : Ival :=
+@[expose] public def goldenRatioIval (c : Ctx) : Ival :=
   Ival.div c.prec
     (Ival.add c.prec Ival.one (Ival.sqrt c.prec (Ival.pt (Dy.ofNat 5))))
     (Ival.pt (Dy.ofNat 2))
@@ -32,10 +42,10 @@ theorem mem_goldenRatioIval {c : Ctx} : Real.goldenRatio ∈ goldenRatioIval c :
   exact Ival.mem_div
     (Ival.mem_add Ival.mem_one (Ival.mem_sqrt h5)) h2
 
-@[lynth_cfn] def goldenRatioR : Fn0 .real where
+@[expose, lynth_cfn] public def goldenRatioR : Fn0 .real where
   name := "goldenRatio"
   graph y := y = Real.goldenRatio
-  exu := exu_eq₀ _
+  exu := by exact exu_eq₀ _
   ev := goldenRatioIval
   sound := fun _ _ _ hy => by obtain rfl := hy; exact mem_goldenRatioIval
   cost := 120

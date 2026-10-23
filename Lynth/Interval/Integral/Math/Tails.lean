@@ -1,11 +1,23 @@
-import Lynth.Interval.Integral.Math.Integrand
-import Lynth.Interval.Integral.Math.IntegralBounds
+module
+
+public import Init.Data.Cast
+public import Init.Data.List.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Algebra.Order.Ring.Unbundled.Rat
+public import Mathlib.Data.Nat.Factorial.Basic
+public import Mathlib.Data.Rat.Defs
+public import Lynth.Interval.Integral.Math.Integrand
+import all Lynth.Interval.Integral.Math.Integrand
+import all Lynth.Interval.Integral.Math.IntegralBounds
 
 /-! Portable tail models and integral assembly contracts. -/
 
 namespace Intgrl
 
-inductive TailFamily where
+public inductive TailFamily where
   | gaussian (power : ℕ)
   | exponential (power : ℕ)
   | sech (power : ℕ)
@@ -13,15 +25,15 @@ inductive TailFamily where
   | airyDamped
 deriving Repr, Inhabited
 
-structure TailModel where
+public structure TailModel where
   family : TailFamily
   scale : ℚ := 1
 deriving Repr, Inhabited
 
-def gaussianTerm : Term := .unary .exp (.unary .neg (.pow .var 2))
-def exponentialTerm : Term := .unary .exp (.unary .neg .var)
+@[expose] public def gaussianTerm : Term := .unary .exp (.unary .neg (.pow .var 2))
+@[expose] public def exponentialTerm : Term := .unary .exp (.unary .neg .var)
 
-def classifyTail : Term → Option TailModel
+@[expose] public def classifyTail : Term → Option TailModel
   | .binary .mul (.unary .exp (.unary .neg .var)) (.unary .airyAi (.unary .neg .var))
   | .binary .mul (.unary .airyAi (.unary .neg .var)) (.unary .exp (.unary .neg .var)) =>
       some ⟨.airyDamped,1⟩
@@ -43,14 +55,14 @@ def classifyTail : Term → Option TailModel
       if p == 1 then some ⟨.arctan,q⟩ else none
   | _ => none
 
-def gaussianBoundTerm : ℕ → Term
+@[expose] public def gaussianBoundTerm : ℕ → Term
   | 0 => .binary .div gaussianTerm (.binary .mul (.rat 2) .var)
   | 1 => .binary .div gaussianTerm (.rat 2)
   | n + 2 => .binary .div
       (.binary .add (.binary .mul (.pow .var (n+1)) gaussianTerm)
         (.binary .mul (.rat (n+1)) (gaussianBoundTerm n))) (.rat 2)
 
-def TailModel.boundTerm (m : TailModel) : Term :=
+@[expose] public def TailModel.boundTerm (m : TailModel) : Term :=
   .binary .mul (.rat |m.scale|) (match m.family with
     | .gaussian n => gaussianBoundTerm n
     | .exponential n =>
@@ -63,7 +75,7 @@ def TailModel.boundTerm (m : TailModel) : Term :=
     | .arctan => .unary .inv .var
     | .airyDamped => exponentialTerm)
 
-def TailModel.twoSided : TailModel → Bool
+@[expose] public def TailModel.twoSided : TailModel → Bool
   | ⟨.gaussian _,_⟩ => true
   | _ => false
 

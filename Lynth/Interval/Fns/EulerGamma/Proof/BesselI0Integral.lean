@@ -1,5 +1,7 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.Coefficients
-import Lynth.Interval.Fns.EulerGamma.Proof.ChangeOfVariables
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.Coefficients
+import all Lynth.Interval.Fns.EulerGamma.Proof.ChangeOfVariables
 
 /-!
 # `bmB (x²) = (1/π) ∫_0^π exp(2x cos θ) dθ = e^{2x} PP(4x) / (2π√x)`

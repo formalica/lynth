@@ -1,10 +1,35 @@
-import Lynth.Interval.Fns.Special.Common
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Data.Rat.Defs
+public import Lynth.Interval.Core.Expr
+public import Lynth.Analysis.SpecialFunctions
+public import Lynth.Analysis.SpecialFunctionsDefs
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.ComplexElem
+public import Lynth.Interval.Fns.Elem
+public import Lynth.Interval.Fns.Special.Common
+public import Lynth.Interval.Integral.Exp
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Series.Tail
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Fns.Special.Common
 
 namespace Lynth.Interval.Fns
 
 open SpecialFunctions Integral
 
-def etaSumR (c : Ctx) (S : Ival) : List (ℕ × ℚ) → Ival
+@[expose] public def etaSumR (c : Ctx) (S : Ival) : List (ℕ × ℚ) → Ival
   | [] => Ival.zero
   | (k,w) :: ws => Ival.add c.prec
     (Ival.mul c.prec (Ival.ofRat c.prec w)
@@ -24,13 +49,13 @@ theorem mem_etaSumR {c : Ctx} (hc : c.Valid) {s : ℝ} {S : Ival} (hs : s ∈ S)
 converges for all s and avoids cancellation of zeta's pole at one.
 Keep Re(s)+m >= 1, including boxes close to a negative integer.
 This prevents the complex Gamma-ratio estimate from becoming needlessly large. -/
-def etaShift (lo : ℚ) : ℕ := (max 0 (1-lo).ceil).toNat
+@[expose] public def etaShift (lo : ℚ) : ℕ := (max 0 (1-lo).ceil).toNat
 
-def etaRParams (c : Ctx) (lo : ℚ) : ℕ × ℕ :=
+@[expose] public def etaRParams (c : Ctx) (lo : ℚ) : ℕ × ℕ :=
   let m := etaShift lo
   (m,c.prec+32+8*m*m)
 
-def etaIval (c : Ctx) (S : Ival) : Ival :=
+@[expose] public def etaIval (c : Ctx) (S : Ival) : Ival :=
   match S.lo with
   | some lo =>
     let m := (etaRParams c lo.toRat).1
@@ -61,7 +86,7 @@ theorem mem_etaIval {c : Ctx} (hc : c.Valid) {s : ℝ} {S : Ival} (hs : s ∈ S)
     · exact Ival.mem_top _
   · exact Ival.mem_top _
 
-def etaSumC (c : Ctx) (S : CBox) : List (ℕ × ℚ) → CBox
+@[expose] public def etaSumC (c : Ctx) (S : CBox) : List (ℕ × ℚ) → CBox
   | [] => CBox.ofReal Ival.zero
   | (k,w) :: ws => CBox.add c.prec
     (CBox.mul c.prec (CBox.ofReal (Ival.ofRat c.prec w))
@@ -78,13 +103,13 @@ theorem mem_etaSumC {c : Ctx} (hc : c.Valid) {s : ℂ} {S : CBox} (hs : s ∈ S)
     simpa only [etaSumC, List.map_cons, List.sum_cons, Complex.ofReal_ratCast] using
       CBox.mem_add (CBox.mem_mul (CBox.mem_ofReal (Ival.mem_ofRat _ kw.2)) hp) ih
 
-def etaCParams (c : Ctx) (lo : ℚ) (t : ℚ) : ℕ × ℕ :=
+@[expose] public def etaCParams (c : Ctx) (lo : ℚ) (t : ℚ) : ℕ × ℕ :=
   let m := etaShift lo
   let a := lo+m
   let growth := (t^2/2 * (a⁻¹^2+a⁻¹)).ceil.toNat
   (m,c.prec+32+8*m*m+2*growth)
 
-def etaCError (c : Ctx) (S : CBox) (m n : ℕ) : Ival :=
+@[expose] public def etaCError (c : Ctx) (S : CBox) (m n : ℕ) : Ival :=
   let A := Ival.add c.prec S.re (Ival.ofRat c.prec m)
   let Ainv := Ival.inv c.prec A
   let exponent := Ival.mul c.prec (Ival.divNat c.prec (Ival.sq c.prec S.im) 2)
@@ -102,7 +127,7 @@ theorem mem_etaCError (c : Ctx) {s : ℂ} {S : CBox} (hs : s ∈ S) (m n : ℕ) 
   have h := Ival.mem_mul (p := c.prec) (Ival.mem_ofRat c.prec (2*(n+1 : ℚ)^m / 2^n)) hE
   convert h using 1 <;> push_cast <;> ring
 
-def etaCBox (c : Ctx) (S : CBox) : CBox :=
+@[expose] public def etaCBox (c : Ctx) (S : CBox) : CBox :=
   match S.re.lo, (Ival.abs S.im).hi with
   | some lo, some t =>
     let m := (etaCParams c lo.toRat t.toRat).1
@@ -131,18 +156,18 @@ theorem mem_etaCBox {c : Ctx} (hc : c.Valid) {s : ℂ} {S : CBox} (hs : s ∈ S)
     · exact CBox.mem_top _
   · exact CBox.mem_top _
 
-@[lynth_cfn] def etaR : Fn1 .real .real where
+@[expose, lynth_cfn] public def etaR : Fn1 .real .real where
   name := "dirichletEta"
   graph x y := y = Real.dirichletEta x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := etaIval
   sound := fun _ _ _ _ hc hy hx => by cases hy; exact mem_etaIval hc hx
   cost := 500000
 
-@[lynth_cfn] def etaC : Fn1 .cplx .cplx where
+@[expose, lynth_cfn] public def etaC : Fn1 .cplx .cplx where
   name := "dirichletEta"
   graph x y := y = Complex.dirichletEta x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := etaCBox
   sound := fun _ _ _ _ hc hy hx => by cases hy; exact mem_etaCBox hc hx
   cost := 1000000

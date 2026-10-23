@@ -1,5 +1,7 @@
-import Lynth.Interval.Integral.NestedSemantics
-import Lynth.Interval.Integral.Math.NestedAnalysis
+module
+
+import all Lynth.Interval.Integral.NestedSemantics
+import all Lynth.Interval.Integral.Math.NestedAnalysis
 
 /-! Endpoint power extraction preserves values and recursive convergence. -/
 namespace Lynth.Interval.Integral.Nested

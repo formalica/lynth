@@ -1,3 +1,5 @@
+module
+
 import Mathlib
 
 /-! Cancellation bounds near a reciprocal-phase endpoint. This theorem is

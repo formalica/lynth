@@ -1,4 +1,6 @@
-import Lynth.Interval.Fns.EMCore.GammaLimit
+module
+
+import all Lynth.Interval.Fns.EMCore.GammaLimit
 
 /-!
 # Complex Stirling expansion for the digamma function

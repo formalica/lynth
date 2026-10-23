@@ -1,4 +1,15 @@
-import Lynth.Interval.Series.Tail
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Series.Tail
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Series.Tail
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
@@ -13,11 +24,11 @@ namespace Lynth.Interval
 
 open Dy
 
-def quarterHalf : Dy := ⟨1, -1⟩
-def negQuarterHalf : Dy := ⟨-1, -1⟩
+@[expose] public def quarterHalf : Dy := ⟨1, -1⟩
+@[expose] public def negQuarterHalf : Dy := ⟨-1, -1⟩
 
 /-- `Z ⊆ [-1/2, 1/2]` -/
-def smallHalf (Z : Ival) : Bool :=
+@[expose] public def smallHalf (Z : Ival) : Bool :=
   match Z.lo, Z.hi with
   | some a, some b => Dy.leB negQuarterHalf a && Dy.leB b quarterHalf
   | _, _ => false
@@ -36,16 +47,16 @@ theorem abs_le_half_of_smallHalf {Z : Ival} (h : smallHalf Z = true) {z : ℝ} (
   · simp at h
 
 /-- the (vanishing-precision) test for small terms -/
-def smallT (w : Nat) (T : Ival) : Bool :=
+@[expose] public def smallT (w : Nat) (T : Ival) : Bool :=
   match Ival.magHi T with
   | some m => Dy.ltB m ⟨1, -(w : Int)⟩
   | none => false
 
-def atanhStep (w : Nat) (Z2 : Ival) (k : Nat) (T : Ival) : Ival :=
+@[expose] public def atanhStep (w : Nat) (Z2 : Ival) (k : Nat) (T : Ival) : Ival :=
   Ival.divNat w (Ival.mul w (Ival.mul w T Z2) (Ival.pt (Dy.ofNat (2 * k + 1)))) (2 * k + 3)
 
 /-- enclosure of `log (1 + z) - log (1 - z)` for `z ∈ Z` -/
-def atanh2Series (w : Nat) (Z : Ival) : Ival :=
+@[expose] public def atanh2Series (w : Nat) (Z : Ival) : Ival :=
   if smallHalf Z then
     let Z2 := Ival.sq w Z
     let T0 := Ival.mul w (Ival.pt (Dy.ofNat 2)) Z
@@ -109,7 +120,7 @@ theorem log_eq_atanh2 {t : ℝ} (ht : 0 < t) :
   congr 1; field_simp
 
 /-- series enclosure of `log 2` -/
-def ln2Series (p : Nat) : Ival := atanh2Series (p + 8) (Ival.ofRat (p + 8) (1 / 3))
+@[expose] public def ln2Series (p : Nat) : Ival := atanh2Series (p + 8) (Ival.ofRat (p + 8) (1 / 3))
 
 theorem mem_ln2Series (p : Nat) : Real.log 2 ∈ ln2Series p := by
   have := mem_atanh2Series (p + 8) (Ival.mem_ofRat (p + 8) (1 / 3))

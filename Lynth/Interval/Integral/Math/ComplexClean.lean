@@ -1,10 +1,23 @@
-import Lynth.Interval.Integral.Math.ComplexIntegral
+module
+
+public import Init.Core
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Nat.Coprime
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Lynth.Interval.Integral.Math.ComplexIntegral
+public import Lynth.Interval.Integral.Math.Integrand
+public import Lynth.Interval.Integral.Math.NestedDefs
+public import Lynth.Interval.Integral.Math.NestedSyntax
+import all Lynth.Interval.Integral.Math.ComplexIntegral
 
 /-! Real algebraic identities for principal complex projections. -/
 namespace Intgrl
 open Lynth.Interval.Integral.Nested
 
-def complexCleanUnary (op : Unary) (a : NExpr) : NExpr :=
+@[expose] public def complexCleanUnary (op : Unary) (a : NExpr) : NExpr :=
   if op == .sqrt then
     match a with
     | .pow a 2 => .unary .abs a
@@ -18,7 +31,7 @@ def complexCleanUnary (op : Unary) (a : NExpr) : NExpr :=
     | _ => CParts.un op a
   else CParts.un op a
 
-def complexCleanBinary (op : Binary) (a b : NExpr) : NExpr :=
+@[expose] public def complexCleanBinary (op : Binary) (a b : NExpr) : NExpr :=
   match op,a,b with
   | .add,a,.unary .neg b => sub a b
   | .add,.unary .neg a,b => sub b a
@@ -31,7 +44,7 @@ def complexCleanBinary (op : Binary) (a b : NExpr) : NExpr :=
   | .div,.rat 0,b => if !b.hasIntegral then .rat 0 else .binary .div a b
   | _,_,_ => simplify (.binary op a b)
 
-def complexCleanPow (a : NExpr) (n : Nat) : NExpr :=
+@[expose] public def complexCleanPow (a : NExpr) (n : Nat) : NExpr :=
   match a with
   | .rat q => .rat (q^n)
   | _ => pow a n

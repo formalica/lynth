@@ -1,5 +1,7 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.CoefficientSeries
-import Lynth.Interval.Fns.EulerGamma.Proof.ChangeOfVariables
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.CoefficientSeries
+import all Lynth.Interval.Fns.EulerGamma.Proof.ChangeOfVariables
 
 /-!
 # Logarithmic changes of variables for `PP` and for the incomplete Gamma integrals

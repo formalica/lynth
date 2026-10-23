@@ -1,6 +1,8 @@
+module
+
 import Lean
-import Lynth.Euf.Procedure
-import Lynth.Euf.Closure
+import all Lynth.Euf.Procedure
+import all Lynth.Euf.Closure
 
 /-!
 Trigger extraction + E-matching over EUF congruence classes.

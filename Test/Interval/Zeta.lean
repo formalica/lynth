@@ -1,5 +1,6 @@
+module
 import Mathlib
-import Lynth
+public import Lynth
 
 open Lynth.Interval
 open Lynth.Interval.Fns
@@ -25,7 +26,7 @@ ported from the Mathlib-only `/tmp/zeta/` prover handoff); `#eval!`
 
 set_option maxHeartbeats 60000 in
 -- Z1: ζ(2) = π²/6 via Euler–Maclaurin. 1.644934066848226
-def zeta_two : { x : Rat //
+public def zeta_two : { x : Rat //
     abs (Real'.zeta 2 - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'zeta_two' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_two._native.native_decide.ax_1] -/
@@ -35,7 +36,7 @@ def zeta_two : { x : Rat //
 
 set_option maxHeartbeats 60000 in
 -- Z2: ζ(3) (Apéry) via Euler–Maclaurin. 1.202056903159594
-def zeta_three : { x : Rat //
+public def zeta_three : { x : Rat //
     abs (Real'.zeta 3 - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'zeta_three' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_three._native.native_decide.ax_1] -/
@@ -45,7 +46,7 @@ def zeta_three : { x : Rat //
 
 set_option maxHeartbeats 60000 in
 -- Z3: ζ(4) = π⁴/90 via Euler–Maclaurin. 1.082323233711138
-def zeta_four : { x : Rat //
+public def zeta_four : { x : Rat //
     abs (Real'.zeta 4 - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'zeta_four' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_four._native.native_decide.ax_1] -/
@@ -55,7 +56,7 @@ def zeta_four : { x : Rat //
 
 set_option maxHeartbeats 60000 in
 -- Z4: ζ(5) via Euler–Maclaurin. 1.036927755143370
-def zeta_five : { x : Rat //
+public def zeta_five : { x : Rat //
     abs (Real'.zeta 5 - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'zeta_five' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_five._native.native_decide.ax_1] -/
@@ -65,7 +66,7 @@ def zeta_five : { x : Rat //
 
 set_option maxHeartbeats 60000 in
 -- Z5: ζ(6) via Euler product. 1.017343061984449
-def zeta_six : { x : Rat //
+public def zeta_six : { x : Rat //
     abs (Real'.zeta 6 - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'zeta_six' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_six._native.native_decide.ax_1] -/
@@ -75,7 +76,7 @@ def zeta_six : { x : Rat //
 
 set_option maxHeartbeats 60000 in
 -- Z6: ζ(7) via Euler product. 1.008349277381923
-def zeta_seven : { x : Rat //
+public def zeta_seven : { x : Rat //
     abs (Real'.zeta 7 - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'zeta_seven' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_seven._native.native_decide.ax_1] -/
@@ -85,7 +86,7 @@ def zeta_seven : { x : Rat //
 
 set_option maxHeartbeats 60000 in
 -- Z7: ζ(8) via Euler product. 1.004077356197944
-def zeta_eight : { x : Rat //
+public def zeta_eight : { x : Rat //
     abs (Real'.zeta 8 - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'zeta_eight' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_eight._native.native_decide.ax_1] -/
@@ -95,7 +96,7 @@ def zeta_eight : { x : Rat //
 
 set_option maxHeartbeats 60000 in
 -- Z8: ζ(1.5) via Euler–Maclaurin. 2.612375348685449
-def zeta_three_halves : { x : Rat //
+public def zeta_three_halves : { x : Rat //
     abs (Real'.zeta 1.5 - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'zeta_three_halves' depends on axioms: [propext,
@@ -108,7 +109,7 @@ def zeta_three_halves : { x : Rat //
 
 set_option maxHeartbeats 60000 in
 -- Z9: ζ(2.5) via Euler–Maclaurin. 1.341487257250917
-def zeta_five_halves : { x : Rat //
+public def zeta_five_halves : { x : Rat //
     abs (Real'.zeta 2.5 - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'zeta_five_halves' depends on axioms: [propext,
@@ -121,7 +122,7 @@ def zeta_five_halves : { x : Rat //
 
 set_option maxHeartbeats 60000 in
 -- Z10: ζ(0.5) < 0 via Euler–Maclaurin on `(0, 1)`. -1.460354510127246
-def zeta_half : { x : Rat //
+public def zeta_half : { x : Rat //
     abs (Real'.zeta 0.5 - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'zeta_half' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_half._native.native_decide.ax_1] -/
@@ -131,7 +132,7 @@ def zeta_half : { x : Rat //
 
 set_option maxHeartbeats 60000 in
 -- Z11: ζ(-1) = -1/12 via functional equation. -0.0833333333
-def zeta_neg_one : { x : Rat //
+public def zeta_neg_one : { x : Rat //
     abs (Real'.zeta (-1) - x) < 1 / 1000 } := by
   lynth
 /-- info: 'zeta_neg_one' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_neg_one._native.native_decide.ax_1] -/
@@ -141,7 +142,7 @@ def zeta_neg_one : { x : Rat //
 
 set_option maxHeartbeats 60000 in
 -- Z12: ζ(-3) = 1/120 via functional equation. 0.0083333333
-def zeta_neg_three : { x : Rat //
+public def zeta_neg_three : { x : Rat //
     abs (Real'.zeta (-3) - x) < 1 / 1000 } := by
   lynth
 /-- info: 'zeta_neg_three' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_neg_three._native.native_decide.ax_1] -/
@@ -151,7 +152,7 @@ def zeta_neg_three : { x : Rat //
 
 set_option maxHeartbeats 60000 in
 -- Z13: ζ(-2) = 0 (trivial zero) via functional equation.
-def zeta_neg_two : { x : Rat //
+public def zeta_neg_two : { x : Rat //
     abs (Real'.zeta (-2) - x) < 1 / 1000 } := by
   lynth
 /-- info: 'zeta_neg_two' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_neg_two._native.native_decide.ax_1] -/
@@ -161,7 +162,7 @@ def zeta_neg_two : { x : Rat //
 
 set_option maxHeartbeats 60000 in
 -- Z14: ζ(-1/2) via functional equation. -0.207886224977
-def zeta_neg_half : { x : Rat //
+public def zeta_neg_half : { x : Rat //
     abs (Real'.zeta (-1 / 2) - x) < 1 / 1000 } := by
   lynth
 /-- info: 'zeta_neg_half' depends on axioms: [propext, Classical.choice, Quot.sound, zeta_neg_half._native.native_decide.ax_1] -/

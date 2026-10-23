@@ -1,4 +1,6 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.Remainder.Substitution
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.Remainder.Substitution
 
 /-!
 # The exponentially small difference `PP n - Σ_{j<n} pp n j`: pointwise identities

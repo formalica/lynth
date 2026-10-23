@@ -1,4 +1,37 @@
-import Lynth.Interval.Integral.Math.Integrand
+module
+
+public import Batteries.Classes.RatCast
+public import Init.Data.List.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Data.Zero
+public import Init.GetElem
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Analysis.InnerProductSpace.Defs
+public import Mathlib.Analysis.Normed.Group.Continuity
+public import Mathlib.Analysis.Normed.Group.Defs
+public import Mathlib.Analysis.Normed.Group.Real
+public import Mathlib.Analysis.Normed.Ring.Basic
+public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import Mathlib.Basic.Real.Basic
+public import Mathlib.Data.Set.Defs
+public import Mathlib.MeasureTheory.Function.L1Space.Integrable
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+public import Mathlib.MeasureTheory.Measure.MeasureSpaceDef
+public import Mathlib.MeasureTheory.Measure.Restrict
+public import Mathlib.Order.Interval.Set.Defs
+public import Mathlib.Order.Interval.Set.UnorderedInterval
+public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+public import Mathlib.Topology.UniformSpace.Defs
+public import Lynth.Interval.Integral.Math.Integrand
+import all Lynth.Interval.Integral.Math.Integrand
 
 /-! Binder-aware syntax and mathematical semantics for iterated real integrals.
 Variables use levels: entering an integral appends one variable. `Scoped`
@@ -7,11 +40,11 @@ This file and NestedAnalysis are mirrored in /tmp/intgrl without Lynth imports. 
 
 namespace Intgrl
 
-inductive NDomain where
+public inductive NDomain where
   | interval | icc | ioc | ico | ioo | right | left | whole
-  deriving Repr, BEq, Inhabited
+  deriving Repr, @[expose] BEq, Inhabited
 
-noncomputable def NDomain.value (k : NDomain) (f : ℝ → ℝ) (a b : ℝ) : ℝ :=
+@[expose] public noncomputable def NDomain.value (k : NDomain) (f : ℝ → ℝ) (a b : ℝ) : ℝ :=
   match k with
   | .interval => ∫ x in a..b, f x
   | .icc => ∫ x in Set.Icc a b, f x
@@ -22,7 +55,7 @@ noncomputable def NDomain.value (k : NDomain) (f : ℝ → ℝ) (a b : ℝ) : �
   | .left => ∫ x in Set.Iio a, f x
   | .whole => ∫ x, f x
 
-noncomputable def NDomain.Converges (k : NDomain) (f : ℝ → ℝ) (a b : ℝ) : Prop :=
+@[expose] public noncomputable def NDomain.Converges (k : NDomain) (f : ℝ → ℝ) (a b : ℝ) : Prop :=
   match k with
   | .interval => IntervalIntegrable f MeasureTheory.volume a b
   | .icc => MeasureTheory.IntegrableOn f (Set.Icc a b)
@@ -33,11 +66,11 @@ noncomputable def NDomain.Converges (k : NDomain) (f : ℝ → ℝ) (a b : ℝ) 
   | .left => MeasureTheory.IntegrableOn f (Set.Iio a)
   | .whole => MeasureTheory.Integrable f
 
-def NDomain.finite : NDomain → Bool
+@[expose] public def NDomain.finite : NDomain → Bool
   | .right | .left | .whole => false
   | _ => true
 
-inductive NExpr where
+public inductive NExpr where
   | var (level : Nat)
   | rat (q : ℚ)
   | pi
@@ -46,16 +79,16 @@ inductive NExpr where
   | pow (a : NExpr) (n : Nat)
   | rpow (a : NExpr) (q : ℚ)
   | integral (kind : NDomain) (a b body : NExpr)
-  deriving Repr, BEq, Inhabited
+  deriving Repr, @[expose] BEq, Inhabited
 
-def NExpr.scoped (n : Nat) : NExpr → Bool
+@[expose] public def NExpr.scoped (n : Nat) : NExpr → Bool
   | .var i => i < n
   | .rat _ | .pi => true
   | .unary _ a | .pow a _ | .rpow a _ => a.scoped n
   | .binary _ a b => a.scoped n && b.scoped n
   | .integral _ a b f => a.scoped n && b.scoped n && f.scoped (n+1)
 
-noncomputable def NExpr.real : NExpr → List ℝ → ℝ
+@[expose] public noncomputable def NExpr.real : NExpr → List ℝ → ℝ
   | .var i, env => env[i]?.getD 0
   | .rat q, _ => q
   | .pi, _ => Real.pi
@@ -67,7 +100,7 @@ noncomputable def NExpr.real : NExpr → List ℝ → ℝ
 
 /-- Recursive ordinary convergence: a divergent inner integral cannot be
 used as the default zero of the Bochner integral. Endpoints are immaterial. -/
-noncomputable def NExpr.Converges : NExpr → List ℝ → Prop
+@[expose] public noncomputable def NExpr.Converges : NExpr → List ℝ → Prop
   | .var _, _ | .rat _, _ | .pi, _ => True
   | .unary _ a, env | .pow a _, env | .rpow a _, env => a.Converges env
   | .binary _ a b, env => a.Converges env ∧ b.Converges env
@@ -81,13 +114,13 @@ noncomputable def NExpr.Converges : NExpr → List ℝ → Prop
         | .interval => Set.uIoo (a.real env) (b.real env)
         | _ => Set.Ioo (a.real env) (b.real env)), f.Converges (env ++ [x]))
 
-theorem NDomain.value_congr (k : NDomain) {f g : ℝ → ℝ} {a b c d : ℝ}
+public theorem NDomain.value_congr (k : NDomain) {f g : ℝ → ℝ} {a b c d : ℝ}
     (hf : ∀ x, f x = g x) (ha : a = c) (hb : b = d) :
     k.value f a b = k.value g c d := by
   rw [funext hf, ha, hb]
 
 /-- Open and closed endpoint conventions agree for Lebesgue measure. -/
-theorem NDomain.right_closed (f : ℝ → ℝ) (a : ℝ) :
+public theorem NDomain.right_closed (f : ℝ → ℝ) (a : ℝ) :
     (∫ x in Set.Ici a, f x) = NDomain.right.value f a 0 := by
   have key : Set.Ici a \ Set.Ioi a = ({a} : Set ℝ) := by
     ext x
@@ -108,7 +141,7 @@ theorem NDomain.right_closed (f : ℝ → ℝ) (a : ℝ) :
       rw [hsub, MeasureTheory.measure_empty]
   exact MeasureTheory.setIntegral_congr_set hset
 
-theorem NDomain.left_closed (f : ℝ → ℝ) (a : ℝ) :
+public theorem NDomain.left_closed (f : ℝ → ℝ) (a : ℝ) :
     (∫ x in Set.Iic a, f x) = NDomain.left.value f a 0 := by
   have key : Set.Iic a \ Set.Iio a = ({a} : Set ℝ) := by
     ext x
@@ -128,5 +161,8 @@ theorem NDomain.left_closed (f : ℝ → ℝ) (a : ℝ) :
         exact hx.2 (Set.mem_Iic.2 (le_of_lt hx.1))
       rw [hsub, MeasureTheory.measure_empty]
   exact MeasureTheory.setIntegral_congr_set hset
+
+deriving instance ReflBEq for NDomain, NExpr
+deriving instance LawfulBEq for NDomain, NExpr
 
 end Intgrl

@@ -1,5 +1,7 @@
-import Lynth.Interval.Integral.Math.NestedDefs
-import Lynth.Interval.Integral.Math.IntgrlDefs
+module
+
+import all Lynth.Interval.Integral.Math.NestedDefs
+import all Lynth.Interval.Integral.Math.IntgrlDefs
 
 /-! Portable proof obligations for recursive real quadrature. No interval
 representation, search state or tactic code occurs in these statements.

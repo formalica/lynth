@@ -1,7 +1,10 @@
+module
+
+public import Lean.Expr
 import Lean
 import Mathlib.Data.Fintype.Card
-import Lynth.FinSearch.Syntax
-import Lynth.FinSearch.Detect
+import all Lynth.FinSearch.Syntax
+import all Lynth.FinSearch.Detect
 
 /-!
 Translation from Lean synthesis goals to `FProp` constraints.
@@ -211,7 +214,7 @@ def finWidth (ty : Expr) : MetaM (Option Nat) :=
   finCard ty 8
 
 /-- Numeric literal value. -/
-def asNumeral (e : Expr) : Option Nat :=
+public def asNumeral (e : Expr) : Option Nat :=
   match e with
   | .lit (.natVal n) => some n
   | .app (.app (.app (.const ``OfNat.ofNat _) _) (.lit (.natVal n))) _ =>

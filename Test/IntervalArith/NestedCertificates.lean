@@ -1,11 +1,14 @@
+import Lynth
 import Mathlib
-import Lynth.Interval.Integral.NestedSearch
 
 /-! Runtime rejection tests for the recursive integration checker. Each test
 has an independent measured heartbeat cap, like the integration regressions. -/
 namespace IntervalArith.NestedCertificates
-open Lean Elab Command
-open Lynth.Interval Lynth.Interval.Integral Lynth.Interval.Integral.Nested Intgrl
+open Lynth.Interval (Ctx Dy Ival)
+open Intgrl (NExpr)
+open Lynth.Interval.Integral (NodeTable)
+open Lynth.Interval.Integral.Nested
+  (Memo Plan Entry search check key boundR evalWith formula entryEncl replay envCheck)
 
 private def gaussian : NExpr := .integral .interval (.rat 0) (.rat 1)
   (.integral .interval (.rat 0) (.var 0) (.unary .exp (.unary .neg (.pow (.var 1) 2))))

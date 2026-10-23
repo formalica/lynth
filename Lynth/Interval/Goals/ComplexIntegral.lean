@@ -1,15 +1,20 @@
-import Lynth.Interval.Goals.NestedIntegral
-import Lynth.Interval.Integral.ComplexReify
-import Lynth.Interval.Integral.Math.ComplexReduction
+module
+
+meta import Lynth.Options
+import Lynth.Options
+meta import all Lynth.Interval.Goals.NestedIntegral
+import all Lynth.Interval.Goals.NestedIntegral
+meta import all Lynth.Interval.Integral.ComplexReify
+import all Lynth.Interval.Integral.ComplexReify
+meta import all Lynth.Interval.Integral.Math.ComplexReduction
+import all Lynth.Interval.Integral.Math.ComplexReduction
 
 /-! Certified complex-valued integration over real ranges. The two scalar
 projections use the existing Gauss–Legendre/Petras certificates. -/
+meta section
+
 namespace Lynth.Interval.Goals
 open Lean Meta Elab Tactic Intgrl Integral Qq
-register_option lynth.interval.complexIntegralSteps : Nat := {
-  defValue := 16384
-  descr := "subdivision and recursive-integral search budget for a complex component"
-}
 
 namespace CI
 

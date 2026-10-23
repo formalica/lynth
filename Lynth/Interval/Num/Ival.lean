@@ -1,4 +1,15 @@
-import Lynth.Interval.Num.Dy
+module
+
+public import Init.Core
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Option.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Basic.Real.Basic
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Num.Dy
 
 /-!
 # Extended real intervals
@@ -12,7 +23,7 @@ See `docs/interval/02-numerics.md §2`.
 namespace Lynth.Interval
 
 /-- Interval with extended dyadic endpoints: `lo = none` is `-∞`, `hi = none` is `+∞`. -/
-structure Ival where
+public structure Ival where
   lo : Option Dy
   hi : Option Dy
 deriving Repr, Inhabited
@@ -22,58 +33,58 @@ namespace Ival
 open Dy
 
 /-- lower-end condition -/
-def LoLe (lo : Option Dy) (x : ℝ) : Prop := ∀ l, lo = some l → l.toReal ≤ x
+@[expose] public def LoLe (lo : Option Dy) (x : ℝ) : Prop := ∀ l, lo = some l → l.toReal ≤ x
 /-- upper-end condition -/
-def LeHi (x : ℝ) (hi : Option Dy) : Prop := ∀ h, hi = some h → x ≤ h.toReal
+@[expose] public def LeHi (x : ℝ) (hi : Option Dy) : Prop := ∀ h, hi = some h → x ≤ h.toReal
 
-@[simp] theorem loLe_none (x : ℝ) : LoLe none x := by simp [LoLe]
-@[simp] theorem loLe_some (l : Dy) (x : ℝ) : LoLe (some l) x ↔ l.toReal ≤ x := by simp [LoLe]
-@[simp] theorem leHi_none (x : ℝ) : LeHi x none := by simp [LeHi]
-@[simp] theorem leHi_some (h : Dy) (x : ℝ) : LeHi x (some h) ↔ x ≤ h.toReal := by simp [LeHi]
+@[simp] public theorem loLe_none (x : ℝ) : LoLe none x := by simp [LoLe]
+@[simp] public theorem loLe_some (l : Dy) (x : ℝ) : LoLe (some l) x ↔ l.toReal ≤ x := by simp [LoLe]
+@[simp] public theorem leHi_none (x : ℝ) : LeHi x none := by simp [LeHi]
+@[simp] public theorem leHi_some (h : Dy) (x : ℝ) : LeHi x (some h) ↔ x ≤ h.toReal := by simp [LeHi]
 
 /-- Membership of a real in an interval. -/
-def Mem (I : Ival) (x : ℝ) : Prop := LoLe I.lo x ∧ LeHi x I.hi
+@[expose] public def Mem (I : Ival) (x : ℝ) : Prop := LoLe I.lo x ∧ LeHi x I.hi
 
-instance : Membership ℝ Ival := ⟨Ival.Mem⟩
+public instance : Membership ℝ Ival := ⟨Ival.Mem⟩
 
 theorem mem_def {x : ℝ} {I : Ival} : x ∈ I ↔ LoLe I.lo x ∧ LeHi x I.hi := Iff.rfl
 
-@[simp] theorem mem_mk {x : ℝ} {lo hi : Option Dy} :
+@[simp] public theorem mem_mk {x : ℝ} {lo hi : Option Dy} :
     x ∈ (⟨lo, hi⟩ : Ival) ↔ LoLe lo x ∧ LeHi x hi := Iff.rfl
 
 /-- The whole real line. -/
-def top : Ival := ⟨none, none⟩
+@[expose] public def top : Ival := ⟨none, none⟩
 theorem mem_top (x : ℝ) : x ∈ top := by simp [top]
 
 /-- A point. -/
-def pt (d : Dy) : Ival := ⟨some d, some d⟩
+@[expose] public def pt (d : Dy) : Ival := ⟨some d, some d⟩
 theorem mem_pt (d : Dy) : d.toReal ∈ pt d := by simp [pt]
 
-def zero : Ival := pt Dy.zero
-def one : Ival := pt Dy.one
+@[expose] public def zero : Ival := pt Dy.zero
+@[expose] public def one : Ival := pt Dy.one
 theorem mem_zero : (0 : ℝ) ∈ zero := by simp [zero, pt, toReal_def]
 theorem mem_one : (1 : ℝ) ∈ one := by simp [one, pt, toReal_def]
 
 /-- Interval enclosing a rational. -/
-def ofRat (p : Nat) (q : ℚ) : Ival := ⟨some (ofRatD p q), some (ofRatU p q)⟩
+@[expose] public def ofRat (p : Nat) (q : ℚ) : Ival := ⟨some (ofRatD p q), some (ofRatU p q)⟩
 theorem mem_ofRat (p : Nat) (q : ℚ) : (q : ℝ) ∈ ofRat p q := by
   simp only [ofRat, mem_mk, loLe_some, leHi_some, toReal_def]
   exact ⟨by exact_mod_cast ofRatD_le p q, by exact_mod_cast le_ofRatU p q⟩
 
 /-- interval between two rationals (outward rounded) -/
-def ofRats (p : Nat) (a b : ℚ) : Ival := ⟨some (ofRatD p a), some (ofRatU p b)⟩
+@[expose] public def ofRats (p : Nat) (a b : ℚ) : Ival := ⟨some (ofRatD p a), some (ofRatU p b)⟩
 
 theorem mem_ofRats {p : Nat} {a b : ℚ} {x : ℝ} (ha : (a : ℝ) ≤ x) (hb : x ≤ (b : ℝ)) :
     x ∈ ofRats p a b := by
   simp only [ofRats, mem_mk, loLe_some, leHi_some, toReal_def]
   exact ⟨le_trans (Rat.cast_le.2 (ofRatD_le p a)) ha, le_trans hb (Rat.cast_le.2 (le_ofRatU p b))⟩
 
-def isFinite (I : Ival) : Bool := I.lo.isSome && I.hi.isSome
+@[expose] public def isFinite (I : Ival) : Bool := I.lo.isSome && I.hi.isSome
 
 /-! ### Helpers -/
 
 /-- apply a binary endpoint function when both endpoints are finite -/
-def omap2 (f : Dy → Dy → Dy) : Option Dy → Option Dy → Option Dy
+@[expose] public def omap2 (f : Dy → Dy → Dy) : Option Dy → Option Dy → Option Dy
   | some a, some b => some (f a b)
   | _, _ => none
 
@@ -93,7 +104,7 @@ theorem leHi_omap2 {f : Dy → Dy → Dy} {a b : Option Dy} {z : ℝ}
 
 /-! ### Addition, negation, subtraction -/
 
-def add (p : Nat) (I J : Ival) : Ival := ⟨omap2 (addD p) I.lo J.lo, omap2 (addU p) I.hi J.hi⟩
+@[expose] public def add (p : Nat) (I J : Ival) : Ival := ⟨omap2 (addD p) I.lo J.lo, omap2 (addU p) I.hi J.hi⟩
 
 theorem mem_add {p : Nat} {x y : ℝ} {I J : Ival} (hx : x ∈ I) (hy : y ∈ J) :
     x + y ∈ add p I J := by
@@ -114,7 +125,7 @@ theorem mem_add {p : Nat} {x y : ℝ} {I J : Ival} (hx : x ∈ I) (hy : y ∈ J)
     have : (u.toRat : ℝ) + v.toRat ≤ ((addU p u v).toRat : ℝ) := by exact_mod_cast this
     linarith
 
-def neg (I : Ival) : Ival := ⟨I.hi.map Vendor.Dyadic.neg, I.lo.map Vendor.Dyadic.neg⟩
+@[expose] public def neg (I : Ival) : Ival := ⟨I.hi.map Vendor.Dyadic.neg, I.lo.map Vendor.Dyadic.neg⟩
 
 theorem mem_neg {x : ℝ} {I : Ival} (hx : x ∈ I) : -x ∈ neg I := by
   obtain ⟨hx1, hx2⟩ := hx
@@ -133,7 +144,7 @@ theorem mem_neg {x : ℝ} {I : Ival} (hx : x ∈ I) : -x ∈ neg I := by
       simp only [neg, Option.map_some, leHi_some, toReal_def, toRat_neg', Rat.cast_neg]
       simp only [toReal_def] at this; linarith
 
-def sub (p : Nat) (I J : Ival) : Ival := add p I (neg J)
+@[expose] public def sub (p : Nat) (I J : Ival) : Ival := add p I (neg J)
 
 theorem mem_sub {p : Nat} {x y : ℝ} {I J : Ival} (hx : x ∈ I) (hy : y ∈ J) :
     x - y ∈ sub p I J := by
@@ -142,9 +153,9 @@ theorem mem_sub {p : Nat} {x y : ℝ} {I J : Ival} (hx : x ∈ I) (hy : y ∈ J)
 /-! ### Multiplication -/
 
 /-- lower end is a nonnegative number -/
-def nonneg (I : Ival) : Bool := match I.lo with | some a => isNonneg a | none => false
+@[expose] public def nonneg (I : Ival) : Bool := match I.lo with | some a => isNonneg a | none => false
 /-- upper end is a nonpositive number -/
-def nonpos (I : Ival) : Bool := match I.hi with | some b => isNonneg b.neg | none => false
+@[expose] public def nonpos (I : Ival) : Bool := match I.hi with | some b => isNonneg b.neg | none => false
 
 theorem nonneg_of {I : Ival} {x : ℝ} (h : I.nonneg = true) (hx : x ∈ I) : 0 ≤ x := by
   unfold nonneg at h
@@ -165,7 +176,7 @@ theorem neg_nonneg_of_nonpos {I : Ival} (h : I.nonpos = true) : (neg I).nonneg =
   | some b => simp only [hh] at h; simpa using h
 
 /-- product of intervals with nonnegative lower ends -/
-def mulNN (p : Nat) (I J : Ival) : Ival :=
+@[expose] public def mulNN (p : Nat) (I J : Ival) : Ival :=
   ⟨omap2 (mulD p) I.lo J.lo, omap2 (mulU p) I.hi J.hi⟩
 
 theorem mem_mulNN {p : Nat} {x y : ℝ} {I J : Ival} (hI : I.nonneg = true) (hJ : J.nonneg = true)
@@ -230,7 +241,7 @@ theorem mul_mem_corners {x y a₁ a₂ b₁ b₂ : ℝ} (ha : a₁ ≤ x ∧ x �
       exact le_trans (le_trans h1.2 hr1.2) (le_max_left _ _)
 
 /-- product of finite intervals by the four corners -/
-def mulFin (p : Nat) (a b c d : Dy) : Ival :=
+@[expose] public def mulFin (p : Nat) (a b c d : Dy) : Ival :=
   ⟨some (Dy.min (Dy.min (mulD p a c) (mulD p a d)) (Dy.min (mulD p b c) (mulD p b d))),
    some (Dy.max (Dy.max (mulU p a c) (mulU p a d)) (Dy.max (mulU p b c) (mulU p b d)))⟩
 
@@ -268,7 +279,7 @@ theorem mem_mulFin {p : Nat} {x y : ℝ} {a b c d : Dy}
     · exact le_trans (mulU_toReal p b d) (le_trans (le_max_toReal_right _ _) (le_max_toReal_right _ _))
 
 /-- Interval product (sound for extended intervals). -/
-def mul (p : Nat) (I J : Ival) : Ival :=
+@[expose] public def mul (p : Nat) (I J : Ival) : Ival :=
   if I.nonneg && J.nonneg then mulNN p I J else
   match I, J with
   | ⟨some a, some b⟩, ⟨some c, some d⟩ => mulFin p a b c d
@@ -315,7 +326,7 @@ theorem mem_mul {p : Nat} {x y : ℝ} {I J : Ival} (hx : x ∈ I) (hy : y ∈ J)
   · exact generic
 
 /-- Square (dependency-aware). -/
-def sq (p : Nat) (I : Ival) : Ival :=
+@[expose] public def sq (p : Nat) (I : Ival) : Ival :=
   if I.nonneg then mulNN p I I
   else if I.nonpos then mulNN p (neg I) (neg I)
   else
@@ -354,7 +365,7 @@ theorem mem_sq {p : Nat} {x : ℝ} {I : Ival} (hx : x ∈ I) : x ^ 2 ∈ sq p I 
       exact sq_nonneg x
 
 /-- Natural power (binary powering with dependency-aware squaring; fuel bounds the depth). -/
-def npowAux (p : Nat) (I : Ival) : Nat → Nat → Ival
+@[expose] public def npowAux (p : Nat) (I : Ival) : Nat → Nat → Ival
   | 0, _ => top
   | _ + 1, 0 => one
   | _ + 1, 1 => I
@@ -363,7 +374,7 @@ def npowAux (p : Nat) (I : Ival) : Nat → Nat → Ival
     else mul p I (npowAux p I fuel (n + 1))
 
 /-- fuel `130` covers every exponent `< 2^64` (at most `2·log₂ n + 2` steps) -/
-def npow (p : Nat) (I : Ival) (n : Nat) : Ival := npowAux p I 130 n
+@[expose] public def npow (p : Nat) (I : Ival) (n : Nat) : Ival := npowAux p I 130 n
 
 theorem mem_npowAux {p : Nat} {x : ℝ} {I : Ival} (hx : x ∈ I) :
     ∀ fuel n, x ^ n ∈ npowAux p I fuel n
@@ -387,9 +398,9 @@ theorem mem_npow {p : Nat} {x : ℝ} {I : Ival} (hx : x ∈ I) (n : Nat) : x ^ n
 /-! ### Inverse and division -/
 
 /-- lower end is a positive number -/
-def pos (I : Ival) : Bool := match I.lo with | some a => isPos a | none => false
+@[expose] public def pos (I : Ival) : Bool := match I.lo with | some a => isPos a | none => false
 /-- upper end is a negative number -/
-def negv (I : Ival) : Bool := match I.hi with | some b => isNeg b | none => false
+@[expose] public def negv (I : Ival) : Bool := match I.hi with | some b => isNeg b | none => false
 
 theorem pos_of {I : Ival} {x : ℝ} (h : I.pos = true) (hx : x ∈ I) : 0 < x := by
   unfold pos at h
@@ -431,7 +442,7 @@ private theorem divU_one_toReal {p : Nat} {b : Dy} (hb : b.toReal ≠ 0) :
   exact_mod_cast h1
 
 /-- `1/x` (Mathlib: `0⁻¹ = 0`); `top` if the interval may contain `0`. -/
-def inv (p : Nat) (I : Ival) : Ival :=
+@[expose] public def inv (p : Nat) (I : Ival) : Ival :=
   if I.pos then
     ⟨some (match I.hi with | some b => divD p Dy.one b | none => Dy.zero),
      some (match I.lo with | some a => divU p Dy.one a | none => Dy.zero)⟩
@@ -489,7 +500,7 @@ theorem mem_inv {p : Nat} {x : ℝ} {I : Ival} (hx : x ∈ I) : x⁻¹ ∈ inv p
   · exact mem_top _
 
 /-- quotient, with a direct fast path for `I ≥ 0`, `J > 0` (finite) -/
-def div (p : Nat) (I J : Ival) : Ival :=
+@[expose] public def div (p : Nat) (I J : Ival) : Ival :=
   match I, J with
   | ⟨some a, some b⟩, ⟨some c, some d⟩ =>
     if isNonneg a && isPos c then ⟨some (divD p a d), some (divU p b c)⟩
@@ -533,11 +544,11 @@ theorem mem_div {p : Nat} {x y : ℝ} {I J : Ival} (hx : x ∈ I) (hy : y ∈ J)
 
 /-! ### Order-based operations -/
 
-def omin (a b : Option Dy) : Option Dy := omap2 Dy.min a b
-def omax (a b : Option Dy) : Option Dy := omap2 Dy.max a b
+@[expose] public def omin (a b : Option Dy) : Option Dy := omap2 Dy.min a b
+@[expose] public def omax (a b : Option Dy) : Option Dy := omap2 Dy.max a b
 
 /-- hull of two intervals -/
-def hull (I J : Ival) : Ival := ⟨omin I.lo J.lo, omax I.hi J.hi⟩
+@[expose] public def hull (I J : Ival) : Ival := ⟨omin I.lo J.lo, omax I.hi J.hi⟩
 
 theorem mem_hull_left {x : ℝ} {I J : Ival} (hx : x ∈ I) : x ∈ hull I J := by
   obtain ⟨hx1, hx2⟩ := hx
@@ -552,9 +563,9 @@ theorem mem_hull_right {x : ℝ} {I J : Ival} (hx : x ∈ J) : x ∈ hull I J :=
   · intro u v _ hv; exact le_trans (hx2 v hv) (le_max_toReal_right u v)
 
 /-- `max` of two intervals -/
-def max (I J : Ival) : Ival := ⟨omax I.lo J.lo, omax I.hi J.hi⟩
+@[expose] public def max (I J : Ival) : Ival := ⟨omax I.lo J.lo, omax I.hi J.hi⟩
 /-- `min` of two intervals -/
-def min (I J : Ival) : Ival := ⟨omin I.lo J.lo, omin I.hi J.hi⟩
+@[expose] public def min (I J : Ival) : Ival := ⟨omin I.lo J.lo, omin I.hi J.hi⟩
 
 theorem mem_max {x y : ℝ} {I J : Ival} (hx : x ∈ I) (hy : y ∈ J) : Max.max x y ∈ max I J := by
   obtain ⟨hx1, hx2⟩ := hx; obtain ⟨hy1, hy2⟩ := hy
@@ -577,7 +588,7 @@ theorem mem_min {x y : ℝ} {I J : Ival} (hx : x ∈ I) (hy : y ∈ J) : Min.min
     · exact le_trans (min_le_right _ _) (hy2 v hv)
 
 /-- absolute value -/
-def abs (I : Ival) : Ival :=
+@[expose] public def abs (I : Ival) : Ival :=
   if I.nonneg then I
   else if I.nonpos then neg I
   else ⟨some Dy.zero, omax (I.hi) (I.lo.map Vendor.Dyadic.neg)⟩
@@ -607,13 +618,13 @@ theorem mem_abs {x : ℝ} {I : Ival} (hx : x ∈ I) : |x| ∈ abs I := by
 /-! ### Certified comparisons -/
 
 /-- every element of `I` is `<` every element of `J` -/
-def ltB (I J : Ival) : Bool :=
+@[expose] public def ltB (I J : Ival) : Bool :=
   match I.hi, J.lo with
   | some a, some b => Dy.ltB a b
   | _, _ => false
 
 /-- every element of `I` is `≤` every element of `J` -/
-def leB (I J : Ival) : Bool :=
+@[expose] public def leB (I J : Ival) : Bool :=
   match I.hi, J.lo with
   | some a, some b => Dy.leB a b
   | _, _ => false
@@ -635,10 +646,10 @@ theorem le_of_leB {x y : ℝ} {I J : Ival} (hx : x ∈ I) (hy : y ∈ J) (h : le
 /-! ### Width, midpoint, bisection -/
 
 /-- upper bound of the width, `none` if infinite -/
-def width (I : Ival) : Option Dy := omap2 (fun a b => subU 64 b a) I.lo I.hi
+@[expose] public def width (I : Ival) : Option Dy := omap2 (fun a b => subU 64 b a) I.lo I.hi
 
 /-- exact midpoint of a finite interval -/
-def mid (I : Ival) : Option Dy :=
+@[expose] public def mid (I : Ival) : Option Dy :=
   omap2 (fun a b => Vendor.Dyadic.scale2 (a.add b) (-1)) I.lo I.hi
 
 /-- bisection at the exact midpoint (finite intervals only; otherwise no split) -/
@@ -657,7 +668,7 @@ theorem mem_bisect {x : ℝ} {I : Ival} (hx : x ∈ I) : x ∈ (bisect I).1 ∨ 
   · exact Or.inl hx
 
 /-- lower bound with rounding: `[lo - r, hi + r]` -/
-def widen (p : Nat) (I : Ival) (r : Dy) : Ival :=
+@[expose] public def widen (p : Nat) (I : Ival) (r : Dy) : Ival :=
   ⟨I.lo.map (fun a => subD p a r), I.hi.map (fun b => addU p b r)⟩
 
 theorem mem_widen {p : Nat} {x v : ℝ} {I : Ival} {r : Dy} (hv : v ∈ I) (hxv : |x - v| ≤ r.toReal) :
@@ -682,7 +693,7 @@ theorem mem_widen {p : Nat} {x v : ℝ} {I : Ival} {r : Dy} (hv : v ∈ I) (hxv 
       simp only [toReal_def] at *; linarith
 
 /-- clamp the lower end to be at least `c` (sound when `c ≤ x` is known) -/
-def clampLo (I : Ival) (c : Dy) : Ival :=
+@[expose] public def clampLo (I : Ival) (c : Dy) : Ival :=
   ⟨some (match I.lo with | some a => Dy.max a c | none => c), I.hi⟩
 
 theorem mem_clampLo {x : ℝ} {I : Ival} {c : Dy} (hx : x ∈ I) (hc : c.toReal ≤ x) : x ∈ clampLo I c := by
@@ -696,7 +707,7 @@ theorem mem_clampLo {x : ℝ} {I : Ival} {c : Dy} (hx : x ∈ I) (hc : c.toReal 
   · exact hc
 
 /-- clamp the upper end to be at most `c` (sound when `x ≤ c` is known) -/
-def clampHi (I : Ival) (c : Dy) : Ival :=
+@[expose] public def clampHi (I : Ival) (c : Dy) : Ival :=
   ⟨I.lo, some (match I.hi with | some b => Dy.min b c | none => c)⟩
 
 theorem mem_clampHi {x : ℝ} {I : Ival} {c : Dy} (hx : x ∈ I) (hc : x ≤ c.toReal) : x ∈ clampHi I c := by
@@ -711,7 +722,7 @@ theorem mem_clampHi {x : ℝ} {I : Ival} {c : Dy} (hx : x ∈ I) (hc : x ≤ c.t
 
 /-! ### Square root (monotone; Mathlib `√x = 0` for `x ≤ 0`) -/
 
-def sqrt (p : Nat) (I : Ival) : Ival :=
+@[expose] public def sqrt (p : Nat) (I : Ival) : Ival :=
   ⟨some (match I.lo with | some a => sqrtD p a | none => Dy.zero),
    I.hi.map (fun b => sqrtU p b)⟩
 

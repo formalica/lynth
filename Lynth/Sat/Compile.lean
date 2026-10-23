@@ -1,6 +1,21 @@
+module
+
+public import Init.Core
+public import Init.Data.Function
+public import Init.Data.Hashable
+public import Init.Data.List.FinRange
+public import Init.Data.Option.Basic
+public import Init.Prelude
+public import Std.Data.HashSet.Basic
+public import Lynth.Sat.Differ
+public import Lynth.Sat.FinVal
+public import Lynth.Sat.Gates
+public import Lynth.Sat.Solver
+public import Lynth.Sat.Syntax
+public import Lynth.Sat.Verified
 import Lean
-import Lynth.Sat.Differ
-import Lynth.Sat.Verified
+import all Lynth.Sat.Differ
+import all Lynth.Sat.Verified
 
 /-!
 Generic spec compiler, fragment v1: `∀`-guarded inequalities over `Fin`.
@@ -26,7 +41,7 @@ open Lynth.Sat.Differ
 v1b adds two-dimensional boards (`Fin n → Fin n → Fin k`,
 linearized to `Fin (n*n)`). Multi-index outputs and arithmetic
 arrive as later fragments without touching this code. -/
-inductive FragKind
+public inductive FragKind
   | ne
   | eq
   | inj
@@ -41,7 +56,7 @@ inductive FragKind
 `k`, and a closed guard. Guard contract by kind: `ne`/`eq` take
 `input → Fin n → Fin n → Bool`; `req` takes
 `input → Fin n → Fin k → Bool`; `inj` ignores it. -/
-structure Frag where
+public structure Frag where
   kind : FragKind
   n : Nat
   k : Nat
@@ -53,7 +68,7 @@ def splitConj : Expr → List Expr
   | e => [e]
 
 /-- Guarded-difference family over all index pairs. -/
-def neFamCNF (I : Type) (n k : Nat)
+@[expose] public def neFamCNF (I : Type) (n k : Nat)
     (guard : I → Fin n → Fin n → Bool) (input : I) : CNF :=
   (List.finRange n).flatMap fun i =>
     (List.finRange n).flatMap fun j =>
@@ -61,7 +76,7 @@ def neFamCNF (I : Type) (n k : Nat)
 
 /-- Fragment soundness (inequality): held families decode to
 guard-respecting different values. -/
-theorem neFam_sound (I : Type) (n k : Nat) (hk : 0 < k)
+public theorem neFam_sound (I : Type) (n k : Nat) (hk : 0 < k)
     (guard : I → Fin n → Fin n → Bool) (input : I) (m : Assignment)
     (hrows : ∀ v : Fin n,
       checkSat (oneHotRowCNF (rowLits k v.val)) m = true)
@@ -107,7 +122,7 @@ theorem neFam_sound (I : Type) (n k : Nat) (hk : 0 < k)
   exact diff_sound_decode n k hk m i j (hrows i) (hrows j) hper
 
 /-- Fragment completeness (inequality): valid functions satisfy. -/
-theorem neFam_complete (I : Type) (n k : Nat) (hk : 0 < k)
+public theorem neFam_complete (I : Type) (n k : Nat) (hk : 0 < k)
     (guard : I → Fin n → Fin n → Bool) (input : I)
     (f : Fin n → Fin k)
     (hvalid : ∀ i j : Fin n, guard input i j = true → f i ≠ f j) :
@@ -132,7 +147,7 @@ theorem neFam_complete (I : Type) (n k : Nat) (hk : 0 < k)
     rfl
 
 /-- Guarded-equality family over all index pairs. -/
-def eqFamCNF (I : Type) (n k : Nat)
+@[expose] public def eqFamCNF (I : Type) (n k : Nat)
     (guard : I → Fin n → Fin n → Bool) (input : I) : CNF :=
   (List.finRange n).flatMap fun i =>
     (List.finRange n).flatMap fun j =>
@@ -166,7 +181,7 @@ theorem eqFam_piece (I : Type) (n k : Nat)
   simpa [eqClausePair] using hc
 
 /-- Fragment soundness (equality). -/
-theorem eqFam_sound (I : Type) (n k : Nat) (hk : 0 < k)
+public theorem eqFam_sound (I : Type) (n k : Nat) (hk : 0 < k)
     (guard : I → Fin n → Fin n → Bool) (input : I) (m : Assignment)
     (hrows : ∀ v : Fin n,
       checkSat (oneHotRowCNF (rowLits k v.val)) m = true)
@@ -181,7 +196,7 @@ theorem eqFam_sound (I : Type) (n k : Nat) (hk : 0 < k)
   exact eq_sound_decode n k hk m i j (hrows i) (hrows j) hper
 
 /-- Fragment completeness (equality). -/
-theorem eqFam_complete (I : Type) (n k : Nat) (hk : 0 < k)
+public theorem eqFam_complete (I : Type) (n k : Nat) (hk : 0 < k)
     (guard : I → Fin n → Fin n → Bool) (input : I)
     (f : Fin n → Fin k)
     (hvalid : ∀ i j : Fin n, guard input i j = true → f i = f j) :
@@ -206,20 +221,20 @@ theorem eqFam_complete (I : Type) (n k : Nat) (hk : 0 < k)
     rfl
 
 /-- Injectivity family: complete pairwise difference. -/
-def injFamCNF (n k : Nat) : CNF :=
+@[expose] public def injFamCNF (n k : Nat) : CNF :=
   (List.finRange n).flatMap fun i =>
     (List.finRange n).flatMap fun j =>
       condDiffPair k i.val j.val (decide (i ≠ j))
 
 /-- Scoped injectivity family: pairwise difference over an
 explicit cell list (rows, columns, boxes share this one construction). -/
-def injListCNF (N k : Nat) (cells : List (Fin N)) : CNF :=
+public def injListCNF (N k : Nat) (cells : List (Fin N)) : CNF :=
   cells.flatMap fun u =>
     cells.flatMap fun v =>
       condDiffPair k u.val v.val (decide (u ≠ v))
 
 /-- Scoped injectivity soundness. -/
-theorem injList_sound (N k : Nat) (hk : 0 < k) (cells : List (Fin N))
+public theorem injList_sound (N k : Nat) (hk : 0 < k) (cells : List (Fin N))
     (m : Assignment)
     (hrows : ∀ v ∈ cells,
       checkSat (oneHotRowCNF (rowLits k v.val)) m = true)
@@ -268,7 +283,7 @@ theorem injList_sound (N k : Nat) (hk : 0 < k) (cells : List (Fin N))
     exact absurd hab hdn
 
 /-- Scoped injectivity completeness. -/
-theorem injList_complete (N k : Nat) (hk : 0 < k) (cells : List (Fin N))
+public theorem injList_complete (N k : Nat) (hk : 0 < k) (cells : List (Fin N))
     (f : Fin N → Fin k)
     (hinj : ∀ a ∈ cells, ∀ b ∈ cells, f a = f b → a = b) :
     checkSat (injListCNF N k cells) (modelOf N k f) = true := by
@@ -295,7 +310,7 @@ theorem injList_complete (N k : Nat) (hk : 0 < k) (cells : List (Fin N))
     simpa [condDiffPair] using h3
 
 /-- Fragment soundness (injectivity). -/
-theorem injFam_sound (n k : Nat) (hk : 0 < k)
+public theorem injFam_sound (n k : Nat) (hk : 0 < k)
     (m : Assignment)
     (hrows : ∀ v : Fin n,
       checkSat (oneHotRowCNF (rowLits k v.val)) m = true)
@@ -342,7 +357,7 @@ theorem injFam_sound (n k : Nat) (hk : 0 < k)
     exact absurd hab hdn
 
 /-- Fragment completeness (injectivity). -/
-theorem injFam_complete (n k : Nat) (hk : 0 < k)
+public theorem injFam_complete (n k : Nat) (hk : 0 < k)
     (f : Fin n → Fin k) (hinj : Function.Injective f) :
     checkSat (injFamCNF n k) (modelOf n k f) = true := by
   apply checkSat_flatMap
@@ -368,14 +383,14 @@ theorem injFam_complete (n k : Nat) (hk : 0 < k)
     simpa [condDiffPair] using h3
 
 /-- Required-guard family: forbid each value unless its guard holds. -/
-def reqFamCNF (I : Type) (n k : Nat)
+@[expose] public def reqFamCNF (I : Type) (n k : Nat)
     (guard : I → Fin n → Fin k → Bool) (input : I) : CNF :=
   (List.finRange n).flatMap fun i =>
     (List.finRange k).flatMap fun v =>
       condUnitNeg k i.val v.val (guard input i v)
 
 /-- Fragment soundness (required guard). -/
-theorem reqFam_sound (I : Type) (n k : Nat) (hk : 0 < k)
+public theorem reqFam_sound (I : Type) (n k : Nat) (hk : 0 < k)
     (guard : I → Fin n → Fin k → Bool) (input : I) (m : Assignment)
     (hrows : ∀ v : Fin n,
       checkSat (oneHotRowCNF (rowLits k v.val)) m = true)
@@ -413,7 +428,7 @@ theorem reqFam_sound (I : Type) (n k : Nat) (hk : 0 < k)
   exact unitNeg_sound n k (guard input) hk m i (hrows i) hper
 
 /-- Fragment completeness (required guard). -/
-theorem reqFam_complete (I : Type) (n k : Nat) (hk : 0 < k)
+public theorem reqFam_complete (I : Type) (n k : Nat) (hk : 0 < k)
     (guard : I → Fin n → Fin k → Bool) (input : I)
     (f : Fin n → Fin k)
     (hvalid : ∀ i : Fin n, guard input i (f i) = true) :
@@ -491,7 +506,7 @@ def finBound (ty : Expr) : MetaM (Option Nat) := do
 as produced by extraction): telescope peels all four binders; the
 index pair must share one literal bound. Returns
 `(n, g, c, i, j, body)`. -/
-def matchForall2Fin (P : Expr) :
+public def matchForall2Fin (P : Expr) :
     MetaM (Option (Nat × Expr × Expr × Expr × Expr × Expr)) := do
   -- accept validity constants as well as extracted lambdas.
   -- `P` is a lambda (`fun input output => ...`); `forallTelescope`
@@ -518,7 +533,7 @@ def matchForall2Fin (P : Expr) :
 
 /-- Match the guarded-inequality body `guardApp = true → lhs ≠ rhs`.
 Returns `(guardApp, lhs, rhs)`. -/
-def matchGuardNeBody (body : Expr) :
+public def matchGuardNeBody (body : Expr) :
     MetaM (Option (Expr × Expr × Expr × Bool)) := do
   match body with
   | .forallE _ dom cod _ =>
@@ -569,15 +584,15 @@ def matchGuardNeBody (body : Expr) :
 /-- 2D index linearization: `(r, c)` over `Fin 9` to `Fin 81`.
 Sizes are puzzle parameters (like `n = 8` for coloring); the shape
 is generic. All bounds discharge by `omega`/`decide` on literals. -/
-def lin2D (r c : Fin 9) : Fin 81 :=
+@[expose] public def lin2D (r c : Fin 9) : Fin 81 :=
   ⟨r.val * 9 + c.val, by omega⟩
 
 /-- Inverse: split a linear cell back into row/col. -/
-def unlin2D (i : Fin 81) : Fin 9 × Fin 9 :=
+@[expose] public def unlin2D (i : Fin 81) : Fin 9 × Fin 9 :=
   (⟨i.val / 9, by omega⟩, ⟨i.val % 9, by omega⟩)
 
 /-- Linearization is injective on pairs. -/
-theorem lin2D_inj (r₁ c₁ r₂ c₂ : Fin 9)
+public theorem lin2D_inj (r₁ c₁ r₂ c₂ : Fin 9)
     (h : lin2D r₁ c₁ = lin2D r₂ c₂) : r₁ = r₂ ∧ c₁ = c₂ := by
   have h1 := r₁.isLt
   have h2 := c₁.isLt
@@ -591,7 +606,7 @@ theorem lin2D_inj (r₁ c₁ r₂ c₂ : Fin 9)
   exact ⟨Fin.ext hr, Fin.ext hc⟩
 
 /-- Roundtrip: unlinearizing is left-inverse. -/
-theorem unlin_lin (r c : Fin 9) :
+public theorem unlin_lin (r c : Fin 9) :
     unlin2D (lin2D r c) = (r, c) := by
   have h1 := r.isLt
   have h2 := c.isLt
@@ -616,16 +631,16 @@ theorem lin_unlin (i : Fin 81) :
   exact hdm
 
 /-- Row guard over linear cells: same row plus distinctness. -/
-def rowGuard81 (i j : Fin 81) : Bool :=
+@[expose] public def rowGuard81 (i j : Fin 81) : Bool :=
   decide ((unlin2D i).1 = (unlin2D j).1 ∧ i ≠ j)
 
 /-- Column guard over linear cells. -/
-def colGuard81 (i j : Fin 81) : Bool :=
+@[expose] public def colGuard81 (i j : Fin 81) : Bool :=
   decide ((unlin2D i).2 = (unlin2D j).2 ∧ i ≠ j)
 
 /-- Row adequacy (sound): linear guarded difference gives nested
 row injectivity. -/
-theorem rowAdequate_sound (f : Fin 81 → Fin 9)
+public theorem rowAdequate_sound (f : Fin 81 → Fin 9)
     (hne : ∀ i j : Fin 81, rowGuard81 i j = true → f i ≠ f j) :
     ∀ r c₁ c₂ : Fin 9, f (lin2D r c₁) = f (lin2D r c₂) → c₁ = c₂ := by
   intro r c₁ c₂ hve
@@ -646,7 +661,7 @@ theorem rowAdequate_sound (f : Fin 81 → Fin 9)
   exact absurd hve (hne _ _ hg)
 
 /-- Column adequacy (sound). -/
-theorem colAdequate_sound (f : Fin 81 → Fin 9)
+public theorem colAdequate_sound (f : Fin 81 → Fin 9)
     (hne : ∀ i j : Fin 81, colGuard81 i j = true → f i ≠ f j) :
     ∀ c r₁ r₂ : Fin 9, f (lin2D r₁ c) = f (lin2D r₂ c) → r₁ = r₂ := by
   intro c r₁ r₂ hve
@@ -667,7 +682,7 @@ theorem colAdequate_sound (f : Fin 81 → Fin 9)
   exact absurd hve (hne _ _ hg)
 
 /-- Column adequacy (complete). -/
-theorem colAdequate_complete (f : Fin 81 → Fin 9)
+public theorem colAdequate_complete (f : Fin 81 → Fin 9)
     (hvalid : ∀ c r₁ r₂ : Fin 9,
       f (lin2D r₁ c) = f (lin2D r₂ c) → r₁ = r₂) :
     ∀ i j : Fin 81, colGuard81 i j = true → f i ≠ f j := by
@@ -693,7 +708,7 @@ theorem colAdequate_complete (f : Fin 81 → Fin 9)
   exact hne hij
 
 /-- Row adequacy (complete). -/
-theorem rowAdequate_complete (f : Fin 81 → Fin 9)
+public theorem rowAdequate_complete (f : Fin 81 → Fin 9)
     (hvalid : ∀ r c₁ c₂ : Fin 9,
       f (lin2D r c₁) = f (lin2D r c₂) → c₁ = c₂) :
     ∀ i j : Fin 81, rowGuard81 i j = true → f i ≠ f j := by
@@ -722,14 +737,14 @@ theorem rowAdequate_complete (f : Fin 81 → Fin 9)
 user condition (e.g. same `box_idx`); the linear guard adds
 distinctness. Frag wrappers ignore the input to keep the uniform
 `input → Fin 81 → Fin 81 → Bool` contract. -/
-def boxGuardLin (boxB : Fin 9 → Fin 9 → Fin 9 → Fin 9 → Bool)
+@[expose] public def boxGuardLin (boxB : Fin 9 → Fin 9 → Fin 9 → Fin 9 → Bool)
     (i j : Fin 81) : Bool :=
   boxB (unlin2D i).1 (unlin2D i).2 (unlin2D j).1 (unlin2D j).2 &&
     decide (i ≠ j)
 
 /-- Box adequacy (sound): linear guarded difference gives the nested
 paired conclusion. -/
-theorem boxAdequate_sound (boxB : Fin 9 → Fin 9 → Fin 9 → Fin 9 → Bool)
+public theorem boxAdequate_sound (boxB : Fin 9 → Fin 9 → Fin 9 → Fin 9 → Bool)
     (f : Fin 81 → Fin 9)
     (hne : ∀ i j : Fin 81, boxGuardLin boxB i j = true → f i ≠ f j) :
     ∀ r₁ c₁ r₂ c₂ : Fin 9, boxB r₁ c₁ r₂ c₂ = true →
@@ -752,7 +767,7 @@ theorem boxAdequate_sound (boxB : Fin 9 → Fin 9 → Fin 9 → Fin 9 → Bool)
   exact absurd hve (hne _ _ hg)
 
 /-- Box adequacy (complete). -/
-theorem boxAdequate_complete (boxB : Fin 9 → Fin 9 → Fin 9 → Fin 9 → Bool)
+public theorem boxAdequate_complete (boxB : Fin 9 → Fin 9 → Fin 9 → Fin 9 → Bool)
     (f : Fin 81 → Fin 9)
     (hvalid : ∀ r₁ c₁ r₂ c₂ : Fin 9, boxB r₁ c₁ r₂ c₂ = true →
       f (lin2D r₁ c₁) = f (lin2D r₂ c₂) → r₁ = r₂ ∧ c₁ = c₂) :
@@ -780,13 +795,13 @@ theorem boxAdequate_complete (boxB : Fin 9 → Fin 9 → Fin 9 → Fin 9 → Boo
   exact hne hij
 
 /-- Input-dependent given guard lifted through unlinearization. -/
-def givenGuardLin (I : Type)
+@[expose] public def givenGuardLin (I : Type)
     (givB : I → Fin 9 → Fin 9 → Fin 9 → Bool)
     (input : I) (i : Fin 81) (v : Fin 9) : Bool :=
   givB input (unlin2D i).1 (unlin2D i).2 v
 
 /-- Given adequacy (sound): forced linear values give nested givens. -/
-theorem givenAdequate_sound (I : Type)
+public theorem givenAdequate_sound (I : Type)
     (givB : I → Fin 9 → Fin 9 → Fin 9 → Bool)
     (input : I) (f : Fin 81 → Fin 9)
     (hforced : ∀ i : Fin 81, ∀ vv : Fin 9,
@@ -802,7 +817,7 @@ theorem givenAdequate_sound (I : Type)
   exact hforced _ _ hg
 
 /-- Given adequacy (complete). -/
-theorem givenAdequate_complete (I : Type)
+public theorem givenAdequate_complete (I : Type)
     (givB : I → Fin 9 → Fin 9 → Fin 9 → Bool)
     (input : I) (f : Fin 81 → Fin 9)
     (hvalid : ∀ r c v : Fin 9, givB input r c v = true →
@@ -817,14 +832,14 @@ theorem givenAdequate_complete (I : Type)
   exact h
 
 /-- Forced-value family over all index/value pairs. -/
-def givenFamCNF (I : Type) (n k : Nat)
+@[expose] public def givenFamCNF (I : Type) (n k : Nat)
     (guard : I → Fin n → Fin k → Bool) (input : I) : CNF :=
   (List.finRange n).flatMap fun i =>
     (List.finRange k).flatMap fun v =>
       condUnitPos k i.val v.val (guard input i v)
 
 /-- Fragment soundness (forced values). -/
-theorem givenFam_sound (I : Type) (n k : Nat) (hk : 0 < k)
+public theorem givenFam_sound (I : Type) (n k : Nat) (hk : 0 < k)
     (guard : I → Fin n → Fin k → Bool) (input : I) (m : Assignment)
     (hrows : ∀ v : Fin n,
       checkSat (oneHotRowCNF (rowLits k v.val)) m = true)
@@ -862,7 +877,7 @@ theorem givenFam_sound (I : Type) (n k : Nat) (hk : 0 < k)
   exact unitPos_sound n k (guard input) hk m i (hrows i) hper c hg
 
 /-- Fragment completeness (forced values). -/
-theorem givenFam_complete (I : Type) (n k : Nat) (hk : 0 < k)
+public theorem givenFam_complete (I : Type) (n k : Nat) (hk : 0 < k)
     (guard : I → Fin n → Fin k → Bool) (input : I)
     (f : Fin n → Fin k)
     (hvalid : ∀ i : Fin n, ∀ c : Fin k, guard input i c = true → f i = c) :
@@ -876,7 +891,7 @@ theorem givenFam_complete (I : Type) (n k : Nat) (hk : 0 < k)
 
 /-- Row nested soundness (combined): held `ne` family with a
 `rowGuard81` wrapper decodes to nested row injectivity. -/
-theorem rowNested_sound (I : Type)
+public theorem rowNested_sound (I : Type)
     (guard : I → Fin 81 → Fin 81 → Bool) (input : I) (m : Assignment)
     (hrows : ∀ v : Fin 81,
       checkSat (oneHotRowCNF (rowLits 9 v.val)) m = true)
@@ -895,7 +910,7 @@ theorem rowNested_sound (I : Type)
 
 /-- Row nested completeness (combined): nested row validity yields a
 held `ne` family for the unlinearized model. -/
-theorem rowNested_complete (I : Type)
+public theorem rowNested_complete (I : Type)
     (guard : I → Fin 81 → Fin 81 → Bool) (input : I)
     (f : Fin 9 → Fin 9 → Fin 9)
     (hvalid : ∀ r c₁ c₂ : Fin 9, f r c₁ = f r c₂ → c₁ = c₂)
@@ -923,7 +938,7 @@ theorem rowNested_complete (I : Type)
   exact hne i j hg'
 
 /-- Column nested soundness (combined). -/
-theorem colNested_sound (I : Type)
+public theorem colNested_sound (I : Type)
     (guard : I → Fin 81 → Fin 81 → Bool) (input : I) (m : Assignment)
     (hrows : ∀ v : Fin 81,
       checkSat (oneHotRowCNF (rowLits 9 v.val)) m = true)
@@ -941,7 +956,7 @@ theorem colNested_sound (I : Type)
   exact colAdequate_sound _ hne
 
 /-- Column nested completeness (combined). -/
-theorem colNested_complete (I : Type)
+public theorem colNested_complete (I : Type)
     (guard : I → Fin 81 → Fin 81 → Bool) (input : I)
     (f : Fin 9 → Fin 9 → Fin 9)
     (hvalid : ∀ c r₁ r₂ : Fin 9, f r₁ c = f r₂ c → r₁ = r₂)
@@ -972,7 +987,7 @@ theorem colNested_complete (I : Type)
 goals): held `ne` family with a `boxGuardLin` wrapper decodes to
 paired indices whenever the user `lhs = rhs` holds. `beq_iff_eq`
 bridges `==`/`=` inside. -/
-theorem boxNested_sound (boxLHS boxRHS : Fin 9 → Fin 9 → Fin 9 → Fin 9 → Fin 9)
+public theorem boxNested_sound (boxLHS boxRHS : Fin 9 → Fin 9 → Fin 9 → Fin 9 → Fin 9)
     (I : Type) (guard : I → Fin 81 → Fin 81 → Bool) (input : I)
     (m : Assignment)
     (hrows : ∀ v : Fin 81,
@@ -1006,7 +1021,7 @@ theorem boxNested_sound (boxLHS boxRHS : Fin 9 → Fin 9 → Fin 9 → Fin 9 →
 /-- Box nested completeness (combined, `Prop` antecedent matching
 goals): nested box validity with `lhs = rhs` yields a held family
 for the unlinearized model. `beq_iff_eq` bridges `==`/`=` inside. -/
-theorem boxNested_complete (boxLHS boxRHS : Fin 9 → Fin 9 → Fin 9 → Fin 9 → Fin 9)
+public theorem boxNested_complete (boxLHS boxRHS : Fin 9 → Fin 9 → Fin 9 → Fin 9 → Fin 9)
     (I : Type) (guard : I → Fin 81 → Fin 81 → Bool) (input : I)
     (f : Fin 9 → Fin 9 → Fin 9)
     (hvalid : ∀ r₁ c₁ r₂ c₂ : Fin 9,
@@ -1045,7 +1060,7 @@ theorem boxNested_complete (boxLHS boxRHS : Fin 9 → Fin 9 → Fin 9 → Fin 9 
 
 /-- Given nested soundness (combined, `Prop` antecedent matching
 goals with `input r c = some v`). -/
-theorem givenNested_sound
+public theorem givenNested_sound
     (guard : (Fin 9 → Fin 9 → Option (Fin 9)) → Fin 81 → Fin 9 → Bool)
     (input : Fin 9 → Fin 9 → Option (Fin 9)) (m : Assignment)
     (hrows : ∀ v : Fin 81,
@@ -1070,7 +1085,7 @@ theorem givenNested_sound
 
 /-- Given nested completeness (combined, `Prop` antecedent matching
 goals with `input r c = some v`). -/
-theorem givenNested_complete
+public theorem givenNested_complete
     (guard : (Fin 9 → Fin 9 → Option (Fin 9)) → Fin 81 → Fin 9 → Bool)
     (input : Fin 9 → Fin 9 → Option (Fin 9))
     (f : Fin 9 → Fin 9 → Fin 9)
@@ -1634,7 +1649,7 @@ def liftMem (hc : Expr) (j m : Nat) : MetaM Expr := do
   | j + 1 =>
     let rest ← liftMem hc j (m - 1)
     mkAppM ``Or.inr #[rest]
-def runSolver {I O : Type} (encode : I → CNF)
+@[expose] public def runSolver {I O : Type} (encode : I → CNF)
     (decode : Assignment → O)
     (fuel restartBase : Nat) (input : I) :
     Option O := 
@@ -1643,7 +1658,7 @@ def runSolver {I O : Type} (encode : I → CNF)
   | .unsat => none
 
 /-- Runner soundness from a decode lemma. -/
-theorem runSolver_sound {I O : Type} (encode : I → CNF)
+public theorem runSolver_sound {I O : Type} (encode : I → CNF)
     (decode : Assignment → O) (P : I → O → Prop)
     (fuel restartBase : Nat)
     (hsound : ∀ input m,
@@ -1663,7 +1678,7 @@ theorem runSolver_sound {I O : Type} (encode : I → CNF)
     nomatch h
 
 /-- Runner completeness from an encode lemma. -/
-theorem runSolver_complete {I O : Type} (encode : I → CNF)
+public theorem runSolver_complete {I O : Type} (encode : I → CNF)
     (decode : Assignment → O) (P : I → O → Prop)
     (fuel restartBase : Nat)
     (hcomp : ∀ input f, P input f → ∃ m, checkSat (encode input) m = true)
@@ -1681,7 +1696,7 @@ theorem runSolver_complete {I O : Type} (encode : I → CNF)
     exact Bool.noConfusion hfalse
 
 /-- Runner none-iff from both directions. -/
-theorem runSolver_none {I O : Type} (encode : I → CNF)
+public theorem runSolver_none {I O : Type} (encode : I → CNF)
     (decode : Assignment → O) (P : I → O → Prop)
     (fuel restartBase : Nat)
     (hsound : ∀ input m,
@@ -1803,7 +1818,7 @@ def matchFrag1D (P : Expr) : MetaM (Option (List Frag)) := do
 
 
 /-- Fragment entry: 1D shapes first, nested boards second. -/
-def matchFrag (P : Expr) : MetaM (Option (List Frag)) := do
+public def matchFrag (P : Expr) : MetaM (Option (List Frag)) := do
   match ← matchFrag1D P with
   | some frags => pure (some frags)
   | none => matchFragNested P

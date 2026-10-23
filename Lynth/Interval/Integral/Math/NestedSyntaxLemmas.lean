@@ -1,5 +1,7 @@
-import Lynth.Interval.Integral.Math.NestedSyntax
-import Lynth.Interval.Integral.Math.NestedSyntaxProof
+module
+
+import all Lynth.Interval.Integral.Math.NestedSyntax
+import all Lynth.Interval.Integral.Math.NestedSyntaxProof
 
 /-! Structural lemmas about the nested expression syntax: lawful equality,
 scoping of the syntactic transformations, and their real semantics. -/

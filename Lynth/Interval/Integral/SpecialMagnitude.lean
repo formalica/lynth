@@ -1,5 +1,21 @@
-import Lynth.Interval.Integral.Eval
-import Lynth.Interval.Fns.Special.Bounds
+module
+
+public import Init.Data.Cast
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Option.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Fns.Special.Eta
+public import Lynth.Interval.Integral.Eval
+public import Lynth.Interval.Integral.Exp
+public import Lynth.Interval.Integral.Math.Integrand
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Integral.Eval
+import all Lynth.Interval.Fns.Special.Bounds
 
 /-! Analytic bounds for entire special functions. These bounds do not evaluate
 an oscillatory real phase or cancel the pole of zeta numerically. -/
@@ -8,7 +24,7 @@ namespace Lynth.Interval.Integral
 
 open Intgrl Fns SpecialFunctions
 
-def etaGlobalMagnitude (c : Ctx) (Z : CBox) : Option Dy := do
+@[expose] public def etaGlobalMagnitude (c : Ctx) (Z : CBox) : Option Dy := do
   let lo ← Z.re.lo
   let m := etaShift lo.toRat
   if !(0 < lo.toRat + m) then none else
@@ -40,7 +56,7 @@ theorem etaGlobalMagnitude_sound {c : Ctx} {z : ℂ} {Z : CBox} {M : Dy}
       push_cast at hb
       exact hb
 
-def specialMagnitude (c : Ctx) (op : Unary) (Z : CBox) : Option Dy :=
+@[expose] public def specialMagnitude (c : Ctx) (op : Unary) (Z : CBox) : Option Dy :=
   match op with
   | .erf =>
     let y := Ival.abs Z.im

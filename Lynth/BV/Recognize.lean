@@ -1,5 +1,7 @@
+module
+
 import Lean
-import Lynth.BV.Blast
+import all Lynth.BV.Blast
 
 /-!
 Translation from Lean `BitVec` terms to `BvTerm` reified terms.

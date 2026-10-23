@@ -1,6 +1,11 @@
+module
+
+public import Lean.Elab.Tactic.Basic
+public import Lynth.Arith.Fourier
+
 import Lean
-import Lynth.Arith.Linear
-import Lynth.Arith.Fourier
+import all Lynth.Arith.Linear
+import all Lynth.Arith.Fourier
 
 /-!
 Translation from Lean `Int`/`Nat` comparisons to `Fourier.LeC` systems.
@@ -196,7 +201,7 @@ def negTerms (atoms : IO.Ref (Array Expr)) (k : Cmp) (a b : Expr)
 
 /-- Build the `≤` system from `Prop` hypotheses plus the negated goal.
 `none` ⟹ goal shape unsupported (other procedures take over). -/
-def buildSys : TacticM (Option (List Fourier.LeC)) := do
+public def buildSys : TacticM (Option (List Fourier.LeC)) := do
   let atoms ← IO.mkRef #[]
   let mut raw : Array LinTerm := #[]
   for decl in ← getLCtx do

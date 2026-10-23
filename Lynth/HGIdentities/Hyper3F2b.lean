@@ -1,8 +1,10 @@
+module
+
 import Mathlib
 import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
-import Lynth.HGIdentities.Common
-import Lynth.Hypergeometric
-import Lynth.ComplexFuncs
+import all Lynth.HGIdentities.Common
+import all Lynth.Hypergeometric
+import all Lynth.ComplexFuncs
 
 /-!
 # `₃F₂(-1/2, 1, 1; 1/2, 2; z) = -2√z artanh(√z)/3 + 2/3 - log(1-z)/(3z)`

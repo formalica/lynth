@@ -1,6 +1,8 @@
-import Lynth.Sat.Syntax
-import Lynth.Sat.Solver
-import Lynth.Sat.Cdcl
+module
+
+import all Lynth.Sat.Syntax
+import all Lynth.Sat.Solver
+import all Lynth.Sat.Cdcl
 
 /-!
 Propositional skeleton + Tseitin encoding into `Lynth.Sat.Syntax.CNF`.
@@ -14,7 +16,7 @@ UNSAT of `¬f`, exactly like a Z3 `check` on the negated goal.
 namespace Lynth.Sat.Encode
 
 /-- Propositional skeleton with `Nat`-indexed opaque atoms. -/
-inductive PropForm where
+public inductive PropForm where
   | atom : Nat → PropForm
   | tru : PropForm
   | fls : PropForm
@@ -78,7 +80,7 @@ def encodeNeg (f : PropForm) (nAtoms : Nat) : CNF :=
 (CDCL proves UNSAT of the negation within `fuel`).
 `none` (out of fuel) reads as `false`: inconclusive, never a
 false-positive. -/
-def isTautology (f : PropForm) (nAtoms : Nat) (fuel : Nat := 10000) : Bool :=
+public def isTautology (f : PropForm) (nAtoms : Nat) (fuel : Nat := 10000) : Bool :=
   match (Cdcl.cdclSolve (encodeNeg f nAtoms) fuel).result with
   | some .unsat => true
   | _ => false

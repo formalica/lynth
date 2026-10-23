@@ -1,9 +1,10 @@
 -- CDCL checks: unit cases, learned clauses, differential vs DPLL.
-import Lynth.Sat.Solver
-import Lynth.Sat.Cdcl
+module
+import Lynth
 
 open Lynth.Sat
 
+-- These internal checks load the full facade rather than a narrow implementation module.
 set_option maxHeartbeats 58 in
 /-- Project a CDCL result to `Bool` (`none` = out of fuel). -/
 def proj (o : Cdcl.CdclOut) : Option Bool :=

@@ -1,5 +1,21 @@
-import Lynth.Interval.Integral.Math.ComplexBranch
-import Lynth.Interval.Integral.Math.ComplexLemmasProofs
+module
+
+public import Batteries.Classes.RatCast
+public import Init.Control.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Option.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Basic.Real.Basic
+public import Lynth.Interval.Integral.Math.ComplexBranch
+public import Lynth.Interval.Integral.Math.ComplexClean
+public import Lynth.Interval.Integral.Math.ComplexIntegral
+public import Lynth.Interval.Integral.Math.Integrand
+public import Lynth.Interval.Integral.Math.NestedDefs
+public import Lynth.Interval.Integral.Math.NestedSyntax
+import all Lynth.Interval.Integral.Math.ComplexBranch
+import all Lynth.Interval.Integral.Math.ComplexLemmasProofs
 
 /-! Exact affine-phase antiderivatives used before complex quadrature.
 This mathematical syntax transformation has no numerical dependencies. -/
@@ -8,7 +24,7 @@ open Lynth.Interval.Integral.Nested
 
 /-- Return the intercept and slope of a real affine expression in level n.
 Coefficients contain no integrals and do not depend on the bound variable. -/
-def complexAffine (n : Nat) (e : NExpr) : Option (NExpr × NExpr) := do
+@[expose] public def complexAffine (n : Nat) (e : NExpr) : Option (NExpr × NExpr) := do
   if !e.uses n && !e.hasIntegral then return (e,.rat 0)
   match e with
   | .var i => if i == n then some (.rat 0,.rat 1) else none
@@ -30,7 +46,7 @@ def complexAffine (n : Nat) (e : NExpr) : Option (NExpr × NExpr) := do
       | _ => none
   | _ => none
 
-private def affinePrimitive (op : Unary) (a b p q : NExpr) : NExpr :=
+@[expose] public def affinePrimitive (op : Unary) (a b p q : NExpr) : NExpr :=
   let atA := add p (mul q a)
   let atB := add p (mul q b)
   let width := sub b a
@@ -46,7 +62,7 @@ private def affinePrimitive (op : Unary) (a b p q : NExpr) : NExpr :=
 
 /-- Linearity is applied only to finite interval integrals. A remaining
 integral retains its convergence obligation, even with a zero multiplier. -/
-def complexFinitePrimitive (n : Nat) (a b : NExpr) (f : NExpr) : NExpr :=
+@[expose] public def complexFinitePrimitive (n : Nat) (a b : NExpr) (f : NExpr) : NExpr :=
   match f with
   | .binary .add f g => add (complexFinitePrimitive n a b f) (complexFinitePrimitive n a b g)
   | .binary .sub f g => sub (complexFinitePrimitive n a b f) (complexFinitePrimitive n a b g)
@@ -66,7 +82,7 @@ def complexFinitePrimitive (n : Nat) (a b : NExpr) (f : NExpr) : NExpr :=
       else .integral .interval a b (.unary op f)
   | f => .integral .interval a b f
 
-def NExpr.reduceComplexIntegral (n : Nat) : NExpr → NExpr
+@[expose] public def NExpr.reduceComplexIntegral (n : Nat) : NExpr → NExpr
   | .unary op a => complexCleanUnary op (a.reduceComplexIntegral n)
   | .binary op a b => complexCleanBinary op (a.reduceComplexIntegral n) (b.reduceComplexIntegral n)
   | .pow a m => complexCleanPow (a.reduceComplexIntegral n) m
@@ -640,7 +656,7 @@ theorem NExpr.reduceComplexIntegral_sound {e : NExpr} {env : List ℝ}
         exact ⟨hc', hv'.trans hv⟩
     · exact integral_transfer hA hB hF h
 
-theorem NExpr.reduceComplexIntegral_result {e : NExpr} {q : ℚ} {tol : ℝ}
+public theorem NExpr.reduceComplexIntegral_result {e : NExpr} {q : ℚ} {tol : ℝ}
     (hs : e.scoped 0 = true)
     (h : (e.reduceComplexIntegral 0).Converges [] ∧
       |(e.reduceComplexIntegral 0).real []-(q:ℝ)| < tol) :

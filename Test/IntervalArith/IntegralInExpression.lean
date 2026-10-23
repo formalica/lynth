@@ -1,3 +1,4 @@
+module
 import Mathlib
 import Lynth
 
@@ -10,8 +11,12 @@ variable. Witness values are checked independently below each specification.
 
 
 open MeasureTheory
+local syntax (name := checkExpressionAxioms) "#check_expression_axioms " ident : command
+
 open Lean Elab Command in
-elab "#check_expression_axioms " decl:ident : command => do
+@[local command_elab checkExpressionAxioms]
+private meta def checkExpressionAxiomsImpl : CommandElab := fun stx => do
+  let decl := stx[1]
   let name ← liftCoreM <| realizeGlobalConstNoOverloadWithInfo decl
   let axioms ← Lean.collectAxioms name
   let standard := #[``propext, ``Classical.choice, ``Quot.sound]

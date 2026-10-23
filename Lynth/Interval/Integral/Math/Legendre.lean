@@ -1,4 +1,6 @@
-import Lynth.Interval.Integral.Math.IntgrlDefs
+module
+
+import all Lynth.Interval.Integral.Math.IntgrlDefs
 
 /-!
 P0: roots, weights and exactness. Send with IntgrlDefs.lean.

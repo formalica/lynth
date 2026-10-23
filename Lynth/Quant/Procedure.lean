@@ -1,8 +1,11 @@
+module
+
+public import Lean.Elab.Tactic.Basic
 import Lean
-import Lynth.Procedure
-import Lynth.Euf.Procedure
-import Lynth.Euf.Closure
-import Lynth.Quant.Trigger
+import all Lynth.Procedure
+import all Lynth.Euf.Procedure
+import all Lynth.Euf.Closure
+import all Lynth.Quant.Trigger
 
 /-!
 `Quant` procedure: E-matching ground instantiation for `∀`-hypotheses.
@@ -111,7 +114,7 @@ def tryAssert (fproof : Expr) (args : Array Expr)
 
 /-- E-matching round: instantiate all `∀`-hyps (capped), assert proven
 instances, return the count. Always yields (never closes the goal). -/
-def instantiate (maxInst : Nat := 6) : TacticM Nat := do
+public def instantiate (maxInst : Nat := 6) : TacticM Nat := do
   let hyps ← collectForalls
   if hyps.isEmpty then return 0
   let pool ← groundPool 64

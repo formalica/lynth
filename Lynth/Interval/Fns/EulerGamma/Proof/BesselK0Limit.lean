@@ -1,4 +1,6 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.BesselK0
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.BesselK0
 
 /-!
 # The limit `K0 x + log x → -γ` as `x → 0⁺`

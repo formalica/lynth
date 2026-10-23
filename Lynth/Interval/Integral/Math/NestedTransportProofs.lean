@@ -1,5 +1,7 @@
-import Lynth.Interval.Integral.Math.NestedSyntaxLemmas
-import Lynth.Interval.Integral.Math.NestedAnalysis
+module
+
+import all Lynth.Interval.Integral.Math.NestedSyntaxLemmas
+import all Lynth.Interval.Integral.Math.NestedAnalysis
 
 /-! Semantics of power regularization and the one-dimensional changes of
 variables used by `transformed`. -/
@@ -375,6 +377,7 @@ theorem power_sem (xs : List ℝ) (a b f : Expr) (m : Nat) (right : Bool) {t : �
     rw [mul_converges] at h'
     exact hE2 (hr.2 h'.2)
 
+set_option maxHeartbeats 400000 in
 theorem tail_sem (xs : List ℝ) (a b f : Expr) (how : Change)
     (hhow : how = .right ∨ how = .left) {t : ℝ} (ht : t ∈ Ioo (0:ℝ) 1) :
     (transformed xs.length how a b f).real (xs ++ [t]) =

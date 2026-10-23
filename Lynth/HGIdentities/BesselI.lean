@@ -1,7 +1,10 @@
+module
+
+import all Lynth.Analysis.ClassicalFunctions
 import Mathlib
 import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
-import Lynth.HGIdentities.Common
-import Lynth.Hypergeometric
+import all Lynth.HGIdentities.Common
+import all Lynth.Hypergeometric
 
 /-!
 # `₀F₁(; b; z) = z^{(1-b)/2} I_{b-1}(2 √z) Γ(b)`
@@ -22,9 +25,7 @@ open scoped Nat
 
 namespace Complex
 
-/-- The modified Bessel function of the first kind, defined by its classical series. -/
-noncomputable def besselI (ν w : ℂ) : ℂ :=
-  (w / 2) ^ ν * ∑' k : ℕ, (w ^ 2 / 4) ^ k / ((k ! : ℂ) * Gamma (ν + k + 1))
+
 
 /-- For order `0` the definition is the classical series `I₀(w) = ∑ₖ (w²/4)^k / (k!)²`. -/
 theorem besselI_zero (w : ℂ) :

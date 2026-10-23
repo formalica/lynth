@@ -1,7 +1,38 @@
-import Lynth.Interval.Fns.Trig
-import Lynth.Interval.Fns.Log
-import Lynth.Interval.Series.Arctan
-import Lynth.Interval.Series.AsyOps
+module
+
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Analysis.Complex.Trigonometric
+public import Mathlib.Analysis.SpecialFunctions.Arcosh
+public import Mathlib.Analysis.SpecialFunctions.Arsinh
+public import Mathlib.Analysis.SpecialFunctions.Artanh
+public import Mathlib.Analysis.SpecialFunctions.Log.Base
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.Exp
+public import Lynth.Interval.Fns.Log
+public import Lynth.Interval.Fns.Trig
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Series.Arctan
+public import Lynth.Interval.Series.AsyOps
+public import Lynth.Interval.Series.Tail
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Fns.Trig
+import all Lynth.Interval.Fns.Log
+import all Lynth.Interval.Series.Arctan
+import all Lynth.Interval.Series.AsyOps
 import Mathlib.Analysis.SpecialFunctions.Arsinh
 import Mathlib.Analysis.SpecialFunctions.Arcosh
 import Mathlib.Analysis.SpecialFunctions.Artanh
@@ -26,7 +57,7 @@ open Lynth.Interval Dy
 /-! ### arctan -/
 
 /-- `arctan z` for `z ∈ Z ⊆ [0, 1]` -/
-def atanUnit (w : Nat) (Z : Ival) : Ival :=
+@[expose] public def atanUnit (w : Nat) (Z : Ival) : Ival :=
   if Z.nonneg && Ival.leB Z Ival.one then
     let half := Ival.ofRat w (1 / 2)
     let Y := Ival.div w (Ival.sub w Z half) (Ival.add w Ival.one (Ival.mul w half Z))
@@ -59,14 +90,14 @@ theorem mem_atanUnit (w : Nat) {Z : Ival} {z : ℝ} (hz : z ∈ Z) : Real.arctan
     exact ⟨by simp [toReal_def]; linarith [(abs_le.1 this).1], by simp [toReal_def]; linarith [(abs_le.1 this).2]⟩
 
 /-- `π/2` -/
-def halfPi (c : Ctx) : Ival := Ival.divNat (c.prec + 8) c.pi 2
+@[expose] public def halfPi (c : Ctx) : Ival := Ival.divNat (c.prec + 8) c.pi 2
 
 theorem mem_halfPi {c : Ctx} (hc : c.Valid) : Real.pi / 2 ∈ halfPi c := by
   have := Ival.mem_divNat (p := c.prec + 8) hc.pi_mem (n := 2) (by norm_num)
   unfold halfPi; simpa using this
 
 /-- `arctan a` for `a ≥ 0` -/
-def atanNonneg (c : Ctx) (w : Nat) (a : Dy) : Ival :=
+@[expose] public def atanNonneg (c : Ctx) (w : Nat) (a : Dy) : Ival :=
   if Dy.leB a Dy.one then atanUnit w (Ival.pt a)
   else Ival.sub w (halfPi c) (atanUnit w (Ival.inv w (Ival.pt a)))
 
@@ -87,7 +118,7 @@ theorem mem_atanNonneg {c : Ctx} (hc : c.Valid) (w : Nat) {a : Dy} (ha : 0 ≤ a
     exact Ival.mem_sub (mem_halfPi hc) (mem_atanUnit w (Ival.mem_inv (Ival.mem_pt a)))
 
 /-- `arctan a` for a dyadic point -/
-def atanPt (c : Ctx) (w : Nat) (a : Dy) : Ival :=
+@[expose] public def atanPt (c : Ctx) (w : Nat) (a : Dy) : Ival :=
   if isNonneg a then atanNonneg c w a else Ival.neg (atanNonneg c w (Vendor.Dyadic.neg a))
 
 theorem mem_atanPt {c : Ctx} (hc : c.Valid) (w : Nat) (a : Dy) : Real.arctan a.toReal ∈ atanPt c w a := by
@@ -106,7 +137,7 @@ theorem mem_atanPt {c : Ctx} (hc : c.Valid) (w : Nat) (a : Dy) : Real.arctan a.t
     exact this
 
 /-- interval extension of `arctan` (monotone, bounded by `±2`) -/
-def atanIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def atanIval (c : Ctx) (X : Ival) : Ival :=
   let w := c.prec + 8
   ⟨some (match X.lo with | some a => ((atanPt c w a).lo).getD (Dy.ofInt (-2)) | none => Dy.ofInt (-2)),
    some (match X.hi with | some b => ((atanPt c w b).hi).getD (Dy.ofInt 2) | none => Dy.ofInt 2)⟩
@@ -132,10 +163,10 @@ theorem mem_atanIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X
       | some h => simp only [Option.getD_some]; exact le_trans hxb ((mem_atanPt hc _ b).2 h hh)
     · simp [toReal_def]; linarith [(abs_le.1 hb).2]
 
-@[lynth_cfn] def arctanR : Fn1 .real .real where
+@[expose, lynth_cfn] public def arctanR : Fn1 .real .real where
   name := "arctan"
   graph x y := y = Real.arctan x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := atanIval
   sound := fun _ _ _ _ hc hy hx => by obtain rfl := hy; exact mem_atanIval hc hx
   cost := 60
@@ -143,7 +174,7 @@ theorem mem_atanIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X
 /-! ### arcsin, arccos -/
 
 /-- `arcsin a` for a dyadic point -/
-def asinPt (c : Ctx) (w : Nat) (a : Dy) : Ival :=
+@[expose] public def asinPt (c : Ctx) (w : Nat) (a : Dy) : Ival :=
   if Dy.leB Dy.one a then halfPi c
   else if Dy.leB a (Dy.ofInt (-1)) then Ival.neg (halfPi c)
   else
@@ -171,7 +202,7 @@ theorem mem_asinPt {c : Ctx} (hc : c.Valid) (w : Nat) (a : Dy) : Real.arcsin a.t
     have hA := Ival.mem_pt a
     exact mem_atanIval hc (Ival.mem_div hA (Ival.mem_sqrt (Ival.mem_sub Ival.mem_one (Ival.mem_sq hA))))
 
-def asinIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def asinIval (c : Ctx) (X : Ival) : Ival :=
   let w := c.prec + 8
   ⟨some (match X.lo with | some a => ((asinPt c w a).lo).getD (Dy.ofInt (-2)) | none => Dy.ofInt (-2)),
    some (match X.hi with | some b => ((asinPt c w b).hi).getD (Dy.ofInt 2) | none => Dy.ofInt 2)⟩
@@ -203,18 +234,18 @@ theorem mem_asinIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X
       | some h => simp only [Option.getD_some]; exact le_trans hxb ((mem_asinPt hc _ b).2 h hh)
     · simp [toReal_def]; linarith [(abs_le.1 hb).2]
 
-@[lynth_cfn] def arcsinR : Fn1 .real .real where
+@[expose, lynth_cfn] public def arcsinR : Fn1 .real .real where
   name := "arcsin"
   graph x y := y = Real.arcsin x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := asinIval
   sound := fun _ _ _ _ hc hy hx => by obtain rfl := hy; exact mem_asinIval hc hx
   cost := 80
 
-@[lynth_cfn] def arccosR : Fn1 .real .real where
+@[expose, lynth_cfn] public def arccosR : Fn1 .real .real where
   name := "arccos"
   graph x y := y = Real.arccos x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c X := Ival.sub (c.prec + 8) (halfPi c) (asinIval c X)
   sound := fun _ _ _ _ hc hy hx => by
     obtain rfl := hy; rw [Real.arccos_eq_pi_div_two_sub_arcsin]
@@ -223,7 +254,7 @@ theorem mem_asinIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X
 
 /-! ### Hyperbolic functions -/
 
-def sinhIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def sinhIval (c : Ctx) (X : Ival) : Ival :=
   Ival.divNat (c.prec + 8) (Ival.sub (c.prec + 8) (expIval c X) (expIval c (Ival.neg X))) 2
 
 theorem mem_sinhIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) : Real.sinh x ∈ sinhIval c X := by
@@ -232,7 +263,7 @@ theorem mem_sinhIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) : Real.sinh x
     (Ival.mem_sub (p := c.prec + 8) (mem_expIval c hx) (mem_expIval c (Ival.mem_neg hx))) (n := 2) (by norm_num)
   unfold sinhIval; simpa using this
 
-def coshIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def coshIval (c : Ctx) (X : Ival) : Ival :=
   Ival.divNat (c.prec + 8) (Ival.add (c.prec + 8) (expIval c X) (expIval c (Ival.neg X))) 2
 
 theorem mem_coshIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) : Real.cosh x ∈ coshIval c X := by
@@ -241,36 +272,36 @@ theorem mem_coshIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) : Real.cosh x
     (Ival.mem_add (p := c.prec + 8) (mem_expIval c hx) (mem_expIval c (Ival.mem_neg hx))) (n := 2) (by norm_num)
   unfold coshIval; simpa using this
 
-@[lynth_cfn] def sinhR : Fn1 .real .real where
+@[expose, lynth_cfn] public def sinhR : Fn1 .real .real where
   name := "sinh"
   graph x y := y = Real.sinh x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := sinhIval
   sound := fun c _ _ _ _ hy hx => by obtain rfl := hy; exact mem_sinhIval c hx
   cost := 80
 
-@[lynth_cfn] def coshR : Fn1 .real .real where
+@[expose, lynth_cfn] public def coshR : Fn1 .real .real where
   name := "cosh"
   graph x y := y = Real.cosh x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := coshIval
   sound := fun c _ _ _ _ hy hx => by obtain rfl := hy; exact mem_coshIval c hx
   cost := 80
 
-@[lynth_cfn] def tanhR : Fn1 .real .real where
+@[expose, lynth_cfn] public def tanhR : Fn1 .real .real where
   name := "tanh"
   graph x y := y = Real.tanh x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c X := Ival.div (c.prec + 8) (sinhIval c X) (coshIval c X)
   sound := fun c _ _ _ _ hy hx => by
     obtain rfl := hy; rw [Real.tanh_eq_sinh_div_cosh]
     exact Ival.mem_div (mem_sinhIval c hx) (mem_coshIval c hx)
   cost := 160
 
-@[lynth_cfn] def arsinhR : Fn1 .real .real where
+@[expose, lynth_cfn] public def arsinhR : Fn1 .real .real where
   name := "arsinh"
   graph x y := y = Real.arsinh x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c X := let w := c.prec + 8
     logIval c (Ival.add w X (Ival.sqrt w (Ival.add w Ival.one (Ival.sq w X))))
   sound := fun _ _ _ _ hc hy hx => by
@@ -278,10 +309,10 @@ theorem mem_coshIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) : Real.cosh x
     exact mem_logIval hc (Ival.mem_add hx (Ival.mem_sqrt (Ival.mem_add Ival.mem_one (Ival.mem_sq hx))))
   cost := 80
 
-@[lynth_cfn] def arcoshR : Fn1 .real .real where
+@[expose, lynth_cfn] public def arcoshR : Fn1 .real .real where
   name := "arcosh"
   graph x y := y = Real.arcosh x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c X := let w := c.prec + 8
     logIval c (Ival.add w X (Ival.sqrt w (Ival.sub w (Ival.sq w X) Ival.one)))
   sound := fun _ _ _ _ hc hy hx => by
@@ -289,10 +320,10 @@ theorem mem_coshIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) : Real.cosh x
     exact mem_logIval hc (Ival.mem_add hx (Ival.mem_sqrt (Ival.mem_sub (Ival.mem_sq hx) Ival.mem_one)))
   cost := 80
 
-@[lynth_cfn] def artanhR : Fn1 .real .real where
+@[expose, lynth_cfn] public def artanhR : Fn1 .real .real where
   name := "artanh"
   graph x y := y = Real.artanh x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c X := let w := c.prec + 8
     logIval c (Ival.sqrt w (Ival.div w (Ival.add w Ival.one X) (Ival.sub w Ival.one X)))
   sound := fun _ _ _ _ hc hy hx => by
@@ -303,17 +334,17 @@ theorem mem_coshIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) : Real.cosh x
 
 /-! ### logb, rpow, sinc -/
 
-@[lynth_cfn] def logbR : Fn2 .real .real .real where
+@[expose, lynth_cfn] public def logbR : Fn2 .real .real .real where
   name := "logb"
   graph b x y := y = Real.logb b x
-  exu := exu_eq₂ _
+  exu := by exact exu_eq₂ _
   ev c B X := Ival.div (c.prec + 8) (logIval c X) (logIval c B)
   sound := fun _ _ _ _ _ _ hc hy hb hx => by
     obtain rfl := hy
     exact Ival.mem_div (mem_logIval hc hx) (mem_logIval hc hb)
   cost := 100
 
-def rpowIval (c : Ctx) (X Y : Ival) : Ival :=
+@[expose] public def rpowIval (c : Ctx) (X Y : Ival) : Ival :=
   if X.pos then expIval c (Ival.mul (c.prec + 8) (logIval c X) Y) else Ival.top
 
 theorem mem_rpowIval {c : Ctx} (hc : c.Valid) {x y : ℝ} {X Y : Ival} (hx : x ∈ X) (hy : y ∈ Y) :
@@ -327,7 +358,7 @@ theorem mem_rpowIval {c : Ctx} (hc : c.Valid) {x y : ℝ} {X Y : Ival} (hx : x �
 
 /-- AIA rule for `x ^ y` on `pow` values: constant exponent, or `(k + a)^(k + b)`-type
 self powers -/
-def rpowAsyPow (c : Ctx) (N a : ℕ) (α : ℚ) (I : Ival) (b : ℕ) (β : ℚ) (K : Ival) : RAsy :=
+@[expose] public def rpowAsyPow (c : Ctx) (N a : ℕ) (α : ℚ) (I : Ival) (b : ℕ) (β : ℚ) (K : Ival) : RAsy :=
   if β = 0 then
     match K.point? with
     | some s =>
@@ -343,7 +374,7 @@ def rpowAsyPow (c : Ctx) (N a : ℕ) (α : ℚ) (I : Ival) (b : ℕ) (β : ℚ) 
     | none => .top
   else .top
 
-def rpowAsy (c : Ctx) (N : ℕ) : RAsy → RAsy → RAsy
+@[expose] public def rpowAsy (c : Ctx) (N : ℕ) : RAsy → RAsy → RAsy
   | .pow a α I _, .pow b β K _ => rpowAsyPow c N a α I b β K
   | _, _ => .top
 
@@ -411,10 +442,10 @@ theorem rpowAsy_holds {c : Ctx} (hc : c.Valid) {N : ℕ} {A B : RAsy} {f g : ℕ
     | _ => trivial
   | _ => trivial
 
-@[lynth_cfn] def rpowR : Fn2 .real .real .real where
+@[expose, lynth_cfn] public def rpowR : Fn2 .real .real .real where
   name := "rpow"
   graph x y z := z = x ^ y
-  exu := exu_eq₂ _
+  exu := by exact exu_eq₂ _
   ev := rpowIval
   sound := fun _ _ _ _ _ _ hc hz hx hy => by obtain rfl := hz; exact mem_rpowIval hc hx hy
   cost := 100
@@ -423,14 +454,14 @@ theorem rpowAsy_holds {c : Ctx} (hc : c.Valid) {N : ℕ} {A B : RAsy} {f g : ℕ
     obtain rfl : h = fun k => f k ^ g k := funext fun k => hg k
     exact rpowAsy_holds hc hA hB
 
-def sincIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def sincIval (c : Ctx) (X : Ival) : Ival :=
   if X.pos || X.negv then Ival.div (c.prec + 8) (sinIval c X) X
   else unitIval
 
-@[lynth_cfn] def sincR : Fn1 .real .real where
+@[expose, lynth_cfn] public def sincR : Fn1 .real .real where
   name := "sinc"
   graph x y := y = Real.sinc x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := sincIval
   sound := fun c x _ X hc hy hx => by
     obtain rfl := hy

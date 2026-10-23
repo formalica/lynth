@@ -1,7 +1,38 @@
-import Lynth.Interval.Fns.Gamma
-import Lynth.Interval.Fns.Elem
-import Lynth.Interval.Fns.Trig
-import Lynth.Interval.Fns.Zeta
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.List.Basic
+public import Init.Data.List.BasicAux
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Field.Defs
+public import Mathlib.Algebra.Field.Rat
+public import Mathlib.Algebra.Order.Floor.Defs
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Algebra.Order.Ring.Unbundled.Rat
+public import Mathlib.Data.Rat.Defs
+public import Mathlib.Data.Rat.Floor
+public import Lynth.Interval.Core.Expr
+public import Lynth.Analysis.RealFunctions
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.Elem
+public import Lynth.Interval.Fns.Gamma
+public import Lynth.Interval.Fns.Log
+public import Lynth.Interval.Fns.Trig
+public import Lynth.Interval.Fns.Zeta
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Analysis.RealFunctions
+import all Lynth.Interval.Fns.Gamma
+import all Lynth.Interval.Fns.Elem
+import all Lynth.Interval.Fns.Trig
+import all Lynth.Interval.Fns.Zeta
 import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
 
 /-!
@@ -27,12 +58,7 @@ namespace Lynth.Interval.Fns
 
 open BigOperators
 
-namespace Real'
 
-/-- real digamma as a real-valued function (graph for the registry entry). -/
-noncomputable def digamma (s : ℝ) : ℝ := (Complex.digamma (s : ℂ)).re
-
-end Real'
 
 /-- shift sum `Σ_{k<n} 1/(x+k)` (what the evaluator subtracts). -/
 noncomputable def digShiftSum (x : ℝ) (n : Nat) : ℝ :=
@@ -545,7 +571,7 @@ theorem dig_refl (x : ℝ) (hx : x < 0) (hN : ∀ m : ℕ, x ≠ -(m : ℝ)) :
 
 /-- shift count clearing `X₀` above a rational lower bound
 (`⌈X₀ - loQ⌉` for positive gaps, `0` otherwise). -/
-def digShiftNumQ (X₀ : Nat) (loQ : ℚ) : Nat :=
+@[expose] public def digShiftNumQ (X₀ : Nat) (loQ : ℚ) : Nat :=
   if (X₀ : ℚ) - loQ ≤ 0 then 0
   else (((X₀ : ℚ) - loQ).num.toNat / (((X₀ : ℚ) - loQ).den : Nat) + 1)
 
@@ -609,7 +635,7 @@ theorem digShiftNumQ_ge (X₀ : Nat) (loQ : ℚ) :
     exact hle
 
 /-- pole test: the enclosure contains a nonpositive integer. -/
-def digHasPole (lo hi : Dy) : Bool :=
+@[expose] public def digHasPole (lo hi : Dy) : Bool :=
   decide (⌈lo.toRat⌉ ≤ ⌊hi.toRat⌋ ∧ ⌈lo.toRat⌉ ≤ 0)
 
 /-- a negative pole test rules out every `x = -m`. -/
@@ -635,18 +661,18 @@ theorem digHasPole_false {lo hi : Dy} (h : digHasPole lo hi = false) (x : ℝ)
   exact h' ⟨le_trans c1 c2, le_trans c1 (by omega)⟩
 
 /-- one Stirling correction `Q/(Y^{2k})` with exact rational `Q`. -/
-def digCorrTerm (c : Ctx) (Q : ℚ) (Y : Ival) (k : Nat) : Ival :=
+@[expose] public def digCorrTerm (c : Ctx) (Q : ℚ) (Y : Ival) (k : Nat) : Ival :=
   Ival.div c.prec (Ival.ofRat c.prec Q)
     (rpowIval c Y (Ival.ofRat c.prec ((2 * ((k : Nat) : ℚ)))))
 
 /-- interval for the tail scale (mirrors the analytic scale). -/
-def digTailIval (c : Ctx) (QT : ℚ) (Y : Ival) (K : Nat) : Ival :=
+@[expose] public def digTailIval (c : Ctx) (QT : ℚ) (Y : Ival) (K : Nat) : Ival :=
   Ival.div c.prec (Ival.ofRat c.prec QT)
     (rpowIval c Y (Ival.ofRat c.prec ((2 * (((K + 1 : Nat) : ℚ))))))
 
 /-- Stirling enclosure at `Y ∋ y` (log, half term, `K` corrections,
 widened by the interval tail). -/
-def digStirlingIval (c : Ctx) (Y : Ival) (L : List ℚ) (K : Nat) : Ival :=
+@[expose] public def digStirlingIval (c : Ctx) (Y : Ival) (L : List ℚ) (K : Nat) : Ival :=
   let logT := logIval c Y
   let halfT := Ival.div c.prec (Ival.ofRat c.prec 1)
     (Ival.mul c.prec (Ival.ofRat c.prec 2) Y)
@@ -660,7 +686,7 @@ def digStirlingIval (c : Ctx) (Y : Ival) (L : List ℚ) (K : Nat) : Ival :=
   | none => Ival.top
 
 /-- positive enclosure at `X ∋ x`: Stirling at `Y = X + n` minus shift. -/
-def digammaPosIval (c : Ctx) (X : Ival) (L : List ℚ) (n K : Nat) : Ival :=
+@[expose] public def digammaPosIval (c : Ctx) (X : Ival) (L : List ℚ) (n K : Nat) : Ival :=
   let Y := Ival.add c.prec X (Ival.ofRat c.prec (n : ℚ))
   let terms : List Ival := (List.range n).map fun k =>
     Ival.div c.prec (Ival.ofRat c.prec 1)
@@ -669,7 +695,7 @@ def digammaPosIval (c : Ctx) (X : Ival) (L : List ℚ) (n K : Nat) : Ival :=
 
 /-- reflection enclosure at `X ∋ x < 0`: positive path at `1-X` minus
 `π·cos(πx)/sin(πx)`. -/
-def digammaReflIval (c : Ctx) (X : Ival) (L : List ℚ) (n K : Nat) : Ival :=
+@[expose] public def digammaReflIval (c : Ctx) (X : Ival) (L : List ℚ) (n K : Nat) : Ival :=
   let oneSub := Ival.sub c.prec (Ival.ofRat c.prec 1) X
   let pos := digammaPosIval c oneSub L n K
   let pix := Ival.mul c.prec c.pi X
@@ -678,7 +704,7 @@ def digammaReflIval (c : Ctx) (X : Ival) (L : List ℚ) (n K : Nat) : Ival :=
 
 /-- dispatcher: poles/straddles/unbounded → `⊤`; `0 < lo` → shift+Stirling
 with adaptive `n`; `hi < 0` pole-free → reflection; else `⊤`. -/
-def digammaIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def digammaIval (c : Ctx) (X : Ival) : Ival :=
   match X.lo, X.hi with
   | some lo, some hi =>
     if digHasPole lo hi then Ival.top
@@ -990,10 +1016,10 @@ theorem digammaIval_sound (c : Ctx) (hc : c.Valid) (x : ℝ) (X : Ival)
           · rename_i hneg2
             exact Ival.mem_top _
 
-@[lynth_cfn] def digammaR : Fn1 .real .real where
+@[expose, lynth_cfn] public def digammaR : Fn1 .real .real where
   name := "digamma"
   graph x y := y = Real'.digamma x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c X := digammaIval c X
   sound := fun c x _ X hc hy hx => by
     obtain rfl := hy

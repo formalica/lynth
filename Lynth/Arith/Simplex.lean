@@ -1,3 +1,5 @@
+module
+
 
 
 /-!
@@ -188,7 +190,7 @@ def findRepair (s : State) : Option (Nat × Var × Var × Bool) :=
 /-- UNSAT explanation: lineage over the initial equations plus the
 conflicting bound situation. The checker (`Explain.checkExplanation`)
 re-derives everything; see there for the soundness argument. -/
-structure DdMExplanation where
+public structure DdMExplanation where
   combo : List Rat
   xi : Nat
   below : Bool
@@ -199,7 +201,7 @@ structure DdMExplanation where
   deriving Repr, DecidableEq
 
 /-- Check outcome: model, refutation with explanation, or unknown. -/
-inductive CheckOut where
+public inductive CheckOut where
   | sat : List Rat → CheckOut
   | unsat : DdMExplanation → CheckOut
   | unknown : CheckOut
@@ -258,12 +260,12 @@ def init (sys : List (List Rat × Rat)) (n : Nat) : State :=
     assign := Array.replicate total 0 }
 
 /-- Top-level: model on SAT, explanation on UNSAT, unknown on fuel. -/
-def solve (sys : List (List Rat × Rat)) (fuel : Nat := 1024) : CheckOut :=
+public def solve (sys : List (List Rat × Rat)) (fuel : Nat := 1024) : CheckOut :=
   let n := sys.foldl (fun m (cs, _) => Nat.max m cs.length) 0
   check (init sys n) n (n + sys.length) fuel
 
 /-- Model checker: every constraint satisfied. -/
-def checkModel (sys : List (List Rat × Rat)) (model : List Rat) : Bool :=
+public def checkModel (sys : List (List Rat × Rat)) (model : List Rat) : Bool :=
   sys.all fun (cs, c0) =>
     decide ((cs.zipIdx.foldl (fun acc (c, i) => acc + c * model.getD i 0) 0 + c0) ≤ 0)
 

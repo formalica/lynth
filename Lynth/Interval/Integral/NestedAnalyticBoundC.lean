@@ -1,12 +1,13 @@
-import Lynth.Interval.Integral.NestedAnalyticScaled
-import Lynth.Interval.Integral.Panel
+module
+
+import all Lynth.Interval.Integral.NestedAnalyticScaled
+import all Lynth.Interval.Integral.Panel
 
 /-! Analytic soundness of recursive complex bounds and their Bernstein ellipse extension. -/
 
 namespace Lynth.Interval.Integral.Nested.AnalyticWork
 open Intgrl Fns MeasureTheory Set Metric
 open scoped Topology
-open private unit from Lynth.Interval.Integral.NestedBounds
 
 set_option maxHeartbeats 3200000 in
 lemma boundC_analytic_model {c : Ctx} (hc : c.Valid) {S : Set ℂ} (hS : Convex ℝ S)

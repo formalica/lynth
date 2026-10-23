@@ -1,4 +1,6 @@
-import Lynth.Interval.Fns.EMCore.Gamma
+module
+
+import all Lynth.Interval.Fns.EMCore.Gamma
 
 /-!
 # Complex Stirling formula (exponential form) with explicit remainder

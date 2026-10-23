@@ -1,9 +1,11 @@
+module
+
 import Lean
-import Lynth.Procedure
-import Lynth.Sat.Solver
-import Lynth.Sat.Reconstruct
-import Lynth.Sat.Encode
-import Lynth.Sat.Abstract
+import all Lynth.Procedure
+import all Lynth.Sat.Solver
+import all Lynth.Sat.Reconstruct
+import all Lynth.Sat.Encode
+import all Lynth.Sat.Abstract
 
 /-!
 SAT procedure: Lean `Prop` skeleton → internal CNF → solver → proof.

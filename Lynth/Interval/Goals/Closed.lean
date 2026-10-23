@@ -1,5 +1,9 @@
-import Lynth.Interval.Check.Trust
-import Lynth.Interval.Reify.Reify
+module
+
+meta import all Lynth.Interval.Check.Trust
+import all Lynth.Interval.Check.Trust
+meta import all Lynth.Interval.Reify.Reify
+import all Lynth.Interval.Reify.Reify
 
 /-!
 # Closed propositions
@@ -8,6 +12,8 @@ import Lynth.Interval.Reify.Reify
 `PropExpr`, checked natively at increasing precision, and certified.
 See `docs/interval/05-point-goals.md §1`.
 -/
+
+meta section
 
 namespace Lynth.Interval.Goals
 

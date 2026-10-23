@@ -1,7 +1,6 @@
 -- FinSearch differential: encoder verdicts vs brute force, both directions.
-import Lynth.FinSearch.Syntax
-import Lynth.FinSearch.Encode
-import Lynth.Sat.Solver
+module
+import Lynth
 
 open Lynth.FinSearch
 open Lynth.FinSearch.Encode

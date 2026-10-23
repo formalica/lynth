@@ -1,11 +1,31 @@
-import Lynth.Interval.Integral.Eval
-import Lynth.Interval.Integral.Math.Oscillatory
+module
+
+public import Batteries.Classes.RatCast
+public import Init.Control.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Option.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Group.DivInvMonoid
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Algebra.Order.Ring.Unbundled.Rat
+public import Mathlib.Analysis.Complex.Trigonometric
+public import Mathlib.Basic.Real.Basic
+public import Mathlib.Data.Rat.Defs
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Integral.Math.Integrand
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Integral.Eval
+import all Lynth.Interval.Integral.Math.Oscillatory
 
 namespace Lynth.Interval.Integral
 
 open Intgrl
 
-def reciprocalSine (e : Term) : Option {ω : ℚ //
+@[expose] public def reciprocalSine (e : Term) : Option {ω : ℚ //
     ∀ x : ℝ, e.real x = Real.sin ((ω : ℝ)/x)} :=
   match e with
   | .unary .sin (.unary .inv .var) =>
@@ -14,12 +34,12 @@ def reciprocalSine (e : Term) : Option {ω : ℚ //
     some ⟨ω, by intro x; rfl⟩
   | _ => none
 
-structure OscillatoryModel (e : Term) where
+public structure OscillatoryModel (e : Term) where
   degree : ℕ
   frequency : ℚ
   agrees : ∀ x : ℝ, e.real x = x^degree * Real.sin ((frequency : ℝ)/x)
 
-def oscillatoryModel (e : Term) : Option (OscillatoryModel e) := do
+@[expose] public def oscillatoryModel (e : Term) : Option (OscillatoryModel e) := do
   match he : e with
   | .binary .mul .var s =>
     let ⟨ω,hω⟩ ← reciprocalSine s
@@ -40,7 +60,7 @@ def oscillatoryModel (e : Term) : Option (OscillatoryModel e) := do
 
 /-- A genuine integral enclosure, using cancellation rather than a
 pointwise enclosure. Only used on a panel whose left endpoint is zero. -/
-def oscillatoryPanel (c : Ctx) (e : Term) (a b : Dy) : Option Ival := do
+@[expose] public def oscillatoryPanel (c : Ctx) (e : Term) (a b : Dy) : Option Ival := do
   if !a.isZero || !b.isNonneg then none else do
     let m ← oscillatoryModel e
     if m.frequency == 0 || m.degree > 256 then none else do

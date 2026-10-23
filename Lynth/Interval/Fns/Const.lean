@@ -1,5 +1,13 @@
-import Lynth.Interval.Fns.Log
-import Lynth.Interval.Fns.EulerGamma.Eval
+module
+
+public import Init.Prelude
+public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.EulerGamma.Eval
+import all Lynth.Interval.Fns.Log
+import all Lynth.Interval.Fns.EulerGamma.Eval
 import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 
 /-!
@@ -55,10 +63,10 @@ def eulerIval (c : Ctx) : Ival := eulerIvalN c 128
 theorem mem_eulerIval {c : Ctx} (hc : c.Valid) : Real.eulerMascheroniConstant ∈ eulerIval c :=
   mem_eulerIvalN hc (by decide)
 
-@[lynth_cfn] def eulerR : Fn0 .real where
+@[expose, lynth_cfn] public def eulerR : Fn0 .real where
   name := "eulerMascheroni"
   graph y := y = Real.eulerMascheroniConstant
-  exu := exu_eq₀ _
+  exu := by exact exu_eq₀ _
   ev := eulerBMIval
   sound := fun _ _ hc hy => by obtain rfl := hy; exact mem_eulerBMIval hc
   cost := 400

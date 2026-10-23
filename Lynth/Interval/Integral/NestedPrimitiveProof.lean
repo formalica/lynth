@@ -1,5 +1,7 @@
-import Lynth.Interval.Integral.NestedBounds
-import Lynth.Interval.Integral.Math.NestedAnalysis
+module
+
+import all Lynth.Interval.Integral.NestedBounds
+import all Lynth.Interval.Integral.Math.NestedAnalysis
 
 /-! Real and complex arithmetic correctness for recursive range bounds. -/
 namespace Lynth.Interval.Integral.Nested

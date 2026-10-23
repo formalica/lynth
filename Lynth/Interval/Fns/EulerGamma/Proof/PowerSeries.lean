@@ -1,4 +1,6 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.Notation
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.Notation
 
 /-!
 # Entire power series and the derivatives of `bmB`, `bmA`

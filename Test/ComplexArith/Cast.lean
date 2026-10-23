@@ -1,5 +1,6 @@
+module
 import Mathlib
-import Lynth
+public import Lynth
 
 open Lynth.Interval
 
@@ -11,7 +12,7 @@ Tiny regression tests locking the `intCastC` / `natCastC` entries
 
 set_option maxHeartbeats 1397 in
 -- CCast1: `((-3 : ℤ) : ℂ)`. (-3, 0)
-def cx_int_cast : { p : Rat × Rat //
+public def cx_int_cast : { p : Rat × Rat //
     ‖((-3 : ℤ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
 /-- info: 'cx_int_cast' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -21,7 +22,7 @@ def cx_int_cast : { p : Rat × Rat //
 
 set_option maxHeartbeats 1319 in
 -- CCast2: `((7 : ℕ) : ℂ)`. (7, 0)
-def cx_nat_cast : { p : Rat × Rat //
+public def cx_nat_cast : { p : Rat × Rat //
     ‖((7 : ℕ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
 /-- info: 'cx_nat_cast' depends on axioms: [propext, Classical.choice, Quot.sound] -/

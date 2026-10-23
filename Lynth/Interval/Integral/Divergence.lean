@@ -1,6 +1,18 @@
-import Lynth.Interval.Integral.Cert
-import Lynth.Interval.Integral.Math.DivergenceRules
-import Lynth.Interval.Integral.SyntaxEq
+module
+
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Data.Zero
+public import Init.Prelude
+public import Mathlib.Basic.Real.Basic
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Integral.Eval
+public import Lynth.Interval.Integral.Math.DivergenceRules
+public import Lynth.Interval.Integral.Math.Integrand
+public import Lynth.Interval.Num.Ival
+import all Lynth.Interval.Integral.Cert
+import all Lynth.Interval.Integral.Math.DivergenceRules
+import all Lynth.Interval.Integral.SyntaxEq
 
 /-! Proof-producing divergence checks, separate from quadrature failure. -/
 
@@ -8,15 +20,15 @@ namespace Lynth.Interval.Integral
 
 open Intgrl
 
-def termEq (a b : Term) : Bool := a == b
+@[expose] public def termEq (a b : Term) : Bool := a == b
 
-def leTermCheck (c : Ctx) (A B : Term) : Bool :=
+@[expose] public def leTermCheck (c : Ctx) (A B : Term) : Bool :=
   termEq A B || Ival.leB (evalR c A Ival.zero) (evalR c B Ival.zero)
 
-def ltTermCheck (c : Ctx) (A B : Term) : Bool :=
+@[expose] public def ltTermCheck (c : Ctx) (A B : Term) : Bool :=
   Ival.ltB (evalR c A Ival.zero) (evalR c B Ival.zero)
 
-def conditionCheck (c : Ctx) (r : DivergenceRule) (kind : Region) (A B : Term) : Bool :=
+@[expose] public def conditionCheck (c : Ctx) (r : DivergenceRule) (kind : Region) (A B : Term) : Bool :=
   match r with
   | .invPower n =>
     if kind.isFinite then
@@ -34,7 +46,7 @@ def conditionCheck (c : Ctx) (r : DivergenceRule) (kind : Region) (A B : Term) :
     else true
   | _ => !kind.isFinite
 
-def divergenceCheck (c : Ctx) (e A B : Term) (kind : Region) : Bool :=
+@[expose] public def divergenceCheck (c : Ctx) (e A B : Term) (kind : Region) : Bool :=
   match classifyDivergence e with
   | some rule => conditionCheck c rule kind A B
   | none => false
@@ -98,7 +110,7 @@ theorem divergenceCheck_sound {c : Ctx} (hc : c.Valid) {e A B : Term} {kind : Re
     have hh : conditionCheck c rule kind A B = true := by simpa [divergenceCheck, he] using h
     exact divergenceRule_sound he (conditionCheck_sound hc hh)
 
-theorem not_converges_of_check {f : ℝ → ℝ} {a b : ℝ} {e A B : Term} {c : Ctx}
+public theorem not_converges_of_check {f : ℝ → ℝ} {a b : ℝ} {e A B : Term} {c : Ctx}
     {kind : Region} (hc : c.Valid) (hf : ∀ x, f x = e.real x)
     (ha : a = A.real 0) (hb : b = B.real 0)
     (h : divergenceCheck c e A B kind = true) :

@@ -1,7 +1,12 @@
-import Lynth.FinSearch.Syntax
-import Lynth.FinSearch.Detect
-import Lynth.Sat.Solver
-import Lynth.Sat.Cdcl
+module
+
+public import Lynth.FinSearch.Syntax
+public import Lynth.Sat.Syntax
+
+import all Lynth.FinSearch.Syntax
+import all Lynth.FinSearch.Detect
+import all Lynth.Sat.Solver
+import all Lynth.Sat.Cdcl
 import Batteries.Data.HashMap
 import Batteries.Lean.HashSet
 
@@ -247,7 +252,7 @@ waste decisions on Tseitin gates); gate variables come after.
 `extraCells` pre-allocates one-hot rows for cells hidden inside
 opaque theory atoms (their rows would otherwise be missing from
 the map the lazy loop uses to build blocking clauses). -/
-def runEncode (p : FProp) (maxVars : Nat := 8192)
+public def runEncode (p : FProp) (maxVars : Nat := 8192)
     (extraCells : List (Nat × Nat) := []) :
     Option (CNF × List ((Nat × Nat) × Nat) × Nat) :=
   -- simplify first (constant folding over ite-distribution debris;

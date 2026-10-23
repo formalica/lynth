@@ -1,5 +1,7 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.NumericalBounds
-import Lynth.Interval.Fns.EulerGamma.Proof.CoefficientSeries
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.NumericalBounds
+import all Lynth.Interval.Fns.EulerGamma.Proof.CoefficientSeries
 
 /-!
 # A finite sum estimate for the coefficients `c_j`

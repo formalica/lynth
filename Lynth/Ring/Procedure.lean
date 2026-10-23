@@ -1,6 +1,8 @@
+module
+
 import Lean
 import Mathlib.Tactic.Ring
-import Lynth.Procedure
+import all Lynth.Procedure
 
 /-!
 Ring-normalization procedure: semiring identities by `ring`.

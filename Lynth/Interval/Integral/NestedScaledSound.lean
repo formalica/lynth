@@ -1,10 +1,11 @@
-import Lynth.Interval.Integral.NestedRangeModel
+module
+
+import all Lynth.Interval.Integral.NestedRangeModel
 
 /-! Soundness and continuous real parameter dependence of the endpoint evaluator. -/
 namespace Lynth.Interval.Integral.Nested
 open Intgrl Fns MeasureTheory Set Filter
 open scoped Topology
-open private unit from Lynth.Interval.Integral.NestedBounds
 
 set_option maxHeartbeats 1600000 in
 theorem scaled_real_model {c : Ctx} (hc : c.Valid) {δ : Dy} {decay : Nat} {t : ℝ}

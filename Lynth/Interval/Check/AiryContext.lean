@@ -1,4 +1,6 @@
-import Lynth.Interval.Check.AiryProof
+module
+
+import all Lynth.Interval.Check.AiryProof
 
 open scoped Lynth.Interval.AiryProof.Kernel
 

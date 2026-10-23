@@ -1,4 +1,13 @@
-import Lynth.Interval.Series.Atanh
+module
+
+public import Init.Data.Int.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Series.Atanh
+public import Lynth.Interval.Series.Tail
+import all Lynth.Interval.Series.Atanh
 import Mathlib.Analysis.SpecialFunctions.Complex.Arctan
 import Mathlib.Analysis.Real.Pi.Bounds
 
@@ -25,11 +34,11 @@ theorem hasSum_arctan_real {x : ℝ} (hx : |x| < 1) :
   push_cast
   ring
 
-def arctanStep (w : Nat) (Z2 : Ival) (k : Nat) (T : Ival) : Ival :=
+@[expose] public def arctanStep (w : Nat) (Z2 : Ival) (k : Nat) (T : Ival) : Ival :=
   Ival.divNat w (Ival.mul w (Ival.mul w (Ival.neg T) Z2) (Ival.pt (Dy.ofNat (2 * k + 1)))) (2 * k + 3)
 
 /-- enclosure of `arctan z` for `z ∈ Z`, `|Z| ≤ 1/2` (else `[-2, 2]`) -/
-def arctanSeries (w : Nat) (Z : Ival) : Ival :=
+@[expose] public def arctanSeries (w : Nat) (Z : Ival) : Ival :=
   if smallHalf Z then
     (serLoop w (arctanStep w (Ival.sq w Z)) (smallT w) (w + 16) (SerState.start Z)).encl w (Dy.ofNat 2)
   else ⟨some (Dy.ofInt (-2)), some (Dy.ofInt 2)⟩
@@ -83,7 +92,7 @@ theorem mem_arctanSeries (w : Nat) {Z : Ival} {z : ℝ} (hz : z ∈ Z) :
     refine ⟨by simp [toReal_def]; linarith [(abs_le.1 this).1], by simp [toReal_def]; linarith [(abs_le.1 this).2]⟩
 
 /-- `π` to precision `p` by Machin's formula -/
-def piSeries (p : Nat) : Ival :=
+@[expose] public def piSeries (p : Nat) : Ival :=
   let w := p + 10
   let a := arctanSeries w (Ival.ofRat w (1 / 5))
   let b := arctanSeries w (Ival.ofRat w (1 / 239))

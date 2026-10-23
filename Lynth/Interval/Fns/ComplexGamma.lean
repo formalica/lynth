@@ -1,6 +1,32 @@
-import Lynth.Interval.Fns.EMCore.GammaLimit
-import Lynth.Interval.Fns.ComplexElem
-import Lynth.Interval.Fns.Gamma
+module
+
+public import Init.Data.Cast
+public import Init.Data.List.BasicAux
+public import Init.Data.Nat.Basic
+public import Init.Data.Rat.Basic
+public import Init.Data.Zero
+public import Init.Prelude
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Algebra.Order.Ring.Unbundled.Rat
+public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+public import Mathlib.Basic.Complex.Basic
+public import Mathlib.Data.Rat.Defs
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.ComplexElem
+public import Lynth.Interval.Fns.Gamma
+public import Lynth.Interval.Fns.Log
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Series.Tail
+import Mathlib
+import all Lynth.Interval.Fns.EMCore.GammaLimit
+import all Lynth.Interval.Fns.ComplexElem
+import all Lynth.Interval.Fns.Gamma
 
 /-!
 # Complex Gamma function via Stirling expansion over rectangles.
@@ -49,8 +75,8 @@ theorem stirling_Gamma_exp (w : ℂ) (hw : 0 < w.re) (N : ℕ) (hN : 1 ≤ N) :
   ⟨EMCore.gammaR w N, EMCore.gamma_eq_exp_stirlingPhi hw hN,
     (EMCore.gammaR_summable_bound hw hN).2⟩
 
-/-- info: 'Complex.stirling_Gamma_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+/-- info: '_private.Lynth.Interval.Fns.ComplexGamma.0.Complex.stirling_Gamma_exp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
 #print axioms Complex.stirling_Gamma_exp
 
 end Complex
@@ -62,11 +88,11 @@ open Lynth.Interval Dy
 /-! ### Complex rising factorial -/
 
 /-- `x·(x+1)·…·(x+r-1)` over `ℂ`. -/
-noncomputable def risingCx (x : ℂ) : Nat → ℂ
+@[expose] public noncomputable def risingCx (x : ℂ) : Nat → ℂ
   | 0 => 1
   | r + 1 => risingCx x r * (x + (r : ℂ))
 
-def risingC (w : Nat) (X : CBox) : Nat → CBox
+@[expose] public def risingC (w : Nat) (X : CBox) : Nat → CBox
   | 0 => ⟨Ival.one, Ival.zero⟩
   | r + 1 => CBox.mul w (risingC w X r)
       (CBox.add w X (CBox.ofReal (Ival.ofRat w (r : ℚ))))
@@ -125,7 +151,7 @@ theorem gamma_ne_zero_of_pos_re {s : ℂ} (h : 0 < s.re) :
 
 /-- `c_{M-j} + W2 * (c_{M-j+1} + …)`: Horner accumulator, `j` levels,
 same coefficients as the real `stirlingAcc`. -/
-def stirlingAccC (w : Nat) (W2 : CBox) (B : List ℚ) (M : Nat) : Nat → CBox
+@[expose] public def stirlingAccC (w : Nat) (W2 : CBox) (B : List ℚ) (M : Nat) : Nat → CBox
   | 0 => ⟨Ival.zero, Ival.zero⟩
   | j + 1 =>
     CBox.add w (CBox.ofReal (Ival.ofRat w (if M - j ≤ 24 then stirlingTable (M - j)
@@ -253,7 +279,7 @@ theorem stirling_tail_bridge (N : ℕ) (hN : 1 ≤ N) (z : ℂ) :
 /-! ### Stirling main term and tail -/
 
 /-- `(z-½) * log z - z + log √(2π)` over rectangles. -/
-def stirlingMainC (c : Ctx) (w : Nat) (Z : CBox) : CBox :=
+@[expose] public def stirlingMainC (c : Ctx) (w : Nat) (Z : CBox) : CBox :=
   let logZ := logBox c Z
   let sqrt2pi := Ival.sqrt w (Ival.mul w (Ival.ofRat w 2) c.pi)
   let logSqrt2pi := CBox.ofReal (logIval c sqrt2pi)
@@ -300,7 +326,7 @@ theorem mem_stirlingMainC {c : Ctx} (hc : c.Valid) {z : ℂ} {Z : CBox} (hx : z 
   exact h
 
 /-- interval containing the remainder bound `2|c_N| / ‖z‖^(2N-1)`. -/
-def stirlingTailRealC (w : Nat) (Z : CBox) (N : Nat) : Ival :=
+@[expose] public def stirlingTailRealC (w : Nat) (Z : CBox) (N : Nat) : Ival :=
   Ival.div w (Ival.ofRat w (2 * |stirlingCoeff N|)) (Ival.npow w (CBox.norm w Z) (2 * N - 1))
 
 theorem mem_stirlingTailRealC {w : Nat} {Z : CBox} {N : Nat} {z : ℂ}
@@ -316,7 +342,7 @@ theorem mem_stirlingTailRealC {w : Nat} {Z : CBox} {N : Nat} {z : ℂ}
 
 /-- interval enclosing the sector factor `(2‖z‖/(‖z‖+Re z))^N` (which is `1`
 on the real axis and `≥ 1` elsewhere). -/
-def secFactorC (w : Nat) (Z : CBox) (N : Nat) : Ival :=
+@[expose] public def secFactorC (w : Nat) (Z : CBox) (N : Nat) : Ival :=
   Ival.npow w
     (Ival.div w (Ival.mul w (Ival.ofRat w 2) (CBox.norm w Z))
       (Ival.add w (CBox.norm w Z) Z.re)) N
@@ -337,7 +363,7 @@ theorem mem_secFactorC {w : Nat} {Z : CBox} {N : Nat} {z : ℂ}
 
 /-- interval containing the corrected remainder bound
 `2|c_N| / ‖z‖^(2N-1) · (2‖z‖/(‖z‖+Re z))^N`. -/
-def stirlingTailC (w : Nat) (Z : CBox) (N : Nat) : Ival :=
+@[expose] public def stirlingTailC (w : Nat) (Z : CBox) (N : Nat) : Ival :=
   Ival.mul w (stirlingTailRealC w Z N) (secFactorC w Z N)
 
 theorem mem_stirlingTailC {w : Nat} {Z : CBox} {N : Nat} {z : ℂ}
@@ -348,7 +374,7 @@ theorem mem_stirlingTailC {w : Nat} {Z : CBox} {N : Nat} {z : ℂ}
   exact Ival.mem_mul (mem_stirlingTailRealC hx) (mem_secFactorC hx)
 
 /-- widen both components by a norm bound. -/
-def widenCBox (w : Nat) (B : CBox) (t : Option Dy) : CBox :=
+@[expose] public def widenCBox (w : Nat) (B : CBox) (t : Option Dy) : CBox :=
   match t with
   | some m => ⟨Ival.widen w B.re m, Ival.widen w B.im m⟩
   | none => CBox.top
@@ -371,7 +397,7 @@ theorem mem_widenCBox {w : Nat} {z v : ℂ} {B : CBox} {t : Option Dy} (hv : v �
 /-- `Γ` on `Z ∋ z` with `8 ≤ z.re`: exponent box (main + Horner sum widened
 by the corrected tail) mapped through `exp`.
 `B` is the shared Bernoulli list (`bernoulliList (2N)`). -/
-def logGammaC (c : Ctx) (w : Nat) (Z : CBox) (N : Nat) (B : List ℚ) : CBox :=
+@[expose] public def logGammaC (c : Ctx) (w : Nat) (Z : CBox) (N : Nat) (B : List ℚ) : CBox :=
   let Zinv := CBox.inv w Z
   let W2 := CBox.mul w Zinv Zinv
   let S := CBox.mul w Zinv (stirlingAccC w W2 B (N - 1) (N - 1))
@@ -430,7 +456,7 @@ theorem mem_logGammaC {c : Ctx} (hc : c.Valid) {w : Nat} {Z : CBox} {N : Nat} {z
 /-! ### Shifted evaluation (`8 ≤ Re` after shift) -/
 
 /-- `Γ` on boxes with known `Re` lower bound: shift, Stirling, unshift. -/
-def gammaPosC (c : Ctx) (X : CBox) : CBox :=
+@[expose] public def gammaPosC (c : Ctx) (X : CBox) : CBox :=
   let w := c.prec + 16
   let T := Nat.max 10 (w / 8)
   match X.re.lo with
@@ -479,7 +505,7 @@ theorem mem_gammaPosC {c : Ctx} (hc : c.Valid) {z : ℂ} {X : CBox}
 /-! ### Reflection for `Re < 1` -/
 
 /-- `Γ` via `Γ(s) = (π / sin(πs)) / Γ(1-s)`. -/
-def gammaReflC (c : Ctx) (X : CBox) : CBox :=
+@[expose] public def gammaReflC (c : Ctx) (X : CBox) : CBox :=
   let w := c.prec + 16
   let S := sinBox c (CBox.mul w (CBox.ofReal c.pi) X)
   let G := gammaPosC c (CBox.sub w (CBox.ofReal Ival.one) X)
@@ -512,7 +538,7 @@ theorem mem_gammaReflC {c : Ctx} (hc : c.Valid) {z : ℂ} {X : CBox}
 /-! ### Top-level dispatch: split `Re` at `0` -/
 
 /-- hull of two rectangles. -/
-def CBox.hull (A B : CBox) : CBox := ⟨Ival.hull A.re B.re, Ival.hull A.im B.im⟩
+@[expose] public def CBox.hull (A B : CBox) : CBox := ⟨Ival.hull A.re B.re, Ival.hull A.im B.im⟩
 
 theorem CBox.mem_hull_left {z : ℂ} {A B : CBox} (hx : z ∈ A) : z ∈ CBox.hull A B :=
   ⟨Ival.mem_hull_left hx.1, Ival.mem_hull_left hx.2⟩
@@ -521,10 +547,10 @@ theorem CBox.mem_hull_right {z : ℂ} {A B : CBox} (hx : z ∈ B) : z ∈ CBox.h
   ⟨Ival.mem_hull_right hx.1, Ival.mem_hull_right hx.2⟩
 
 /-- `X ∩ (Re ≤ 0)`. -/
-def negPartC (X : CBox) : CBox := ⟨negPart X.re, X.im⟩
+@[expose] public def negPartC (X : CBox) : CBox := ⟨negPart X.re, X.im⟩
 
 /-- `X ∩ (Re ≥ 0)`. -/
-def posPartC (X : CBox) : CBox := ⟨posPart X.re, X.im⟩
+@[expose] public def posPartC (X : CBox) : CBox := ⟨posPart X.re, X.im⟩
 
 theorem mem_negPartC {z : ℂ} {X : CBox} (hx : z ∈ X) (hx0 : z.re ≤ 0) :
     z ∈ negPartC X :=
@@ -536,7 +562,7 @@ theorem mem_posPartC {z : ℂ} {X : CBox} (hx : z ∈ X) (h0x : 0 ≤ z.re) :
 
 /-- `Γ` on any box: positive fast path, reflection below `Re = 1`,
 hull of the two pieces across `Re = 0` otherwise. -/
-def gammaCBox (c : Ctx) (X : CBox) : CBox :=
+@[expose] public def gammaCBox (c : Ctx) (X : CBox) : CBox :=
   if X.re.pos then gammaPosC c X
   else if hiLtOne X.re then gammaReflC c X
   else CBox.hull (gammaReflC c (negPartC X)) (gammaPosC c (posPartC X))
@@ -566,10 +592,10 @@ theorem mem_gammaCBox {c : Ctx} (hc : c.Valid) {z : ℂ} {X : CBox}
         exact CBox.mem_hull_left (mem_gammaReflC hc (mem_negPartC hx hx0) hne)
       · exact CBox.mem_hull_right (mem_gammaPosC hc (mem_posPartC hx h0x))
 
-@[lynth_cfn] def gammaC : Fn1 .cplx .cplx where
+@[expose, lynth_cfn] public def gammaC : Fn1 .cplx .cplx where
   name := "Complex.Gamma"
   graph x y := y = Complex.Gamma x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := gammaCBox
   sound := fun _ _ _ _ hc hy hx => by obtain rfl := hy; exact mem_gammaCBox hc hx
   cost := 500
@@ -577,7 +603,7 @@ theorem mem_gammaCBox {c : Ctx} (hc : c.Valid) {z : ℂ} {X : CBox}
 /-! ### Complex list sums -/
 
 /-- fold `CBox.add` over boxes. -/
-def csumC (w : Nat) : List CBox → CBox
+@[expose] public def csumC (w : Nat) : List CBox → CBox
   | [] => ⟨Ival.zero, Ival.zero⟩
   | B :: Bs => CBox.add w B (csumC w Bs)
 
@@ -634,21 +660,21 @@ theorem csumForall₂RangeLe {F : Nat → ℂ} {G : Nat → CBox} {K : Nat}
 /-! ### Small constant boxes -/
 
 /-- the constant `2` box. -/
-def twoC (w : Nat) : CBox := CBox.ofReal (Ival.ofRat w 2)
+@[expose] public def twoC (w : Nat) : CBox := CBox.ofReal (Ival.ofRat w 2)
 
 theorem mem_twoC {w : Nat} : (2 : ℂ) ∈ twoC w := by
   rw [twoC]
   simpa using CBox.mem_ofReal (Ival.mem_ofRat w (2 : ℚ))
 
 /-- the constant `6` box. -/
-def sixC (w : Nat) : CBox := CBox.ofReal (Ival.ofRat w 6)
+@[expose] public def sixC (w : Nat) : CBox := CBox.ofReal (Ival.ofRat w 6)
 
 theorem mem_sixC {w : Nat} : (6 : ℂ) ∈ sixC w := by
   rw [sixC]
   simpa using CBox.mem_ofReal (Ival.mem_ofRat w (6 : ℚ))
 
 /-- the constant `1` box. -/
-def oneCBox : CBox := ⟨Ival.one, Ival.zero⟩
+@[expose] public def oneCBox : CBox := ⟨Ival.one, Ival.zero⟩
 
 theorem mem_oneCBox : (1 : ℂ) ∈ oneCBox :=
   ⟨by rw [Complex.one_re]; exact Ival.mem_one,

@@ -1,5 +1,13 @@
-import Lynth.Interval.Core.Ctx
-import Lynth.Interval.Core.Asy
+module
+
+public import Init.Prelude
+public import Init.Tactics
+public import Mathlib.Basic.ExistsUnique
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Ty
+import all Lynth.Interval.Core.Ctx
+import all Lynth.Interval.Core.Asy
 
 /-!
 # Function records (the open registry's entries)
@@ -14,7 +22,7 @@ helper *function* would make the record noncomputable):
 @[lynth_cfn] def expFn : Fn1 .real .real where
   name := "exp"
   graph x y := y = Real.exp x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := expIval
   sound := fun c x y X hc hy hx => by cases hy; exact mem_expIval hc hx
 ```
@@ -34,7 +42,7 @@ theorem exu_eq₂ {α β γ : Type} (F : α → β → γ) : ∀ x y, ∃! z, z 
 theorem exu_eq₀ {β : Type} (b : β) : ∃! y, y = b := ⟨b, rfl, fun _ h => h⟩
 
 /-- nullary function (constant) -/
-structure Fn0 (r : Ty) where
+public structure Fn0 (r : Ty) where
   name : String
   graph : r.Val → Prop
   exu : ∃! y, graph y
@@ -43,7 +51,7 @@ structure Fn0 (r : Ty) where
   cost : Nat := 1
 
 /-- unary function -/
-structure Fn1 (a r : Ty) where
+public structure Fn1 (a r : Ty) where
   name : String
   graph : a.Val → r.Val → Prop
   exu : ∀ x, ∃! y, graph x y
@@ -58,7 +66,7 @@ structure Fn1 (a r : Ty) where
     intros; exact Ty.asyHolds_top _ _ _
 
 /-- binary function -/
-structure Fn2 (a b r : Ty) where
+public structure Fn2 (a b r : Ty) where
   name : String
   graph : a.Val → b.Val → r.Val → Prop
   exu : ∀ x y, ∃! z, graph x y z

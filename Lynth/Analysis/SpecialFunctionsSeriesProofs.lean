@@ -1,4 +1,6 @@
-import Lynth.Analysis.SpecialFunctions
+module
+
+import all Lynth.Analysis.SpecialFunctions
 
 /-! Convergence, analyticity and real/complex compatibility lemmas for the
 power series defining the special functions. Ported from the supplied proof

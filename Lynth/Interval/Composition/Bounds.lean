@@ -1,6 +1,59 @@
-import Lynth.Interval.Series.Cert
-import Lynth.Interval.Integral.NestedSound
-import Lynth.Interval.Integral.NestedSearch
+module
+
+public import Batteries.Classes.RatCast
+public import Init.Control.Basic
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.List.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Option.Basic
+public import Init.Data.Rat.Basic
+public import Init.Data.Zero
+public import Init.Prelude
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Algebra.Group.DivInvMonoid
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Analysis.InnerProductSpace.Defs
+public import Mathlib.Analysis.Normed.Group.Continuity
+public import Mathlib.Analysis.Normed.Group.Defs
+public import Mathlib.Analysis.Normed.Group.Real
+public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Basic.Real.Basic
+public import Mathlib.Data.Finset.Range
+public import Mathlib.Data.Set.Defs
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+public import Mathlib.MeasureTheory.MeasurableSpace.Defs
+public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+public import Mathlib.MeasureTheory.Measure.MeasureSpaceDef
+public import Mathlib.Order.Interval.Set.Defs
+public import Mathlib.Order.Interval.Set.UnorderedInterval
+public import Mathlib.Topology.Algebra.InfiniteSum.Defs
+public import Mathlib.Topology.Algebra.InfiniteSum.SummationFilter
+public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+public import Mathlib.Topology.UniformSpace.Defs
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Env
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.ExprAsy
+public import Lynth.Interval.Core.Prop
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.Elem
+public import Lynth.Interval.Integral.Math.NestedDefs
+public import Lynth.Interval.Integral.NestedCert
+public import Lynth.Interval.Integral.NestedExpr
+public import Lynth.Interval.Integral.NestedSound
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Series.AsyOps
+public import Lynth.Interval.Series.Cert
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Series.Cert
+import all Lynth.Interval.Integral.NestedSound
+import all Lynth.Interval.Integral.NestedSearch
 
 /-! Certified enclosures shared by arithmetic, integrals and series.
 Series parameters retain their interval bounds while the natural index varies.
@@ -10,7 +63,7 @@ open MeasureTheory
 
 namespace ParametricSeries
 
-def parameterAsy (σ : IEnv) : (t : Ty) → ℕ → t.Asy
+@[expose] public def parameterAsy (σ : IEnv) : (t : Ty) → ℕ → t.Asy
   | .nat, 0 => NAsy.affine 0
   | .nat, i+1 => encAsy .nat (σ.get .nat i)
   | t, i => encAsy t (σ.get t i)
@@ -36,7 +89,7 @@ namespace ParametricSeries
 -- AIA values of an argument list.
 mutual
 /-- AIA values of an argument list -/
-def asyArgs (c : Ctx) (N : ℕ) (σ : IEnv) : {tys : List Ty} → CArg tys → CAsy tys
+@[expose] public def asyArgs (c : Ctx) (N : ℕ) (σ : IEnv) : {tys : List Ty} → CArg tys → CAsy tys
   | _, .nil => .nil
   | (.nat :: _), .cons .nat x xs => .cons .nat (asy c N σ x) (asyArgs c N σ xs)
   | (.int :: _), .cons .int _ xs => .cons .int () (asyArgs c N σ xs)
@@ -46,7 +99,7 @@ def asyArgs (c : Ctx) (N : ℕ) (σ : IEnv) : {tys : List Ty} → CArg tys → C
   | (.list _ :: _), .cons _ _ xs => .cons _ () (asyArgs c N σ xs)
 
 /-- AIA evaluation -/
-def asy (c : Ctx) (N : ℕ) (σ : IEnv) : {t : Ty} → Expr t → t.Asy
+@[expose] public def asy (c : Ctx) (N : ℕ) (σ : IEnv) : {t : Ty} → Expr t → t.Asy
   | _, .lit q => RAsy.const (Ival.ofRat c.prec q)
   | _, .rlit _ => ()
   | _, .natLit n => NAsy.const n
@@ -102,13 +155,13 @@ end ParametricSeries
 
 namespace Composition
 
-def covers (X Y : Ival) : Bool :=
+@[expose] public def covers (X Y : Ival) : Bool :=
   (match Y.lo, X.lo with
     | none, _ => true | some a, some b => Dy.leB a b | _, _ => false) &&
   (match Y.hi, X.hi with
     | none, _ => true | some a, some b => Dy.leB b a | _, _ => false)
 
-theorem mem_of_covers {X Y : Ival} {x : ℝ} (hx : x ∈ X) (h : covers X Y = true) : x ∈ Y := by
+public theorem mem_of_covers {X Y : Ival} {x : ℝ} (hx : x ∈ X) (h : covers X Y = true) : x ∈ Y := by
   simp only [covers, Bool.and_eq_true] at h
   obtain ⟨hl, hu⟩ := h
   constructor
@@ -125,20 +178,20 @@ theorem mem_of_covers {X Y : Ival} {x : ℝ} (hx : x ∈ X) (h : covers X Y = tr
       have hb : b.toReal ≤ u.toReal := Dy.toReal_le_of_leB (by simpa [he, hX] using hu)
       exact (hx.2 b hX).trans hb
 
-def evalCheck (c : Ctx) (e : Expr .real) (σ : IEnv) (I : Ival) : Bool :=
+@[expose] public def evalCheck (c : Ctx) (e : Expr .real) (σ : IEnv) (I : Ival) : Bool :=
   covers (e.eval c σ) I
 
-theorem evalCheck_sound {c : Ctx} (hc : c.Valid) {e : Expr .real} {σ : IEnv} {ρ : SEnv}
+public theorem evalCheck_sound {c : Ctx} (hc : c.Valid) {e : Expr .real} {σ : IEnv} {ρ : SEnv}
     {x : ℝ} {I : Ival} (h : evalCheck c e σ I = true)
     (hσ : σ.Holds ρ) (hx : x = e.denote ρ) : x ∈ I := by
   rw [hx]
   exact mem_of_covers (Expr.eval_sound hc e hσ) h
 
-theorem propCheck_sound {c : Ctx} (hc : c.Valid) {p : PropExpr} {σ : IEnv} {ρ : SEnv}
+public theorem propCheck_sound {c : Ctx} (hc : c.Valid) {p : PropExpr} {σ : IEnv} {ρ : SEnv}
     {P : Prop} (h : p.check c σ = true)
     (hσ : σ.Holds ρ) (hp : P = p.denote ρ) : P := hp ▸ PropExpr.check_sound hc hσ h
 
-def seriesEncl (c : Ctx) (body : Expr .real) (σ : IEnv) (N : ℕ) : Option Ival := do
+@[expose] public def seriesEncl (c : Ctx) (body : Expr .real) (σ : IEnv) (N : ℕ) : Option Ival := do
   let T ← Series.tailEncl c N (ParametricSeries.asy c N σ body)
   return Ival.add c.prec ((Expr.sum .real (.natLit N) body).eval c σ) T
 
@@ -159,10 +212,10 @@ theorem seriesEncl_sound {c : Ctx} (hc : c.Valid) {body : Expr .real} {N : ℕ}
     rw [← hs'.sum_add_tsum_nat_add N]
     exact Ival.mem_add (Expr.eval_sound hc (Expr.sum .real (.natLit N) body) hσ) hm
 
-def seriesCheck (c : Ctx) (body : Expr .real) (σ : IEnv) (N : ℕ) (I : Ival) : Bool :=
+@[expose] public def seriesCheck (c : Ctx) (body : Expr .real) (σ : IEnv) (N : ℕ) (I : Ival) : Bool :=
   (seriesEncl c body σ N).any (fun S => covers S I)
 
-theorem seriesCheck_sound {c : Ctx} (hc : c.Valid) {body : Expr .real} {N : ℕ}
+public theorem seriesCheck_sound {c : Ctx} (hc : c.Valid) {body : Expr .real} {N : ℕ}
     {σ : IEnv} {ρ : SEnv} {f : ℕ → ℝ} {I : Ival}
     (h : seriesCheck c body σ N I = true)
     (hσ : σ.Holds ρ) (hf : ∀ k, f k = body.denote (ρ.push .nat k)) :
@@ -174,17 +227,17 @@ theorem seriesCheck_sound {c : Ctx} (hc : c.Valid) {body : Expr .real} {N : ℕ}
     have hh := seriesEncl_sound hc hσ he
     exact ⟨hh.1, mem_of_covers hh.2 (by simpa [seriesCheck, he] using h)⟩
 
-def integralEncl (c : Ctx) (e : Intgrl.NExpr) (env : Array Ival)
+@[expose] public def integralEncl (c : Ctx) (e : Intgrl.NExpr) (env : Array Ival)
     (cert : Integral.Nested.Cert) : Option Ival := do
   if !e.scoped env.size then none else do
     let memo ← Integral.Nested.replay c cert
     Integral.Nested.evalWith c memo e env
 
-def integralCheck (c : Ctx) (e : Intgrl.NExpr) (env : Array Ival)
+@[expose] public def integralCheck (c : Ctx) (e : Intgrl.NExpr) (env : Array Ival)
     (cert : Integral.Nested.Cert) (I : Ival) : Bool :=
   (integralEncl c e env cert).any (fun J => covers J I)
 
-theorem integralCheck_sound {c : Ctx} (hc : c.Valid) {e : Intgrl.NExpr}
+public theorem integralCheck_sound {c : Ctx} (hc : c.Valid) {e : Intgrl.NExpr}
     {env : Array Ival} {xs : List ℝ} {cert : Integral.Nested.Cert} {I : Ival}
     {x : ℝ} (h : integralCheck c e env cert I = true)
     (hx : Integral.Nested.EnvMem xs env) (he : x = e.real xs) : e.Converges xs ∧ x ∈ I := by
@@ -202,28 +255,28 @@ theorem integralCheck_sound {c : Ctx} (hc : c.Valid) {e : Intgrl.NExpr}
           (by simpa using hs) hx hv
         exact ⟨hh.1, he ▸ mem_of_covers hh.2 (by simpa [hr,hv] using h)⟩
 
-theorem sum_zero (f : ℕ → ℝ) : (∑ k ∈ Finset.range 0, f k) = 0 := by simp
+public theorem sum_zero (f : ℕ → ℝ) : (∑ k ∈ Finset.range 0, f k) = 0 := by simp
 
 theorem sum_step (f : ℕ → ℝ) (n : ℕ) {x y : ℝ}
     (hx : (∑ k ∈ Finset.range n, f k) = x) (hy : f n = y) :
     (∑ k ∈ Finset.range (n+1), f k) = x+y := by rw [Finset.sum_range_succ, hx, hy]
 
-theorem sum_one (f : ℕ → ℝ) {x : ℝ} (hx : f 0 = x) :
+public theorem sum_one (f : ℕ → ℝ) {x : ℝ} (hx : f 0 = x) :
     (∑ k ∈ Finset.range 1, f k) = x := by simpa only [Finset.sum_range_one] using hx
 
-theorem sum_split (f : ℕ → ℝ) (m n : ℕ) {x y : ℝ}
+public theorem sum_split (f : ℕ → ℝ) (m n : ℕ) {x y : ℝ}
     (hx : (∑ k ∈ Finset.range m, f k) = x)
     (hy : (∑ k ∈ Finset.range n, f (m + k)) = y) :
     (∑ k ∈ Finset.range (m + n), f k) = x + y := by
   rw [Finset.sum_range_add, hx, hy]
 
-theorem affine_integral (f : ℝ → ℝ) (a b : ℝ) :
+public theorem affine_integral (f : ℝ → ℝ) (a b : ℝ) :
     (∫ x in a..b, f x) = ∫ t in (0:ℝ)..1, (b - a) * f (a + (b - a) * t) := by
   rw [intervalIntegral.integral_const_mul]
   simpa [smul_eq_mul] using
     (intervalIntegral.smul_integral_comp_add_mul (f := f) (a := (0:ℝ)) (b := 1) (b-a) a).symm
 
-theorem panel (prec : Nat) {f : ℝ → ℝ} {a b : ℚ} {I : Ival} {lo hi : Dy}
+public theorem panel (prec : Nat) {f : ℝ → ℝ} {a b : ℚ} {I : Ival} {lo hi : Dy}
     (hm : Measurable f) (hab : a ≤ b)
     (hf : ∀ x ∈ Set.Icc (a : ℝ) b, f x ∈ I) (hlo : I.lo = some lo) (hhi : I.hi = some hi) :
     IntervalIntegrable f volume a b ∧
@@ -249,7 +302,7 @@ theorem panel (prec : Nat) {f : ℝ → ℝ} {a b : ℚ} {I : Ival} {lo hi : Dy}
     have he := Ival.mem_mul (p := prec) (Ival.mem_ofRat prec (b-a)) hq
     simpa only [Rat.cast_sub, mul_div_cancel₀ _ (ne_of_gt hp)] using he
 
-theorem join (prec : Nat) {f : ℝ → ℝ} {a m b : ℚ} {I J : Ival}
+public theorem join (prec : Nat) {f : ℝ → ℝ} {a m b : ℚ} {I J : Ival}
     (h1 : IntervalIntegrable f volume a m ∧ (∫ x in (a : ℝ)..m, f x) ∈ I)
     (h2 : IntervalIntegrable f volume m b ∧ (∫ x in (m : ℝ)..b, f x) ∈ J) :
     IntervalIntegrable f volume a b ∧
@@ -258,14 +311,14 @@ theorem join (prec : Nat) {f : ℝ → ℝ} {a m b : ℚ} {I J : Ival}
   rw [← intervalIntegral.integral_add_adjacent_intervals h1.1 h2.1]
   exact Ival.mem_add h1.2 h2.2
 
-theorem unit_panel {f : ℝ → ℝ} {I : Ival}
+public theorem unit_panel {f : ℝ → ℝ} {I : Ival}
     (h : IntervalIntegrable f volume ((0 : ℚ) : ℝ) ((1 : ℚ) : ℝ) ∧
       (∫ x in ((0 : ℚ) : ℝ)..((1 : ℚ) : ℝ), f x) ∈ I) :
     IntervalIntegrable f volume 0 1 ∧ (∫ x in (0 : ℝ)..1, f x) ∈ I := by
   simpa only [Rat.cast_zero, Rat.cast_one] using h
 
 
-theorem hull_between {a b x : ℝ} {A B : Ival} (ha : a ∈ A) (hb : b ∈ B)
+public theorem hull_between {a b x : ℝ} {A B : Ival} (ha : a ∈ A) (hb : b ∈ B)
     (hx : x ∈ Set.uIcc a b) : x ∈ Ival.hull A B := by
   have h1 := Ival.mem_hull_left (J := B) ha
   have h2 := Ival.mem_hull_right (I := A) hb
@@ -273,7 +326,7 @@ theorem hull_between {a b x : ℝ} {A B : Ival} (ha : a ∈ A) (hb : b ∈ B)
   · exact ⟨fun l hl => (h1.1 l hl).trans h.1, fun u hu => h.2.trans (h2.2 u hu)⟩
   · exact ⟨fun l hl => (h2.1 l hl).trans h.1, fun u hu => h.2.trans (h1.2 u hu)⟩
 
-theorem lengthCheck_sound (prec : Nat) {a b : ℝ} {A B : Ival} {L : Dy}
+public theorem lengthCheck_sound (prec : Nat) {a b : ℝ} {A B : Ival} {L : Dy}
     (h : Ival.leB (Ival.abs (Ival.sub prec B A)) (Ival.pt L) = true)
     (ha : a ∈ A) (hb : b ∈ B) : |b - a| ≤ L.toReal :=
   Ival.le_of_leB (Ival.mem_abs (Ival.mem_sub (p := prec) hb ha)) (Ival.mem_pt L) h
@@ -310,16 +363,16 @@ theorem integral_geo (prec : Nat) {f : ℕ → ℝ → ℝ} {a b : ℝ} {N : ℕ
       _ ≤ (Dy.mulU prec L M).toReal * R.toReal ^ (k-N) :=
         mul_le_mul_of_nonneg_right (Dy.le_mulU_toReal prec L M) hp
 
-def symmetric (D : Dy) : Ival := ⟨some D.neg, some D⟩
+@[expose] public def symmetric (D : Dy) : Ival := ⟨some D.neg, some D⟩
 
-def integralAsy (prec : Nat) (L : Dy) : RAsy → RAsy
+@[expose] public def integralAsy (prec : Nat) (L : Dy) : RAsy → RAsy
   | .geo M R => if Dy.isNonneg M && Dy.isNonneg R then .geo (Dy.mulU prec L M) R else .top
   | .pow a α I _ => match (Ival.abs I).hi with
     | some B => let K := symmetric (Dy.mulU prec L B); .pow a α K (Ival.abs K)
     | none => .top
   | _ => .top
 
-theorem integralAsy_sound (prec : Nat) {f : ℕ → ℝ → ℝ} {a b : ℕ → ℝ}
+public theorem integralAsy_sound (prec : Nat) {f : ℕ → ℝ → ℝ} {a b : ℕ → ℝ}
     {D : Ival} {N : ℕ} {L : Dy} {A : RAsy}
     (_hm : ∀ k, Measurable (f k)) (hL : ∀ k, N ≤ k → |b k - a k| ≤ L.toReal)
     (hd : ∀ k, N ≤ k → ∀ x ∈ Set.uIcc (a k) (b k), x ∈ D)
@@ -385,7 +438,7 @@ theorem integralAsy_sound (prec : Nat) {f : ℕ → ℝ → ℝ} {a b : ℕ → 
         simpa [symmetric,Ival.mem_def,Ival.LoLe,Ival.LeHi,Dy.toReal_def] using abs_le.mp hv
       exact ⟨hpos,v,hmK,Ival.mem_abs hmK,(mul_div_cancel₀ _ hw.ne').symm⟩
 
-theorem asy_source {c : Ctx} (hc : c.Valid) (body : Expr .real) {σ : IEnv} {ρ : SEnv}
+public theorem asy_source {c : Ctx} (hc : c.Valid) (body : Expr .real) {σ : IEnv} {ρ : SEnv}
     {f : ℕ → ℝ} (N : ℕ) (hσ : σ.Holds ρ)
     (hf : ∀ k, f k = body.denote (ρ.push .nat k)) :
     (ParametricSeries.asy c N σ body).Holds N f := by
@@ -393,7 +446,7 @@ theorem asy_source {c : Ctx} (hc : c.Valid) (body : Expr .real) {σ : IEnv} {ρ 
 
 /-- A uniform real enclosure for all indices in a certified sequence tail.
 This is used for bounds of integration that depend on the summation index. -/
-def uniformEncl (c : Ctx) (N : ℕ) : RAsy → Option Ival
+@[expose] public def uniformEncl (c : Ctx) (N : ℕ) : RAsy → Option Ival
   | .geo M R =>
     if Dy.isNonneg M && Dy.isNonneg R && Dy.leB R Dy.one then some (symmetric M) else none
   | .pow a α I _ =>
@@ -453,10 +506,10 @@ theorem uniformEncl_sound {c : Ctx} (hc : c.Valid) {N : ℕ} {f : ℕ → ℝ} {
         exact Ival.mem_mul hu hw
       · cases he
 
-def uniformCheck (c : Ctx) (N : ℕ) (A : RAsy) (I : Ival) : Bool :=
+@[expose] public def uniformCheck (c : Ctx) (N : ℕ) (A : RAsy) (I : Ival) : Bool :=
   (uniformEncl c N A).any (fun T => covers T I)
 
-theorem uniformCheck_sound {c : Ctx} (hc : c.Valid) {N : ℕ} {f : ℕ → ℝ} {A : RAsy}
+public theorem uniformCheck_sound {c : Ctx} (hc : c.Valid) {N : ℕ} {f : ℕ → ℝ} {A : RAsy}
     {I : Ival} (h : uniformCheck c N A I = true) (ha : A.Holds N f) :
     ∀ k, N ≤ k → f k ∈ I := by
   cases he : uniformEncl c N A with
@@ -465,10 +518,10 @@ theorem uniformCheck_sound {c : Ctx} (hc : c.Valid) {N : ℕ} {f : ℕ → ℝ} 
     intro k hk
     exact mem_of_covers (uniformEncl_sound hc ha he k hk) (by simpa [uniformCheck,he] using h)
 
-def modelTailCheck (c : Ctx) (N : ℕ) (A : RAsy) (I : Ival) : Bool :=
+@[expose] public def modelTailCheck (c : Ctx) (N : ℕ) (A : RAsy) (I : Ival) : Bool :=
   (Series.tailEncl c N A).any (fun T => covers T I)
 
-theorem modelTailCheck_sound {c : Ctx} (hc : c.Valid) {N : ℕ} {f : ℕ → ℝ}
+public theorem modelTailCheck_sound {c : Ctx} (hc : c.Valid) {N : ℕ} {f : ℕ → ℝ}
     {A : RAsy} {I : Ival} (h : modelTailCheck c N A I = true) (ha : A.Holds N f) :
     Summable (fun j => f (j + N)) ∧ (∑' j, f (j + N)) ∈ I := by
   cases he : Series.tailEncl c N A with
@@ -477,26 +530,26 @@ theorem modelTailCheck_sound {c : Ctx} (hc : c.Valid) {N : ℕ} {f : ℕ → ℝ
     have ht := Series.tailEncl_sound hc ha he
     exact ⟨ht.1,mem_of_covers ht.2 (by simpa [modelTailCheck,he] using h)⟩
 
-theorem model_add (p N : ℕ) {f g : ℕ → ℝ} {A B : RAsy}
+public theorem model_add (p N : ℕ) {f g : ℕ → ℝ} {A B : RAsy}
     (ha : A.Holds N f) (hb : B.Holds N g) :
     (RAsy.add p N A B).Holds N (fun k => f k + g k) := RAsy.add_holds ha hb
 
-theorem model_mul (p N : ℕ) {f g : ℕ → ℝ} {A B : RAsy}
+public theorem model_mul (p N : ℕ) {f g : ℕ → ℝ} {A B : RAsy}
     (ha : A.Holds N f) (hb : B.Holds N g) :
     (RAsy.mul p N A B).Holds N (fun k => f k * g k) := RAsy.mul_holds ha hb
 
-theorem model_inv (p N : ℕ) {f : ℕ → ℝ} {A : RAsy} (ha : A.Holds N f) :
+public theorem model_inv (p N : ℕ) {f : ℕ → ℝ} {A : RAsy} (ha : A.Holds N f) :
     (RAsy.inv p A).Holds N (fun k => (f k)⁻¹) := RAsy.inv_holds ha
 
 theorem model_pow (p N n : ℕ) {f : ℕ → ℝ} {A : RAsy} (ha : A.Holds N f) :
     (RAsy.npowC p n A).Holds N (fun k => f k ^ n) := RAsy.npowC_holds ha
 
 /-- Compose powers through multiplication, including geometric tail models. -/
-def powerModel (p N : ℕ) (A : RAsy) : ℕ → RAsy
+@[expose] public def powerModel (p N : ℕ) (A : RAsy) : ℕ → RAsy
   | 0 => RAsy.const Ival.one
   | n + 1 => RAsy.mul p N (powerModel p N A n) A
 
-theorem powerModel_sound (p N n : ℕ) {f : ℕ → ℝ} {A : RAsy} (ha : A.Holds N f) :
+public theorem powerModel_sound (p N n : ℕ) {f : ℕ → ℝ} {A : RAsy} (ha : A.Holds N f) :
     (powerModel p N A n).Holds N (fun k => f k ^ n) := by
   induction n with
   | zero =>
@@ -505,11 +558,11 @@ theorem powerModel_sound (p N n : ℕ) {f : ℕ → ℝ} {A : RAsy} (ha : A.Hold
   | succ n ih =>
     simpa only [powerModel, pow_succ] using (RAsy.mul_holds (p := p) ih ha)
 
-theorem model_eq {N : ℕ} {f g : ℕ → ℝ} {A : RAsy}
+public theorem model_eq {N : ℕ} {f g : ℕ → ℝ} {A : RAsy}
     (ha : A.Holds N g) (he : ∀ k, f k = g k) : A.Holds N f :=
   RAsy.holds_congr ha (fun k _ => (he k).symm)
 
-theorem prefix_tail (prec : Nat) {f : ℕ → ℝ} {N : ℕ} {P T : Ival}
+public theorem prefix_tail (prec : Nat) {f : ℕ → ℝ} {N : ℕ} {P T : Ival}
     (hp : (∑ k ∈ Finset.range N, f k) ∈ P)
     (ht : Summable (fun j => f (j + N)) ∧ (∑' j, f (j + N)) ∈ T) :
     Summable f ∧ (∑' k, f k) ∈ Ival.add prec P T := by
@@ -518,14 +571,14 @@ theorem prefix_tail (prec : Nat) {f : ℕ → ℝ} {N : ℕ} {P T : Ival}
   rw [← hs.sum_add_tsum_nat_add N]
   exact Ival.mem_add hp ht.2
 
-theorem pushReal {σ : IEnv} {ρ : SEnv} {x : ℝ} {I : Ival}
+public theorem pushReal {σ : IEnv} {ρ : SEnv} {x : ℝ} {I : Ival}
     (h : σ.Holds ρ) (hx : x ∈ I) : (σ.push .real I).Holds (ρ.push .real x) :=
   h.push (t := .real) hx
 
-theorem mem_box (prec : Nat) {a b : ℚ} {x : ℝ} (hx : x ∈ Set.Icc (a : ℝ) b) :
+public theorem mem_box (prec : Nat) {a b : ℚ} {x : ℝ} (hx : x ∈ Set.Icc (a : ℝ) b) :
     x ∈ Ival.ofRats prec a b := Ival.mem_ofRats hx.1 hx.2
 
-theorem integralConverges {k : Intgrl.NDomain} {A B E : Intgrl.NExpr} {xs : List ℝ}
+public theorem integralConverges {k : Intgrl.NDomain} {A B E : Intgrl.NExpr} {xs : List ℝ}
     {f : ℝ → ℝ} {a b : ℝ}
     (h : (Intgrl.NExpr.integral k A B E).Converges xs)
     (hf : ∀ x, f x = E.real (xs ++ [x])) (ha : a = A.real xs) (hb : b = B.real xs) :
@@ -534,7 +587,7 @@ theorem integralConverges {k : Intgrl.NDomain} {A B E : Intgrl.NExpr} {xs : List
   subst a; subst b
   exact h.2.2.1
 
-theorem affine_integrable {f : ℝ → ℝ} {a b : ℝ}
+public theorem affine_integrable {f : ℝ → ℝ} {a b : ℝ}
     (h : IntervalIntegrable (fun t => (b - a) * f (a + (b - a) * t)) volume 0 1) :
     IntervalIntegrable f volume a b := by
   by_cases he : b-a = 0
@@ -549,10 +602,10 @@ theorem affine_integrable {f : ℝ → ℝ} {a b : ℝ}
     simpa [sub_eq_add_neg, add_assoc] using hh
 
 
-def remainderCheck (c : Ctx) (body : Expr .real) (σ : IEnv) (N : ℕ) (I : Ival) : Bool :=
+@[expose] public def remainderCheck (c : Ctx) (body : Expr .real) (σ : IEnv) (N : ℕ) (I : Ival) : Bool :=
   (Series.tailEncl c N (ParametricSeries.asy c N σ body)).any (fun T => covers T I)
 
-theorem remainderCheck_sound {c : Ctx} (hc : c.Valid) {body : Expr .real} {σ : IEnv}
+public theorem remainderCheck_sound {c : Ctx} (hc : c.Valid) {body : Expr .real} {σ : IEnv}
     {ρ : SEnv} {f : ℕ → ℝ} {N : ℕ} {I : Ival}
     (h : remainderCheck c body σ N I = true) (hσ : σ.Holds ρ)
     (hf : ∀ k, f k = body.denote (ρ.push .nat k)) :
@@ -567,11 +620,11 @@ theorem remainderCheck_sound {c : Ctx} (hc : c.Valid) {body : Expr .real} {σ : 
     rw [← hs'.sum_add_tsum_nat_add N,add_sub_cancel_left]
     exact mem_of_covers hm (by simpa [remainderCheck,he] using h)
 
-theorem rewrite_remainder {f g h : ℝ → ℝ} {a b : ℝ} {T : Ival} (he : g = h)
+public theorem rewrite_remainder {f g h : ℝ → ℝ} {a b : ℝ} {T : Ival} (he : g = h)
     (hb : ∀ x ∈ Set.uIcc a b, f x - g x ∈ T) :
     ∀ x ∈ Set.uIcc a b, f x - h x ∈ T := by simpa [he] using hb
 
-theorem integral_remainder (prec : Nat) {f p : ℝ → ℝ} {a b : ℝ} {I T : Ival} {B L : Dy}
+public theorem integral_remainder (prec : Nat) {f p : ℝ → ℝ} {a b : ℝ} {I T : Ival} {B L : Dy}
     (hm : Measurable f) (hmp : Measurable p) (hip : IntervalIntegrable p volume a b)
     (hp : (∫ x in a..b, p x) ∈ I) (hL : |b - a| ≤ L.toReal)
     (hb : ∀ x ∈ Set.uIcc a b, f x - p x ∈ T)
@@ -595,51 +648,51 @@ theorem integral_remainder (prec : Nat) {f p : ℝ → ℝ} {a b : ℝ} {I T : I
   simp only [Real.norm_eq_abs] at hh
   exact hh.trans ((mul_le_mul_of_nonneg_left hL hB0).trans (Dy.le_mulU_toReal prec B L))
 
-theorem local_box (prec : Nat) (lo hi : ℚ) {a b x : ℝ}
+public theorem local_box (prec : Nat) (lo hi : ℚ) {a b x : ℝ}
     (ha : a = (lo : ℝ)) (hb : b = (hi : ℝ)) (hx : a ≤ x) (hy : x ≤ b) :
     x ∈ Ival.ofRats prec lo hi := by
   subst a; subst b
   exact Ival.mem_ofRats hx hy
 
-theorem transportConverges (k : Intgrl.NDomain) {f g : ℝ → ℝ} {a b c d : ℝ}
+public theorem transportConverges (k : Intgrl.NDomain) {f g : ℝ → ℝ} {a b c d : ℝ}
     (hf : f = g) (ha : a = c) (hb : b = d) (h : k.Converges g c d) :
     k.Converges f a b := by simpa only [hf,ha,hb] using h
 
-theorem integral_add_bounds (prec : Nat) {f g : ℝ → ℝ} {a b : ℝ} {I J : Ival}
+public theorem integral_add_bounds (prec : Nat) {f g : ℝ → ℝ} {a b : ℝ} {I J : Ival}
     (hf : IntervalIntegrable f volume a b) (hg : IntervalIntegrable g volume a b)
     (hi : (∫ x in a..b, f x) ∈ I) (hj : (∫ x in a..b, g x) ∈ J) :
     IntervalIntegrable (fun x => f x+g x) volume a b ∧
       (∫ x in a..b, f x+g x) ∈ Ival.add prec I J := by
   exact ⟨hf.add hg,by rw [intervalIntegral.integral_add hf hg]; exact Ival.mem_add hi hj⟩
 
-theorem integral_sub_bounds (prec : Nat) {f g : ℝ → ℝ} {a b : ℝ} {I J : Ival}
+public theorem integral_sub_bounds (prec : Nat) {f g : ℝ → ℝ} {a b : ℝ} {I J : Ival}
     (hf : IntervalIntegrable f volume a b) (hg : IntervalIntegrable g volume a b)
     (hi : (∫ x in a..b, f x) ∈ I) (hj : (∫ x in a..b, g x) ∈ J) :
     IntervalIntegrable (fun x => f x-g x) volume a b ∧
       (∫ x in a..b, f x-g x) ∈ Ival.sub prec I J := by
   exact ⟨hf.sub hg,by rw [intervalIntegral.integral_sub hf hg]; exact Ival.mem_sub hi hj⟩
 
-theorem integral_scale_bounds (prec : Nat) {f : ℝ → ℝ} {a b c : ℝ} {C I : Ival}
+public theorem integral_scale_bounds (prec : Nat) {f : ℝ → ℝ} {a b c : ℝ} {C I : Ival}
     (hc : c ∈ C) (hf : IntervalIntegrable f volume a b) (hi : (∫ x in a..b, f x) ∈ I) :
     IntervalIntegrable (fun x => c*f x) volume a b ∧
       (∫ x in a..b, c*f x) ∈ Ival.mul prec C I := by
   exact ⟨hf.const_mul c,by rw [intervalIntegral.integral_const_mul]; exact Ival.mem_mul hc hi⟩
 
-theorem integral_scale_right_bounds (prec : Nat) {f : ℝ → ℝ} {a b c : ℝ} {C I : Ival}
+public theorem integral_scale_right_bounds (prec : Nat) {f : ℝ → ℝ} {a b c : ℝ} {C I : Ival}
     (hf : IntervalIntegrable f volume a b) (hi : (∫ x in a..b, f x) ∈ I) (hc : c ∈ C) :
     IntervalIntegrable (fun x => f x*c) volume a b ∧
       (∫ x in a..b, f x*c) ∈ Ival.mul prec I C := by
   exact ⟨hf.mul_const c,by rw [intervalIntegral.integral_mul_const]; exact Ival.mem_mul hi hc⟩
 
-theorem integral_div_bounds (prec : Nat) {f : ℝ → ℝ} {a b c : ℝ} {C I : Ival}
+public theorem integral_div_bounds (prec : Nat) {f : ℝ → ℝ} {a b c : ℝ} {C I : Ival}
     (hf : IntervalIntegrable f volume a b) (hi : (∫ x in a..b, f x) ∈ I) (hc : c ∈ C) :
     IntervalIntegrable (fun x => f x/c) volume a b ∧
       (∫ x in a..b, f x/c) ∈ Ival.div prec I C := by
   exact ⟨hf.div_const c,by rw [intervalIntegral.integral_div]; exact Ival.mem_div hi hc⟩
 
-theorem emptyEnvMem : Integral.Nested.EnvMem [] #[] := ⟨rfl, by simp⟩
+public theorem emptyEnvMem : Integral.Nested.EnvMem [] #[] := ⟨rfl, by simp⟩
 
-theorem mem_transport {a b : ℝ} {I : Ival} (he : a = b) (hb : b ∈ I) : a ∈ I := he ▸ hb
+public theorem mem_transport {a b : ℝ} {I : Ival} (he : a = b) (hb : b ∈ I) : a ∈ I := he ▸ hb
 
 end Composition
 end Lynth.Interval

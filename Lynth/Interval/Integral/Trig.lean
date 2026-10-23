@@ -1,6 +1,25 @@
-import Lynth.Interval.Integral.Math.FixedTrig
-import Lynth.Interval.Integral.Exp
-import Lynth.Interval.Fns.ComplexElem
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.Int.DivMod.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Algebra.Order.Ring.Unbundled.Rat
+public import Mathlib.Data.Rat.Defs
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Fns.Trig
+public import Lynth.Interval.Integral.Exp
+public import Lynth.Interval.Integral.Math.FixedTrig
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Series.Tail
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Integral.Math.FixedTrig
+import all Lynth.Interval.Integral.Exp
+import all Lynth.Interval.Fns.ComplexElem
 
 /-! Fixed-point kernels for narrow quadrature samples. Wide real ranges use
 the existing range evaluator, intersected with the known unit range. -/
@@ -9,7 +28,7 @@ namespace Lynth.Interval.Integral
 
 open Fns
 
-def fixedPointTrig (w : Nat) (sine : Bool) (y : Dy) : Ival :=
+@[expose] public def fixedPointTrig (w : Nat) (sine : Bool) (y : Dy) : Ival :=
   let p := w + 8
   let (lo, hi) := Intgrl.fixedTrigBounds p sine y.toRat
   ⟨some ⟨lo, -(p : Int)⟩, some ⟨hi, -(p : Int)⟩⟩
@@ -22,11 +41,11 @@ theorem mem_fixedPointTrig (w : Nat) (sine : Bool) (y : Dy)
     Dy.toReal_def, Dy.toRat_mk, Rat.cast_mul, Rat.cast_intCast, Rat.cast_zpow,
     Rat.cast_ofNat] using h
 
-def fastSinSer (w : Nat) (y : Dy) : Ival :=
+@[expose] public def fastSinSer (w : Nat) (y : Dy) : Ival :=
   if |y.toRat| < 1/16 then sinSer w y
   else if isTrigArg y then fixedPointTrig w true y else unitIval
 
-def fastCosSer (w : Nat) (y : Dy) : Ival :=
+@[expose] public def fastCosSer (w : Nat) (y : Dy) : Ival :=
   if isTrigArg y then fixedPointTrig w false y else unitIval
 
 theorem mem_fastSinSer (w : Nat) (y : Dy) : Real.sin y.toReal ∈ fastSinSer w y := by
@@ -45,7 +64,7 @@ theorem mem_fastCosSer (w : Nat) (y : Dy) : Real.cos y.toReal ∈ fastCosSer w y
     exact mem_fixedPointTrig w false y (abs_le_two_of_isTrigArg h)
   · exact mem_unitIval (Real.neg_one_le_cos _) (Real.cos_le_one _)
 
-def clampUnit (X : Ival) : Ival := (X.clampLo (Dy.ofInt (-1))).clampHi Dy.one
+@[expose] public def clampUnit (X : Ival) : Ival := (X.clampLo (Dy.ofInt (-1))).clampHi Dy.one
 
 theorem mem_clampUnit {x : ℝ} {X : Ival} (hx : x ∈ X) (hb : -1 ≤ x ∧ x ≤ 1) :
     x ∈ clampUnit X := by
@@ -54,17 +73,17 @@ theorem mem_clampUnit {x : ℝ} {X : Ival} (hx : x ∈ X) (hb : -1 ≤ x ∧ x �
     simpa [Dy.toReal_def] using hb.1
   · simpa [Dy.toReal_def] using hb.2
 
-def narrowTrig (X : Ival) : Bool :=
+@[expose] public def narrowTrig (X : Ival) : Bool :=
   match X.width with
   | some w => Dy.leB w ⟨1, -10⟩
   | none => false
 
-def wideTrig (X : Ival) : Bool :=
+@[expose] public def wideTrig (X : Ival) : Bool :=
   match X.width with
   | some w => Dy.leB (Dy.ofNat 7) w
   | none => true
 
-def reducedTrig (c : Ctx) (ser : Nat → Dy → Ival) (X : Ival) : Ival :=
+@[expose] public def reducedTrig (c : Ctx) (ser : Nat → Dy → Ival) (X : Ival) : Ival :=
   match X.mid with
   | some m =>
     let k := piMultiple c m
@@ -94,11 +113,11 @@ theorem mem_reducedTrig {c : Ctx} (hc : c.Valid) {ser : Nat → Dy → Ival}
       simpa only [k, h2', Bool.false_eq_true, ↓reduceIte] using Ival.mem_neg hS
   · exact mem_unitIval (hb x).1 (hb x).2
 
-def fastSinIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def fastSinIval (c : Ctx) (X : Ival) : Ival :=
   if wideTrig X then unitIval else
     if narrowTrig X then reducedTrig c fastSinSer X else clampUnit (sinIval c X)
 
-def fastCosIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def fastCosIval (c : Ctx) (X : Ival) : Ival :=
   if wideTrig X then unitIval else
     if narrowTrig X then reducedTrig c fastCosSer X else clampUnit (cosIval c X)
 
@@ -132,7 +151,7 @@ theorem mem_fastCosIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x �
       ring_nf
     · exact mem_clampUnit (mem_cosIval hc hx) ⟨Real.neg_one_le_cos _, Real.cos_le_one _⟩
 
-def fastSinhIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def fastSinhIval (c : Ctx) (X : Ival) : Ival :=
   Ival.divNat (c.prec+8)
     (Ival.sub (c.prec+8) (fastExpIval c X) (fastExpIval c (Ival.neg X))) 2
 
@@ -142,7 +161,7 @@ theorem mem_fastSinhIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) :
   exact Ival.mem_divNat (Ival.mem_sub (mem_fastExpIval c hx)
     (mem_fastExpIval c (Ival.mem_neg hx))) (by norm_num : 0 < (2 : Nat))
 
-def fastCoshIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def fastCoshIval (c : Ctx) (X : Ival) : Ival :=
   Ival.divNat (c.prec+8)
     (Ival.add (c.prec+8) (fastExpIval c X) (fastExpIval c (Ival.neg X))) 2
 
@@ -152,7 +171,7 @@ theorem mem_fastCoshIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) :
   exact Ival.mem_divNat (Ival.mem_add (mem_fastExpIval c hx)
     (mem_fastExpIval c (Ival.mem_neg hx))) (by norm_num : 0 < (2 : Nat))
 
-def fastSinBox (c : Ctx) (Z : CBox) : CBox :=
+@[expose] public def fastSinBox (c : Ctx) (Z : CBox) : CBox :=
   ⟨Ival.mul c.prec (fastSinIval c Z.re) (fastCoshIval c Z.im),
    Ival.mul c.prec (fastCosIval c Z.re) (fastSinhIval c Z.im)⟩
 
@@ -163,7 +182,7 @@ theorem mem_fastSinBox {c : Ctx} (hc : c.Valid) {z : ℂ} {Z : CBox} (hz : z ∈
   exact ⟨Ival.mem_mul (mem_fastSinIval hc hz.1) (mem_fastCoshIval c hz.2),
     Ival.mem_mul (mem_fastCosIval hc hz.1) (mem_fastSinhIval c hz.2)⟩
 
-def fastCosBox (c : Ctx) (Z : CBox) : CBox :=
+@[expose] public def fastCosBox (c : Ctx) (Z : CBox) : CBox :=
   ⟨Ival.mul c.prec (fastCosIval c Z.re) (fastCoshIval c Z.im),
    Ival.neg (Ival.mul c.prec (fastSinIval c Z.re) (fastSinhIval c Z.im))⟩
 
@@ -174,7 +193,7 @@ theorem mem_fastCosBox {c : Ctx} (hc : c.Valid) {z : ℂ} {Z : CBox} (hz : z ∈
   exact ⟨Ival.mem_mul (mem_fastCosIval hc hz.1) (mem_fastCoshIval c hz.2),
     Ival.mem_neg (Ival.mem_mul (mem_fastSinIval hc hz.1) (mem_fastSinhIval c hz.2))⟩
 
-def fastExpBox (c : Ctx) (Z : CBox) : CBox :=
+@[expose] public def fastExpBox (c : Ctx) (Z : CBox) : CBox :=
   let E := fastExpIval c Z.re
   ⟨Ival.mul c.prec E (fastCosIval c Z.im), Ival.mul c.prec E (fastSinIval c Z.im)⟩
 

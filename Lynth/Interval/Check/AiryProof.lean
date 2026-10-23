@@ -1,6 +1,14 @@
-import Lynth.Interval.Core.Const
-import Lynth.Interval.Fns.Gamma
-import Lean.Elab.Tactic.Cbv
+module
+
+import all Lynth.Interval.Core.Const
+import all Lynth.Interval.Fns.Gamma
+public import Lean.Elab.Tactic.Cbv
+public meta import Lean
+public meta import Mathlib.Algebra.Group.Nat.Defs
+public meta import Mathlib.Algebra.Group.Int.Defs
+public meta import Mathlib.Algebra.Group.Monoid
+
+public section
 /-!
 Proof-producing arithmetic for the Airy normalization certificate.
 
@@ -19,11 +27,11 @@ private meta def memoProof (h : Lean.Expr) : MetaM Lean.Expr := do
   return mkConst name
 
 namespace Lynth.Interval.AiryProof.Kernel
-private def natVal? (e : Lean.Expr) : Option Nat :=
+private meta def natVal? (e : Lean.Expr) : Option Nat :=
   match (Sym.getNatValue? e).run with
   | some n => some n
   | none => match e with | .lit (.natVal n) => some n | _ => none
-private def intVal? (e : Lean.Expr) : Option Int :=
+private meta def intVal? (e : Lean.Expr) : Option Int :=
   match (Sym.getIntValue? e).run with
   | some n => some n
   | none => match_expr e with

@@ -1,6 +1,6 @@
 -- Farkas validation: every FM refutation certificate verifies.
-import Lynth.Arith.Fourier
-import Lynth.Arith.FarkasSound
+module
+import Lynth
 
 open Lynth.Arith.Fourier
 open Lynth.Arith.FarkasSound

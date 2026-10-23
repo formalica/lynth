@@ -1,5 +1,18 @@
-import Lynth.Analysis.SpecialFunctions
-import Lynth.Analysis.SpecialFunctionsSeriesProofs
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.Int.Bitwise.Basic
+public import Init.Data.Int.DivMod.Basic
+public import Init.Data.Nat.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Int.Defs
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Lynth.Analysis.SpecialFunctionsDefs
+import all Lynth.Analysis.SpecialFunctions
+import all Lynth.Analysis.SpecialFunctionsSeriesProofs
 
 /-! Small portable fixed-point kernels. Real series use two integer endpoints;
 complex series use four, in a distinct loop. No CBox, Ival or tactic dependencies.
@@ -8,35 +21,35 @@ Mirrored in /tmp/intgrl/SpecialKernel.lean (with its sole local import renamed).
 
 namespace SpecialFunctions
 
-abbrev Fixed := ℤ × ℤ
-abbrev FixedC := Fixed × Fixed
+public abbrev Fixed := ℤ × ℤ
+public abbrev FixedC := Fixed × Fixed
 
-def fixedAdd (a b : Fixed) : Fixed := (a.1+b.1, a.2+b.2)
-def fixedNeg (a : Fixed) : Fixed := (-a.2,-a.1)
-def fixedMul (p : ℕ) (a b : Fixed) : Fixed :=
+@[expose] public def fixedAdd (a b : Fixed) : Fixed := (a.1+b.1, a.2+b.2)
+@[expose] public def fixedNeg (a : Fixed) : Fixed := (-a.2,-a.1)
+@[expose] public def fixedMul (p : ℕ) (a b : Fixed) : Fixed :=
   let aa := a.1*b.1
   let ab := a.1*b.2
   let ba := a.2*b.1
   let bb := a.2*b.2
   (min (min aa ab) (min ba bb) >>> p,
     -((-max (max aa ab) (max ba bb)) >>> p))
-def fixedScale (a : Fixed) (n d : ℕ) : Fixed :=
+@[expose] public def fixedScale (a : Fixed) (n d : ℕ) : Fixed :=
   (a.1 * (n : ℤ) / (d : ℤ), -((-a.2 * (n : ℤ)) / (d : ℤ)))
-def fixedAbs (a : Fixed) : ℕ := max a.1.natAbs a.2.natAbs
+@[expose] public def fixedAbs (a : Fixed) : ℕ := max a.1.natAbs a.2.natAbs
 
-def fixedCAdd (a b : FixedC) : FixedC := (fixedAdd a.1 b.1, fixedAdd a.2 b.2)
-def fixedCMul (p : ℕ) (a b : FixedC) : FixedC :=
+@[expose] public def fixedCAdd (a b : FixedC) : FixedC := (fixedAdd a.1 b.1, fixedAdd a.2 b.2)
+@[expose] public def fixedCMul (p : ℕ) (a b : FixedC) : FixedC :=
   (fixedAdd (fixedMul p a.1 b.1) (fixedNeg (fixedMul p a.2 b.2)),
     fixedAdd (fixedMul p a.1 b.2) (fixedMul p a.2 b.1))
-def fixedCScale (a : FixedC) (n d : ℕ) : FixedC :=
+@[expose] public def fixedCScale (a : FixedC) (n d : ℕ) : FixedC :=
   (fixedScale a.1 n d, fixedScale a.2 n d)
-def fixedCAbs (a : FixedC) : ℕ := fixedAbs a.1 + fixedAbs a.2
+@[expose] public def fixedCAbs (a : FixedC) : ℕ := fixedAbs a.1 + fixedAbs a.2
 
-def fixedInput (p : ℕ) (q : ℚ) : Fixed :=
+@[expose] public def fixedInput (p : ℕ) (q : ℚ) : Fixed :=
   let q := q * ((2 : ℕ)^p : ℚ)
   (q.floor, q.ceil)
 
-def realSeriesLoop (kind : SeriesKind) (p : ℕ) (x : Fixed) :
+@[expose] public def realSeriesLoop (kind : SeriesKind) (p : ℕ) (x : Fixed) :
     ℕ → ℕ → Fixed → Fixed → Option Fixed
   | 0, _, _, _ => none
   | fuel+1, k, term, sum =>
@@ -48,7 +61,7 @@ def realSeriesLoop (kind : SeriesKind) (p : ℕ) (x : Fixed) :
       some (sum.1-err, sum.2+err)
     else realSeriesLoop kind p x fuel (k+1) next sum
 
-def complexSeriesLoop (kind : SeriesKind) (p : ℕ) (z : FixedC) :
+@[expose] public def complexSeriesLoop (kind : SeriesKind) (p : ℕ) (z : FixedC) :
     ℕ → ℕ → FixedC → FixedC → Option FixedC
   | 0, _, _, _ => none
   | fuel+1, k, term, sum =>
@@ -60,10 +73,10 @@ def complexSeriesLoop (kind : SeriesKind) (p : ℕ) (z : FixedC) :
       some ((sum.1.1-err, sum.1.2+err), (sum.2.1-err, sum.2.2+err))
     else complexSeriesLoop kind p z fuel (k+1) next sum
 
-def realSeriesBounds (kind : SeriesKind) (p : ℕ) (x : ℚ) : Option Fixed :=
+@[expose] public def realSeriesBounds (kind : SeriesKind) (p : ℕ) (x : ℚ) : Option Fixed :=
   realSeriesLoop kind p (fixedInput p x) (4*p+128) 0 (2^p,2^p) (0,0)
 
-def complexSeriesBounds (kind : SeriesKind) (p : ℕ) (re im : ℚ) : Option FixedC :=
+@[expose] public def complexSeriesBounds (kind : SeriesKind) (p : ℕ) (re im : ℚ) : Option FixedC :=
   complexSeriesLoop kind p (fixedInput p re, fixedInput p im) (4*p+128) 0
     ((2^p,2^p),(0,0)) ((0,0),(0,0))
 

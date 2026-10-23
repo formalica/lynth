@@ -1,5 +1,32 @@
-import Lynth.Interval.Fns.Special.Common
-import Lynth.Interval.Core.Const
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Algebra.Order.Ring.Unbundled.Rat
+public import Mathlib.Data.Rat.Defs
+public import Lynth.Interval.Core.Expr
+public import Lynth.Analysis.SpecialFunctions
+public import Lynth.Analysis.SpecialFunctionsDefs
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Const
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.Elem
+public import Lynth.Interval.Fns.Gamma
+public import Lynth.Interval.Fns.Special.Common
+public import Lynth.Interval.Integral.Exp
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Fns.Special.Common
+import all Lynth.Interval.Core.Const
 
 namespace Lynth.Interval.Fns
 
@@ -7,7 +34,7 @@ open SpecialFunctions Integral
 
 /-- A 1328-bit enclosure covers the common path. Higher precisions compute the
 normalizing constants from Gamma, with a fresh context at the work precision. -/
-def airyConstants (p : ℕ) : Ival × Ival :=
+@[expose] public def airyConstants (p : ℕ) : Ival × Ival :=
   if p ≤ 1200 then
     (Ival.ofRats p (airyConstA / (airyConstScale : ℚ)) ((airyConstA+1) / (airyConstScale : ℚ)),
       Ival.ofRats p (airyConstB / (airyConstScale : ℚ)) ((airyConstB+1) / (airyConstScale : ℚ)))
@@ -37,7 +64,7 @@ theorem mem_airyConstants (p : ℕ) :
         (Ival.mem_mul (mem_rpowIval (Ctx.make_valid _) (Ival.mem_ofRat _ 3)
           (Ival.mem_ofRat _ (1/3))) (mem_gammaIval (Ctx.make_valid _) (Ival.mem_ofRat _ (1/3)))))
 
-def airyAiPoint (c : Ctx) (x : ℚ) : Ival :=
+@[expose] public def airyAiPoint (c : Ctx) (x : ℚ) : Ival :=
   let p := specialPrec c.prec .airy0 |x|
   let (a,b) := airyConstants p
   Ival.add p (Ival.mul p a (specialSeriesR p .airy0 (x^3)))
@@ -53,7 +80,7 @@ theorem mem_airyAiPoint (c : Ctx) (x : ℚ) :
   push_cast at h
   exact h
 
-def airyAiIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def airyAiIval (c : Ctx) (X : Ival) : Ival :=
   match X.mid with
   | some m =>
     let r := Ival.add c.prec (Ival.abs X) (Ival.abs (Ival.pt m))
@@ -76,7 +103,7 @@ theorem mem_airyAiIval (c : Ctx) {x : ℝ} {X : Ival} (hx : x ∈ X) :
   · have h := abs_le.mp (airy_real_bound x)
     exact Ival.mem_ofRats (by simpa using h.1) (by simpa using h.2)
 
-def airyAiBoxPoint (c : Ctx) (a b : ℚ) : CBox :=
+@[expose] public def airyAiBoxPoint (c : Ctx) (a b : ℚ) : CBox :=
   let p := specialPrec c.prec .airy0 (|a|+|b|)
   let (A,B) := airyConstants p
   let q := specialPower .airy0 a b
@@ -95,7 +122,7 @@ theorem mem_airyAiBoxPoint (c : Ctx) (a b : ℚ) :
   exact CBox.mem_add (CBox.mem_mul (CBox.mem_ofReal h.1) h0)
     (CBox.mem_mul (CBox.mem_mul (CBox.mem_ofReal h.2) (mem_rationalBox _ a b)) h1)
 
-def airyAiCBox (c : Ctx) (Z : CBox) : CBox :=
+@[expose] public def airyAiCBox (c : Ctx) (Z : CBox) : CBox :=
   match Z.re.mid, Z.im.mid with
   | some a, some b =>
     let m := rationalBox c.prec a.toRat b.toRat
@@ -121,18 +148,18 @@ theorem mem_airyAiCBox (c : Ctx) {z : ℂ} {Z : CBox} (hz : z ∈ Z) :
     simpa only [Rat.cast_ofNat, add_assoc] using (complex_lipschitz_pair z _).2.2
   · exact CBox.mem_top _
 
-@[lynth_cfn] def airyAiR : Fn1 .real .real where
+@[expose, lynth_cfn] public def airyAiR : Fn1 .real .real where
   name := "airyAi"
   graph x y := y = Real.airyAi x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := airyAiIval
   sound := fun c _ _ _ _ hy hx => by cases hy; exact mem_airyAiIval c hx
   cost := 500000
 
-@[lynth_cfn] def airyAiC : Fn1 .cplx .cplx where
+@[expose, lynth_cfn] public def airyAiC : Fn1 .cplx .cplx where
   name := "airyAi"
   graph x y := y = Complex.airyAi x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := airyAiCBox
   sound := fun c _ _ _ _ hy hx => by cases hy; exact mem_airyAiCBox c hx
   cost := 1000000

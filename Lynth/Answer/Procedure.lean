@@ -1,10 +1,12 @@
+module
+
 import Lean
-import Lynth.Procedure
-import Lynth.Egraph.Procedure
-import Lynth.Euf.Procedure
-import Lynth.FinSearch.Procedure
-import Lynth.FinSearch.ListInfer
-import Lynth.Witness
+import all Lynth.Procedure
+import all Lynth.Egraph.Procedure
+import all Lynth.Euf.Procedure
+import all Lynth.FinSearch.Procedure
+import all Lynth.FinSearch.ListInfer
+import all Lynth.Witness
 
 /-!
 Answer-goal procedure: split `Sum`/`PSum` goals (notably the FinDomain

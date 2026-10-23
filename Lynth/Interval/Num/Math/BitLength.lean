@@ -1,3 +1,7 @@
+module
+
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Prelude
 import Mathlib.Data.Nat.Log
 
 /-! Portable equality used only to select a faster native implementation.
@@ -5,7 +9,7 @@ The bounded binary search remains the kernel implementation. -/
 
 namespace Lynth.Interval.Vendor.Dyadic
 
-def bitSearchS (n : Nat) : Nat → Nat → Nat → Nat
+@[expose] public def bitSearchS (n : Nat) : Nat → Nat → Nat → Nat
   | 0, _, hi => hi
   | fuel + 1, lo, hi =>
     cond (hi.ble (lo + 1)) hi

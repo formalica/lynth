@@ -1,4 +1,16 @@
-import Lynth.Interval.Vendor.Dyadic
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.Int.DivMod.Basic
+public import Init.Data.Nat.Sqrt.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Int.Defs
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Vendor.Dyadic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 
@@ -16,7 +28,7 @@ See `docs/interval/02-numerics.md`.
 namespace Lynth.Interval
 
 /-- Dyadic numbers `m * 2^e` (not normalized). -/
-abbrev Dy := Vendor.Dyadic
+public abbrev Dy := Vendor.Dyadic
 
 namespace Dy
 
@@ -25,38 +37,38 @@ open Vendor.Dyadic (toRat toRat_eq)
 /-- The real value `d.toReal` is the vendored `Vendor.Dyadic.toReal = Rat.cast ∘ toRat`. -/
 theorem toReal_def (d : Dy) : d.toReal = (d.toRat : ℝ) := rfl
 
-def ofInt (i : Int) : Dy := ⟨i, 0⟩
-def ofNat (n : Nat) : Dy := ⟨n, 0⟩
-def zero : Dy := ⟨0, 0⟩
-def one : Dy := ⟨1, 0⟩
+@[expose] public def ofInt (i : Int) : Dy := ⟨i, 0⟩
+@[expose] public def ofNat (n : Nat) : Dy := ⟨n, 0⟩
+@[expose] public def zero : Dy := ⟨0, 0⟩
+@[expose] public def one : Dy := ⟨1, 0⟩
 
-@[simp] theorem toRat_mk (m e : Int) : (⟨m, e⟩ : Dy).toRat = m * (2 : ℚ) ^ e := toRat_eq _
+@[simp] public theorem toRat_mk (m e : Int) : (⟨m, e⟩ : Dy).toRat = m * (2 : ℚ) ^ e := toRat_eq _
 
-@[simp] theorem toRat_ofInt (i : Int) : (ofInt i).toRat = i := by simp [ofInt]
-@[simp] theorem toRat_ofNat (n : Nat) : (ofNat n).toRat = n := by simp [ofNat]
-@[simp] theorem toRat_zero : zero.toRat = 0 := by simp [zero]
-@[simp] theorem toRat_one : one.toRat = 1 := by simp [one]
+@[simp] public theorem toRat_ofInt (i : Int) : (ofInt i).toRat = i := by simp [ofInt]
+@[simp] public theorem toRat_ofNat (n : Nat) : (ofNat n).toRat = n := by simp [ofNat]
+@[simp] public theorem toRat_zero : zero.toRat = 0 := by simp [zero]
+@[simp] public theorem toRat_one : one.toRat = 1 := by simp [one]
 
-@[simp] theorem toRat_add' (a b : Dy) : (a.add b).toRat = a.toRat + b.toRat :=
+@[simp] public theorem toRat_add' (a b : Dy) : (a.add b).toRat = a.toRat + b.toRat :=
   Vendor.Dyadic.toRat_add a b
-@[simp] theorem toRat_mul' (a b : Dy) : (a.mul b).toRat = a.toRat * b.toRat :=
+@[simp] public theorem toRat_mul' (a b : Dy) : (a.mul b).toRat = a.toRat * b.toRat :=
   Vendor.Dyadic.toRat_mul a b
-@[simp] theorem toRat_neg' (a : Dy) : (a.neg).toRat = -a.toRat :=
+@[simp] public theorem toRat_neg' (a : Dy) : (a.neg).toRat = -a.toRat :=
   Vendor.Dyadic.toRat_neg a
 
 /-- Exact scaling by `2^n`. -/
-def scale2 (d : Dy) (n : Int) : Dy := ⟨d.mantissa, d.exponent + n⟩
+@[expose] public def scale2 (d : Dy) (n : Int) : Dy := ⟨d.mantissa, d.exponent + n⟩
 
-@[simp] theorem toRat_scale2 (d : Dy) (n : Int) : (scale2 d n).toRat = d.toRat * 2 ^ n := by
+@[simp] public theorem toRat_scale2 (d : Dy) (n : Int) : (scale2 d n).toRat = d.toRat * 2 ^ n := by
   simp only [scale2, toRat_mk, toRat_eq d]
   rw [zpow_add₀ (by norm_num : (2 : ℚ) ≠ 0)]; ring
 
 /-! ### Comparisons -/
 
 /-- `a ≤ b` as a Bool. -/
-def leB (a b : Dy) : Bool := Vendor.Dyadic.le a b
+@[expose] public def leB (a b : Dy) : Bool := Vendor.Dyadic.le a b
 /-- `a < b` as a Bool. -/
-def ltB (a b : Dy) : Bool := Vendor.Dyadic.lt a b
+@[expose] public def ltB (a b : Dy) : Bool := Vendor.Dyadic.lt a b
 
 theorem leB_iff (a b : Dy) : leB a b = true ↔ a.toRat ≤ b.toRat :=
   Vendor.Dyadic.le_iff_toRat_le a b
@@ -72,8 +84,8 @@ theorem toReal_le_of_leB {a b : Dy} (h : leB a b = true) : a.toReal ≤ b.toReal
 theorem toReal_lt_of_ltB {a b : Dy} (h : ltB a b = true) : a.toReal < b.toReal := by
   rw [toReal_def, toReal_def]; exact_mod_cast (ltB_iff a b).1 h
 
-def min (a b : Dy) : Dy := if leB a b then a else b
-def max (a b : Dy) : Dy := if leB a b then b else a
+@[expose] public def min (a b : Dy) : Dy := if leB a b then a else b
+@[expose] public def max (a b : Dy) : Dy := if leB a b then b else a
 
 theorem toRat_min_le_left (a b : Dy) : (min a b).toRat ≤ a.toRat := by
   unfold min; split
@@ -106,10 +118,10 @@ theorem toRat_max_eq_or (a b : Dy) : max a b = a ∨ max a b = b := by
   unfold max; split <;> simp
 
 /-- Sign tests. -/
-def isNeg (a : Dy) : Bool := decide (a.mantissa < 0)
-def isPos (a : Dy) : Bool := decide (0 < a.mantissa)
-def isNonneg (a : Dy) : Bool := decide (0 ≤ a.mantissa)
-def isZero (a : Dy) : Bool := a.mantissa == 0
+@[expose] public def isNeg (a : Dy) : Bool := decide (a.mantissa < 0)
+@[expose] public def isPos (a : Dy) : Bool := decide (0 < a.mantissa)
+@[expose] public def isNonneg (a : Dy) : Bool := decide (0 ≤ a.mantissa)
+@[expose] public def isZero (a : Dy) : Bool := a.mantissa == 0
 
 theorem two_zpow_pos (e : Int) : (0 : ℚ) < 2 ^ e := zpow_pos (by norm_num) e
 
@@ -158,21 +170,21 @@ theorem isNeg_iff (a : Dy) : isNeg a = true ↔ a.toRat < 0 := by
 /-! ### Directed rounding to `p` mantissa bits -/
 
 /-- Round down to at most `p` significant bits. -/
-def rd (p : Nat) (d : Dy) : Dy := Vendor.Dyadic.normalizeDown d p
+@[expose] public def rd (p : Nat) (d : Dy) : Dy := Vendor.Dyadic.normalizeDown d p
 /-- Round up to at most `p` significant bits. -/
-def ru (p : Nat) (d : Dy) : Dy := Vendor.Dyadic.normalizeUp d p
+@[expose] public def ru (p : Nat) (d : Dy) : Dy := Vendor.Dyadic.normalizeUp d p
 
 theorem rd_le (p : Nat) (d : Dy) : (rd p d).toRat ≤ d.toRat :=
   Vendor.Dyadic.toRat_normalizeDown_le d p
 theorem le_ru (p : Nat) (d : Dy) : d.toRat ≤ (ru p d).toRat :=
   Vendor.Dyadic.toRat_normalizeUp_ge d p
 
-def addD (p : Nat) (a b : Dy) : Dy := rd p (a.add b)
-def addU (p : Nat) (a b : Dy) : Dy := ru p (a.add b)
-def subD (p : Nat) (a b : Dy) : Dy := rd p (a.add b.neg)
-def subU (p : Nat) (a b : Dy) : Dy := ru p (a.add b.neg)
-def mulD (p : Nat) (a b : Dy) : Dy := rd p (a.mul b)
-def mulU (p : Nat) (a b : Dy) : Dy := ru p (a.mul b)
+@[expose] public def addD (p : Nat) (a b : Dy) : Dy := rd p (a.add b)
+@[expose] public def addU (p : Nat) (a b : Dy) : Dy := ru p (a.add b)
+@[expose] public def subD (p : Nat) (a b : Dy) : Dy := rd p (a.add b.neg)
+@[expose] public def subU (p : Nat) (a b : Dy) : Dy := ru p (a.add b.neg)
+@[expose] public def mulD (p : Nat) (a b : Dy) : Dy := rd p (a.mul b)
+@[expose] public def mulU (p : Nat) (a b : Dy) : Dy := ru p (a.mul b)
 
 theorem addD_le (p a b) : (addD p a b).toRat ≤ a.toRat + b.toRat := by
   unfold addD; simpa using rd_le p (a.add b)
@@ -190,20 +202,20 @@ theorem le_mulU (p a b) : a.toRat * b.toRat ≤ (mulU p a b).toRat := by
 /-! ### Division -/
 
 /-- Bit length of `|m|`. -/
-def bits (m : Int) : Nat := Vendor.Dyadic.bitLength m
+@[expose] public def bits (m : Int) : Nat := Vendor.Dyadic.bitLength m
 
 /-- Extra scaling for a quotient with about `p+2` significant bits. -/
-def divShift (p : Nat) (a b : Dy) : Nat := (p + 2 + bits b.mantissa) - bits a.mantissa
+@[expose] public def divShift (p : Nat) (a b : Dy) : Nat := (p + 2 + bits b.mantissa) - bits a.mantissa
 
 /-- Lower bound of `a / b` (junk `0` if `b = 0`). -/
-def divD (p : Nat) (a b : Dy) : Dy :=
+@[expose] public def divD (p : Nat) (a b : Dy) : Dy :=
   if b.mantissa = 0 then zero else
   let s : Int := if b.mantissa < 0 then -1 else 1
   let k := divShift p a b
   rd p ⟨(s * a.mantissa * 2 ^ k) / (s * b.mantissa), a.exponent - b.exponent - k⟩
 
 /-- Upper bound of `a / b` (junk `0` if `b = 0`). -/
-def divU (p : Nat) (a b : Dy) : Dy :=
+@[expose] public def divU (p : Nat) (a b : Dy) : Dy :=
   if b.mantissa = 0 then zero else
   let s : Int := if b.mantissa < 0 then -1 else 1
   let k := divShift p a b
@@ -272,9 +284,9 @@ theorem le_divU (p : Nat) (a b : Dy) (hb : b.toRat ≠ 0) :
 /-! ### Rationals -/
 
 /-- Lower dyadic bound of a rational. -/
-def ofRatD (p : Nat) (q : ℚ) : Dy := divD p (ofInt q.num) (ofNat q.den)
+@[expose] public def ofRatD (p : Nat) (q : ℚ) : Dy := divD p (ofInt q.num) (ofNat q.den)
 /-- Upper dyadic bound of a rational. -/
-def ofRatU (p : Nat) (q : ℚ) : Dy := divU p (ofInt q.num) (ofNat q.den)
+@[expose] public def ofRatU (p : Nat) (q : ℚ) : Dy := divU p (ofInt q.num) (ofNat q.den)
 
 theorem ofRatD_le (p : Nat) (q : ℚ) : (ofRatD p q).toRat ≤ q := by
   have h := divD_le p (ofInt q.num) (ofNat q.den) (by simp [q.den_nz])
@@ -287,21 +299,21 @@ theorem le_ofRatU (p : Nat) (q : ℚ) : q ≤ (ofRatU p q).toRat := by
 /-! ### Square roots -/
 
 /-- Extra even scaling for a square root with about `p+1` significant bits. -/
-def sqrtShift (p : Nat) (a : Dy) : Nat :=
+@[expose] public def sqrtShift (p : Nat) (a : Dy) : Nat :=
   let j0 : Nat := (2 * p + 2) - bits a.mantissa
   j0 + ((a.exponent - j0) % 2).toNat
 
 /-- Integer square root of the scaled mantissa. -/
-def sqrtCore (p : Nat) (a : Dy) : Nat :=
+@[expose] public def sqrtCore (p : Nat) (a : Dy) : Nat :=
   Nat.sqrt (a.mantissa.toNat * 2 ^ sqrtShift p a)
 
 /-- Lower bound of `√a` (`0` if `a ≤ 0`). -/
-def sqrtD (p : Nat) (a : Dy) : Dy :=
+@[expose] public def sqrtD (p : Nat) (a : Dy) : Dy :=
   if a.mantissa ≤ 0 then zero else
   rd p ⟨sqrtCore p a, (a.exponent - sqrtShift p a) / 2⟩
 
 /-- Upper bound of `√a` (`0` if `a ≤ 0`). -/
-def sqrtU (p : Nat) (a : Dy) : Dy :=
+@[expose] public def sqrtU (p : Nat) (a : Dy) : Dy :=
   if a.mantissa ≤ 0 then zero else
   ru p ⟨sqrtCore p a + 1, (a.exponent - sqrtShift p a) / 2⟩
 

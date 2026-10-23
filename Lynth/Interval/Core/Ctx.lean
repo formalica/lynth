@@ -1,4 +1,14 @@
-import Lynth.Interval.Core.Ty
+module
+
+public import Init.Data.Nat.Basic
+public import Init.Prelude
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import Mathlib.Basic.Real.Basic
+public import Mathlib.Data.Nat.Cast.Defs
+public import Mathlib.Data.Nat.Init
+public import Lynth.Interval.Num.Ival
+import all Lynth.Interval.Core.Ty
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
@@ -14,7 +24,7 @@ See `docs/interval/03-expr-registry.md §2`.
 
 namespace Lynth.Interval
 
-structure Ctx where
+public structure Ctx where
   /-- working precision (mantissa bits) -/
   prec : Nat
   /-- enclosure of `π` -/
@@ -23,12 +33,12 @@ structure Ctx where
   ln2 : Ival
 deriving Repr, Inhabited
 
-structure Ctx.Valid (c : Ctx) : Prop where
+public structure Ctx.Valid (c : Ctx) : Prop where
   pi_mem : Real.pi ∈ c.pi
   ln2_mem : Real.log 2 ∈ c.ln2
 
 /-- context with trivial constant enclosures (always valid) -/
-def Ctx.coarse (p : Nat) : Ctx := ⟨p, Ival.top, Ival.top⟩
+public def Ctx.coarse (p : Nat) : Ctx := ⟨p, Ival.top, Ival.top⟩
 
 theorem Ctx.coarse_valid (p : Nat) : (Ctx.coarse p).Valid :=
   ⟨Ival.mem_top _, Ival.mem_top _⟩

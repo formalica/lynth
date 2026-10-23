@@ -1,4 +1,6 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.Remainder.PointwiseEstimates
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.Remainder.PointwiseEstimates
 
 /-!
 # Integrability and basic integrals for the exponentially small remainder

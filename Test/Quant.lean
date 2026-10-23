@@ -1,6 +1,5 @@
 -- Quant procedure: E-matching ground instantiation over EUF classes.
 import Lynth
-import Lynth.Quant.Procedure
 
 open Lean Elab Tactic Meta
 
@@ -38,7 +37,7 @@ example (R : Nat → Nat → Prop) (f : Nat → Nat) (a b c : Nat)
 
 set_option maxHeartbeats 39 in
 /-- End-to-end: instance `P x` enables `assumption` downstream. -/
-theorem quant_single (P : Nat → Prop) (h : ∀ n, P n) (x : Nat) :
+public theorem quant_single (P : Nat → Prop) (h : ∀ n, P n) (x : Nat) :
     P x := by lynth
 /-- info: 'quant_single' does not depend on any axioms -/
 #guard_msgs in
@@ -46,7 +45,7 @@ theorem quant_single (P : Nat → Prop) (h : ∀ n, P n) (x : Nat) :
 
 set_option maxHeartbeats 287 in
 /-- Multi-premise: `P x y → Q x y` instance closes the goal. -/
-theorem quant_multi (P Q : Nat → Nat → Prop) (h : ∀ a b, P a b → Q a b)
+public theorem quant_multi (P Q : Nat → Nat → Prop) (h : ∀ a b, P a b → Q a b)
     (x y : Nat) (h2 : P x y) : Q x y := by lynth
 /-- info: 'quant_multi' depends on axioms: [propext] -/
 #guard_msgs in
@@ -55,7 +54,7 @@ theorem quant_multi (P Q : Nat → Nat → Prop) (h : ∀ a b, P a b → Q a b)
 set_option maxHeartbeats 144 in
 /-- Congruence-modulo: no purely syntactic instance exists; the `g = f c`
 edge lets `R n (f n)` match `R c g`. -/
-theorem quant_congr (R : Nat → Nat → Prop) (f : Nat → Nat) (g c : Nat)
+public theorem quant_congr (R : Nat → Nat → Prop) (f : Nat → Nat) (g c : Nat)
     (h1 : ∀ n, R n (f n)) (h2 : g = f c) : R c g := by lynth
 /-- info: 'quant_congr' depends on axioms: [propext] -/
 #guard_msgs in
@@ -63,7 +62,7 @@ theorem quant_congr (R : Nat → Nat → Prop) (f : Nat → Nat) (g c : Nat)
 
 set_option maxHeartbeats 45 in
 /-- No-match fallthrough: nothing to instantiate, pipeline unaffected. -/
-theorem quant_nomatch (P Q : Nat → Prop) (_h : ∀ n, P n) (x : Nat)
+public theorem quant_nomatch (P Q : Nat → Prop) (_h : ∀ n, P n) (x : Nat)
     (hq : Q x) : Q x := by lynth
 /-- info: 'quant_nomatch' does not depend on any axioms -/
 #guard_msgs in

@@ -1,7 +1,9 @@
-import Lynth.Interval.Integral.Math.NestedSyntax
-import Lynth.Interval.Integral.Math.NestedAnalysis
-import Lynth.Interval.Integral.Math.NestedSyntaxLemmas
-import Lynth.Interval.Integral.Math.NestedTransportProofs
+module
+
+import all Lynth.Interval.Integral.Math.NestedSyntax
+import all Lynth.Interval.Integral.Math.NestedAnalysis
+import all Lynth.Interval.Integral.Math.NestedSyntaxLemmas
+import all Lynth.Interval.Integral.Math.NestedTransportProofs
 
 /-! Mathematical scope and substitution obligations for the pure nested
 expression language. The complete dependency bundle is mirrored in /tmp/intgrl. -/

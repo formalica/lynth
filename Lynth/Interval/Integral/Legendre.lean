@@ -1,6 +1,38 @@
-import Lynth.Interval.Integral.Math.FixedPoint
-import Lynth.Interval.Integral.Eval
-import Lynth.Interval.Core.Const
+module
+
+public import Init.Control.Basic
+public import Init.Control.Id
+public import Init.Core
+public import Init.Data.Array.Basic
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.Int.DivMod.Basic
+public import Init.Data.List.Basic
+public import Init.Data.Nat.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Nat.Log2
+public import Init.Data.Nat.Sqrt.Basic
+public import Init.Data.Range.Basic
+public import Init.Data.Rat.Basic
+public import Init.GetElem
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Int.Defs
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Data.Nat.Choose.Basic
+public import Mathlib.Data.Rat.Defs
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Fns.Elem
+public import Lynth.Interval.Fns.Trig
+public import Lynth.Interval.Integral.Math.FixedPoint
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Series.Tail
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Integral.Math.FixedPoint
+import all Lynth.Interval.Integral.Eval
+import all Lynth.Interval.Core.Const
 
 /-!
 Hybrid Legendre evaluator and symmetric Gauss node generation.
@@ -15,12 +47,12 @@ open Intgrl Fns
 
 def absUpper (I : Ival) : Option Dy := (Ival.abs I).hi
 
-def atFixed (p : Nat) (x : Dy) : Int :=
+@[expose] public def atFixed (p : Nat) (x : Dy) : Int :=
   if 0 ≤ x.exponent + (p : Int) then
     x.mantissa * (2 : Int) ^ (x.exponent + p).toNat
   else x.mantissa.tdiv ((2 : Int) ^ (-(x.exponent + p)).toNat)
 
-def fixedValue (p n : Nat) (x : Dy) : Ival × Ival :=
+@[expose] public def fixedValue (p n : Nat) (x : Dy) : Ival × Ival :=
   let q := atFixed p x
   let (a, b) := fixedPair p q n
   let err : Dy := ⟨(2 * (n + 1) * (n + 2) : Nat), -(p : Int)⟩
@@ -28,7 +60,7 @@ def fixedValue (p n : Nat) (x : Dy) : Ival × Ival :=
    Ival.widen p (Ival.pt ⟨b, -(p : Int)⟩) err)
 
 /-- Exact integer coefficients of 2^n P_n, in increasing parity order. -/
-def zeroCoeffs (n : Nat) : Array Int := Id.run do
+@[expose] public def zeroCoeffs (n : Nat) : Array Int := Id.run do
   let odd := n % 2
   let mut coeff : Int := (n.choose (n / 2) : Int) *
     (if odd == 0 then 1 else (n + 1 : Nat))
@@ -41,7 +73,7 @@ def zeroCoeffs (n : Nat) : Array Int := Id.run do
     out := out.push coeff
   return out
 
-def oneCoeffs (n : Nat) : Array Int := Id.run do
+@[expose] public def oneCoeffs (n : Nat) : Array Int := Id.run do
   let mut coeff : Int := 1
   let mut out := #[coeff]
   for k in [0:n] do
@@ -52,7 +84,7 @@ def oneCoeffs (n : Nat) : Array Int := Id.run do
 
 /-- Rectangular splitting: coefficients stay exact integers, expensive
 multiplications use shared powers and blocks of about sqrt(length). -/
-def rectEval (p : Nat) (coeff : Array Int) (X : Ival) : Ival := Id.run do
+@[expose] public def rectEval (p : Nat) (coeff : Array Int) (X : Ival) : Ival := Id.run do
   if coeff.isEmpty then return Ival.zero
   let block := max 1 (Nat.sqrt coeff.size)
   let mut powers := #[Ival.one]
@@ -70,19 +102,19 @@ def rectEval (p : Nat) (coeff : Array Int) (X : Ival) : Ival := Id.run do
     acc := Ival.add p (Ival.mul p acc powers[block]!) v
   return acc
 
-def zeroValue (p n : Nat) (x : Dy) : Ival :=
+@[expose] public def zeroValue (p n : Nat) (x : Dy) : Ival :=
   let P := rectEval p (zeroCoeffs n) (Ival.sq p (Ival.pt x))
   let P := if n % 2 == 1 then Ival.mul p (Ival.pt x) P else P
   Ival.mul p P (Ival.pt ⟨1, -(n : Int)⟩)
 
-def oneValue (p n : Nat) (x : Dy) : Ival × Ival :=
+@[expose] public def oneValue (p n : Nat) (x : Dy) : Ival × Ival :=
   let coeff := oneCoeffs n
   let U := Ival.divNat p (Ival.sub p (Ival.pt x) Ival.one) 2
   let P := rectEval p coeff U
   let dcoeff := (coeff.extract 1 coeff.size).mapIdx fun i (a : Int) => a * ((i + 1 : Nat) : Int)
   (P, Ival.divNat p (rectEval p dcoeff U) 2)
 
-def asympValue (c : Ctx) (n K : Nat) (x : Dy) : Ival :=
+@[expose] public def asympValue (c : Ctx) (n K : Nat) (x : Dy) : Ival :=
   let p := c.prec
   let X := Ival.pt x
   let S := Ival.sqrt p (Ival.sub p Ival.one (Ival.sq p X))
@@ -107,7 +139,7 @@ def asympValue (c : Ctx) (n K : Nat) (x : Dy) : Ival :=
     (Ival.mul p pref (Ival.div p next (Ival.npow p S K)))
   match tail.hi with | some e => Ival.widen p main e | none => Ival.top
 
-def pointPairNonneg (c : Ctx) (n : Nat) (x : Dy) : Ival × Ival := Id.run do
+@[expose] public def pointPairNonneg (c : Ctx) (n : Nat) (x : Dy) : Ival × Ival := Id.run do
   let p := c.prec
   if n == 0 then return (Ival.one, Ival.zero)
   let X := Ival.pt x
@@ -127,7 +159,7 @@ def pointPairNonneg (c : Ctx) (n : Nat) (x : Dy) : Ival × Ival := Id.run do
   return (val, Ival.div p
     (Ival.mul p (Ival.ofRat p n) (Ival.sub p prev (Ival.mul p X val))) D)
 
-def pointPair (c : Ctx) (n : Nat) (x : Dy) : Ival × Ival :=
+@[expose] public def pointPair (c : Ctx) (n : Nat) (x : Dy) : Ival × Ival :=
   if x.mantissa < 0 then
     let (v,d) := pointPairNonneg c n x.neg
     (if n % 2 == 1 then Ival.neg v else v,
@@ -135,7 +167,7 @@ def pointPair (c : Ctx) (n : Nat) (x : Dy) : Ival × Ival :=
   else pointPairNonneg c n x
 
 /-- Global second-derivative bound. The interior bound is selected when tighter. -/
-def secondBound (p n : Nat) (X : Ival) : Ival :=
+@[expose] public def secondBound (p n : Nat) (X : Ival) : Ival :=
   let global := Ival.ofRat p
     (((n - 1 : Nat) : ℚ) * n * (n + 1) * (n + 2) / 8)
   let D := Ival.sub p Ival.one (Ival.sq p X)
@@ -146,7 +178,7 @@ def secondBound (p n : Nat) (X : Ival) : Ival :=
     Ival.min global inner
   else global
 
-def onInterval (c : Ctx) (n : Nat) (X : Ival) : Ival × Ival :=
+@[expose] public def onInterval (c : Ctx) (n : Nat) (X : Ival) : Ival × Ival :=
   match X.mid, X.lo, X.hi with
   | some m, some a, some b =>
     let (v, d) := pointPair c n m
@@ -158,46 +190,46 @@ def onInterval (c : Ctx) (n : Nat) (X : Ival) : Ival × Ival :=
     (v, d)
   | _, _, _ => (Ival.top, Ival.top)
 
-def gaussWeightI (c : Ctx) (n : Nat) (X : Ival) : Ival :=
+@[expose] public def gaussWeightI (c : Ctx) (n : Nat) (X : Ival) : Ival :=
   let d := (onInterval c n X).2
   Ival.div c.prec (Ival.ofRat c.prec 2)
     (Ival.mul c.prec (Ival.sub c.prec Ival.one (Ival.sq c.prec X)) (Ival.sq c.prec d))
 
-structure NodeTable where
+public structure NodeTable where
   roots : List (Dy × Dy)
   certWeights : List Ival := []
 deriving Repr, Inhabited
 
-def rootIval (r : Dy × Dy) : Ival := ⟨some r.1, some r.2⟩
+@[expose] public def rootIval (r : Dy × Dy) : Ival := ⟨some r.1, some r.2⟩
 
-def rootSignCheck (c : Ctx) (n : Nat) (r : Dy × Dy) : Bool :=
+@[expose] public def rootSignCheck (c : Ctx) (n : Nat) (r : Dy × Dy) : Bool :=
   Dy.ltB r.1 r.2 && Dy.ltB (Dy.ofInt (-1)) r.1 && Dy.ltB r.2 Dy.one &&
     (Ival.mul c.prec (pointPair c n r.1).1 (pointPair c n r.2).1).negv
 
-def rawDyEq (a b : Dy) : Bool :=
+@[expose] public def rawDyEq (a b : Dy) : Bool :=
   a.mantissa == b.mantissa && a.exponent == b.exponent
 
-def reflectedRoots (rs : List (Dy × Dy)) : List (Dy × Dy) :=
+@[expose] public def reflectedRoots (rs : List (Dy × Dy)) : List (Dy × Dy) :=
   rs.reverse.map (fun (a,b) => (b.neg,a.neg))
 
-def NodeTable.computeWeights (c : Ctx) (t : NodeTable) : List Ival :=
+@[expose] public def NodeTable.computeWeights (c : Ctx) (t : NodeTable) : List Ival :=
   if t.roots.length == 1 then [Ival.ofRat c.prec 2]
   else
     let right := (t.roots.drop (t.roots.length/2)).map
       (fun r => gaussWeightI c t.roots.length (rootIval r))
     right.reverse ++ right
 
-def rawEndpointEq : Option Dy → Option Dy → Bool
+@[expose] public def rawEndpointEq : Option Dy → Option Dy → Bool
   | none, none => true
   | some a, some b => rawDyEq a b
   | _, _ => false
 
-def rawIvalEq (a b : Ival) : Bool :=
+@[expose] public def rawIvalEq (a b : Ival) : Bool :=
   rawEndpointEq a.lo b.lo && rawEndpointEq a.hi b.hi
 
-def NodeTable.weights (_c : Ctx) (t : NodeTable) : List Ival := t.certWeights
+@[expose] public def NodeTable.weights (_c : Ctx) (t : NodeTable) : List Ival := t.certWeights
 
-def NodeTable.check (c : Ctx) (t : NodeTable) : Bool :=
+@[expose] public def NodeTable.check (c : Ctx) (t : NodeTable) : Bool :=
   let n := t.roots.length
   let rootsOK := if n == 1 then
     match t.roots with

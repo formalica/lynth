@@ -1,4 +1,6 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.Remainder.IntegralBounds
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.Remainder.IntegralBounds
 
 /-!
 # The exponentially small remainder `PP n - Σ_{j<n} pp n j` and the lower bound on `PP n`

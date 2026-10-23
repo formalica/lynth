@@ -1,5 +1,7 @@
-import Lynth.Interval.Integral.RectEvalProof
-import Lynth.Interval.Integral.LegendreCoefficients
+module
+
+import all Lynth.Interval.Integral.RectEvalProof
+import all Lynth.Interval.Integral.LegendreCoefficients
 
 /-! Interval realizations of the polynomial expansions at zero and one. -/
 namespace Lynth.Interval.Integral

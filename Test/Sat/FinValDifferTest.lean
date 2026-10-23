@@ -1,7 +1,8 @@
 -- Generic finite-value + difference bridges: smoke tests plus axiom
 -- pins. All correctness lemmas must be core-only (no solver axioms,
 -- no puzzle content) — they are instantiated for every finite puzzle.
-import Lynth.Sat.Differ
+module
+import Lynth
 
 open Lynth.Sat
 open Lynth.Sat.Gates
@@ -16,121 +17,121 @@ open Lynth.Sat.Differ
   (modelOf 2 2 (fun v => if v.val = 0 then ⟨0, by omega⟩ else ⟨1, by omega⟩))
 
 /-- info: 'Lynth.Sat.FinVal.decodeVal_true' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms decodeVal_true
 
 /-- info: 'Lynth.Sat.FinVal.decodeVal_of_row' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms decodeVal_of_row
 
 /-- info: 'Lynth.Sat.FinVal.modelOf_eval' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms modelOf_eval
 
 /-- info: 'Lynth.Sat.Differ.diffClause_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms diffClause_sound
 
 /-- info: 'Lynth.Sat.Differ.diff_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms diff_sound
 
 /-- info: 'Lynth.Sat.Differ.diffClause_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms diffClause_complete
 
 /-- info: 'Lynth.Sat.Gates.checkSat_pair_of_true_left' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms checkSat_pair_of_true_left
 
 /-- info: 'Lynth.Sat.Gates.checkSat_pair_of_true_right' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms checkSat_pair_of_true_right
 
 /-- info: 'Lynth.Sat.FinVal.rowLit_unique' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms rowLit_unique
 
 /-- info: 'Lynth.Sat.Differ.diff_sound_decode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms diff_sound_decode
 
 /-- info: 'Lynth.Sat.Differ.diffCNF_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms diffCNF_complete
 
 /-- info: 'Lynth.Sat.Differ.eq_sound_decode' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms eq_sound_decode
 
 /-- info: 'Lynth.Sat.Differ.eqClause_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms eqClause_complete
 
 /-- info: 'Lynth.Sat.Differ.eqCNF_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms eqCNF_complete
 
 /-- info: 'Lynth.Sat.Gates.checkSat_flatMap' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms checkSat_flatMap
 
 /-- info: 'Lynth.Sat.Gates.checkSat_of_all_single' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms checkSat_of_all_single
 
 /-- info: 'Lynth.Sat.Gates.atLeastOne_of_true' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms atLeastOne_of_true
 
 /-- info: 'Lynth.Sat.Gates.mem_atMostOne' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms mem_atMostOne
 
 /-- info: 'Lynth.Sat.FinVal.atMostOneComplete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms atMostOneComplete
 
 /-- info: 'Lynth.Sat.FinVal.rowComplete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms rowComplete
 
 /-- info: 'Lynth.Sat.FinVal.cellsComplete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms cellsComplete
 
 /-- info: 'Lynth.Sat.Gates.checkSat_piece' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms checkSat_piece
 
 /-- info: 'Lynth.Sat.Gates.checkSat_condFlatMap' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms checkSat_condFlatMap
 
 /-- info: 'Lynth.Sat.Gates.appendHeld' depends on axioms: [propext] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms appendHeld
 
 /-- info: 'Lynth.Sat.Gates.checkSat_appendHeld' depends on axioms: [propext] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms checkSat_appendHeld
 
 /-- info: 'Lynth.Sat.Differ.eqClause_imp' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms eqClause_imp
 
 /-- info: 'Lynth.Sat.Differ.unitNeg_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms unitNeg_sound
 
 /-- info: 'Lynth.Sat.Differ.unitNeg_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms unitNeg_complete
 
 /-- info: 'Lynth.Sat.Differ.unitPos_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms unitPos_sound
 
 /-- info: 'Lynth.Sat.Differ.unitPos_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms unitPos_complete

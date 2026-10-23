@@ -1,6 +1,27 @@
-import Lynth.Interval.Num.CBox
-import Lynth.Interval.Num.NIval
-import Lynth.Interval.Num.ZIval
+module
+
+public import Batteries.Data.List.Basic
+public import Init.Data.Int.Basic
+public import Init.Data.Option.Basic
+public import Init.Data.Rat.Basic
+public import Init.Data.Zero
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Int.Defs
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Algebra.Group.Semigroup
+public import Mathlib.Basic.Complex.Basic
+public import Mathlib.Basic.Real.Basic
+public import Mathlib.Data.Int.Cast.Defs
+public import Mathlib.Data.Nat.Cast.Defs
+public import Mathlib.Data.Rat.Defs
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Num.NIval
+public import Lynth.Interval.Num.ZIval
+import all Lynth.Interval.Num.CBox
+import all Lynth.Interval.Num.NIval
+import all Lynth.Interval.Num.ZIval
 
 /-!
 # Value types of the interval AST
@@ -16,13 +37,13 @@ See `docs/interval/03-expr-registry.md §1`.
 
 namespace Lynth.Interval
 
-inductive Ty | nat | int | real | cplx | rat | list (t : Ty)
-deriving Repr, DecidableEq, Inhabited
+public inductive Ty | nat | int | real | cplx | rat | list (t : Ty)
+deriving Repr, @[expose] DecidableEq, Inhabited
 
 namespace Ty
 
 /-- semantic carrier -/
-@[reducible] def Val : Ty → Type
+@[expose, reducible] public def Val : Ty → Type
   | .nat => ℕ
   | .int => ℤ
   | .real => ℝ
@@ -32,7 +53,7 @@ namespace Ty
 
 /-- computational enclosure (`rat` is exact-or-unknown; lists are
 pointwise-or-unknown: `none` is the trivial enclosure) -/
-@[reducible] def Enc : Ty → Type
+@[expose, reducible] public def Enc : Ty → Type
   | .nat => NIval
   | .int => ZIval
   | .real => Ival
@@ -41,7 +62,7 @@ pointwise-or-unknown: `none` is the trivial enclosure) -/
   | .list t => Option (List t.Enc)
 
 /-- membership of a value in an enclosure -/
-def Mem : (t : Ty) → t.Enc → t.Val → Prop
+@[expose] public def Mem : (t : Ty) → t.Enc → t.Val → Prop
   | .nat, I, n => n ∈ I
   | .int, I, z => z ∈ I
   | .real, I, x => x ∈ I
@@ -51,7 +72,7 @@ def Mem : (t : Ty) → t.Enc → t.Val → Prop
   | .list t, some X, v => List.Forall₂ (Mem t) X v
 
 /-- the trivial enclosure -/
-def top : (t : Ty) → t.Enc
+@[expose] public def top : (t : Ty) → t.Enc
   | .nat => NIval.top
   | .int => ZIval.top
   | .real => Ival.top
@@ -70,7 +91,7 @@ theorem mem_top : (t : Ty) → (v : t.Val) → t.Mem (t.top) v
 /-- pointwise addition on value lists (missing tails treated as zero).
 The element operation is explicit: nothing here relies on typeclass
 resolution, so all uses stay syntactic. -/
-def listAdd (t : Ty) (add : t.Val → t.Val → t.Val) :
+@[expose] public def listAdd (t : Ty) (add : t.Val → t.Val → t.Val) :
     List t.Val → List t.Val → List t.Val
   | [], ys => ys
   | x :: xs, ys =>
@@ -79,12 +100,12 @@ def listAdd (t : Ty) (add : t.Val → t.Val → t.Val) :
     | y :: ys => add x y :: listAdd t add xs ys
 
 /-- scalar multiplication on value lists -/
-def listNsmul (t : Ty) (add : t.Val → t.Val → t.Val) :
+@[expose] public def listNsmul (t : Ty) (add : t.Val → t.Val → t.Val) :
     ℕ → List t.Val → List t.Val
   | 0, _ => []
   | n + 1, xs => listAdd t add (listNsmul t add n xs) xs
 
-def listAddCommMonoid (t : Ty) (F : t.Val → t.Val → t.Val)
+@[expose] public def listAddCommMonoid (t : Ty) (F : t.Val → t.Val → t.Val)
     (comm : ∀ x y, F x y = F y x)
     (assoc : ∀ x y z, F (F x y) z = F x (F y z)) :
     AddCommMonoid (List t.Val) where
@@ -129,7 +150,7 @@ def listAddCommMonoid (t : Ty) (F : t.Val → t.Val → t.Val)
 
 /-- dummy value (for `CFn.fn` placeholders, which are never applied:
 denotation uses `fn'`, evaluation uses `ev`) -/
-def defaultVal : (t : Ty) → t.Val
+@[expose] public def defaultVal : (t : Ty) → t.Val
   | .nat => 0
   | .int => 0
   | .real => 0
@@ -137,7 +158,7 @@ def defaultVal : (t : Ty) → t.Val
   | .rat => 0
   | .list _ => []
 
-instance instAddCommMonoid : (t : Ty) → AddCommMonoid t.Val
+public instance instAddCommMonoid : (t : Ty) → AddCommMonoid t.Val
   | .nat => inferInstanceAs (AddCommMonoid ℕ)
   | .int => inferInstanceAs (AddCommMonoid ℤ)
   | .real => inferInstanceAs (AddCommMonoid ℝ)
@@ -149,7 +170,7 @@ instance instAddCommMonoid : (t : Ty) → AddCommMonoid t.Val
       (fun x y z => add_assoc x y z)
 
 /-- exact zero enclosure -/
-def zeroE : (t : Ty) → t.Enc
+@[expose] public def zeroE : (t : Ty) → t.Enc
   | .nat => NIval.pt 0
   | .int => ZIval.pt 0
   | .real => Ival.zero
@@ -158,14 +179,14 @@ def zeroE : (t : Ty) → t.Enc
   | .list _ => some []
 
 /-- pointwise enclosure addition with an explicit element operation -/
-def zipAddE (t : Ty) (f : t.Enc → t.Enc → t.Enc) :
+@[expose] public def zipAddE (t : Ty) (f : t.Enc → t.Enc → t.Enc) :
     List t.Enc → List t.Enc → List t.Enc
   | [], Ys => Ys
   | Xs, [] => Xs
   | x :: xs, y :: ys => f x y :: zipAddE t f xs ys
 
 /-- sum of enclosures at precision `p` (lists: pointwise when both known) -/
-def addE : (t : Ty) → Nat → t.Enc → t.Enc → t.Enc
+@[expose] public def addE : (t : Ty) → Nat → t.Enc → t.Enc → t.Enc
   | .nat, _, I, J => NIval.add I J
   | .int, _, I, J => ZIval.add I J
   | .real, p, I, J => Ival.add p I J

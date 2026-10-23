@@ -1,5 +1,7 @@
-import Lynth.Interval.Fns.All
-import Lynth.Interval.Procedure
+module
+
+import all Lynth.Interval.Fns.All
+import all Lynth.Interval.Procedure
 
 /-!
 # Interval arithmetic for `lynth`

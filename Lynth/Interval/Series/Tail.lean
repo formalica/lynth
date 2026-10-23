@@ -1,4 +1,9 @@
-import Lynth.Interval.Num.Ival
+module
+
+public import Init.Prelude
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+import all Lynth.Interval.Num.Ival
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 
@@ -44,7 +49,7 @@ theorem abs_sub_sum_le_of_ratio {t : ℕ → ℝ} {s : ℝ} (hs : HasSum t s) (N
 namespace Ival
 
 /-- upper bound of `|x|` over the interval (`none` if unbounded) -/
-def magHi (I : Ival) : Option Dy := (abs I).hi
+@[expose] public def magHi (I : Ival) : Option Dy := (abs I).hi
 
 theorem abs_le_magHi {x : ℝ} {I : Ival} (hx : x ∈ I) {m : Dy} (hm : magHi I = some m) :
     |x| ≤ m.toReal := (mem_abs hx).2 m hm
@@ -53,7 +58,7 @@ theorem mem_pt_nat (n : ℕ) : (n : ℝ) ∈ pt (Dy.ofNat n) := by
   have := mem_pt (Dy.ofNat n); simpa [toReal_def] using this
 
 /-- `I / n` for a positive natural `n` -/
-def divNat (p : Nat) (I : Ival) (n : Nat) : Ival :=
+@[expose] public def divNat (p : Nat) (I : Ival) (n : Nat) : Ival :=
   ⟨I.lo.map (fun a => divD p a (Dy.ofNat n)), I.hi.map (fun b => divU p b (Dy.ofNat n))⟩
 
 theorem mem_divNat {p : Nat} {x : ℝ} {I : Ival} (hx : x ∈ I) {n : Nat} (hn : 0 < n) :
@@ -83,7 +88,7 @@ theorem mem_divNat {p : Nat} {x : ℝ} {I : Ival} (hx : x ∈ I) {n : Nat} (hn :
       exact le_trans (div_le_div_of_nonneg_right hb (le_of_lt hn')) h'
 
 /-- `[lo - r, hi + r]` where `r` bounds the distance -/
-def widenMag (p : Nat) (I : Ival) (r : Option Dy) : Ival :=
+@[expose] public def widenMag (p : Nat) (I : Ival) (r : Option Dy) : Ival :=
   match r with
   | some r => widen p I r
   | none => top
@@ -98,7 +103,7 @@ end Ival
 
 /-! ### Partial sums by term recurrence -/
 
-structure SerState where
+public structure SerState where
   /-- index of the current term -/
   k : Nat
   /-- enclosure of `t k` -/
@@ -111,7 +116,7 @@ def SerState.Inv (t : ℕ → ℝ) (st : SerState) : Prop :=
   t st.k ∈ st.T ∧ (∑ i ∈ Finset.range st.k, t i) ∈ st.S
 
 /-- advance until `small T` or fuel runs out -/
-def serLoop (p : Nat) (step : Nat → Ival → Ival) (small : Ival → Bool) :
+@[expose] public def serLoop (p : Nat) (step : Nat → Ival → Ival) (small : Ival → Bool) :
     Nat → SerState → SerState
   | 0, st => st
   | fuel + 1, st =>
@@ -133,14 +138,14 @@ theorem serLoop_inv {p : Nat} {step : Nat → Ival → Ival} {small : Ival → B
       exact Ival.mem_add h.2 h.1
 
 /-- start state `t 0 ∈ T0`, empty sum -/
-def SerState.start (T0 : Ival) : SerState := ⟨0, T0, Ival.zero⟩
+@[expose] public def SerState.start (T0 : Ival) : SerState := ⟨0, T0, Ival.zero⟩
 
 theorem SerState.start_inv {t : ℕ → ℝ} {T0 : Ival} (h : t 0 ∈ T0) : (SerState.start T0).Inv t :=
   ⟨h, by simpa [SerState.start] using Ival.mem_zero⟩
 
 /-- enclosure of the series sum from a loop state, given a ratio bound `q` for the tail:
 `S ± |T| · (1/(1-q))`, where `inv1q ≥ 1/(1-q)` is supplied as a dyadic. -/
-def SerState.encl (p : Nat) (st : SerState) (inv1q : Dy) : Ival :=
+@[expose] public def SerState.encl (p : Nat) (st : SerState) (inv1q : Dy) : Ival :=
   Ival.widenMag p st.S ((Ival.magHi st.T).map (fun m => mulU p m inv1q))
 
 theorem SerState.mem_encl {p : Nat} {t : ℕ → ℝ} {s : ℝ} (hs : HasSum t s) {st : SerState}

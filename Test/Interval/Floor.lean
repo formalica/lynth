@@ -1,5 +1,6 @@
+module
 import Mathlib
-import Lynth
+public import Lynth
 
 open Lynth.Interval
 
@@ -10,7 +11,7 @@ Nested floor/ceil/round: enclosures feed further real computation
 
 set_option maxHeartbeats 6741 in
 -- N1: floor of a composition, under sqrt. √8 ≈ 2.8284271247461903
-def floor_sqrt_nest : { x : Rat //
+public def floor_sqrt_nest : { x : Rat //
     abs (Real.sqrt (↑⌊Real.exp 2 + Real.sin 1⌋₊) - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'floor_sqrt_nest' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -20,7 +21,7 @@ def floor_sqrt_nest : { x : Rat //
 
 set_option maxHeartbeats 6444 in
 -- N2: floor inside sin. sin 5 ≈ -0.9589242746631385
-def floor_sin_nest : { x : Rat //
+public def floor_sin_nest : { x : Rat //
     abs (Real.sin (↑⌊Real.exp 1 + Real.pi⌋₊) - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'floor_sin_nest' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -30,7 +31,7 @@ def floor_sin_nest : { x : Rat //
 
 set_option maxHeartbeats 34217 in
 -- N3: Gamma-fed floor feeding division. 6/10 = 0.6
-def floor_gamma_div : { x : Rat //
+public def floor_gamma_div : { x : Rat //
     abs (((⌊Real.Gamma (1 / 4) + Real.Gamma (1 / 3)⌋₊ : ℕ) : ℝ) / 10 - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'floor_gamma_div' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -40,7 +41,7 @@ def floor_gamma_div : { x : Rat //
 
 set_option maxHeartbeats 1917 in
 -- N4: computed floor feeding `npow`. 2^3 = 8
-def floor_npow : { x : Rat //
+public def floor_npow : { x : Rat //
     abs ((2 : ℝ) ^ ⌊Real.sqrt 2 + Real.sqrt 3⌋₊ - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'floor_npow' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -50,7 +51,7 @@ def floor_npow : { x : Rat //
 
 set_option maxHeartbeats 4901 in
 -- N5: computed ceil under sqrt. √9 = 3
-def ceil_sqrt_nest : { x : Rat //
+public def ceil_sqrt_nest : { x : Rat //
     abs (Real.sqrt (↑⌈Real.exp 1 * Real.pi⌉₊) - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'ceil_sqrt_nest' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -60,7 +61,7 @@ def ceil_sqrt_nest : { x : Rat //
 
 set_option maxHeartbeats 4341 in
 -- N6: double nesting through a cast. ⌊5 + sin 1⌋₊ = 5
-def floor_double_nest : { n : Nat //
+public def floor_double_nest : { n : Nat //
     n = ⌊((⌊(11 : ℝ) / 2⌋₊ : ℕ) : ℝ) + Real.sin 1⌋₊ } := by
   lynth
 /-- info: 'floor_double_nest' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -70,7 +71,7 @@ def floor_double_nest : { n : Nat //
 
 set_option maxHeartbeats 4870 in
 -- N7: Nat.floor junk path (`⌊negative⌋₊ = 0`) composing correctly. √2
-def floor_neg_nest : { x : Rat //
+public def floor_neg_nest : { x : Rat //
     abs (Real.sqrt ((((⌊Real.sin 3 - 2⌋₊ : ℕ)) : ℝ) + 2) - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'floor_neg_nest' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -80,7 +81,7 @@ def floor_neg_nest : { x : Rat //
 
 set_option maxHeartbeats 262 in
 -- N8: exact-integer hit. 2
-def floor_exact_hit : { n : Nat // n = ⌊(2 : ℝ)⌋₊ } := by
+public def floor_exact_hit : { n : Nat // n = ⌊(2 : ℝ)⌋₊ } := by
   lynth
 /-- info: 'floor_exact_hit' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
@@ -89,7 +90,7 @@ def floor_exact_hit : { n : Nat // n = ⌊(2 : ℝ)⌋₊ } := by
 
 set_option maxHeartbeats 6183 in
 -- I1: Int.floor nested in sin. sin 5
-def intfloor_sin_nest : { x : Rat //
+public def intfloor_sin_nest : { x : Rat //
     abs (Real.sin (↑⌊Real.exp 1 + Real.pi⌋) - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'intfloor_sin_nest' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -99,7 +100,7 @@ def intfloor_sin_nest : { x : Rat //
 
 set_option maxHeartbeats 4631 in
 -- I2: Int.ceil under sqrt. 3
-def intceil_sqrt_nest : { x : Rat //
+public def intceil_sqrt_nest : { x : Rat //
     abs (Real.sqrt (↑⌈Real.exp 1 * Real.pi⌉) - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'intceil_sqrt_nest' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -109,7 +110,7 @@ def intceil_sqrt_nest : { x : Rat //
 
 set_option maxHeartbeats 5731 in
 -- I3: round nested in sin. sin 6 ≈ -0.27941549819892586
-def round_sin_nest : { x : Rat //
+public def round_sin_nest : { x : Rat //
     abs (Real.sin (↑(round (Real.exp 1 + Real.pi))) - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'round_sin_nest' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -119,7 +120,7 @@ def round_sin_nest : { x : Rat //
 
 set_option maxHeartbeats 5798 in
 -- I4: Int witness with nested Int floor. 3
-def intfloor_wit_nest : { n : Int //
+public def intfloor_wit_nest : { n : Int //
     n = ⌊(((⌊Real.exp 1 + 1⌋ : ℤ)) : ℝ) + Real.sin 1⌋ } := by
   lynth
 /-- info: 'intfloor_wit_nest' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -129,7 +130,7 @@ def intfloor_wit_nest : { n : Int //
 
 set_option maxHeartbeats 3801 in
 -- I5: round tie behavior. sin 3
-def round_tie_nest : { x : Rat //
+public def round_tie_nest : { x : Rat //
     abs (Real.sin (↑(round (5 / 2 : ℝ))) - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'round_tie_nest' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -139,7 +140,7 @@ def round_tie_nest : { x : Rat //
 
 set_option maxHeartbeats 2879 in
 -- I6/I7/I8: negative Int floor/ceil/round composing. all 1
-def intfloor_neg : { x : Rat //
+public def intfloor_neg : { x : Rat //
     abs ((((⌊-Real.exp 1⌋ : ℤ)) : ℝ) + 4 - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'intfloor_neg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -148,7 +149,7 @@ def intfloor_neg : { x : Rat //
 #eval intfloor_neg.1
 
 set_option maxHeartbeats 2879 in
-def intceil_neg : { x : Rat //
+public def intceil_neg : { x : Rat //
     abs ((((⌈-Real.exp 1⌉ : ℤ)) : ℝ) + 3 - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'intceil_neg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -157,7 +158,7 @@ def intceil_neg : { x : Rat //
 #eval intceil_neg.1
 
 set_option maxHeartbeats 2880 in
-def round_neg : { x : Rat //
+public def round_neg : { x : Rat //
     abs (((round (-Real.exp 1) : ℤ) : ℝ) + 4 - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'round_neg' depends on axioms: [propext, Classical.choice, Quot.sound] -/
@@ -167,7 +168,7 @@ def round_neg : { x : Rat //
 
 set_option maxHeartbeats 5456 in
 -- round witness (top level). 4
-def round_wit : { s : Int // round (Real.exp 1 + Real.sin 1) = s } := by
+public def round_wit : { s : Int // round (Real.exp 1 + Real.sin 1) = s } := by
   lynth
 /-- info: 'round_wit' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
@@ -176,7 +177,7 @@ def round_wit : { s : Int // round (Real.exp 1 + Real.sin 1) = s } := by
 
 set_option maxHeartbeats 7722 in
 -- MD01 shape (existing suite target). 15
-def floor_exp_sin_cos : { n : Nat //
+public def floor_exp_sin_cos : { n : Nat //
     n = ⌊(Real.exp 2 + Real.sin 1) / Real.cos 1⌋₊ } := by
   lynth
 /-- info: 'floor_exp_sin_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/

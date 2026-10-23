@@ -1,4 +1,6 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.Remainder.Integrability
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.Remainder.Integrability
 
 /-!
 # Bounds on the three remainder integrals

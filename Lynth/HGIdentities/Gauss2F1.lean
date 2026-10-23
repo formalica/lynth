@@ -1,7 +1,9 @@
+module
+
 import Mathlib
 import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
-import Lynth.HGIdentities.Common
-import Lynth.Hypergeometric
+import all Lynth.HGIdentities.Common
+import all Lynth.Hypergeometric
 
 /-!
 # The quadratic transformation `₂F̃₁(a, a - 1/2; 2a; z) = 2^(2a-1) (√(1-z) + 1)^(1-2a) / Γ(2a)`

@@ -1,9 +1,10 @@
-import Lynth.Interval.Integral.NestedExpr
+module
+
+import all Lynth.Interval.Integral.NestedExpr
 
 /-! Preservation of stored assertions through memo lookup and resizing. -/
 namespace Lynth.Interval.Integral.Nested
 
-open private putBucket from Lynth.Interval.Integral.NestedExpr
 
 def BucketsHold (P : Key → Ival → Prop) (bs : Array (List (Key × Ival))) : Prop :=
   ∀ bucket ∈ bs, ∀ kv ∈ bucket, P kv.1 kv.2

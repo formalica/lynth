@@ -1,6 +1,25 @@
-import Lynth.Interval.Fns.EulerGamma.Bound
-import Lynth.Interval.Fns.Log
-import Lynth.Interval.Fns.Exp
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Data.Nat.Factorial.Basic
+public import Mathlib.Data.Rat.Defs
+public import Mathlib.NumberTheory.Harmonic.Defs
+import Mathlib.NumberTheory.Harmonic.Defs
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Fns.Exp
+public import Lynth.Interval.Fns.Log
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Fns.EulerGamma.Bound
+import all Lynth.Interval.Fns.Log
+import all Lynth.Interval.Fns.Exp
 
 /-!
 # Euler–Mascheroni via Brent–McMillan B3: interval evaluator
@@ -46,10 +65,10 @@ theorem mem_pt_zero : (0 : ℝ) ∈ Ival.pt Dy.zero := by
 
 /-- B3 parameter from working precision `p` (mantissa bits):
 `24·e^{−8m}` lands far below `2^{−p}`. -/
-def eulerM (p : Nat) : Nat := p / 8 + 6
+@[expose] public def eulerM (p : Nat) : Nat := p / 8 + 6
 
 /-- truncation count (`m < N + 1`, as the tail lemmas need). -/
-def eulerN (p : Nat) : Nat := 5 * eulerM p + 10
+@[expose] public def eulerN (p : Nat) : Nat := 5 * eulerM p + 10
 
 theorem eulerM_ge (p : Nat) : 1 ≤ eulerM p := by unfold eulerM; omega
 
@@ -65,14 +84,14 @@ theorem eulerM_lt_eulerN (p : Nat) : (eulerM p : ℝ) < (eulerN p : ℝ) + 1 := 
 /-! ### Joint `A`/`B` fold -/
 
 /-- fold state: term, harmonic number, and both partial sums. -/
-structure BMState where
+public structure BMState where
   t : Ival
   h : Ival
   sa : Ival
   sb : Ival
 
 /-- one step at index `k` (all operations rounded at precision `w`). -/
-def bmStep (w m k : Nat) (s : BMState) : BMState :=
+@[expose] public def bmStep (w m k : Nat) (s : BMState) : BMState :=
   { t := Ival.div w (Ival.mul w s.t (Ival.pt (Dy.ofNat (m * m))))
       (Ival.pt (Dy.ofNat ((k + 1) * (k + 1))))
     h := Ival.add w s.h
@@ -81,7 +100,7 @@ def bmStep (w m k : Nat) (s : BMState) : BMState :=
     sb := Ival.add w s.sb s.t }
 
 /-- `n` steps from `(t₀, H₀, A₀, B₀) = (1, 0, 0, 0)`. -/
-def bmFold (w m : Nat) : Nat → BMState
+@[expose] public def bmFold (w m : Nat) : Nat → BMState
   | 0 => ⟨Ival.pt (Dy.ofNat 1), Ival.pt Dy.zero, Ival.pt Dy.zero, Ival.pt Dy.zero⟩
   | n + 1 => bmStep w m n (bmFold w m n)
 
@@ -142,13 +161,13 @@ theorem mem_bmFold (w m n : Nat) :
 /-! ### `K` fold -/
 
 /-- `K` fold state: current term and partial sum. -/
-structure BMKState where
+public structure BMKState where
   u : Ival
   sk : Ival
 
 /-- one step at index `k`:
 `u_{k+1} = u_k·(2k+1)³(2k+2)³/((k+1)⁴(16m)²)`. -/
-def bmKStep (w m k : Nat) (s : BMKState) : BMKState :=
+@[expose] public def bmKStep (w m k : Nat) (s : BMKState) : BMKState :=
   let num := (2 * k + 1) ^ 3 * (2 * k + 2) ^ 3
   let den := (k + 1) ^ 4 * (16 * m) ^ 2
   { u := Ival.div w (Ival.mul w s.u (Ival.pt (Dy.ofNat num)))
@@ -156,7 +175,7 @@ def bmKStep (w m k : Nat) (s : BMKState) : BMKState :=
     sk := Ival.add w s.sk s.u }
 
 /-- `n` steps from `(u₀, K₀) = (1, 0)`; run for `n = 2m`. -/
-def bmKFold (w m : Nat) : Nat → BMKState
+@[expose] public def bmKFold (w m : Nat) : Nat → BMKState
   | 0 => ⟨Ival.pt (Dy.ofNat 1), Ival.pt Dy.zero⟩
   | n + 1 => bmKStep w m n (bmKFold w m n)
 
@@ -208,7 +227,7 @@ theorem mem_bmKFold (w m n : Nat) (hm : 1 ≤ m) :
 
 /-- exact-`ℚ` analytic radius from Dy upper bounds of `A_N`, `B_N`, `K`
 and of `exp(−8m)`: truncation pieces plus the B3 bound. -/
-def eulerRadQ (m N : Nat) (ahi bhi khi ehi : ℚ) : ℚ :=
+@[expose] public def eulerRadQ (m N : Nat) (ahi bhi khi ehi : ℚ) : ℚ :=
   let xq : ℚ := (m : ℚ) ^ 2
   let tB : ℚ := xq ^ N / ((N ! : ℚ)) ^ 2
   let qq : ℚ := xq / (((N : ℚ) + 1) ^ 2)
@@ -218,7 +237,7 @@ def eulerRadQ (m N : Nat) (ahi bhi khi ehi : ℚ) : ℚ :=
 
 /-- the enclosure: midpoint from the folds, widened by the radius
 (`top` on the impossible path where a bound is missing). -/
-def eulerBMIval (c : Ctx) : Ival :=
+@[expose] public def eulerBMIval (c : Ctx) : Ival :=
   let w := c.prec + 8
   let m := eulerM c.prec
   let N := eulerN c.prec

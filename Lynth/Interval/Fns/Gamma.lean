@@ -1,5 +1,36 @@
-import Lynth.Interval.Fns.Elem
-import Lynth.Interval.Fns.StirlingExpansion
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.List.Basic
+public import Init.Data.List.BasicAux
+public import Init.Data.Nat.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Algebra.Field.Defs
+public import Mathlib.Algebra.Field.Rat
+public import Mathlib.Algebra.Order.Floor.Defs
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Algebra.Order.Ring.Unbundled.Rat
+public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+public import Mathlib.Data.Finset.Range
+public import Mathlib.Data.Rat.Defs
+public import Mathlib.Data.Rat.Floor
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.Exp
+public import Lynth.Interval.Fns.Log
+public import Lynth.Interval.Fns.Trig
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Series.Tail
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Fns.Elem
+import all Lynth.Interval.Fns.StirlingExpansion
 import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 
@@ -42,7 +73,7 @@ open Lynth.Interval Dy
 
 /-- table values `B_{2k} / (2k * (2k-1))` for `k = 1..24` (`0` beyond;
 used below the cutoff — see `stirlingCoeff`). -/
-def stirlingTable : Nat → ℚ
+@[expose] public def stirlingTable : Nat → ℚ
   | 1 => 1 / 12
   | 2 => -1 / 360
   | 3 => 1 / 1260
@@ -72,7 +103,7 @@ def stirlingTable : Nat → ℚ
 /-! ### General Bernoulli computation (arbitrary `k`) -/
 
 /-- one Pascal-triangle step on adjacent pairs. -/
-def pascalAdd : Nat → List Nat → List Nat
+@[expose] public def pascalAdd : Nat → List Nat → List Nat
   | prev, [] => [prev]
   | prev, x :: xs => (prev + x) :: pascalAdd x xs
 
@@ -86,7 +117,7 @@ theorem length_pascalAdd (prev : Nat) (r : List Nat) :
     simp only [e, List.length_cons, h]
 
 /-- next Pascal row from the current one. -/
-def nextPascal : List Nat → List Nat
+@[expose] public def nextPascal : List Nat → List Nat
   | [] => [1]
   | _ :: r => 1 :: pascalAdd 1 r
 
@@ -101,22 +132,22 @@ theorem length_nextPascal (r : List Nat) :
 
 /-- incremental Bernoulli state: `vals = [B_0, …, B_{L-1}]` with
 `L = vals.length`, and `row = C(L+1, ·)` for computing `B_L` next. -/
-structure BernState where
+public structure BernState where
   vals : List ℚ
   row : List Nat
 
 /-- the next Bernoulli number from the state (binomial recurrence
 `B_L = -Σ_{k<L} C(L+1,k)·B_k / (L+1)`). -/
-def bernNext (st : BernState) : ℚ :=
+@[expose] public def bernNext (st : BernState) : ℚ :=
   -(∑ k ∈ Finset.range st.vals.length, (st.row.getD k 0 : ℚ) * st.vals.getD k 0) /
     ((st.vals.length : ℚ) + 1)
 
 /-- one step: append `B_L`, advance the Pascal row. -/
-def bernStep (st : BernState) : BernState :=
+@[expose] public def bernStep (st : BernState) : BernState :=
   ⟨st.vals ++ [bernNext st], nextPascal st.row⟩
 
 /-- iterate from `[B_0] = [1]` with row `C(2, ·)`; `vals` grows by append. -/
-def bernState : Nat → BernState
+@[expose] public def bernState : Nat → BernState
   | 0 => ⟨[1], [1, 2, 1]⟩
   | n + 1 => bernStep (bernState n)
 
@@ -129,20 +160,20 @@ theorem length_bernState_vals (n : Nat) : (bernState n).vals.length = n + 1 := b
     simp [e, List.length_append, ih]
 
 /-- `[B_0, …, B_N]` (length `N+1`). -/
-def bernoulliList (N : Nat) : List ℚ := (bernState N).vals
+@[expose] public def bernoulliList (N : Nat) : List ℚ := (bernState N).vals
 
 /-- computed `n`-th Bernoulli number. -/
-def bernoulliQ (n : Nat) : ℚ := (bernoulliList n).getD n 0
+@[expose] public def bernoulliQ (n : Nat) : ℚ := (bernoulliList n).getD n 0
 
 /-- quotient form shared by the spec and the Horner entries. -/
-def stirlingQuot (b : ℚ) (k : Nat) : ℚ := b / ((2 * (k : ℚ)) * (2 * (k : ℚ) - 1))
+@[expose] public def stirlingQuot (b : ℚ) (k : Nat) : ℚ := b / ((2 * (k : ℚ)) * (2 * (k : ℚ) - 1))
 
 /-- general Stirling coefficient for any `k ≥ 1`, computed from Bernoulli. -/
-def stirlingGen (k : Nat) : ℚ := stirlingQuot (bernoulliQ (2 * k)) k
+@[expose] public def stirlingGen (k : Nat) : ℚ := stirlingQuot (bernoulliQ (2 * k)) k
 
 /-- hybrid: exact table below the cutoff, computed values beyond
 (the cutoff moves with the table; `chooseN` has no cap). -/
-def stirlingCoeff (k : Nat) : ℚ :=
+@[expose] public def stirlingCoeff (k : Nat) : ℚ :=
   if k ≤ 24 then stirlingTable k else stirlingGen k
 
 /-- `getD` is stable under appending on the right. -/
@@ -329,7 +360,7 @@ theorem stirlingTable_correct (k : Nat) (h1 : 1 ≤ k) (h24 : k ≤ 24) :
 /-! ### Argument shift -/
 
 /-- least `r` with `a + r ≥ T`. -/
-def gammaShift (a : Dy) (T : Nat) : Nat :=
+@[expose] public def gammaShift (a : Dy) (T : Nat) : Nat :=
   if Dy.leB (Dy.ofNat T) a then 0
   else Int.toNat (Int.ceil ((T : ℚ) - a.toRat))
 
@@ -376,7 +407,7 @@ def risingReal (x : ℝ) : Nat → ℝ
   | r + 1 => risingReal x r * (x + (r : ℝ))
 
 /-- interval rising factorial. -/
-def risingIval (w : Nat) (X : Ival) : Nat → Ival
+@[expose] public def risingIval (w : Nat) (X : Ival) : Nat → Ival
   | 0 => Ival.one
   | r + 1 => Ival.mul w (risingIval w X r) (Ival.add w X (Ival.ofRat w (r : ℚ)))
 
@@ -430,7 +461,7 @@ theorem gamma_eq_gamma_add_div_rising (x : ℝ) (r : Nat) :
 /-- `c_{M-j} + W2 * (c_{M-j+1} + …)`: Horner accumulator, `j` levels.
 `B` is the shared Bernoulli list (`bernoulliList (2N)`); levels `k ≤ 24`
 use exact table literals, deeper levels the recurrence values in `B`. -/
-def stirlingAcc (w : Nat) (W2 : Ival) (B : List ℚ) (M : Nat) : Nat → Ival
+@[expose] public def stirlingAcc (w : Nat) (W2 : Ival) (B : List ℚ) (M : Nat) : Nat → Ival
   | 0 => Ival.zero
   | j + 1 =>
     Ival.add w (Ival.ofRat w (if M - j ≤ 24 then stirlingTable (M - j)
@@ -513,7 +544,7 @@ theorem stirling_sum_eq {z : ℝ} (N : Nat) :
 /-! ### Stirling main term and tail -/
 
 /-- `(z-½) * log z - z + log √(2π)`. -/
-def stirlingMain (c : Ctx) (w : Nat) (Z : Ival) : Ival :=
+@[expose] public def stirlingMain (c : Ctx) (w : Nat) (Z : Ival) : Ival :=
   let logZ := logIval c Z
   let sqrt2pi := Ival.sqrt w (Ival.mul w (Ival.ofRat w 2) c.pi)
   let logSqrt2pi := logIval c sqrt2pi
@@ -550,11 +581,11 @@ theorem mem_stirlingMain {c : Ctx} (hc : c.Valid) {z : ℝ} {Z : Ival} (hx : z �
   exact h
 
 /-- tail interval from an explicit coefficient (search fast path, no proofs). -/
-def stirlingTailIvalQ (w : Nat) (Z : Ival) (N : Nat) (cN : ℚ) : Ival :=
+@[expose] public def stirlingTailIvalQ (w : Nat) (Z : Ival) (N : Nat) (cN : ℚ) : Ival :=
   Ival.div w (Ival.ofRat w (2 * |cN|)) (Ival.npow w Z (2 * N - 1))
 
 /-- interval containing the real remainder bound `2|c_N| / z^(2N-1)`. -/
-def stirlingTailIval (w : Nat) (Z : Ival) (N : Nat) : Ival :=
+@[expose] public def stirlingTailIval (w : Nat) (Z : Ival) (N : Nat) : Ival :=
   stirlingTailIvalQ w Z N (stirlingCoeff N)
 
 theorem mem_stirlingTailIval {w : Nat} {Z : Ival} {N : Nat} {z : ℝ}
@@ -570,7 +601,7 @@ theorem mem_stirlingTailIval {w : Nat} {Z : Ival} {N : Nat} {z : ℝ}
 
 /-- `log Γ` on `Z ∋ z ≥ 8`: main + Horner sum widened by the tail.
 `B` is the shared Bernoulli list (`bernoulliList (2N)`). -/
-def logGammaIval (c : Ctx) (w : Nat) (Z : Ival) (N : Nat) (B : List ℚ) : Ival :=
+@[expose] public def logGammaIval (c : Ctx) (w : Nat) (Z : Ival) (N : Nat) (B : List ℚ) : Ival :=
   let Zinv := Ival.inv w Z
   let W2 := Ival.mul w Zinv Zinv
   let S := Ival.mul w Zinv (stirlingAcc w W2 B (N - 1) (N - 1))
@@ -622,7 +653,7 @@ theorem mem_logGammaIval {c : Ctx} (hc : c.Valid) {w : Nat} {Z : Ival} {N : Nat}
 
 /-- is the tail bound at the threshold point already below `2^{-(w+8)}`?
 `cN` is the candidate coefficient value (from the threaded Bernoulli state). -/
-def tailSmallQ (w T N : Nat) (cN : ℚ) : Bool :=
+@[expose] public def tailSmallQ (w T N : Nat) (cN : ℚ) : Bool :=
   match Ival.magHi (stirlingTailIvalQ w (Ival.pt (Dy.ofNat T)) N cN) with
   | some m => Dy.leB m ⟨1, -((w + 8 : Nat) : Int)⟩
   | none => false
@@ -630,7 +661,7 @@ def tailSmallQ (w T N : Nat) (cN : ℚ) : Bool :=
 /-- smallest `N ≥ 1` with a small tail bound (no cap — any `N` is sound).
 The Bernoulli state is threaded through so the whole search costs `O(N²)`
 instead of recomputing the recurrence per candidate. -/
-def chooseN (w T : Nat) : Nat := go (w + 64) 1 (bernState 2)
+@[expose] public def chooseN (w T : Nat) : Nat := go (w + 64) 1 (bernState 2)
 where go : Nat → Nat → BernState → Nat
   | 0, N, _ => N
   | fuel + 1, N, st =>
@@ -653,7 +684,7 @@ theorem chooseN_ge_one {w T : Nat} : 1 ≤ chooseN w T :=
 /-- `Γ` for any interval `X` (tight when `X` is positive and narrow):
 shift `r` so `Z = X + r ≥ T`, Stirling `log Γ` on `Z`, `exp`, divide by
 the rising factorial. -/
-def gammaPosIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def gammaPosIval (c : Ctx) (X : Ival) : Ival :=
   let w := c.prec + 16
   let T := Nat.max 10 (w / 8)
   match X.lo with
@@ -701,7 +732,7 @@ theorem mem_gammaPosIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival}
 /-! ### Reflection for `hi < 1` -/
 
 /-- `Γ` via `Γ(x) = (π / sin(πx)) / Γ(1-x)`. -/
-def gammaReflIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def gammaReflIval (c : Ctx) (X : Ival) : Ival :=
   let w := c.prec + 16
   let S := sinIval c (Ival.mul w c.pi X)
   let G := gammaPosIval c (Ival.sub w Ival.one X)
@@ -728,7 +759,7 @@ theorem mem_gammaReflIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival}
 /-! ### Top-level dispatch: split at `0` -/
 
 /-- `X.hi < 1`? -/
-def hiLtOne (X : Ival) : Bool :=
+@[expose] public def hiLtOne (X : Ival) : Bool :=
   match X.hi with | some b => Dy.ltB b Dy.one | none => false
 
 theorem hiLtOne_mem {x : ℝ} {X : Ival} (hx : x ∈ X) (h : hiLtOne X = true) : x < 1 := by
@@ -742,11 +773,11 @@ theorem hiLtOne_mem {x : ℝ} {X : Ival} (hx : x ∈ X) (h : hiLtOne X = true) :
   · simp at h
 
 /-- `X ∩ (-∞, 0]`. -/
-def negPart (X : Ival) : Ival :=
+@[expose] public def negPart (X : Ival) : Ival :=
   ⟨X.lo, some (match X.hi with | some b => Dy.min b Dy.zero | none => Dy.zero)⟩
 
 /-- `X ∩ [0, ∞)`. -/
-def posPart (X : Ival) : Ival :=
+@[expose] public def posPart (X : Ival) : Ival :=
   ⟨some (match X.lo with | some a => Dy.max a Dy.zero | none => Dy.zero), X.hi⟩
 
 theorem mem_negPart {x : ℝ} {X : Ival} (hx : x ∈ X) (hx0 : x ≤ 0) : x ∈ negPart X := by
@@ -783,7 +814,7 @@ theorem mem_posPart {x : ℝ} {X : Ival} (hx : x ∈ X) (h0x : 0 ≤ x) : x ∈ 
 
 /-- `Γ` on any interval: positive fast path, reflection below `1`,
 hull of the two pieces across `0` otherwise. -/
-def gammaIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def gammaIval (c : Ctx) (X : Ival) : Ival :=
   if X.pos then gammaPosIval c X
   else if hiLtOne X then gammaReflIval c X
   else Ival.hull (gammaReflIval c (negPart X)) (gammaPosIval c (posPart X))
@@ -807,10 +838,10 @@ theorem mem_gammaIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival}
         exact Ival.mem_hull_left (mem_gammaReflIval hc (mem_negPart hx hx0) hne)
       · exact Ival.mem_hull_right (mem_gammaPosIval hc (mem_posPart hx h0x))
 
-@[lynth_cfn] def gammaR : Fn1 .real .real where
+@[expose, lynth_cfn] public def gammaR : Fn1 .real .real where
   name := "gamma"
   graph x y := y = Real.Gamma x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := gammaIval
   sound := fun _ _ _ _ hc hy hx => by obtain rfl := hy; exact mem_gammaIval hc hx
   cost := 500

@@ -1,5 +1,25 @@
-import Lynth.Sat.Syntax
-import Lynth.Sat.Solver
+module
+
+public import Init.Control.Basic
+public import Init.Core
+public import Init.Data.Array.Basic
+public import Init.Data.Array.QSort.Basic
+public import Init.Data.Array.Set
+public import Init.Data.Hashable
+public import Init.Data.Int.Basic
+public import Init.Data.List.Basic
+public import Init.Data.List.Control
+public import Init.Data.Nat.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Option.Basic
+public import Init.GetElem
+public import Init.Prelude
+public import Init.WF
+public import Std.Data.HashSet.Basic
+public import Lynth.Sat.Solver
+public import Lynth.Sat.Syntax
+import all Lynth.Sat.Syntax
+import all Lynth.Sat.Solver
 import Batteries.Lean.HashSet
 
 /-!
@@ -28,13 +48,13 @@ namespace Lynth.Sat.Watch
 open Lynth.Sat
 
 /-- Watcher: clause reference + blocking literal (CreuSAT `Watcher`). -/
-structure Watcher where
+public structure Watcher where
   cref : Nat
   blocker : Int
-  deriving Inhabited, Repr, DecidableEq, BEq
+  deriving Inhabited, Repr, @[expose] DecidableEq, @[expose] BEq
 
 /-- Clause with circular-search cursor (CreuSAT `Clause.search`). -/
-structure WClause where
+public structure WClause where
   lits : Array Int
   search : Nat := 2
   deriving Inhabited, Repr
@@ -42,7 +62,7 @@ structure WClause where
 /-- Solver state. All arrays, threaded linearly for in-place updates.
 `assign` uses CreuSAT's phase-saving encoding per variable: `0` false,
 `1` true, `2`/`3` unset (saving false/true); unset ⟺ value `≥ 2`. -/
-structure WS where
+public structure WS where
   clauses : Array WClause
   watches : Array (Array Watcher)
   assign : Array Nat
@@ -69,11 +89,11 @@ structure WS where
   deriving Inhabited
 
 /-- Watch-list index of a literal (`2*(v-1)` positive, `+1` negative). -/
-def widx (l : Int) : Nat :=
+@[expose] public def widx (l : Int) : Nat :=
   2 * (l.natAbs - 1) + (if 0 < l then 0 else 1)
 
 /-- Value of a literal under the assignment (`none` = unset/invalid). -/
-def litVal (s : WS) (l : Int) : Option Bool :=
+@[expose] public def litVal (s : WS) (l : Int) : Option Bool :=
   let v := l.natAbs
   if v == 0 || s.assign.size ≤ v - 1 then none
   else
@@ -82,28 +102,28 @@ def litVal (s : WS) (l : Int) : Option Bool :=
     else some ((a == 1) == (0 < l))
 
 /-- Is variable `v` (1-based) currently assigned? -/
-def isSet (s : WS) (v : Nat) : Bool :=
+@[expose] public def isSet (s : WS) (v : Nat) : Bool :=
   v != 0 && v - 1 < s.assign.size && s.assign[v - 1]! < 2
 
 /-- Saved phase of `v` (meaningful even when unset — that is the point). -/
-def savedPhase (s : WS) (v : Nat) : Bool :=
+@[expose] public def savedPhase (s : WS) (v : Nat) : Bool :=
   if v == 0 || s.assign.size ≤ v - 1 then false
   else s.assign[v - 1]! % 2 == 1
 
 /-- Literal evaluators. -/
-def litSat (s : WS) (l : Int) : Bool :=
+@[expose] public def litSat (s : WS) (l : Int) : Bool :=
   litVal s l == some true
-def litUnsat (s : WS) (l : Int) : Bool :=
+@[expose] public def litUnsat (s : WS) (l : Int) : Bool :=
   litVal s l == some false
-def litUnset (s : WS) (l : Int) : Bool :=
+@[expose] public def litUnset (s : WS) (l : Int) : Bool :=
   (litVal s l).isNone
 
 /-- Level of an assigned variable (0 for unassigned). -/
-def levelOf (s : WS) (v : Nat) : Nat :=
+@[expose] public def levelOf (s : WS) (v : Nat) : Nat :=
   if isSet s v then s.alevel[v - 1]! else 0
 
 /-- Reason clause (as a `List`, for resolution) of an assigned variable. -/
-def reasonOf (s : WS) (v : Nat) : Option Clause :=
+@[expose] public def reasonOf (s : WS) (v : Nat) : Option Clause :=
   if isSet s v then
     match s.reason[v - 1]! with
     | none => none
@@ -113,7 +133,7 @@ def reasonOf (s : WS) (v : Nat) : Option Clause :=
   else none
 
 /-- Swap two positions of a clause's literal array. -/
-def swapLits (a : Array Int) (i j : Nat) : Array Int :=
+@[expose] public def swapLits (a : Array Int) (i j : Nat) : Array Int :=
   if i < a.size && j < a.size then
     let x := a[i]!
     let y := a[j]!
@@ -123,11 +143,11 @@ def swapLits (a : Array Int) (i j : Nat) : Array Int :=
 /-- Sort by key, breaking ties by variable id. The tie-breaker matters:
 occurrence counts have many equal keys, which otherwise make the quicksort
 partition badly. This also makes initialization order deterministic. -/
-def isortBy (a : Array (Nat × Nat)) : Array (Nat × Nat) :=
+@[expose] public def isortBy (a : Array (Nat × Nat)) : Array (Nat × Nat) :=
   Array.qsort a (fun x y => decide (x.1 < y.1 ∨ (x.1 = y.1 ∧ x.2 < y.2)))
 
 /-- Last-assigned variable among `vars` (trail-position order). -/
-def lastAssignedW (s : WS) (vars : List Nat) : Option Nat :=
+@[expose] public def lastAssignedW (s : WS) (vars : List Nat) : Option Nat :=
   vars.foldl (fun best v =>
     if !(isSet s v) then best
     else match best with
@@ -137,7 +157,7 @@ def lastAssignedW (s : WS) (vars : List Nat) : Option Nat :=
 /-- Enqueue literal `l` with `reason` at `level`.
 Returns `false` on polarity mismatch (impossible by construction at
 every call site; the driver treats it as fuel-out, never as UNSAT). -/
-def enqLit (s : WS) (l : Int) (reason : Option Nat) (level : Nat) : WS × Bool :=
+@[expose] public def enqLit (s : WS) (l : Int) (reason : Option Nat) (level : Nat) : WS × Bool :=
   let v := l.natAbs
   if v == 0 || s.assign.size ≤ v - 1 then (s, false)
   else if isSet s v then (s, decide (savedPhase s v == (0 < l)))
@@ -153,7 +173,7 @@ def enqLit (s : WS) (l : Int) (reason : Option Nat) (level : Nat) : WS × Bool :
 
 /-- Pop one trail entry, saving its phase (CreuSAT `backstep`:
 `assignments[idx] += 2`). Returns the popped variable. -/
-def popTrail (s : WS) : WS × Nat :=
+@[expose] public def popTrail (s : WS) : WS × Nat :=
   match s.trail.back? with
   | none => (s, 0)
   | some l =>
@@ -167,7 +187,7 @@ def popTrail (s : WS) : WS × Nat :=
 /-- Backjump to `blvl`: pop trail entries above it (phases saved),
 clamp the propagation queue, resume VMTF search at the most recently
 touched variable. -/
-def backjump (s : WS) (blvl : Nat) : WS :=
+@[expose] public def backjump (s : WS) (blvl : Nat) : WS :=
   go s s.nvars 0
 where
   go (s : WS) : Nat → Nat → WS
@@ -186,7 +206,7 @@ where
           go s' n best'
 
 /-- VMTF: unlink `v` (0-based) and push to front with fresh timestamp. -/
-def moveToFront (s : WS) (v : Nat) : WS :=
+@[expose] public def moveToFront (s : WS) (v : Nat) : WS :=
   if v == s.vstart || s.nvars ≤ v then s
   else
     let prev := s.vprev[v]!
@@ -204,7 +224,7 @@ def moveToFront (s : WS) (v : Nat) : WS :=
 
 /-- VMTF conflict bump: sort conflict variables by timestamp, move each
 to front (CreuSAT `increment_and_move`). -/
-def bumpVmtf (s : WS) (vars : List Nat) : WS :=
+@[expose] public def bumpVmtf (s : WS) (vars : List Nat) : WS :=
   let pairs := vars.toArray.map fun v =>
     (v, if v == 0 || s.vts.size ≤ v - 1 then 0 else s.vts[v - 1]!)
   let sorted := isortBy pairs
@@ -216,7 +236,7 @@ set, those variables come first; if none is unsettled, an
 unrestricted pass picks up stragglers so models stay complete
 (gates are implied in practice; the fallback only fires for
 leftovers). -/
-def getNext (s : WS) : WS × Option Nat :=
+@[expose] public def getNext (s : WS) : WS × Option Nat :=
   match go s s.vsearch (s.nvars + 1) true with
   | (s', none) =>
     go s' s'.vsearch (s'.nvars + 1) false
@@ -248,7 +268,7 @@ where
       else goAsc s (i + 1) f onlyBranch
 
 /-- Scan clause positions `[k, upto)` for the first non-false literal. -/
-def scanGo (s : WS) (c : WClause) (k upto : Nat) : Option Nat :=
+@[expose] public def scanGo (s : WS) (c : WClause) (k upto : Nat) : Option Nat :=
   if upto ≤ k then none
   else if k < c.lits.size && !(litUnsat s c.lits[k]!) then some k
   else scanGo s c (k + 1) upto
@@ -259,13 +279,13 @@ termination_by upto - k
 watched-pair SAT check, circular search for a replacement watch
 (swapped into position 0, watcher re-homed — `stay`), else unit
 propagation or conflict. -/
-inductive VisitRes where
+public inductive VisitRes where
   | adv
   | stay
   | conflict (cref : Nat)
-  deriving DecidableEq
+  deriving @[expose] DecidableEq
 
-def visitWatch (s : WS) (p : Int) (j : Nat) : WS × VisitRes :=
+@[expose] public def visitWatch (s : WS) (p : Int) (j : Nat) : WS × VisitRes :=
   let wi := widx p
   let w := s.watches[wi]![j]!
   if litSat s w.blocker then (s, .adv)
@@ -334,14 +354,14 @@ where
 
 /-- Propagation outcome. `stuck` means fuel ran out with units
 possibly pending (must not be read as a model). -/
-inductive POut where
+public inductive POut where
   | ok
   | conflict (cref : Nat)
   | stuck
 
 /-- Process all watchers of newly-assigned literal `p`
 (CreuSAT `propagate_literal`). -/
-def propLit (s : WS) (p : Int) : Nat → Nat → WS × POut × Nat
+@[expose] public def propLit (s : WS) (p : Int) : Nat → Nat → WS × POut × Nat
   | _, 0 => (s, .stuck, 0)
   | j, f + 1 =>
     let wl := s.watches.getD (widx p) #[]
@@ -353,7 +373,7 @@ def propLit (s : WS) (p : Int) : Nat → Nat → WS × POut × Nat
     else (s, .ok, f)
 
 /-- Drain the propagation queue (CreuSAT `unit_propagate`). -/
-def propLoop (s : WS) : Nat → WS × POut × Nat
+@[expose] public def propLoop (s : WS) : Nat → WS × POut × Nat
   | 0 => (s, .stuck, 0)
   | f + 1 =>
     if s.qhead < s.trail.size then
@@ -366,7 +386,7 @@ def propLoop (s : WS) : Nat → WS × POut × Nat
     else (s, .ok, f)
 
 /-- VMTF occurrence-count init order (descending). -/
-def initOrder (cls : Array (Array Int)) (nvars : Nat) : Array Nat :=
+@[expose] public def initOrder (cls : Array (Array Int)) (nvars : Nat) : Array Nat :=
   let counts := cls.foldl (fun acc cl =>
     cl.foldl (fun acc l =>
       let v := l.natAbs
@@ -381,7 +401,7 @@ def initOrder (cls : Array (Array Int)) (nvars : Nat) : Array Nat :=
 opposing units). Unit clauses are enqueued at level 0.
 `branch` (default empty = all) restricts branching to the given
 SAT variables; see `WS.branch`. -/
-def mkWS (cnf : CNF) (branch : Std.HashSet Nat := ∅) : Option WS := do
+@[expose] public def mkWS (cnf : CNF) (branch : Std.HashSet Nat := ∅) : Option WS := do
   -- sanitize: drop `0` literals (parity with the old engine, where a
   -- lone `0` forced conflict and elsewhere it stayed unset forever)
   let cls : Array (Array Int) :=
@@ -437,7 +457,7 @@ each resolution step quadratic in clause length — minutes per
 conflict on learnt clauses hundreds of literals long). Output order
 is identical to the naive version (matters: `checkTrace`
 re-validates resolution derivations). -/
-def wresolve (c r : Clause) (l : Lit) : Clause :=
+@[expose] public def wresolve (c r : Clause) (l : Lit) : Clause :=
   let c' := c.filter (· != l)
   let r' := r.filter (· != -l)
   if c'.length ≤ 8 then c' ++ r'.filter fun m => !(c'.contains m)
@@ -447,7 +467,7 @@ def wresolve (c r : Clause) (l : Lit) : Clause :=
 
 /-- First-UIP conflict analysis over array state (same algorithm as the
 old `analyzeT`, same trace format). -/
-def analyzeW (s : WS) (conflict : Clause) (level fuel : Nat) :
+@[expose] public def analyzeW (s : WS) (conflict : Clause) (level fuel : Nat) :
     Clause × List (Clause × Lit) :=
   go conflict [] fuel
 where
@@ -468,24 +488,24 @@ where
 
 /-- Backjump level: max level in `learnt` excluding the asserting
 (current-level) literal. -/
-def backjumpLevelW (s : WS) (learnt : Clause) (level : Nat) : Nat :=
+@[expose] public def backjumpLevelW (s : WS) (learnt : Clause) (level : Nat) : Nat :=
   let rest := learnt.filter fun l => levelOf s (varOf l) != level
   rest.foldl (fun m l => Nat.max m (levelOf s (varOf l))) 0
 
 /-- A clause is useless if tautological (hash-set membership:
 linear instead of quadratic). -/
-def isTautW (cl : Clause) : Bool :=
+@[expose] public def isTautW (cl : Clause) : Bool :=
   if cl.length ≤ 8 then cl.any fun l => cl.contains (-l)
   else
     let seen : Std.HashSet Lit := cl.foldl (fun s m => s.insert m) ∅
     cl.any fun l => seen.contains (-l)
 
 /-- Geometric restart limit (kept from the previous engine). -/
-def restartLimitW (base idx : Nat) : Nat :=
+@[expose] public def restartLimitW (base idx : Nat) : Nat :=
   base * 2 ^ Nat.min idx 8
 
 /-- Driver output (mirrors `CdclOut`; packed by `Cdcl.cdclSolve`). -/
-structure WOut where
+public structure WOut where
   result : Option SatResult
   learnt : Nat
   restarts : Nat
@@ -493,7 +513,7 @@ structure WOut where
   deriving Repr
 
 /-- CDCL driver: propagate → analyze/learn/backjump → decide, fueled. -/
-def wcdcl (s : WS) (fuel learnt confTotal rIdx sinceR rBase : Nat)
+@[expose] public def wcdcl (s : WS) (fuel learnt confTotal rIdx sinceR rBase : Nat)
     (acc : List (Clause × List (Clause × Lit) × Clause)) : WOut :=
   match fuel with
   | 0 => { result := none, learnt, restarts := rIdx, traces := acc }
@@ -569,7 +589,7 @@ def wcdcl (s : WS) (fuel learnt confTotal rIdx sinceR rBase : Nat)
               rIdx sinceR rBase acc
 
 /-- Top-level watched-literal solver over array state. -/
-def wsolve (s : WS) (fuel restartBase : Nat) : WOut :=
+@[expose] public def wsolve (s : WS) (fuel restartBase : Nat) : WOut :=
   let o := wcdcl s fuel 0 0 0 0 restartBase []
   { o with traces := o.traces.reverse }
 

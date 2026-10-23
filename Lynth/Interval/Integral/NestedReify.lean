@@ -1,8 +1,14 @@
-import Lynth.Interval.Integral.NestedSearch
-import Lynth.Interval.Integral.Reify
+module
+
+meta import all Lynth.Interval.Integral.NestedSearch
+import all Lynth.Interval.Integral.NestedSearch
+meta import all Lynth.Interval.Integral.Reify
+import all Lynth.Interval.Integral.Reify
 
 /-! Proof-producing binder-aware compilation. Each bound is compiled before
 entering its binder. Shadowing uses free-variable identities, not names. -/
+meta section
+
 namespace Lynth.Interval.Integral.Nested
 open Lean Meta Elab Tactic Intgrl Qq
 

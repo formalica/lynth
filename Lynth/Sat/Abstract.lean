@@ -1,5 +1,7 @@
+module
+
 import Lean
-import Lynth.Sat.Encode
+import all Lynth.Sat.Encode
 
 /-!
 Abstraction of Lean goals to `Lynth.Sat.Encode.PropForm` skeletons.

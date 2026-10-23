@@ -1,4 +1,6 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.Notation
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.Notation
 
 /-!
 # Coefficients `c_j`, half-integer Gamma values, and the Dixon-type identity

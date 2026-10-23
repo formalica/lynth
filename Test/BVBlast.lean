@@ -1,9 +1,9 @@
 -- Bit-blast differential: oracle verdicts vs brute force, both directions.
-import Lynth.BV.Blast
-import Lynth.Sat.Solver
+module
+import Lynth
 
-open Lynth.BV
-open Lynth.Sat
+open Lynth.BV (BvTerm eval runBlast blastNeq)
+open Lynth.Sat (Assignment)
 
 set_option maxHeartbeats 56 in
 def bVBlast_lcg (s : Nat) : Nat := (1103515245 * s + 12345) % 2147483648
@@ -88,7 +88,7 @@ def checkPair (t1 t2 : BvTerm) (na w : Nat) : Bool :=
   match runBlast (blastNeq t1 t2) with
   | none => false
   | some (cnf, vmap) =>
-    match Cdcl.cdclSolve cnf 10000 with
+    match Lynth.Sat.Cdcl.cdclSolve cnf 10000 with
     | { result := some .unsat, .. } => brute
     | { result := some (.sat m), .. } =>
       (!brute) &&

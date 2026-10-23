@@ -1,16 +1,18 @@
-import Lynth.HGIdentities.Arcsin2F1
-import Lynth.HGIdentities.Atanh2F1
-import Lynth.HGIdentities.Bessel0F1
-import Lynth.HGIdentities.BesselI
-import Lynth.HGIdentities.Common
-import Lynth.HGIdentities.CosArcsin2F1
-import Lynth.HGIdentities.Elliptic
-import Lynth.HGIdentities.Gauss2F1
-import Lynth.HGIdentities.Hyper1F0
-import Lynth.HGIdentities.Hyper3F2
-import Lynth.HGIdentities.Hyper3F2b
-import Lynth.HGIdentities.Log2F1
-import Lynth.HGIdentities.Quadratic2F1
+module
+
+import all Lynth.HGIdentities.Arcsin2F1
+import all Lynth.HGIdentities.Atanh2F1
+import all Lynth.HGIdentities.Bessel0F1
+import all Lynth.HGIdentities.BesselI
+import all Lynth.HGIdentities.Common
+import all Lynth.HGIdentities.CosArcsin2F1
+import all Lynth.HGIdentities.Elliptic
+import all Lynth.HGIdentities.Gauss2F1
+import all Lynth.HGIdentities.Hyper1F0
+import all Lynth.HGIdentities.Hyper3F2
+import all Lynth.HGIdentities.Hyper3F2b
+import all Lynth.HGIdentities.Log2F1
+import all Lynth.HGIdentities.Quadratic2F1
 
 /-!
 # Hypergeometric identities

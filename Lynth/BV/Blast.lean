@@ -1,6 +1,10 @@
-import Lynth.Sat.Syntax
-import Lynth.Sat.Solver
-import Lynth.Sat.Cdcl
+module
+
+public import Lynth.Sat.Syntax
+
+import all Lynth.Sat.Syntax
+import all Lynth.Sat.Solver
+import all Lynth.Sat.Cdcl
 
 /-!
 Bit-blasting core: word-level terms to CNF.
@@ -18,7 +22,7 @@ namespace Lynth.BV
 open Lynth.Sat
 
 /-- Reified fixed-width bitvector term. -/
-inductive BvTerm where
+public inductive BvTerm where
   | const : Nat → Nat → BvTerm
   | var : Nat → Nat → BvTerm
   | and : BvTerm → BvTerm → BvTerm
@@ -39,7 +43,7 @@ def width : BvTerm → Nat
   | .add a _ => width a
 
 /-- Reference evaluation (`assign` maps atom id to value). -/
-def eval (t : BvTerm) (assign : Nat → Nat) : Nat :=
+public def eval (t : BvTerm) (assign : Nat → Nat) : Nat :=
   match t with
   | .const w v => v % 2 ^ w
   | .var w a => assign a % 2 ^ w
@@ -60,12 +64,12 @@ def eval (t : BvTerm) (assign : Nat → Nat) : Nat :=
     (eval a assign + eval b assign) % 2 ^ w
 
 /-- Blast state: next fresh SAT var, clauses, atom-bit map. -/
-structure BState where
+public structure BState where
   next : Nat
   clauses : CNF
   vmap : List ((Nat × Nat) × Nat)
 
-abbrev BlastM := StateM BState
+public abbrev BlastM := StateM BState
 
 /-- Fresh SAT variable (1-based literal). -/
 def freshLit : BlastM Lit := do
@@ -157,7 +161,7 @@ def blastTerm : BvTerm → BlastM (List Lit)
     pure out
 
 /-- Assert `t1 ≠ t2` (for validity queries of `t1 = t2`). -/
-def blastNeq (t1 t2 : BvTerm) : BlastM Unit := do
+public def blastNeq (t1 t2 : BvTerm) : BlastM Unit := do
   let as ← blastTerm t1
   let bs ← blastTerm t2
   let mut disj : List Lit := []
@@ -178,14 +182,14 @@ def blastEqConj (t1 t2 : BvTerm) : BlastM Unit := do
     emit [x, -y]
 
 /-- Run the blast; `none` when over limits. Returns clauses + var map. -/
-def runBlast (act : BlastM Unit) (maxVars : Nat := 8192) :
+public def runBlast (act : BlastM Unit) (maxVars : Nat := 8192) :
     Option (CNF × List ((Nat × Nat) × Nat)) :=
   let (_, s) := StateT.run act { next := 1, clauses := [], vmap := [] }
   if s.next > maxVars then none else some (s.clauses, s.vmap)
 
 /-- Validity oracle for equations: `true` iff `t1 = t2` holds
 (CDCL proves UNSAT of the negated equation). -/
-def checkValidEq (t1 t2 : BvTerm) (fuel : Nat := 10000) : Bool :=
+public def checkValidEq (t1 t2 : BvTerm) (fuel : Nat := 10000) : Bool :=
   if width t1 != width t2 then false
   else match runBlast (blastNeq t1 t2) with
   | none => false

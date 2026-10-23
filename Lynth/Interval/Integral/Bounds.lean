@@ -1,5 +1,7 @@
-import Lynth.Interval.Num.Ival
-import Lynth.Interval.Integral.Math.IntegralBounds
+module
+
+import all Lynth.Interval.Num.Ival
+import all Lynth.Interval.Integral.Math.IntegralBounds
 
 /-! Interval adapters for the portable integral enclosure theorems. -/
 

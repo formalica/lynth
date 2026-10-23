@@ -1,4 +1,6 @@
-import Lynth.Interval.Fns.EMCore.EulerMaclaurin
+module
+
+import all Lynth.Interval.Fns.EMCore.EulerMaclaurin
 
 /-!
 # Euler–Maclaurin for `log (x + w)`: the complex Stirling remainder

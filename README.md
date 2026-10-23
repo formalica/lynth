@@ -3,6 +3,8 @@
 `lynth` fills in proofs *and* computable data from the types you write:
 
 ```lean
+module
+
 import Lynth
 
 theorem thm (a b : Nat) : a + b = b + a := by lynth
@@ -14,6 +16,31 @@ theorem ex : ∃ n : Int, n < 0 := by lynth  -- −1
 
 def pp : { p : Nat × Nat // p.1 + p.2 = 3 } := by lynth  -- (0, 3)
 ```
+
+## Public API
+
+Use `import Lynth` and describe the goal to `lynth`. The main entry points are
+the tactic, its checking/search options, and the provided mathematical functions:
+`Real.erf`, `Real.Si`, `Real.dirichletEta`, `Real.airyAi`, their complex counterparts,
+`Real.digamma`, `Real.zeta`, `Complex.arcsin`, `Complex.artanh`,
+`Complex.HGFun`, `Complex.besselI`, `Complex.ellipticK`, and `Complex.ellipticE`.
+
+For example, `set_option lynth.interval.trust "kernel"` selects kernel checking;
+`"native"` selects native checking and `"auto"` uses the existing cost budget.
+`lynth.interval.kernelBudget`, `lynth.interval.maxPrec`, and
+`lynth.interval.complexIntegralSteps` retain their existing meanings and defaults.
+
+The import also exports the declarations referenced by generated proofs and the
+types and computational definitions needed to check them. Users do not need to
+call these declarations. Lemmas used only inside theorem proofs remain private.
+
+Implementation modules use Lean's `module` system. Selected internal helpers and
+lemmas exercised by regression tests are public; other procedures remain private.
+Use a `module` header in consumer files to benefit from the smaller import interface.
+Internal unit tests also use `import Lynth`; the helpers they exercise are public.
+Six internal tests retain their original file headers to preserve their existing heartbeat limits.
+The separate `lynth_grind` API is an exception and remains available through
+`import Lynth.Grind.Tactic`.
 
 ## Architecture (Z3-style procedures, Lean-native)
 

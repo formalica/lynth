@@ -1,4 +1,6 @@
-import Lynth.Interval.Integral.Legendre
+module
+
+import all Lynth.Interval.Integral.Legendre
 
 /-! Interval realization of the large-degree Legendre expansion. -/
 namespace Lynth.Interval.Integral

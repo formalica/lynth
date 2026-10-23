@@ -1,11 +1,18 @@
-import Lynth.Interval.Integral.Math.NestedDefs
+module
+
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Lynth.Interval.Integral.Math.Integrand
+public import Lynth.Interval.Integral.Math.NestedDefs
+import all Lynth.Interval.Integral.Math.NestedDefs
 
 /-! Capture-avoiding operations on absolute binder levels. The definitions
 and two semantic obligations depend only on NestedDefs and Mathlib, and are
 mirrored in /tmp/intgrl for independent proofs. -/
 namespace Intgrl
 
-def NExpr.shift (e : NExpr) (cutoff amount : Nat) : NExpr :=
+@[expose] public def NExpr.shift (e : NExpr) (cutoff amount : Nat) : NExpr :=
   match e with
   | .var i => .var (if cutoff ≤ i then i+amount else i)
   | .unary op a => .unary op (a.shift cutoff amount)
@@ -18,7 +25,7 @@ def NExpr.shift (e : NExpr) (cutoff amount : Nat) : NExpr :=
 
 /-- Replacement terms start in the scope ending at i. Their own binders
 must move past each additional binder encountered in the source body. -/
-def NExpr.replace (e : NExpr) (i : Nat) (v : NExpr) : NExpr :=
+@[expose] public def NExpr.replace (e : NExpr) (i : Nat) (v : NExpr) : NExpr :=
   match e with
   | .var j => if i == j then v else .var j
   | .unary op a => .unary op (a.replace i v)

@@ -1,4 +1,6 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.Notation
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.Notation
 
 /-!
 # Changes of variables: `K0` and `bmB` in terms of `QQ` and `PP`

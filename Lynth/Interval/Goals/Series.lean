@@ -1,7 +1,82 @@
-import Lynth.Interval.Goals.Approx
-import Lynth.Interval.Goals.ComplexSeries
-import Lynth.Interval.Goals.Support
-import Lynth.Interval.Series.Cert
+module
+
+public meta import Lynth.Analysis.SpecialFunctions
+public meta import Lynth.Analysis.SpecialFunctionsDefs
+public meta import Lynth.Interval.Check.AiryProof
+public meta import Lynth.Interval.Check.EtaProof
+public meta import Lynth.Interval.Fns.EulerGamma.Proof.PowerSeries
+public meta import Lynth.Interval.Fns.Gamma
+public meta import Lynth.Interval.Integral.Cert
+public meta import Lynth.Interval.Integral.Engine
+public meta import Lynth.Interval.Integral.Legendre
+public meta import Lynth.Interval.Integral.Math.IntegralBounds
+public meta import Lynth.Interval.Integral.Math.LegendreEval
+public meta import Lynth.Interval.Integral.Math.Tails
+public meta import Lynth.Interval.Integral.Memo
+public meta import Lynth.Interval.Integral.Panel
+public meta import Lynth.Interval.Integral.Reify
+public meta import Lynth.Interval.Integral.Search
+public meta import Lynth.Interval.Reify.Registry
+
+public meta import Lynth.Interval.Integral.Math.FixedTrig
+public meta import Lynth.Interval.Integral.Math.FixedExp
+public meta import Lynth.Interval.Integral.Math.FixedPoint
+public meta import Lynth.Interval.Core.Asy
+public meta import Lynth.Interval.Core.Env
+public meta import Lynth.Interval.Fns.Elem
+public meta import Lynth.Interval.Fns.Exp
+public meta import Lynth.Interval.Fns.Log
+public meta import Lynth.Interval.Num.CBox
+public meta import Lynth.Interval.Num.NIval
+public meta import Lynth.Interval.Num.ZIval
+public meta import Lynth.Interval.Series.Arctan
+public meta import Lynth.Interval.Series.Atanh
+public meta import Lynth.Interval.Series.Tail
+
+public meta import Lynth.Interval.Check.Trust
+public meta import Lynth.Interval.Core.Const
+public meta import Lynth.Interval.Core.Ctx
+public meta import Lynth.Interval.Core.Expr
+public meta import Lynth.Interval.Core.ExprAsy
+public meta import Lynth.Interval.Core.Ty
+public meta import Lynth.Interval.Num.Dy
+public meta import Lynth.Interval.Num.Ival
+public meta import Lynth.Interval.Reify.Reify
+public meta import Lynth.Interval.Series.Cert
+public meta import Lynth.Interval.Vendor.Dyadic
+public meta import Lynth.Options
+
+public import Lynth.Interval.Goals.Approx
+public import Lynth.Interval.Goals.Closed
+public import Lynth.Interval.Goals.Support
+public import Lynth.Interval.Reify.Reify
+
+public meta import Lean.Elab.Tactic.Basic
+public import Lynth.Interval.Goals.ComplexSeries
+public import Batteries.Classes.RatCast
+public import Init.Data.Int.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Basic.Complex.Basic
+public import Mathlib.Basic.Real.Basic
+public import Mathlib.Topology.Algebra.InfiniteSum.Defs
+public import Mathlib.Topology.Algebra.InfiniteSum.SummationFilter
+public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+public import Mathlib.Topology.UniformSpace.Defs
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Env
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Series.Cert
+meta import all Lynth.Interval.Goals.Approx
+import all Lynth.Interval.Goals.Approx
+meta import all Lynth.Interval.Goals.ComplexSeries
+import all Lynth.Interval.Goals.ComplexSeries
+meta import all Lynth.Interval.Goals.Support
+import all Lynth.Interval.Goals.Support
+meta import all Lynth.Interval.Series.Cert
+import all Lynth.Interval.Series.Cert
 
 /-!
 # Infinite-series goals
@@ -17,9 +92,11 @@ summed terms `N` and the witness are found natively.
 See `docs/interval/08-series.md`.
 -/
 
+meta section
+
 namespace Lynth.Interval.Series
 
-theorem subtype_of_check {f : ℕ → ℝ} {tol : ℝ} {c : Ctx} (hc : c.Valid) {body tolE : Expr .real}
+public theorem subtype_of_check {f : ℕ → ℝ} {tol : ℝ} {c : Ctx} (hc : c.Valid) {body tolE : Expr .real}
     {N : ℕ} {q : ℚ} (hf : ∀ k, f k = body.denote (({} : SEnv).push .nat k))
     (htol : tol = tolE.denote {}) (h : seriesCheck c body N q tolE = true) :
     Summable f ∧ |tsum f - q| < tol := by
@@ -27,7 +104,7 @@ theorem subtype_of_check {f : ℕ → ℝ} {tol : ℝ} {c : Ctx} (hc : c.Valid) 
   subst htol
   exact seriesCheck_sound hc h
 
-theorem not_summable_of_check {f : ℕ → ℝ} {c : Ctx} (hc : c.Valid) {body : Expr .real} {N : ℕ}
+public theorem not_summable_of_check {f : ℕ → ℝ} {c : Ctx} (hc : c.Valid) {body : Expr .real} {N : ℕ}
     (hf : ∀ k, f k = body.denote (({} : SEnv).push .nat k)) (h : divergeCheck c body N = true) :
     ¬ Summable f := by
   obtain rfl : f = fun k => body.denote (({} : SEnv).push .nat k) := funext hf
@@ -143,7 +220,7 @@ private def trySeriesSubtype? (goalTy : Lean.Expr) : TacticM (Option Lean.Expr) 
   return none
 
 /-- series goals, including `A ⊕' B` alternatives -/
-partial def proveSeries? (goalTy : Lean.Expr) : TacticM (Option Lean.Expr) := do
+public partial def proveSeries? (goalTy : Lean.Expr) : TacticM (Option Lean.Expr) := do
   if let some pf ← proveNotSummable? goalTy then return some pf
   if let some pf ← trySeriesSubtype? goalTy then return some pf
   if let some pf ← proveComplexSeries? goalTy then return some pf

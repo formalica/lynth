@@ -1,7 +1,13 @@
-import Lynth.Interval.Integral.Reify
-import Lynth.Interval.Integral.Divergence
+module
+
+meta import all Lynth.Interval.Integral.Reify
+import all Lynth.Interval.Integral.Reify
+meta import all Lynth.Interval.Integral.Divergence
+import all Lynth.Interval.Integral.Divergence
 
 /-! Numerical integral goals and user-defined result constructors. -/
+
+meta section
 
 namespace Lynth.Interval.Goals
 

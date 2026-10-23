@@ -1,4 +1,6 @@
-import Lynth.Interval.Integral.Math.IntgrlDefs
+module
+
+import all Lynth.Interval.Integral.Math.IntgrlDefs
 
 /-!
 Auxiliary analytic facts for the Stieltjes asymptotic expansion of the

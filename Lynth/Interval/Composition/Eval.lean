@@ -1,11 +1,101 @@
-import Lynth.Interval.Composition.Bounds
-import Lynth.Interval.Goals.NestedIntegral
-import Lynth.Interval.Goals.Series
+module
+
+public meta import Lynth.Interval.Goals.Integral
+public meta import Lynth.Interval.Check.AiryProof
+public meta import Lynth.Interval.Check.EtaProof
+public meta import Lynth.Interval.Fns.EulerGamma.Proof.PowerSeries
+public meta import Lynth.Interval.Integral.Math.IntegralBounds
+public meta import Lynth.Interval.Integral.Math.LegendreEval
+public meta import Lynth.Interval.Integral.Math.Tails
+public meta import Lynth.Interval.Integral.Memo
+public meta import Lynth.Interval.Integral.Reify
+
+public meta import Lynth.Analysis.SpecialFunctions
+public meta import Lynth.Analysis.SpecialFunctionsDefs
+public meta import Lynth.Interval.Core.Ctx
+public meta import Lynth.Interval.Core.ExprAsy
+public meta import Lynth.Interval.Core.Fn
+public meta import Lynth.Interval.Fns.ComplexElem
+public meta import Lynth.Interval.Fns.Elem
+public meta import Lynth.Interval.Fns.Exp
+public meta import Lynth.Interval.Fns.Floor
+public meta import Lynth.Interval.Fns.Gamma
+public meta import Lynth.Interval.Fns.Log
+public meta import Lynth.Interval.Fns.Special.Airy
+public meta import Lynth.Interval.Fns.Special.Common
+public meta import Lynth.Interval.Fns.Special.Erf
+public meta import Lynth.Interval.Fns.Special.Eta
+public meta import Lynth.Interval.Fns.Special.Kernel
+public meta import Lynth.Interval.Fns.Special.Si
+public meta import Lynth.Interval.Fns.Trig
+public meta import Lynth.Interval.Integral.Cert
+public meta import Lynth.Interval.Integral.Engine
+public meta import Lynth.Interval.Integral.Eval
+public meta import Lynth.Interval.Integral.Exp
+public meta import Lynth.Interval.Integral.Math.FixedExp
+public meta import Lynth.Interval.Integral.Math.FixedPoint
+public meta import Lynth.Interval.Integral.Math.FixedTrig
+public meta import Lynth.Interval.Integral.Math.NestedSubstitution
+public meta import Lynth.Interval.Integral.NestedBounds
+public meta import Lynth.Interval.Integral.Panel
+public meta import Lynth.Interval.Integral.Powers
+public meta import Lynth.Interval.Integral.Trig
+public meta import Lynth.Interval.Series.Arctan
+public meta import Lynth.Interval.Series.Atanh
+public meta import Lynth.Interval.Series.Tail
+
+public meta import Lynth.Interval.Check.Trust
+public meta import Lynth.Interval.Composition.Bounds
+public meta import Lynth.Interval.Core.Asy
+public meta import Lynth.Interval.Core.Const
+public meta import Lynth.Interval.Core.Env
+public meta import Lynth.Interval.Core.Expr
+public meta import Lynth.Interval.Core.Prop
+public meta import Lynth.Interval.Core.Ty
+public meta import Lynth.Interval.Integral.Legendre
+public meta import Lynth.Interval.Integral.Math.Integrand
+public meta import Lynth.Interval.Integral.Math.NestedDefs
+public meta import Lynth.Interval.Integral.Math.NestedSyntax
+public meta import Lynth.Interval.Integral.NestedCert
+public meta import Lynth.Interval.Integral.NestedExpr
+public meta import Lynth.Interval.Integral.NestedReify
+public meta import Lynth.Interval.Integral.NestedSearch
+public meta import Lynth.Interval.Integral.Search
+public meta import Lynth.Interval.Num.CBox
+public meta import Lynth.Interval.Num.Dy
+public meta import Lynth.Interval.Num.Ival
+public meta import Lynth.Interval.Num.NIval
+public meta import Lynth.Interval.Num.ZIval
+public meta import Lynth.Interval.Reify.Registry
+public meta import Lynth.Interval.Reify.Reify
+public meta import Lynth.Interval.Series.AsyOps
+public meta import Lynth.Interval.Series.Cert
+public meta import Lynth.Interval.Vendor.Dyadic
+public meta import Lynth.Options
+
+public import Lynth.Interval.Goals.Approx
+public import Lynth.Interval.Goals.Closed
+public import Lynth.Interval.Goals.NestedIntegral
+public import Lynth.Interval.Goals.Series
+public import Lynth.Interval.Goals.Support
+public import Lynth.Interval.Integral.NestedReify
+public import Lynth.Interval.Integral.Reify
+public import Lynth.Interval.Reify.Reify
+
+public meta import Lean.Elab.Tactic.Basic
+meta import all Lynth.Interval.Composition.Bounds
+import all Lynth.Interval.Composition.Bounds
+meta import all Lynth.Interval.Goals.NestedIntegral
+import all Lynth.Interval.Goals.NestedIntegral
+meta import all Lynth.Interval.Goals.Series
+import all Lynth.Interval.Goals.Series
 
 /-! Compositional real enclosures. Every leaf returns an interval and a proof.
 Finite binders are specialized hygienically; series tails retain parameter boxes.
 The fast integral checker is reused, with measurable interval panels as fallback.
 -/
+meta section
+
 namespace Lynth.Interval.Goals.Composition
 open Lean Meta Elab Tactic Qq
 open Lynth.Interval.Composition
@@ -55,7 +145,7 @@ inductive SolveResult where
   | unsupported (reason : MessageData)
   | retry (reason : MessageData)
 
-structure SearchResult where
+public structure SearchResult where
   proof? : Option Lean.Expr := none
   attempts : Nat := 0
   retryable : Bool := false
@@ -231,6 +321,8 @@ def findFact (ty : Lean.Expr) : M Lean.Expr := do
     if ← isDefEq ty (← inferType pf) then return pf
   throwError "composition: missing convergence certificate for {ty}"
 
+-- Elaboration budget for this mutual metaprogram.
+set_option maxHeartbeats 1000000 in
 mutual
 partial def enclose (t : Lean.Expr) (bs : Array Bound) (tol : ℚ) (fuel : Nat := 64) : M Bound := do
   let previous ← getThe RetryInfo
@@ -930,7 +1022,7 @@ partial def solve (g : MVarId) (fuel : Nat := 16) : M SolveResult := g.withConte
 /-- Search diagnostics expose whether a failure was structural or numerical.
 Unsupported goals leave after their first attempt; only explicit numerical
 failures advance the precision schedule. -/
-def search (ty : Lean.Expr) : TacticM SearchResult := do
+public def search (ty : Lean.Expr) : TacticM SearchResult := do
   let saved ← saveState
   unless ← hasAggregateOrAlias ty do
     saved.restore
@@ -965,7 +1057,7 @@ def search (ty : Lean.Expr) : TacticM SearchResult := do
     saved.restore
   return { attempts, retryable := true, reason? }
 
-def run? (ty : Lean.Expr) : TacticM (Option Lean.Expr) := do
+public def run? (ty : Lean.Expr) : TacticM (Option Lean.Expr) := do
   let result ← search ty
   if let some reason := result.reason? then
     if result.retryable then trace[lynth.interval] "composition precision exhausted: {reason}"

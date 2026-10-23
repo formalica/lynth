@@ -4,11 +4,54 @@
 -- Negative: equality conclusions, conjunctions, mismatched bounds,
 -- non-`Fin` indices — all must be rejected so future fragments extend
 -- without disturbing this one.
-import Lynth.Sat.Compile
+import Lynth
 
-open Lean Elab Tactic Meta
-open Lynth.Sat.Compile
+open Lean (Name mkConst)
+open Lean.Elab.Tactic (TacticM)
+open Lynth.Sat.Compile (
+  matchForall2Fin
+  matchGuardNeBody
+  matchFrag
+  lin2D_inj
+  unlin_lin
+  neFam_complete
+  eqFam_sound
+  eqFam_complete
+  injFam_sound
+  injFam_complete
+  reqFam_sound
+  reqFam_complete
+  runSolver_sound
+  runSolver_complete
+  runSolver_none
+  neFam_sound
+  injList_sound
+  injList_complete
+  rowGuard81
+  colGuard81
+  rowAdequate_sound
+  rowAdequate_complete
+  colAdequate_sound
+  colAdequate_complete
+  boxGuardLin
+  boxAdequate_sound
+  boxAdequate_complete
+  givenGuardLin
+  givenAdequate_sound
+  givenAdequate_complete
+  givenFamCNF
+  givenFam_sound
+  givenFam_complete
+  rowNested_sound
+  rowNested_complete
+  colNested_sound
+  colNested_complete
+  boxNested_sound
+  boxNested_complete
+  givenNested_sound
+  givenNested_complete)
 
+-- These internal checks load the full facade rather than a narrow implementation module.
 set_option maxHeartbeats 21 in
 /-- Synthetic guarded inequality over `Fin 3 → Fin 2`. -/
 def SynthGuardNe (g : Fin 3 → Fin 3 → Bool) (c : Fin 3 → Fin 2) : Prop :=
@@ -143,165 +186,165 @@ example : True := by
   trivial
 
 /-- info: 'Lynth.Sat.Compile.lin2D_inj' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms lin2D_inj
 
 /-- info: 'Lynth.Sat.Compile.unlin_lin' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms unlin_lin
 
 /-- info: 'Lynth.Sat.Compile.neFam_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms neFam_complete
 
 /-- info: 'Lynth.Sat.Compile.eqFam_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms eqFam_sound
 
 /-- info: 'Lynth.Sat.Compile.eqFam_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms eqFam_complete
 
 /-- info: 'Lynth.Sat.Compile.injFam_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms injFam_sound
 
 /-- info: 'Lynth.Sat.Compile.injFam_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms injFam_complete
 
 /-- info: 'Lynth.Sat.Compile.reqFam_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms reqFam_sound
 
 /-- info: 'Lynth.Sat.Compile.reqFam_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms reqFam_complete
 
 /-- info: 'Lynth.Sat.Compile.runSolver_sound' depends on axioms: [propext,
  Classical.choice,
  Quot.sound,
- Lynth.Sat.cdcl_correct,
- Lynth.Sat.cdcl_fuel_suffices] -/
-#guard_msgs in
+  Lynth.Sat.cdcl_correct✝,
+  Lynth.Sat.cdcl_fuel_suffices✝] -/
+#guard_msgs (whitespace := lax) in
 #print axioms runSolver_sound
 
 /-- info: 'Lynth.Sat.Compile.runSolver_complete' depends on axioms: [propext,
  Classical.choice,
  Quot.sound,
- Lynth.Sat.cdcl_correct,
- Lynth.Sat.cdcl_fuel_suffices] -/
-#guard_msgs in
+  Lynth.Sat.cdcl_correct✝,
+  Lynth.Sat.cdcl_fuel_suffices✝] -/
+#guard_msgs (whitespace := lax) in
 #print axioms runSolver_complete
 
 /-- info: 'Lynth.Sat.Compile.runSolver_none' depends on axioms: [propext,
  Classical.choice,
  Quot.sound,
- Lynth.Sat.cdcl_correct,
- Lynth.Sat.cdcl_fuel_suffices] -/
-#guard_msgs in
+  Lynth.Sat.cdcl_correct✝,
+  Lynth.Sat.cdcl_fuel_suffices✝] -/
+#guard_msgs (whitespace := lax) in
 #print axioms runSolver_none
 
 /-- info: 'Lynth.Sat.Compile.neFam_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms neFam_sound
 
 /-- info: 'Lynth.Sat.Compile.injList_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms injList_sound
 
 /-- info: 'Lynth.Sat.Compile.injList_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms injList_complete
 
 /-- info: 'Lynth.Sat.Compile.rowGuard81' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms rowGuard81
 
 /-- info: 'Lynth.Sat.Compile.colGuard81' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms colGuard81
 
 /-- info: 'Lynth.Sat.Compile.rowAdequate_sound' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms rowAdequate_sound
 
 /-- info: 'Lynth.Sat.Compile.rowAdequate_complete' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms rowAdequate_complete
 
 /-- info: 'Lynth.Sat.Compile.colAdequate_sound' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms colAdequate_sound
 
 /-- info: 'Lynth.Sat.Compile.colAdequate_complete' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms colAdequate_complete
 
 /-- info: 'Lynth.Sat.Compile.boxGuardLin' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms boxGuardLin
 
 /-- info: 'Lynth.Sat.Compile.boxAdequate_sound' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms boxAdequate_sound
 
 /-- info: 'Lynth.Sat.Compile.boxAdequate_complete' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms boxAdequate_complete
 
 /-- info: 'Lynth.Sat.Compile.givenGuardLin' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms givenGuardLin
 
 /-- info: 'Lynth.Sat.Compile.givenAdequate_sound' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms givenAdequate_sound
 
 /-- info: 'Lynth.Sat.Compile.givenAdequate_complete' depends on axioms: [propext, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms givenAdequate_complete
 
 /-- info: 'Lynth.Sat.Compile.givenFamCNF' does not depend on any axioms -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms givenFamCNF
 
 /-- info: 'Lynth.Sat.Compile.givenFam_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms givenFam_sound
 
 /-- info: 'Lynth.Sat.Compile.givenFam_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms givenFam_complete
 
 /-- info: 'Lynth.Sat.Compile.rowNested_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms rowNested_sound
 
 /-- info: 'Lynth.Sat.Compile.rowNested_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms rowNested_complete
 
 /-- info: 'Lynth.Sat.Compile.colNested_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms colNested_sound
 
 /-- info: 'Lynth.Sat.Compile.colNested_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms colNested_complete
 
 /-- info: 'Lynth.Sat.Compile.boxNested_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms boxNested_sound
 
 /-- info: 'Lynth.Sat.Compile.boxNested_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms boxNested_complete
 
 /-- info: 'Lynth.Sat.Compile.givenNested_sound' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms givenNested_sound
 
 /-- info: 'Lynth.Sat.Compile.givenNested_complete' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms givenNested_complete

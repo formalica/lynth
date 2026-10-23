@@ -1,7 +1,8 @@
 -- Verified gate library checks: evaluation smoke tests plus axiom
 -- pins. Every correctness lemma must be axiom-free (core only) —
 -- the gates never touch the solver or its axioms.
-import Lynth.Sat.Gates
+module
+import Lynth
 
 open Lynth.Sat
 open Lynth.Sat.Gates
@@ -23,29 +24,29 @@ open Lynth.Sat.Gates
   [some true, some true, some false, some false, some true, some true, some false]
 
 /-- info: 'Lynth.Sat.Gates.atLeastOne_correct' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms atLeastOne_correct
 
 /-- info: 'Lynth.Sat.Gates.atMostOne_correct' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms atMostOne_correct
 
 /-- info: 'Lynth.Sat.Gates.oneHotRow_correct' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms oneHotRow_correct
 
 /-- info: 'Lynth.Sat.Gates.andGate_correct' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms andGate_correct
 
 /-- info: 'Lynth.Sat.Gates.orGate_correct' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms orGate_correct
 
 /-- info: 'Lynth.Sat.Gates.notGate_correct' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms notGate_correct
 
 /-- info: 'Lynth.Sat.Gates.orOfAnds_correct' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+#guard_msgs (whitespace := lax) in
 #print axioms orOfAnds_correct

@@ -1,17 +1,48 @@
-import Lynth.Interval.Integral.NestedCert
-import Lynth.Interval.Integral.NestedBoundCSound
-import Lynth.Interval.Integral.NestedAnalyticBoundC
-import Lynth.Interval.Integral.NestedRealBoundsProof
-import Lynth.Interval.Integral.NestedPrimitiveProof
-import Lynth.Interval.Integral.NestedFormulaProof
-import Lynth.Interval.Integral.NestedScaleProof
-import Lynth.Interval.Integral.NestedLogEndpointProof
-import Lynth.Interval.Integral.NestedMeasurable
-import Lynth.Interval.Integral.NestedSemantics
-import Lynth.Interval.Integral.NestedMemoProof
-import Lynth.Interval.Integral.NestedNormalizationProof
-import Lynth.Interval.Integral.Math.NestedAnalysis
-import Lynth.Interval.Integral.Math.NestedChange
+module
+
+public import Batteries.Classes.RatCast
+public import Init.Data.List.Basic
+public import Init.Data.Rat.Basic
+public import Init.Data.Zero
+public import Init.GetElem
+public import Init.Prelude
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Analysis.InnerProductSpace.Defs
+public import Mathlib.Analysis.Normed.Group.Continuity
+public import Mathlib.Analysis.Normed.Group.Defs
+public import Mathlib.Analysis.Normed.Group.Real
+public import Mathlib.Analysis.Normed.Ring.Basic
+public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Basic.Real.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
+public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+public import Mathlib.MeasureTheory.Measure.MeasureSpaceDef
+public import Mathlib.MeasureTheory.Measure.Restrict
+public import Mathlib.Order.Interval.Set.Defs
+public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+public import Mathlib.Topology.UniformSpace.Defs
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Integral.Math.Integrand
+public import Lynth.Interval.Integral.Math.NestedDefs
+public import Lynth.Interval.Integral.Math.NestedSyntax
+public import Lynth.Interval.Integral.NestedCert
+public import Lynth.Interval.Num.Ival
+import all Lynth.Interval.Integral.NestedCert
+import all Lynth.Interval.Integral.NestedBoundCSound
+import all Lynth.Interval.Integral.NestedAnalyticBoundC
+import all Lynth.Interval.Integral.NestedRealBoundsProof
+import all Lynth.Interval.Integral.NestedPrimitiveProof
+import all Lynth.Interval.Integral.NestedFormulaProof
+import all Lynth.Interval.Integral.NestedScaleProof
+import all Lynth.Interval.Integral.NestedLogEndpointProof
+import all Lynth.Interval.Integral.NestedMeasurable
+import all Lynth.Interval.Integral.NestedSemantics
+import all Lynth.Interval.Integral.NestedMemoProof
+import all Lynth.Interval.Integral.NestedNormalizationProof
+import all Lynth.Interval.Integral.Math.NestedAnalysis
+import all Lynth.Interval.Integral.Math.NestedChange
 
 /-! Interval-specific proof bridges. Portable analytic and change-of-variable
 obligations live in Math/NestedAnalysis. Every Gauss panel explicitly consumes
@@ -21,10 +52,10 @@ open Intgrl Fns
 
 /-- Parameter boxes are real in an accurate sample; complex boxes are used
 only by analytic bounds and uniform endpoint majorants. -/
-def EnvMem (xs : List ℝ) (env : Array Ival) : Prop :=
+@[expose] public def EnvMem (xs : List ℝ) (env : Array Ival) : Prop :=
   xs.length = env.size ∧ ∀ i, i < env.size → xs[i]?.getD 0 ∈ env[i]!
 
-theorem EnvMem.push {xs : List ℝ} {env : Array Ival} (h : EnvMem xs env)
+public theorem EnvMem.push {xs : List ℝ} {env : Array Ival} (h : EnvMem xs env)
     {x : ℝ} {X : Ival} (hx : x ∈ X) : EnvMem (xs++[x]) (env.push X) := by
   refine ⟨by simp [h.1], ?_⟩
   intro i hi
@@ -332,7 +363,7 @@ theorem boundR_sound_of_complex {c : Ctx} (hc : c.Valid)
             good := good && G.nonneg
           if good then boundR fuel c form.value env else tail
         | _ => tail) = some I := by
-        convert h using 1
+        convert h using 1 <;> rfl
       clear h
       have h := hcore
       split at h
@@ -1198,7 +1229,7 @@ theorem enclosure_sound {c : Ctx} (hc : c.Valid) {e : Expr} {cert : Cert} {I : I
         exact evalWith_sound hc (replay_sound hc hr) (by simpa using hs)
           ⟨rfl,by simp⟩ hv
 
-theorem check_sound {c : Ctx} (hc : c.Valid) {e : Expr} {cert : Cert} {q : ℚ} {T : Term}
+public theorem check_sound {c : Ctx} (hc : c.Valid) {e : Expr} {cert : Cert} {q : ℚ} {T : Term}
     (h : check c e cert q T = true) : e.Converges [] ∧ |e.real []-(q:ℝ)| < T.real 0 := by
   cases hi : enclosure c e cert with
   | none => simp [check,hi] at h
@@ -1206,7 +1237,7 @@ theorem check_sound {c : Ctx} (hc : c.Valid) {e : Expr} {cert : Cert} {q : ℚ} 
     have hh := enclosure_sound hc hi
     exact ⟨hh.1,closeCheck_sound hc hh.2 (by simpa [check,hi] using h)⟩
 
-theorem result_of_check {f : ℝ → ℝ} {a b tol : ℝ}
+public theorem result_of_check {f : ℝ → ℝ} {a b tol : ℝ}
     {e A B : Expr} {T : Term} {c : Ctx} {k : NDomain} {cert : Cert} {q : ℚ}
     (hc : c.Valid) (hf : ∀ x, f x = e.real [x])
     (ha : a = A.real []) (hb : b = B.real []) (htol : tol = T.real 0)
@@ -1217,14 +1248,14 @@ theorem result_of_check {f : ℝ → ℝ} {a b tol : ℝ}
   have hh := check_sound hc h
   exact ⟨hh.1.2.2.1,hh.2⟩
 
-theorem closedRight {f : ℝ → ℝ} {a tol : ℝ} {q : ℚ}
+public theorem closedRight {f : ℝ → ℝ} {a tol : ℝ} {q : ℚ}
     (h : NDomain.right.Converges f a 0 ∧ |NDomain.right.value f a 0-(q:ℝ)| < tol) :
     MeasureTheory.IntegrableOn f (Set.Ici a) ∧
       |(∫ x in Set.Ici a, f x)-(q:ℝ)| < tol := by
   exact ⟨(integrableOn_Ici_iff_integrableOn_Ioi (by finiteness)).mpr h.1,
     by simpa only [NDomain.right_closed] using h.2⟩
 
-theorem closedLeft {f : ℝ → ℝ} {a tol : ℝ} {q : ℚ}
+public theorem closedLeft {f : ℝ → ℝ} {a tol : ℝ} {q : ℚ}
     (h : NDomain.left.Converges f a 0 ∧ |NDomain.left.value f a 0-(q:ℝ)| < tol) :
     MeasureTheory.IntegrableOn f (Set.Iic a) ∧
       |(∫ x in Set.Iic a, f x)-(q:ℝ)| < tol := by

@@ -1,20 +1,30 @@
-import Lynth.Interval.Integral.Math.ComplexClean
+module
+
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Lynth.Interval.Integral.Math.ComplexClean
+public import Lynth.Interval.Integral.Math.ComplexIntegral
+public import Lynth.Interval.Integral.Math.Integrand
+public import Lynth.Interval.Integral.Math.NestedDefs
+public import Lynth.Interval.Integral.Math.NestedSyntax
+import all Lynth.Interval.Integral.Math.ComplexClean
 
 /-! Resolve the real-axis branch step on each side of a real binder's zero.
 Endpoint changes are on a null set; no recursive integral is erased. -/
 namespace Intgrl
 open Lynth.Interval.Integral.Nested
 
-private def axisStep (n : Nat) (e : NExpr) : Bool :=
+@[expose] public def axisStep (n : Nat) (e : NExpr) : Bool :=
   e == CParts.negative (.var n) || e == CParts.negative (neg (.var n))
 
-def hasAxisStep (n : Nat) (e : NExpr) : Bool :=
+@[expose] public def hasAxisStep (n : Nat) (e : NExpr) : Bool :=
   axisStep n e || match e with
     | .unary _ a | .pow a _ | .rpow a _ => hasAxisStep n a
     | .binary _ a b => hasAxisStep n a || hasAxisStep n b
     | _ => false
 
-def resolveAxisStep (n : Nat) (positive : Bool) (e : NExpr) : NExpr :=
+@[expose] public def resolveAxisStep (n : Nat) (positive : Bool) (e : NExpr) : NExpr :=
   if e == CParts.negative (.var n) then .rat (if positive then 0 else -1)
   else if e == CParts.negative (neg (.var n)) then .rat (if positive then -1 else 0)
   else match e with
@@ -27,7 +37,7 @@ def resolveAxisStep (n : Nat) (positive : Bool) (e : NExpr) : NExpr :=
 
 /-- On a subinterval of [0,1], log(x) is nonpositive; its branch step
 is constant away from the null endpoints. -/
-def resolveUnitLog (n : Nat) (e : NExpr) : NExpr :=
+@[expose] public def resolveUnitLog (n : Nat) (e : NExpr) : NExpr :=
   let L := NExpr.unary .log (.var n)
   if e == .unary .sqrt L then .rat 0
   else if e == .unary .abs L then neg L
@@ -40,7 +50,7 @@ def resolveUnitLog (n : Nat) (e : NExpr) : NExpr :=
     | .rpow a q => rpow (resolveUnitLog n a) q
     | e => e
 
-def complexBranchIntegral (n : Nat) (a b f : NExpr) : Option NExpr := do
+@[expose] public def complexBranchIntegral (n : Nat) (a b f : NExpr) : Option NExpr := do
   if f.hasIntegral then none else do
     let .rat p := a | none
     let .rat q := b | none

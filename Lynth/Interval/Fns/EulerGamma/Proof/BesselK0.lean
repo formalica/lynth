@@ -1,4 +1,6 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.Notation
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.Notation
 
 /-!
 # Analytic properties of `K0 x = ∫_0^∞ exp(-2x cosh v) dv`

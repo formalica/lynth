@@ -1,4 +1,6 @@
-import Lynth.Interval.Integral.Legendre
+module
+
+import all Lynth.Interval.Integral.Legendre
 
 /-! Interval transport for the Legendre evaluator. -/
 namespace Lynth.Interval.Integral

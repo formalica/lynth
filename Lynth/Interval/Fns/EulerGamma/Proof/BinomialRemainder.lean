@@ -1,4 +1,6 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.Coefficients
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.Coefficients
 
 /-!
 # Alternating remainder bound for the binomial series of `(1+u)^{-a}`

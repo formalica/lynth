@@ -1,4 +1,26 @@
-import Lynth.Interval.Fns.Exp
+module
+
+public import Init.Data.Int.Basic
+public import Init.Data.Int.Bitwise.Basic
+public import Init.Data.Int.DivMod.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Int.Defs
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Analysis.Complex.Trigonometric
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.Exp
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Series.Tail
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Fns.Exp
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
@@ -18,11 +40,11 @@ namespace Lynth.Interval.Fns
 
 open Lynth.Interval Dy
 
-def two : Dy := ⟨2, 0⟩
-def negTwo : Dy := ⟨-2, 0⟩
+@[expose] public def two : Dy := ⟨2, 0⟩
+@[expose] public def negTwo : Dy := ⟨-2, 0⟩
 
 /-- `-2 ≤ y ≤ 2` -/
-def isTrigArg (y : Dy) : Bool := Dy.leB y two && Dy.leB negTwo y
+@[expose] public def isTrigArg (y : Dy) : Bool := Dy.leB y two && Dy.leB negTwo y
 
 theorem abs_le_two_of_isTrigArg {y : Dy} (h : isTrigArg y = true) : |y.toReal| ≤ 2 := by
   simp only [isTrigArg, Bool.and_eq_true] at h
@@ -32,23 +54,23 @@ theorem abs_le_two_of_isTrigArg {y : Dy} (h : isTrigArg y = true) : |y.toReal| �
   exact abs_le.2 ⟨h2, h1⟩
 
 /-- the unit interval `[-1, 1]` -/
-def unitIval : Ival := ⟨some (Dy.ofInt (-1)), some Dy.one⟩
+@[expose] public def unitIval : Ival := ⟨some (Dy.ofInt (-1)), some Dy.one⟩
 
 theorem mem_unitIval {x : ℝ} (h1 : -1 ≤ x) (h2 : x ≤ 1) : x ∈ unitIval := by
   simp [unitIval, toReal_def]; exact ⟨h1, h2⟩
 
-def sinStep (w : Nat) (Y2 : Ival) (k : Nat) (T : Ival) : Ival :=
+@[expose] public def sinStep (w : Nat) (Y2 : Ival) (k : Nat) (T : Ival) : Ival :=
   Ival.divNat w (Ival.mul w (Ival.neg T) Y2) ((2 * k + 2) * (2 * k + 3))
 
-def cosStep (w : Nat) (Y2 : Ival) (k : Nat) (T : Ival) : Ival :=
+@[expose] public def cosStep (w : Nat) (Y2 : Ival) (k : Nat) (T : Ival) : Ival :=
   Ival.divNat w (Ival.mul w (Ival.neg T) Y2) ((2 * k + 1) * (2 * k + 2))
 
 /-- series state with at least one step taken -/
-def encl1 (w : Nat) (st : SerState) : Ival :=
+@[expose] public def encl1 (w : Nat) (st : SerState) : Ival :=
   if 1 ≤ st.k then st.encl w (Dy.ofNat 2) else unitIval
 
 /-- `sin` on tiny intervals (series takes zero steps): `|sin y| ≤ |y|`. -/
-def sinTiny (w : Nat) (Y : Ival) : Ival :=
+@[expose] public def sinTiny (w : Nat) (Y : Ival) : Ival :=
   match Ival.magHi (Ival.abs Y) with
   | some m => Ival.widen w Ival.zero m
   | none => Ival.top
@@ -72,13 +94,13 @@ theorem mem_sinTiny {w : Nat} {Y : Ival} {y : ℝ} (hy : y ∈ Y) :
 
 /-- series state with at least one step taken; zero-step states (tiny `|y|`)
 use the Lipschitz enclosure instead of bailing to `[-1, 1]`. -/
-def enclSin (w : Nat) (Y : Ival) (st : SerState) : Ival :=
+@[expose] public def enclSin (w : Nat) (Y : Ival) (st : SerState) : Ival :=
   if 1 ≤ st.k then st.encl w (Dy.ofNat 2) else sinTiny w Y
 
 /-- `sin y` for `|y| ≤ 2` (exact at `0`: the series loop takes zero steps
 there, so without this the endpoint bounds in `sinMono` would widen to `±1`
 for intervals like `[−ε, 0]`). -/
-def sinSer (w : Nat) (y : Dy) : Ival :=
+@[expose] public def sinSer (w : Nat) (y : Dy) : Ival :=
   if y.toRat = 0 then Ival.zero
   else if isTrigArg y then
     let Y := Ival.pt y
@@ -86,7 +108,7 @@ def sinSer (w : Nat) (y : Dy) : Ival :=
   else unitIval
 
 /-- `cos y` for `|y| ≤ 2` -/
-def cosSer (w : Nat) (y : Dy) : Ival :=
+@[expose] public def cosSer (w : Nat) (y : Dy) : Ival :=
   if isTrigArg y then
     let Y := Ival.pt y
     encl1 w (serLoop w (cosStep w (Ival.sq w Y)) (smallTerm w) (w + 16) (SerState.start Ival.one))
@@ -196,17 +218,17 @@ theorem mem_cosSer (w : Nat) (y : Dy) : Real.cos y.toReal ∈ cosSer w y := by
 /-! ### Range reduction -/
 
 /-- `⌊d⌋` for a dyadic -/
-def Dy.floor (d : Dy) : Int :=
+@[expose] public def Dy.floor (d : Dy) : Int :=
   if 0 ≤ d.exponent then d.mantissa * 2 ^ d.exponent.toNat else d.mantissa >>> (-d.exponent).toNat
 
 /-- a good integer `k ≈ m / π` (any integer is sound) -/
-def piMultiple (c : Ctx) (m : Dy) : Int :=
+@[expose] public def piMultiple (c : Ctx) (m : Dy) : Int :=
   match c.pi.lo with
   | some pl => if isPos pl then Dy.floor (Vendor.Dyadic.add (divD 64 m pl) half) else 0
   | none => 0
 
 /-- `Y ⊆ [-π/2, π/2]` certified with the context's `π` -/
-def inHalfPi (c : Ctx) (Y : Ival) : Bool :=
+@[expose] public def inHalfPi (c : Ctx) (Y : Ival) : Bool :=
   match Y.lo, Y.hi, c.pi.lo with
   | some a, some b, some pl => Dy.leB (Vendor.Dyadic.neg (Dy.scale2 pl (-1))) a && Dy.leB b (Dy.scale2 pl (-1))
   | _, _, _ => false
@@ -227,7 +249,7 @@ theorem inHalfPi_sound {c : Ctx} (hc : c.Valid) {Y : Ival} (h : inHalfPi c Y = t
   · simp at h
 
 /-- sin on `Y ⊆ [-π/2, π/2]` (monotone) -/
-def sinMono (w : Nat) (Y : Ival) : Ival :=
+@[expose] public def sinMono (w : Nat) (Y : Ival) : Ival :=
   match Y.lo, Y.hi with
   | some a, some b => ⟨(sinSer w a).lo, (sinSer w b).hi⟩
   | _, _ => unitIval
@@ -247,7 +269,7 @@ theorem mem_sinMono {c : Ctx} (hc : c.Valid) {w : Nat} {Y : Ival} (hY : inHalfPi
   · exact mem_unitIval (Real.neg_one_le_sin _) (Real.sin_le_one _)
 
 /-- cos on `Y ⊆ [-π/2, π/2]` (even, antitone on `[0, π/2]`) -/
-def cosEven (w : Nat) (Y : Ival) : Ival :=
+@[expose] public def cosEven (w : Nat) (Y : Ival) : Ival :=
   match Y.lo, Y.hi with
   | some a, some b =>
     if isNonneg a then ⟨(cosSer w b).lo, (cosSer w a).hi⟩
@@ -310,7 +332,7 @@ theorem mem_cosEven {c : Ctx} (hc : c.Valid) {w : Nat} {Y : Ival} (hY : inHalfPi
 /-! ### Interval extensions -/
 
 /-- Lipschitz enclosure `f(m) ± r` around the midpoint of `Y` (for `|m| ≤ 2`) -/
-def lipEncl (w : Nat) (ser : Nat → Dy → Ival) (Y : Ival) : Ival :=
+@[expose] public def lipEncl (w : Nat) (ser : Nat → Dy → Ival) (Y : Ival) : Ival :=
   match Y.mid, Y.width with
   | some m, some wd => Ival.widen w (ser w m) (Dy.scale2 wd (-1))
   | _, _ => unitIval
@@ -343,7 +365,7 @@ theorem mem_lipEncl {w : Nat} {ser : Nat → Dy → Ival} {f : ℝ → ℝ}
   · exact mem_unitIval (hbound y).1 (hbound y).2
 
 /-- `k π` -/
-def piMul (w : Nat) (c : Ctx) (k : Int) : Ival := Ival.mul w (Ival.pt (Dy.ofInt k)) c.pi
+@[expose] public def piMul (w : Nat) (c : Ctx) (k : Int) : Ival := Ival.mul w (Ival.pt (Dy.ofInt k)) c.pi
 
 theorem mem_piMul {w : Nat} {c : Ctx} (hc : c.Valid) (k : Int) : (k : ℝ) * Real.pi ∈ piMul w c k := by
   refine Ival.mem_mul ?_ hc.pi_mem
@@ -366,7 +388,7 @@ theorem pointMemZero {X : Ival} {x : ℝ} {lo hi : Dy} (hx : x ∈ X)
 
 /-- `sin` on an interval (exact-zero fast path: the series loop takes zero
 steps at `0`, where `encl1` bails to `[-1, 1]`). -/
-def sinIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def sinIval (c : Ctx) (X : Ival) : Ival :=
   let w := c.prec + 8
   match X.lo, X.hi with
   | some lo, some hi =>
@@ -381,7 +403,7 @@ def sinIval (c : Ctx) (X : Ival) : Ival :=
   | _, _ => unitIval
 
 /-- `cos` on an interval -/
-def cosIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def cosIval (c : Ctx) (X : Ival) : Ival :=
   let w := c.prec + 8
   match X.mid with
   | some m =>
@@ -472,46 +494,46 @@ theorem mem_cosIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X)
       simp only [this]; exact Ival.mem_neg hS
   · exact mem_unitIval (Real.neg_one_le_cos _) (Real.cos_le_one _)
 
-@[lynth_cfn] def sinR : Fn1 .real .real where
+@[expose, lynth_cfn] public def sinR : Fn1 .real .real where
   name := "sin"
   graph x y := y = Real.sin x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := sinIval
   sound := fun _ _ _ _ hc hy hx => by obtain rfl := hy; exact mem_sinIval hc hx
   cost := 50
 
-@[lynth_cfn] def cosR : Fn1 .real .real where
+@[expose, lynth_cfn] public def cosR : Fn1 .real .real where
   name := "cos"
   graph x y := y = Real.cos x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := cosIval
   sound := fun _ _ _ _ hc hy hx => by obtain rfl := hy; exact mem_cosIval hc hx
   cost := 50
 
-@[lynth_cfn] def tanR : Fn1 .real .real where
+@[expose, lynth_cfn] public def tanR : Fn1 .real .real where
   name := "tan"
   graph x y := y = Real.tan x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c X := Ival.div (c.prec + 8) (sinIval c X) (cosIval c X)
   sound := fun _ _ _ _ hc hy hx => by
     obtain rfl := hy; rw [Real.tan_eq_sin_div_cos]
     exact Ival.mem_div (mem_sinIval hc hx) (mem_cosIval hc hx)
   cost := 100
 
-@[lynth_cfn] def cotR : Fn1 .real .real where
+@[expose, lynth_cfn] public def cotR : Fn1 .real .real where
   name := "cot"
   graph x y := y = Real.cot x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev c X := Ival.div (c.prec + 8) (cosIval c X) (sinIval c X)
   sound := fun _ _ _ _ hc hy hx => by
     obtain rfl := hy; rw [Real.cot_eq_cos_div_sin]
     exact Ival.mem_div (mem_cosIval hc hx) (mem_sinIval hc hx)
   cost := 100
 
-@[lynth_cfn] def piR : Fn0 .real where
+@[expose, lynth_cfn] public def piR : Fn0 .real where
   name := "π"
   graph y := y = Real.pi
-  exu := exu_eq₀ _
+  exu := by exact exu_eq₀ _
   ev c := c.pi
   sound := fun _ _ hc hy => by obtain rfl := hy; exact hc.pi_mem
 

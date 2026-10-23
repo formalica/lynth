@@ -1,5 +1,8 @@
+module
+
+public import Lean.Elab.Tactic.Basic
 import Lean
-import Lynth.Procedure
+import all Lynth.Procedure
 
 /-!
 EUF procedure (part 1): close `a = b` goals from `Eq` hypotheses
@@ -217,7 +220,7 @@ newly reachable `u = v` (up to `maxFacts`) as a hypothesis with its
 proof, so later procedures can use it. This is lynth's variable-sharing
 mechanism: explanations flow as proven equality facts in context.
 Returns the number of facts asserted. -/
-def shareDerived (maxFacts : Nat := 8) : TacticM Nat := do
+public def shareDerived (maxFacts : Nat := 8) : TacticM Nat := do
   let edges0 ← collectEdges
   if edges0.isEmpty then return 0
   -- scope atoms: edge endpoints (+ goal sides when the goal is an `Eq`)

@@ -1,8 +1,40 @@
-import Lynth.Interval.Fns.EMCore.Digamma
-import Lynth.Interval.Fns.Digamma
-import Lynth.Interval.Fns.ComplexGamma
-import Lynth.Interval.Fns.ComplexZeta
-import Lynth.Interval.Fns.ComplexElem
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.List.Basic
+public import Init.Data.List.BasicAux
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Field.Defs
+public import Mathlib.Algebra.Field.Rat
+public import Mathlib.Algebra.Order.Floor.Defs
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Algebra.Order.Ring.Unbundled.Rat
+public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
+public import Mathlib.Data.Rat.Defs
+public import Mathlib.Data.Rat.Floor
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.ComplexElem
+public import Lynth.Interval.Fns.ComplexGamma
+public import Lynth.Interval.Fns.Digamma
+public import Lynth.Interval.Fns.Gamma
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Series.Tail
+public import Lynth.Interval.Vendor.Dyadic
+import Mathlib
+import all Lynth.Interval.Fns.EMCore.Digamma
+import all Lynth.Interval.Fns.Digamma
+import all Lynth.Interval.Fns.ComplexGamma
+import all Lynth.Interval.Fns.ComplexZeta
+import all Lynth.Interval.Fns.ComplexElem
 
 /-!
 # Complex digamma via shift + Stirling (`Re > 0`) and reflection.
@@ -47,8 +79,8 @@ theorem dig_stirling_bound_sector (w : ℂ) (hw : 0 < w.re) (K : ℕ) :
     simpa using this
   · exact EMCore.digR_bound hw (N := K + 1) (by omega)
 
-/-- info: 'Complex.dig_stirling_bound_sector' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+/-- info: '_private.Lynth.Interval.Fns.ComplexDigamma.0.Complex.dig_stirling_bound_sector' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
 #print axioms Complex.dig_stirling_bound_sector
 
 end Complex
@@ -70,7 +102,7 @@ theorem digamma_shiftC {x : ℂ} (hx : ∀ m : ℕ, x ≠ -((m : ℕ) : ℂ)) (n
 /-! ### Pole gate -/
 
 /-- box meets a pole `-m`: nonpos integer in `Re` range and `0` in `Im`. -/
-def digHasPoleC (relo rehi ilo ihi : Dy) : Bool :=
+@[expose] public def digHasPoleC (relo rehi ilo ihi : Dy) : Bool :=
   decide (⌈relo.toRat⌉ ≤ ⌊rehi.toRat⌋ ∧ ⌈relo.toRat⌉ ≤ 0 ∧ ilo.toRat ≤ 0 ∧ 0 ≤ ihi.toRat)
 
 /-- a negative pole test rules out every `z = -m`. -/
@@ -116,13 +148,13 @@ theorem digHasPoleC_false {relo rehi ilo ihi : Dy}
 /-! ### Stirling corrections -/
 
 /-- one correction box `Q/Y^{2j}`. -/
-def digCorrBoxC (c : Ctx) (Q : ℚ) (Y : CBox) (j : Nat) : CBox :=
+@[expose] public def digCorrBoxC (c : Ctx) (Q : ℚ) (Y : CBox) (j : Nat) : CBox :=
   CBox.div (c.prec + 16) (CBox.ofReal (Ival.ofRat (c.prec + 16) Q))
     (CBox.npow (c.prec + 16) Y (2 * j))
 
 /-- Stirling enclosure at `Y ∋ w` (log, half term, `K` corrections from the
 Bernoulli list `L`, widened by the interval tail). -/
-def digStirlingC (c : Ctx) (Y : CBox) (L : List ℚ) (K : Nat) : CBox :=
+@[expose] public def digStirlingC (c : Ctx) (Y : CBox) (L : List ℚ) (K : Nat) : CBox :=
   let w := c.prec + 16
   let logT := logBox c Y
   let halfT := CBox.div w oneCBox (CBox.mul w (twoC w) Y)
@@ -268,7 +300,7 @@ theorem mem_digStirlingC {c : Ctx} (hc : c.Valid) {w : Nat} {Y : CBox} {K : Nat}
 /-! ### Shifted evaluation -/
 
 /-- `ψ` on boxes with `Re > 0`: Stirling at `X + n` minus the shift sum. -/
-def digammaPosC (c : Ctx) (X : CBox) (L : List ℚ) (n K : Nat) : CBox :=
+@[expose] public def digammaPosC (c : Ctx) (X : CBox) (L : List ℚ) (n K : Nat) : CBox :=
   let w := c.prec + 16
   let Y := CBox.add w X (CBox.ofReal (Ival.ofRat w (n : ℚ)))
   let terms : List CBox := (List.range n).map fun k =>
@@ -318,7 +350,7 @@ theorem mem_digammaPosC {c : Ctx} (hc : c.Valid) {z : ℂ} {X : CBox}
 /-! ### Reflection -/
 
 /-- `ψ` via `ψ(s) = ψ(1-s) - π·cot(πs)`. -/
-def digammaReflC (c : Ctx) (X : CBox) (L : List ℚ) (n K : Nat) : CBox :=
+@[expose] public def digammaReflC (c : Ctx) (X : CBox) (L : List ℚ) (n K : Nat) : CBox :=
   let w := c.prec + 16
   let oneSub := CBox.sub w (CBox.ofReal Ival.one) X
   let pos := digammaPosC c oneSub L n K
@@ -364,7 +396,7 @@ theorem mem_digammaReflC {c : Ctx} (hc : c.Valid) {z : ℂ} {X : CBox}
 
 /-- `ψ` on any box: poles → `⊤`; `Re > 0` → shift+Stirling; `Re < 0`
 pole-free → reflection; else `⊤`. -/
-def digammaCBox (c : Ctx) (X : CBox) : CBox :=
+@[expose] public def digammaCBox (c : Ctx) (X : CBox) : CBox :=
   match X.re.lo, X.re.hi, X.im.lo, X.im.hi with
   | some relo, some rehi, some ilo, some ihi =>
     if digHasPoleC relo rehi ilo ihi then CBox.top
@@ -534,10 +566,10 @@ theorem mem_digammaCBox {c : Ctx} (hc : c.Valid) {z : ℂ} {X : CBox}
                   simp [digammaCBox, hlo, hhi, hloi, hhii, hpoleF, hpos, hneg]
                 rw [hev]; exact CBox.mem_top _
 
-@[lynth_cfn] def digammaC : Fn1 .cplx .cplx where
+@[expose, lynth_cfn] public def digammaC : Fn1 .cplx .cplx where
   name := "Complex.digamma"
   graph x y := y = Complex.digamma x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := digammaCBox
   sound := fun _ _ _ _ hc hy hx => by obtain rfl := hy; exact mem_digammaCBox hc hx
   cost := 500

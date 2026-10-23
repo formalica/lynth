@@ -1,4 +1,16 @@
-import Lynth.Interval.Core.Expr
+module
+
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Num.NIval
+import all Lynth.Interval.Core.Expr
 
 /-!
 # AIA evaluation of expressions
@@ -11,12 +23,12 @@ Every other variable gives no information.
 namespace Lynth.Interval
 
 /-- AIA value of a variable: only the series index `var .nat 0` is known -/
-def varAsy : (t : Ty) → ℕ → t.Asy
+@[expose] public def varAsy : (t : Ty) → ℕ → t.Asy
   | .nat, 0 => NAsy.affine 0
   | t, _ => t.asyTop
 
 /-- AIA value of a constant with enclosure `X` -/
-def encAsy : (t : Ty) → t.Enc → t.Asy
+@[expose] public def encAsy : (t : Ty) → t.Enc → t.Asy
   | .nat, X => match NIval.isPoint X with
     | some n => NAsy.const n
     | none => NAsy.top
@@ -46,7 +58,7 @@ namespace Expr
 -- AIA values of an argument list.
 mutual
 /-- AIA values of an argument list -/
-def asyArgs (c : Ctx) (N : ℕ) : {tys : List Ty} → CArg tys → CAsy tys
+@[expose] public def asyArgs (c : Ctx) (N : ℕ) : {tys : List Ty} → CArg tys → CAsy tys
   | _, .nil => .nil
   | (.nat :: _), .cons .nat x xs => .cons .nat (x.asy c N) (asyArgs c N xs)
   | (.int :: _), .cons .int _ xs => .cons .int () (asyArgs c N xs)
@@ -56,7 +68,7 @@ def asyArgs (c : Ctx) (N : ℕ) : {tys : List Ty} → CArg tys → CAsy tys
   | (.list _ :: _), .cons _ _ xs => .cons _ () (asyArgs c N xs)
 
 /-- AIA evaluation -/
-def asy (c : Ctx) (N : ℕ) : {t : Ty} → Expr t → t.Asy
+@[expose] public def asy (c : Ctx) (N : ℕ) : {t : Ty} → Expr t → t.Asy
   | _, .lit q => RAsy.const (Ival.ofRat c.prec q)
   | _, .rlit _ => ()
   | _, .natLit n => NAsy.const n

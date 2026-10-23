@@ -1,5 +1,15 @@
-import Lynth.Interval.Num.Ival
-import Lynth.Interval.Num.NIval
+module
+
+public import Init.Core
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Prelude
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Num.NIval
+import all Lynth.Interval.Num.Ival
+import all Lynth.Interval.Num.NIval
 
 /-!
 # Integer intervals
@@ -12,30 +22,30 @@ are unbounded below.
 
 namespace Lynth.Interval
 
-structure ZIval where
+public structure ZIval where
   lo : Option Int
   hi : Option Int
-deriving Repr, Inhabited, DecidableEq
+deriving Repr, Inhabited, @[expose] DecidableEq
 
 namespace ZIval
 
-def Mem (I : ZIval) (z : ℤ) : Prop :=
+@[expose] public def Mem (I : ZIval) (z : ℤ) : Prop :=
   (∀ l, I.lo = some l → l ≤ z) ∧ ∀ h, I.hi = some h → z ≤ h
 
-instance : Membership ℤ ZIval := ⟨ZIval.Mem⟩
+public instance : Membership ℤ ZIval := ⟨ZIval.Mem⟩
 
-@[simp] theorem mem_mk {z : ℤ} {lo hi : Option Int} :
+@[simp] public theorem mem_mk {z : ℤ} {lo hi : Option Int} :
     z ∈ (⟨lo, hi⟩ : ZIval) ↔ (∀ l, lo = some l → l ≤ z) ∧ ∀ h, hi = some h → z ≤ h :=
   Iff.rfl
 
-def top : ZIval := ⟨none, none⟩
+@[expose] public def top : ZIval := ⟨none, none⟩
 theorem mem_top (z : ℤ) : z ∈ top := by simp [top]
 
-def pt (z : Int) : ZIval := ⟨some z, some z⟩
+@[expose] public def pt (z : Int) : ZIval := ⟨some z, some z⟩
 theorem mem_pt (z : ℤ) : z ∈ pt z := by simp [pt]
 
 /-- `some z` if the interval is the single point `z` -/
-def isPoint (I : ZIval) : Option Int :=
+@[expose] public def isPoint (I : ZIval) : Option Int :=
   match I.lo, I.hi with
   | some l, some h => if l = h then some h else none
   | _, _ => none
@@ -58,18 +68,18 @@ theorem eq_of_isPoint {I : ZIval} {z : ℤ} {m : Int}
         omega
       · simp at h
 
-def olift2 (f : Int → Int → Int) : Option Int → Option Int → Option Int
+@[expose] public def olift2 (f : Int → Int → Int) : Option Int → Option Int → Option Int
   | some a, some b => some (f a b)
   | _, _ => none
 
-def add (I J : ZIval) : ZIval := ⟨olift2 (· + ·) I.lo J.lo, olift2 (· + ·) I.hi J.hi⟩
-def neg (I : ZIval) : ZIval := ⟨I.hi.map (-·), I.lo.map (-·)⟩
-def sub (I J : ZIval) : ZIval := add I (neg J)
+@[expose] public def add (I J : ZIval) : ZIval := ⟨olift2 (· + ·) I.lo J.lo, olift2 (· + ·) I.hi J.hi⟩
+@[expose] public def neg (I : ZIval) : ZIval := ⟨I.hi.map (-·), I.lo.map (-·)⟩
+@[expose] public def sub (I J : ZIval) : ZIval := add I (neg J)
 
 /-- exact multiplication on bounded intervals; `top` otherwise.
 Unbounded-times-anything falls back to `top`: sound, just less precise.
 (Refine if profiling ever demands it.) -/
-def mul (I J : ZIval) : ZIval :=
+@[expose] public def mul (I J : ZIval) : ZIval :=
   match I.lo, I.hi, J.lo, J.hi with
   | some a, some b, some c, some d =>
     ⟨some (min (min (a * c) (a * d)) (min (b * c) (b * d))),
@@ -161,7 +171,7 @@ theorem mem_mul {x y : ℤ} {I J : ZIval} (hx : x ∈ I) (hy : y ∈ J) : x * y 
          exact corner_le_max (hx.1 _ h1) (hx.2 _ h2) (hy.1 _ h3) (hy.2 _ h4)))
 
 /-- cast to a real interval (exact on points via dyadics) -/
-def toIval (I : ZIval) : Ival :=
+@[expose] public def toIval (I : ZIval) : Ival :=
   ⟨I.lo.map (fun l => Dy.ofInt l), I.hi.map (fun h => Dy.ofInt h)⟩
 
 theorem mem_toIval {z : ℤ} {I : ZIval} (hz : z ∈ I) : (z : ℝ) ∈ toIval I := by
@@ -190,7 +200,7 @@ theorem mem_toIval {z : ℤ} {I : ZIval} (hz : z ∈ I) : (z : ℝ) ∈ toIval I
       exact_mod_cast hle
 
 /-- `(n : ℤ)` enclosure from a natural enclosure -/
-def ofNatIval (N : NIval) : ZIval := ⟨some N.lo, N.hi.map Int.ofNat⟩
+@[expose] public def ofNatIval (N : NIval) : ZIval := ⟨some N.lo, N.hi.map Int.ofNat⟩
 
 theorem mem_ofNatIval {n : ℕ} {N : NIval} (hn : n ∈ N) : (n : ℤ) ∈ ofNatIval N := by
   refine ⟨?_, ?_⟩

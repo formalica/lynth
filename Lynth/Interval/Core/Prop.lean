@@ -1,4 +1,20 @@
-import Lynth.Interval.Core.Expr
+module
+
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Basic.Complex.Basic
+public import Mathlib.Basic.Real.Basic
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Env
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Num.NIval
+public import Lynth.Interval.Num.ZIval
+import all Lynth.Interval.Core.Expr
 
 /-!
 # Propositions over expressions
@@ -11,7 +27,7 @@ See `docs/interval/03-expr-registry.md §6`.
 
 namespace Lynth.Interval
 
-inductive PropExpr where
+public inductive PropExpr where
   | lt (a b : Expr .real)
   | le (a b : Expr .real)
   | and (p q : PropExpr)
@@ -21,12 +37,12 @@ inductive PropExpr where
   | tt
   | ff
 
-inductive Tri | yes | no | unk
-deriving DecidableEq, Repr, Inhabited
+public inductive Tri | yes | no | unk
+deriving @[expose] DecidableEq, Repr, Inhabited
 
 namespace PropExpr
 
-noncomputable def denote : PropExpr → SEnv → Prop
+@[expose] public noncomputable def denote : PropExpr → SEnv → Prop
   | .lt a b, ρ => a.denote ρ < b.denote ρ
   | .le a b, ρ => a.denote ρ ≤ b.denote ρ
   | .and p q, ρ => p.denote ρ ∧ q.denote ρ
@@ -36,25 +52,25 @@ noncomputable def denote : PropExpr → SEnv → Prop
   | .tt, _ => True
   | .ff, _ => False
 
-def triAnd : Tri → Tri → Tri
+@[expose] public def triAnd : Tri → Tri → Tri
   | .yes, .yes => .yes
   | .no, _ => .no
   | _, .no => .no
   | _, _ => .unk
 
-def triOr : Tri → Tri → Tri
+@[expose] public def triOr : Tri → Tri → Tri
   | .no, .no => .no
   | .yes, _ => .yes
   | _, .yes => .yes
   | _, _ => .unk
 
-def triNot : Tri → Tri
+@[expose] public def triNot : Tri → Tri
   | .yes => .no
   | .no => .yes
   | .unk => .unk
 
 /-- three-valued interval evaluation -/
-def eval3 (c : Ctx) : PropExpr → IEnv → Tri
+@[expose] public def eval3 (c : Ctx) : PropExpr → IEnv → Tri
   | .lt a b, σ =>
     let A : Ival := a.eval c σ
     let B : Ival := b.eval c σ
@@ -71,7 +87,7 @@ def eval3 (c : Ctx) : PropExpr → IEnv → Tri
   | .ff, _ => .no
 
 /-- certified truth -/
-def check (c : Ctx) (p : PropExpr) (σ : IEnv) : Bool := p.eval3 c σ == .yes
+@[expose] public def check (c : Ctx) (p : PropExpr) (σ : IEnv) : Bool := p.eval3 c σ == .yes
 
 theorem eval3_sound {c : Ctx} (hc : c.Valid) {ρ : SEnv} {σ : IEnv} (h : σ.Holds ρ) :
     ∀ p : PropExpr, (p.eval3 c σ = .yes → p.denote ρ) ∧ (p.eval3 c σ = .no → ¬ p.denote ρ)
@@ -152,23 +168,23 @@ theorem check_sound {c : Ctx} (hc : c.Valid) {ρ : SEnv} {σ : IEnv} (h : σ.Hol
 
 /-! ### Reification lemmas -/
 
-theorem lt_eq (a b : Expr .real) (ρ : SEnv) {A B : ℝ} (hA : A = a.denote ρ) (hB : B = b.denote ρ) :
+public theorem lt_eq (a b : Expr .real) (ρ : SEnv) {A B : ℝ} (hA : A = a.denote ρ) (hB : B = b.denote ρ) :
     (A < B) = (PropExpr.lt a b).denote ρ := by subst hA; subst hB; rfl
-theorem le_eq (a b : Expr .real) (ρ : SEnv) {A B : ℝ} (hA : A = a.denote ρ) (hB : B = b.denote ρ) :
+public theorem le_eq (a b : Expr .real) (ρ : SEnv) {A B : ℝ} (hA : A = a.denote ρ) (hB : B = b.denote ρ) :
     (A ≤ B) = (PropExpr.le a b).denote ρ := by subst hA; subst hB; rfl
-theorem and_eq (p q : PropExpr) (ρ : SEnv) {P Q : Prop} (hP : P = p.denote ρ) (hQ : Q = q.denote ρ) :
+public theorem and_eq (p q : PropExpr) (ρ : SEnv) {P Q : Prop} (hP : P = p.denote ρ) (hQ : Q = q.denote ρ) :
     (P ∧ Q) = (PropExpr.and p q).denote ρ := by subst hP; subst hQ; rfl
-theorem or_eq (p q : PropExpr) (ρ : SEnv) {P Q : Prop} (hP : P = p.denote ρ) (hQ : Q = q.denote ρ) :
+public theorem or_eq (p q : PropExpr) (ρ : SEnv) {P Q : Prop} (hP : P = p.denote ρ) (hQ : Q = q.denote ρ) :
     (P ∨ Q) = (PropExpr.or p q).denote ρ := by subst hP; subst hQ; rfl
-theorem not_eq (p : PropExpr) (ρ : SEnv) {P : Prop} (hP : P = p.denote ρ) :
+public theorem not_eq (p : PropExpr) (ρ : SEnv) {P : Prop} (hP : P = p.denote ρ) :
     (¬ P) = (PropExpr.not p).denote ρ := by subst hP; rfl
-theorem imp_eq (p q : PropExpr) (ρ : SEnv) {P Q : Prop} (hP : P = p.denote ρ) (hQ : Q = q.denote ρ) :
+public theorem imp_eq (p q : PropExpr) (ρ : SEnv) {P Q : Prop} (hP : P = p.denote ρ) (hQ : Q = q.denote ρ) :
     (P → Q) = (PropExpr.imp p q).denote ρ := by subst hP; subst hQ; rfl
-theorem tt_eq (ρ : SEnv) : True = PropExpr.tt.denote ρ := rfl
-theorem ff_eq (ρ : SEnv) : False = PropExpr.ff.denote ρ := rfl
+public theorem tt_eq (ρ : SEnv) : True = PropExpr.tt.denote ρ := rfl
+public theorem ff_eq (ρ : SEnv) : False = PropExpr.ff.denote ρ := rfl
 
 /-- closed propositions: from a certificate to the original statement -/
-theorem of_check {P : Prop} {p : PropExpr} {c : Ctx} (hc : c.Valid) (hP : P = p.denote {})
+public theorem of_check {P : Prop} {p : PropExpr} {c : Ctx} (hc : c.Valid) (hP : P = p.denote {})
     (h : p.check c {} = true) : P := hP ▸ check_sound hc IEnv.holds_empty h
 
 end PropExpr

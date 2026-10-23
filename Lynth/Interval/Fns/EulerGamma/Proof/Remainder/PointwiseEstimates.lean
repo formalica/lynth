@@ -1,5 +1,7 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.Remainder.Identities
-import Lynth.Interval.Fns.EulerGamma.Proof.CoefficientSumBound
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.Remainder.Identities
+import all Lynth.Interval.Fns.EulerGamma.Proof.CoefficientSumBound
 
 /-!
 # Pointwise estimates for the pieces `Em`, `Ep`, `VV`, `WW`, `TL`

@@ -1,5 +1,8 @@
+module
+
+public import Lean.Meta.DiscrTree
 import Lean
-import Lynth.FinSearch.Recognize
+import all Lynth.FinSearch.Recognize
 
 /-!
 Pattern registry for recognizing user-term shapes.
@@ -25,7 +28,7 @@ open Lynth.FinSearch
 
 /-- A registered shape handler: name (identity) plus family-specific
 payload. `BEq` by name so re-registering a name is idempotent. -/
-structure Handler (α : Type) where
+public structure Handler (α : Type) where
   name : String
   val : α
 
@@ -33,11 +36,11 @@ instance : BEq (Handler α) where
   beq a b := a.name == b.name
 
 /-- Pattern registry: discrimination-tree-indexed handlers. -/
-structure Registry (α : Type) where
+public structure Registry (α : Type) where
   tree : DiscrTree (Handler α)
 
 /-- Empty registry. -/
-def Registry.empty : Registry α :=
+public def Registry.empty : Registry α :=
   ⟨DiscrTree.empty⟩
 
 /-- Fresh wildcard slot (untyped metavariable; indexing treats it
@@ -51,7 +54,7 @@ and explicit positions alike. Count total arguments once via `#check`
 (finite-domain work is `Type`-sorted, and keys ignore levels anyway).
 Pure construction, never elaborated, so no instance/type constraints
 can fire. -/
-def wildApp (head : Name) (nargs : Nat) : MetaM Expr := do
+public def wildApp (head : Name) (nargs : Nat) : MetaM Expr := do
   let info ← match (← getEnv).find? head with
     | some info => pure info
     | none => throwError "unknown pattern head {head}"
@@ -61,19 +64,19 @@ def wildApp (head : Name) (nargs : Nat) : MetaM Expr := do
   pure e
 
 /-- Register pattern `pat` with handler payload. -/
-def Registry.register (r : Registry α) (pat : Expr) (name : String)
+public def Registry.register (r : Registry α) (pat : Expr) (name : String)
     (v : α) : MetaM (Registry α) := do
   pure ⟨← DiscrTree.insert r.tree pat ⟨name, v⟩⟩
 
 /-- Retrieve handlers whose pattern structurally matches `e`. -/
-def Registry.lookup (r : Registry α) (e : Expr) :
+public def Registry.lookup (r : Registry α) (e : Expr) :
     MetaM (Array (Handler α)) :=
   DiscrTree.getMatch r.tree e
 
 /-- Seed registry with length equations. One `Eq` pattern covers
 both orientations; the validator below tries length-left then
 length-right. -/
-def seedLenEq : MetaM (Registry Unit) := do
+public def seedLenEq : MetaM (Registry Unit) := do
   let p ← wildApp ``Eq 3
   let mut r := Registry.empty
   r ← r.register p "len-eq" ()
@@ -114,7 +117,7 @@ where
 /-- Recognize `t.length = k` / `k = t.length` for bare target `t`
 with closed `k`: route by shape through the registry, validate,
 extract `k`. -/
-def matchLenEq (reg : Registry Unit) (tgt : FVarId) (c : Expr) :
+public def matchLenEq (reg : Registry Unit) (tgt : FVarId) (c : Expr) :
     MetaM (Option Nat) := do
   for _ in ← reg.lookup c do
     match ← matchLenEqAt tgt c with
@@ -123,7 +126,7 @@ def matchLenEq (reg : Registry Unit) (tgt : FVarId) (c : Expr) :
   pure none
 
 /-- Seed registry with `List.Nodup` over the target. -/
-def seedNodup : MetaM (Registry Unit) := do
+public def seedNodup : MetaM (Registry Unit) := do
   let p ← wildApp ``List.Nodup 2
   let mut r := Registry.empty
   r ← r.register p "nodup" ()
@@ -164,7 +167,7 @@ private def matchNodupAt (tgt : FVarId) (c : Expr) : MetaM (Option Nat) := do
   | _ => pure none
 
 /-- Recognize `t.Nodup` for bare target `t`: cardinality bound. -/
-def matchNodup (reg : Registry Unit) (tgt : FVarId) (c : Expr) :
+public def matchNodup (reg : Registry Unit) (tgt : FVarId) (c : Expr) :
     MetaM (Option Nat) := do
   for _ in ← reg.lookup c do
     match ← matchNodupAt tgt c with

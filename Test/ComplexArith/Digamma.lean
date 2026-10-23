@@ -1,5 +1,6 @@
+module
 import Mathlib
-import Lynth
+public import Lynth
 
 open Lynth.Interval
 open Lynth.Interval.Fns
@@ -20,7 +21,7 @@ Real costs for comparison: all `60000` (native shift+Stirling).
 
 set_option maxHeartbeats 1815 in
 -- CD1: port of `dig_one`: `ψ(1) = -γ = -0.5772156649`. (-0.577216, 0)
-def cx_dig_one : { p : Rat × Rat //
+public def cx_dig_one : { p : Rat × Rat //
     ‖Complex.digamma 1 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
 /-- info: 'cx_dig_one' depends on axioms: [propext, Classical.choice, Quot.sound, cx_dig_one._native.native_decide.ax_1] -/
@@ -30,7 +31,7 @@ def cx_dig_one : { p : Rat × Rat //
 
 set_option maxHeartbeats 1790 in
 -- CD2: port of `dig_two`: `ψ(2) = 1-γ = 0.4227843351`. (0.422784, 0)
-def cx_dig_two : { p : Rat × Rat //
+public def cx_dig_two : { p : Rat × Rat //
     ‖Complex.digamma 2 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
 /-- info: 'cx_dig_two' depends on axioms: [propext, Classical.choice, Quot.sound, cx_dig_two._native.native_decide.ax_1] -/
@@ -40,7 +41,7 @@ def cx_dig_two : { p : Rat × Rat //
 
 set_option maxHeartbeats 2166 in
 -- CD3: port of `dig_half`: `ψ(1/2) = -γ-2ln2 = -1.9635100260`.
-def cx_dig_half : { p : Rat × Rat //
+public def cx_dig_half : { p : Rat × Rat //
     ‖Complex.digamma ((1 / 2 : ℝ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000000 } := by
   lynth
@@ -51,7 +52,7 @@ def cx_dig_half : { p : Rat × Rat //
 
 set_option maxHeartbeats 2153 in
 -- CD4: port of `dig_five_halves`: `ψ(5/2) = 0.7031566407`.
-def cx_dig_five_halves : { p : Rat × Rat //
+public def cx_dig_five_halves : { p : Rat × Rat //
     ‖Complex.digamma ((5 / 2 : ℝ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000000 } := by
   lynth
@@ -65,7 +66,7 @@ def cx_dig_five_halves : { p : Rat × Rat //
 
 set_option maxHeartbeats 2216 in
 -- CD5: port of `dig_neg_half`: `ψ(-1/2) = 0.0364899740` (reflection).
-def cx_dig_neg_half : { p : Rat × Rat //
+public def cx_dig_neg_half : { p : Rat × Rat //
     ‖Complex.digamma ((-1 / 2 : ℝ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000 } := by
   lynth
@@ -76,7 +77,7 @@ def cx_dig_neg_half : { p : Rat × Rat //
 
 set_option maxHeartbeats 1791 in
 -- CD6: port of `dig_three`: `ψ(3) = 3/2-γ = 0.9227843351`. (0.922784, 0)
-def cx_dig_three : { p : Rat × Rat //
+public def cx_dig_three : { p : Rat × Rat //
     ‖Complex.digamma 3 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
 /-- info: 'cx_dig_three' depends on axioms: [propext, Classical.choice, Quot.sound, cx_dig_three._native.native_decide.ax_1] -/
@@ -86,7 +87,7 @@ def cx_dig_three : { p : Rat × Rat //
 
 set_option maxHeartbeats 2202 in
 -- CD7 (own, complex argument): `ψ(1+I) = 0.0946503206 + 1.0766740475·I`.
-def cx_dig_one_add_I : { p : Rat × Rat //
+public def cx_dig_one_add_I : { p : Rat × Rat //
     ‖Complex.digamma (1 + Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000000 } := by
   lynth
@@ -100,7 +101,7 @@ def cx_dig_one_add_I : { p : Rat × Rat //
 
 set_option maxHeartbeats 2223 in
 -- CD8 (own, complex argument): `ψ(2+I) = 0.5946503206 + 0.5766740475·I`.
-def cx_dig_two_add_I : { p : Rat × Rat //
+public def cx_dig_two_add_I : { p : Rat × Rat //
     ‖Complex.digamma (2 + Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000000 } := by
   lynth

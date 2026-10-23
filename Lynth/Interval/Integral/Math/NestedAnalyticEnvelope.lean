@@ -1,4 +1,6 @@
-import Lynth.Interval.Integral.Math.NestedEnvelope
+module
+
+import all Lynth.Interval.Integral.Math.NestedEnvelope
 
 /-! Analytic parameter integrals with integrable envelopes and measurable slices. -/
 

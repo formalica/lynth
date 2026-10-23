@@ -1,6 +1,34 @@
-import Lynth.Interval.Core.Expr
-import Lynth.Interval.Fns.Arith
-import Lynth.Interval.Series.ComplexTails
+module
+
+public import Init.Core
+public import Init.Data.Cast
+public import Init.Data.Rat.Basic
+public import Init.Data.Zero
+public import Init.Prelude
+public import Mathlib.Algebra.Group.DivInvMonoid
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Ring.Defs
+public import Mathlib.Analysis.CStarAlgebra.Classes
+public import Mathlib.Analysis.Normed.Ring.Basic
+public import Mathlib.Basic.Complex.Basic
+public import Mathlib.Data.Nat.Factorial.Basic
+public import Mathlib.Data.Nat.Fib.Basic
+public import Mathlib.Topology.Algebra.InfiniteSum.Defs
+public import Mathlib.Topology.Algebra.InfiniteSum.SummationFilter
+public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+public import Mathlib.Topology.UniformSpace.Defs
+import Mathlib.Data.Nat.Fib.Basic
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Env
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Num.NIval
+public import Lynth.Interval.Num.ZIval
+import all Lynth.Interval.Core.Expr
+import all Lynth.Interval.Fns.Arith
+import all Lynth.Interval.Series.ComplexTails
 
 /-!
 # Complex series certificates: family matchers + norm-based enclosures.
@@ -206,7 +234,7 @@ theorem nfib_congr {m m' : ℕ} (h : m = m') :
 /-! ### Shared pair-witness check -/
 
 /-- point box of a rational pair -/
-def pairBox (c : Ctx) (q1 q2 : ℚ) : CBox :=
+@[expose] public def pairBox (c : Ctx) (q1 q2 : ℚ) : CBox :=
   ⟨Ival.ofRat c.prec q1, Ival.ofRat c.prec q2⟩
 
 theorem mem_pairBox (c : Ctx) (q1 q2 : ℚ) :
@@ -223,7 +251,7 @@ theorem mem_pairBox (c : Ctx) (q1 q2 : ℚ) :
     exact Ival.mem_ofRat _ _
 
 /-- `‖z - q‖ < tol` from an enclosure of `z` -/
-def distCheck (c : Ctx) (B : CBox) (q1 q2 : ℚ) (tol : Expr .real) : Bool :=
+@[expose] public def distCheck (c : Ctx) (B : CBox) (q1 q2 : ℚ) (tol : Expr .real) : Bool :=
   Ival.ltB (CBox.norm c.prec (CBox.sub c.prec B (pairBox c q1 q2))) (tol.eval c {})
 
 theorem distCheck_sound {c : Ctx} (hc : c.Valid) {B : CBox} {z : ℂ} {q1 q2 : ℚ}
@@ -240,7 +268,7 @@ theorem distCheck_sound {c : Ctx} (hc : c.Valid) {B : CBox} {z : ℂ} {q1 q2 : �
 
 /-- monomorphic division cross-multiplication (no universe polymorphism,
 safe for explicit `MetaM` application) -/
-theorem div_eq_div_iff_C {a b c d : ℂ} (hb : b ≠ 0) (hd : d ≠ 0) :
+public theorem div_eq_div_iff_C {a b c d : ℂ} (hb : b ≠ 0) (hd : d ≠ 0) :
     a / b = c / d ↔ a * d = c * b :=
   div_eq_div_iff hb hd
 
@@ -289,7 +317,7 @@ def matchTele1 (body : Expr .cplx) : Option (ℚ × ℚ) :=
   | _ => none
 
 /-- point box of a real literal as a complex number -/
-def ptBox (c : Ctx) (q : ℚ) : CBox :=
+@[expose] public def ptBox (c : Ctx) (q : ℚ) : CBox :=
   ⟨Ival.ofRat c.prec q, Ival.ofRat c.prec 0⟩
 
 theorem mem_ptBox (c : Ctx) (q : ℚ) : ((((q : ℚ) : ℝ) : ℂ)) ∈ ptBox c q := by
@@ -305,11 +333,11 @@ theorem mem_ptBox (c : Ctx) (q : ℚ) : ((((q : ℚ) : ℝ) : ℂ)) ∈ ptBox c 
     simpa using Ival.mem_ofRat c.prec 0
 
 /-- exact-value enclosure from the closed form -/
-def tele1Box (c : Ctx) (c0 w1 : ℚ) : CBox :=
+@[expose] public def tele1Box (c : Ctx) (c0 w1 : ℚ) : CBox :=
   CBox.div c.prec (ptBox c c0) (ptBox c w1)
 
 /-- the value check for family 1 -/
-def tele1Check (c : Ctx) (c0 w1 q1 q2 : ℚ) (tol : Expr .real) : Bool :=
+@[expose] public def tele1Check (c : Ctx) (c0 w1 q1 q2 : ℚ) (tol : Expr .real) : Bool :=
   distCheck c (tele1Box c c0 w1) q1 q2 tol
 
 theorem tele1_sound {c : Ctx} (hc : c.Valid) {f : ℕ → ℂ} {c0 w1 : ℚ}
@@ -395,12 +423,12 @@ def matchTele2n (body : Expr .cplx) : Option (ℚ × ℚ) :=
   | _ => none
 
 /-- exact-value enclosure from the closed form `(c/2)/b` -/
-def tele2Box (c : Ctx) (c0 b0 : ℚ) : CBox :=
+@[expose] public def tele2Box (c : Ctx) (c0 b0 : ℚ) : CBox :=
   CBox.div c.prec
     (CBox.div c.prec (ptBox c c0) (ptBox c 2)) (ptBox c b0)
 
 /-- the value check for family 2 -/
-def tele2Check (c : Ctx) (c0 b0 q1 q2 : ℚ) (tol : Expr .real) : Bool :=
+@[expose] public def tele2Check (c : Ctx) (c0 b0 q1 q2 : ℚ) (tol : Expr .real) : Bool :=
   distCheck c (tele2Box c c0 b0) q1 q2 tol
 
 theorem tele2_sound {c : Ctx} (hc : c.Valid) {f : ℕ → ℂ} {c0 b0 : ℚ}
@@ -433,7 +461,7 @@ theorem tele2_sound {c : Ctx} (hc : c.Valid) {f : ℕ → ℂ} {c0 b0 : ℚ}
 /-! ### Majorant helpers: disc tail + partial sums -/
 
 /-- symmetric disc box of radius `T` (for norm tails) -/
-def discBox (c : Ctx) (T : ℚ) : CBox :=
+@[expose] public def discBox (c : Ctx) (T : ℚ) : CBox :=
   ⟨Ival.ofRats c.prec (-T) T, Ival.ofRats c.prec (-T) T⟩
 
 theorem mem_discBox {c : Ctx} {z : ℂ} {T : ℚ} (hT : 0 ≤ (T : ℝ))
@@ -575,9 +603,9 @@ def matchFib (body : Expr .cplx) : Option ℚ :=
   | _ => none
 
 /-- factorial tail params for split `N` (with `a = 1`): `M = 1/(N+1)!`, `R = 1/(N+2)` -/
-def factM (N : ℕ) : ℚ := 1 / (Nat.factorial (N + 1) : ℚ)
-def factR (N : ℕ) : ℚ := 1 / ((N : ℚ) + 2)
-def factTub (N : ℕ) : ℚ := factM N / (1 - factR N)
+@[expose] public def factM (N : ℕ) : ℚ := 1 / (Nat.factorial (N + 1) : ℚ)
+@[expose] public def factR (N : ℕ) : ℚ := 1 / ((N : ℚ) + 2)
+@[expose] public def factTub (N : ℕ) : ℚ := factM N / (1 - factR N)
 
 theorem factM_nonneg (N : ℕ) : 0 ≤ ((factM N : ℚ) : ℝ) := by
   unfold factM
@@ -599,10 +627,10 @@ theorem factR_lt_one (N : ℕ) : ((factR N : ℚ) : ℝ) < 1 := by
   linarith
 
 /-- total enclosure: `N` partial sums + disc tail -/
-def factEncl (c : Ctx) (body : Expr .cplx) (N : ℕ) : CBox :=
+@[expose] public def factEncl (c : Ctx) (body : Expr .cplx) (N : ℕ) : CBox :=
   CBox.add c.prec ((Expr.sum .cplx (.natLit N) body).eval c {}) (discBox c (factTub N))
 
-def factCheck (c : Ctx) (body : Expr .cplx) (N : ℕ) (q1 q2 : ℚ) (tol : Expr .real) : Bool :=
+@[expose] public def factCheck (c : Ctx) (body : Expr .cplx) (N : ℕ) (q1 q2 : ℚ) (tol : Expr .real) : Bool :=
   distCheck c (factEncl c body N) q1 q2 tol
 
 theorem fact_sound {c : Ctx} (hc : c.Valid) {f : ℕ → ℂ} {body : Expr .cplx}
@@ -686,9 +714,9 @@ theorem fact_sound {c : Ctx} (hc : c.Valid) {f : ℕ → ℂ} {body : Expr .cplx
 
 /-! ### Selfpow family `1/((k+1)^(k+1))` -/
 
-def selfM (N : ℕ) : ℚ := 1 / ((Nat.pow (N + 1) (N + 1) : ℕ) : ℚ)
-def selfR (N : ℕ) : ℚ := 1 / (((N : ℚ) + 1 + 1))
-def selfTub (N : ℕ) : ℚ := selfM N / (1 - selfR N)
+@[expose] public def selfM (N : ℕ) : ℚ := 1 / ((Nat.pow (N + 1) (N + 1) : ℕ) : ℚ)
+@[expose] public def selfR (N : ℕ) : ℚ := 1 / (((N : ℚ) + 1 + 1))
+@[expose] public def selfTub (N : ℕ) : ℚ := selfM N / (1 - selfR N)
 
 theorem selfM_nonneg (N : ℕ) : 0 ≤ ((selfM N : ℚ) : ℝ) := by
   unfold selfM; positivity
@@ -705,10 +733,10 @@ theorem selfR_lt_one (N : ℕ) : ((selfR N : ℚ) : ℝ) < 1 := by
   rw [heq, div_lt_one h2]
   linarith
 
-def selfEncl (c : Ctx) (body : Expr .cplx) (N : ℕ) : CBox :=
+@[expose] public def selfEncl (c : Ctx) (body : Expr .cplx) (N : ℕ) : CBox :=
   CBox.add c.prec ((Expr.sum .cplx (.natLit N) body).eval c {}) (discBox c (selfTub N))
 
-def selfCheck (c : Ctx) (body : Expr .cplx) (N : ℕ) (q1 q2 : ℚ) (tol : Expr .real) : Bool :=
+@[expose] public def selfCheck (c : Ctx) (body : Expr .cplx) (N : ℕ) (q1 q2 : ℚ) (tol : Expr .real) : Bool :=
   distCheck c (selfEncl c body N) q1 q2 tol
 
 theorem self_sound {c : Ctx} (hc : c.Valid) {f : ℕ → ℂ} {body : Expr .cplx}
@@ -776,9 +804,9 @@ theorem self_sound {c : Ctx} (hc : c.Valid) {f : ℕ → ℂ} {body : Expr .cplx
 
 /-! ### Mersenne family `1/(2^(k+1)-1)` -/
 
-def mersM (N : ℕ) : ℚ := 2 / ((Nat.pow 2 (N + 1) : ℕ) : ℚ)
-def mersR : ℚ := 1 / 2
-def mersTub (N : ℕ) : ℚ := mersM N / (1 - mersR)
+@[expose] public def mersM (N : ℕ) : ℚ := 2 / ((Nat.pow 2 (N + 1) : ℕ) : ℚ)
+@[expose] public def mersR : ℚ := 1 / 2
+@[expose] public def mersTub (N : ℕ) : ℚ := mersM N / (1 - mersR)
 
 theorem mersM_nonneg (N : ℕ) : 0 ≤ ((mersM N : ℚ) : ℝ) := by
   unfold mersM; positivity
@@ -789,10 +817,10 @@ theorem mersR_nonneg : 0 ≤ ((mersR : ℚ) : ℝ) := by
 theorem mersR_lt_one : ((mersR : ℚ) : ℝ) < 1 := by
   unfold mersR; norm_num
 
-def mersEncl (c : Ctx) (body : Expr .cplx) (N : ℕ) : CBox :=
+@[expose] public def mersEncl (c : Ctx) (body : Expr .cplx) (N : ℕ) : CBox :=
   CBox.add c.prec ((Expr.sum .cplx (.natLit N) body).eval c {}) (discBox c (mersTub N))
 
-def mersCheck (c : Ctx) (body : Expr .cplx) (N : ℕ) (q1 q2 : ℚ) (tol : Expr .real) : Bool :=
+@[expose] public def mersCheck (c : Ctx) (body : Expr .cplx) (N : ℕ) (q1 q2 : ℚ) (tol : Expr .real) : Bool :=
   distCheck c (mersEncl c body N) q1 q2 tol
 
 theorem mers_sound {c : Ctx} (hc : c.Valid) {f : ℕ → ℂ} {body : Expr .cplx}
@@ -863,9 +891,9 @@ theorem mers_sound {c : Ctx} (hc : c.Valid) {f : ℕ → ℂ} {body : Expr .cplx
 
 /-! ### Fib family `1/fib(k+1)` -/
 
-def fibM (N : ℕ) : ℚ := 1 / ((Nat.fib (N + 1) : ℕ) : ℚ)
-def fibR : ℚ := 2 / 3
-def fibTub (N : ℕ) : ℚ := fibM N / (1 - fibR)
+@[expose] public def fibM (N : ℕ) : ℚ := 1 / ((Nat.fib (N + 1) : ℕ) : ℚ)
+@[expose] public def fibR : ℚ := 2 / 3
+@[expose] public def fibTub (N : ℕ) : ℚ := fibM N / (1 - fibR)
 
 theorem fibM_nonneg (N : ℕ) : 0 ≤ ((fibM N : ℚ) : ℝ) := by
   unfold fibM; positivity
@@ -876,10 +904,10 @@ theorem fibR_nonneg : 0 ≤ ((fibR : ℚ) : ℝ) := by
 theorem fibR_lt_one : ((fibR : ℚ) : ℝ) < 1 := by
   unfold fibR; norm_num
 
-def fibEncl (c : Ctx) (body : Expr .cplx) (N : ℕ) : CBox :=
+@[expose] public def fibEncl (c : Ctx) (body : Expr .cplx) (N : ℕ) : CBox :=
   CBox.add c.prec ((Expr.sum .cplx (.natLit N) body).eval c {}) (discBox c (fibTub N))
 
-def fibCheck (c : Ctx) (body : Expr .cplx) (N : ℕ) (q1 q2 : ℚ) (tol : Expr .real) : Bool :=
+@[expose] public def fibCheck (c : Ctx) (body : Expr .cplx) (N : ℕ) (q1 q2 : ℚ) (tol : Expr .real) : Bool :=
   distCheck c (fibEncl c body N) q1 q2 tol
 
 theorem fib_sound {c : Ctx} (hc : c.Valid) {f : ℕ → ℂ} {body : Expr .cplx}
@@ -982,7 +1010,7 @@ def matchAltHarm (body : Expr .cplx) : Option Unit :=
     else none
   | _ => none
 
-theorem altHarm_not_summable_sound {f : ℕ → ℂ}
+public theorem altHarm_not_summable_sound {f : ℕ → ℂ}
     (hbridge : ∀ k : ℕ, f k = (((-1 : ℂ) ^ k)) / ((((k : ℕ)) : ℂ) + (((1 : ℕ)) : ℂ))) :
     ¬ Summable f := by
   apply Complex_not_summable_of_harmonic_lower (N := 0) (a := 1)
@@ -1009,7 +1037,7 @@ def matchConstOne (body : Expr .cplx) : Option Unit :=
     else none
   | _ => none
 
-theorem const_not_summable_sound {f : ℕ → ℂ}
+public theorem const_not_summable_sound {f : ℕ → ℂ}
     (hbridge : ∀ k : ℕ, f k = 1) : ¬ Summable f := by
   apply Complex_not_summable_of_lower_bound (c := 1) (N := 0) (by norm_num)
   intro k _

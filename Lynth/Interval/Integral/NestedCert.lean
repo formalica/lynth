@@ -1,4 +1,32 @@
-import Lynth.Interval.Integral.NestedBounds
+module
+
+public import Init.Control.Basic
+public import Init.Control.Do
+public import Init.Core
+public import Init.Data.Array.Basic
+public import Init.Data.List.Basic
+public import Init.Data.List.Control
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Option.Basic
+public import Init.Data.Rat.Basic
+public import Init.GetElem
+public import Init.Prelude
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Fns.Elem
+public import Lynth.Interval.Integral.Cert
+public import Lynth.Interval.Integral.Eval
+public import Lynth.Interval.Integral.Legendre
+public import Lynth.Interval.Integral.Math.Integrand
+public import Lynth.Interval.Integral.Math.NestedDefs
+public import Lynth.Interval.Integral.Math.NestedSyntax
+public import Lynth.Interval.Integral.NestedBounds
+public import Lynth.Interval.Integral.NestedExpr
+public import Lynth.Interval.Integral.Panel
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Integral.NestedBounds
 
 /-! A postordered certificate DAG. Samples may use only previously replayed
 subintegrals. The table pool is shared by every level of quadrature. -/
@@ -7,7 +35,7 @@ open Intgrl
 
 /-- Evaluate arithmetic accurately, using checked subintegrals at real boxes.
 A missing subintegral may only use the independent coarse range evaluator. -/
-def evalWith (c : Ctx) (memo : Memo) : Expr → Array Ival → Option Ival
+@[expose] public def evalWith (c : Ctx) (memo : Memo) : Expr → Array Ival → Option Ival
   | .var i,env => env[i]?
   | .rat q,_ => some (Ival.ofRat c.prec q)
   | .pi,_ => some c.pi
@@ -22,7 +50,7 @@ def evalWith (c : Ctx) (memo : Memo) : Expr → Array Ival → Option Ival
     if memo.isEmpty then boundR (e.size+32) c e env
     else memo[key e env]? <|> boundR (e.size+32) c e env
 
-structure Plan where
+public structure Plan where
   change : Change := .identity
   a : Dy
   b : Dy
@@ -33,34 +61,34 @@ structure Plan where
   pieces : List Piece
   deriving Repr, Inhabited
 
-inductive EntryMethod where
+public inductive EntryMethod where
   | panels (plan : Plan)
   | split
   deriving Repr, Inhabited
 
-structure Entry where
+public structure Entry where
   expr : Expr
   env : Array Ival
   method : EntryMethod
   deriving Repr, Inhabited
 
-structure Cert where
+public structure Cert where
   tables : Array NodeTable := #[]
   entries : Array Entry := #[]
   deriving Repr, Inhabited
 
-def coarsePanel (c : Ctx) (e : Expr) (env : Array Ival) (a b : Dy) : Option Ival := do
+@[expose] public def coarsePanel (c : Ctx) (e : Expr) (env : Array Ival) (a b : Dy) : Option Ival := do
   if dyEq a b then return Ival.zero
   let V ← evalWith c {} e (env.push (panelBox a b))
   if !V.isFinite then return ← none
   return mulSigned c.prec (Ival.ofRat c.prec (b.toRat-a.toRat)) V
 
-def analytic (c : Ctx) (e : Expr) (env : Array Ival) (a b ρ : Dy) : Option Dy := do
+@[expose] public def analytic (c : Ctx) (e : Expr) (env : Array Ival) (a b ρ : Dy) : Option Dy := do
   if !Dy.ltB Dy.one ρ then none else do
     let Z ← boundC (e.size+32) c e ((env.map CBox.ofReal).push (ellipseBox c a b ρ))
     (CBox.norm c.prec Z).hi
 
-def samples (c : Ctx) (memo : Memo) (e : Expr) (env : Array Ival)
+@[expose] public def samples (c : Ctx) (memo : Memo) (e : Expr) (env : Array Ival)
     (a b : Dy) (t : NodeTable) (weights : List Ival) : Option Ival := do
   let mid := Ival.ofRat c.prec ((a.toRat+b.toRat)/2)
   let delta := Ival.ofRat c.prec ((b.toRat-a.toRat)/2)
@@ -69,7 +97,7 @@ def samples (c : Ctx) (memo : Memo) (e : Expr) (env : Array Ival)
     return mulSigned c.prec w (← evalWith c memo e (env.push X))
   return mulSigned c.prec delta (balancedSum c.prec vals)
 
-def piece (c : Ctx) (memo : Memo) (e : Expr) (env : Array Ival)
+@[expose] public def piece (c : Ctx) (memo : Memo) (e : Expr) (env : Array Ival)
     (tables : Array NodeTable) (weights : Array (List Ival)) (p : Piece) : Option Ival := do
   match p.method with
   | .direct => coarsePanel c e env p.a p.b
@@ -80,7 +108,7 @@ def piece (c : Ctx) (memo : Memo) (e : Expr) (env : Array Ival)
       let err ← errorBound c t.roots.length p.a p.b ρ M
       return Ival.widen c.prec (← samples c memo e env p.a p.b t (← weights[i]?)) err
 
-def uncertainEndpoint (c : Ctx) (e : Expr) (env : Array Ival)
+@[expose] public def uncertainEndpoint (c : Ctx) (e : Expr) (env : Array Ival)
     (I : Ival) (anchor : Dy) : Option Dy := do
   let a ← I.lo
   let b ← I.hi
@@ -88,7 +116,7 @@ def uncertainEndpoint (c : Ctx) (e : Expr) (env : Array Ival)
   let V ← boundR (e.size+32) c e (env.push (hullPoint I anchor))
   (Ival.mul c.prec (Ival.abs (Ival.sub c.prec I (Ival.pt anchor))) (Ival.abs V)).hi
 
-def entryEncl (c : Ctx) (memo : Memo) (tables : Array NodeTable)
+@[expose] public def entryEncl (c : Ctx) (memo : Memo) (tables : Array NodeTable)
     (weights : Array (List Ival)) (entry : Entry) : Option Ival := do
   let e := entry.expr
   let env := entry.env
@@ -139,12 +167,12 @@ def entryEncl (c : Ctx) (memo : Memo) (tables : Array NodeTable)
 
 /-- Every stored environment admits a real parameter assignment. This keeps
 canonical memo reuse meaningful even when unused slots are erased. -/
-def envCheck (env : Array Ival) : Bool := env.all fun I =>
+@[expose] public def envCheck (env : Array Ival) : Bool := env.all fun I =>
   match I.lo,I.hi with
   | some a,some b => Dy.leB a b
   | _,_ => true
 
-def replay (c : Ctx) (cert : Cert) : Option Memo := do
+@[expose] public def replay (c : Ctx) (cert : Cert) : Option Memo := do
   if !cert.tables.all (fun t => t.check c) then none else do
     let weights := cert.tables.map (fun t => t.weights c)
     let mut memo : Memo := {}
@@ -155,13 +183,13 @@ def replay (c : Ctx) (cert : Cert) : Option Memo := do
       memo := memo.insert (key entry.expr entry.env) I
     return memo
 
-def enclosure (c : Ctx) (e : Expr) (cert : Cert) : Option Ival := do
+@[expose] public def enclosure (c : Ctx) (e : Expr) (cert : Cert) : Option Ival := do
   if !e.scoped 0 then none else do
     let memo ← replay c cert
     let I ← evalWith c memo e #[]
     if I.isFinite then some I else none
 
-def check (c : Ctx) (e : Expr) (cert : Cert) (q : ℚ) (tol : Term) : Bool :=
+@[expose] public def check (c : Ctx) (e : Expr) (cert : Cert) (q : ℚ) (tol : Term) : Bool :=
   match enclosure c e cert with
   | some I => closeCheck c I q tol
   | none => false

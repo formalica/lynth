@@ -1,4 +1,24 @@
-import Lynth.Interval.Core.Asy
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Field.Defs
+public import Mathlib.Algebra.Field.Rat
+public import Mathlib.Algebra.Order.Floor.Defs
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Algebra.Order.Ring.Unbundled.Rat
+public import Mathlib.Basic.Real.Basic
+public import Mathlib.Data.Nat.Factorial.Basic
+public import Mathlib.Data.Nat.Fib.Basic
+public import Mathlib.Data.Rat.Floor
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Core.Asy
 import Mathlib.Data.Nat.Fib.Basic
 
 /-!
@@ -41,7 +61,7 @@ theorem rpow_between_floor_ceil {x : ℝ} (hx : 0 < x) (α : ℚ) :
     exact ⟨le_trans (min_le_right _ _) b, le_trans a (le_max_left _ _)⟩
 
 /-- enclosure of `x^α` (`x > 0` rational, `α` rational) via integer powers -/
-def qpowEncl (p : Nat) (x α : ℚ) : Ival :=
+@[expose] public def qpowEncl (p : Nat) (x α : ℚ) : Ival :=
   Ival.hull (Ival.ofRat p (x ^ ⌊α⌋)) (Ival.ofRat p (x ^ ⌈α⌉))
 
 theorem mem_qpowEncl (p : Nat) {x : ℚ} (hx : 0 < x) (α : ℚ) :
@@ -57,13 +77,13 @@ theorem mem_qpowEncl (p : Nat) {x : ℚ} (hx : 0 < x) (α : ℚ) :
   · rw [e1, e2]; exact h2
 
 /-- `[0, hi X]` -/
-def Ival.zeroTo (X : Ival) : Ival := ⟨some Dy.zero, X.hi⟩
+@[expose] public def Ival.zeroTo (X : Ival) : Ival := ⟨some Dy.zero, X.hi⟩
 
 theorem Ival.mem_zeroTo {x : ℝ} {X : Ival} (h0 : 0 ≤ x) (hx : x ∈ X) : x ∈ Ival.zeroTo X :=
   ⟨fun l hl => by cases hl; simpa [toReal_def] using h0, hx.2⟩
 
 /-- the point value of a degenerate interval -/
-def Ival.point? (I : Ival) : Option Dy :=
+@[expose] public def Ival.point? (I : Ival) : Option Dy :=
   match I.lo, I.hi with
   | some a, some b => if Dy.leB b a then some a else none
   | _, _ => none
@@ -101,12 +121,12 @@ theorem holds_congr {N : ℕ} {f g : ℕ → ℝ} {A : RAsy} (h : A.Holds N f)
   | grow M R => intro k hk; rw [← he k hk]; exact h k hk
   | top => trivial
 
-def neg : RAsy → RAsy
+@[expose] public def neg : RAsy → RAsy
   | pow a α I J => pow a α (Ival.neg I) J
   | geo M R => geo M R
   | _ => top
 
-theorem neg_holds {N : ℕ} {f : ℕ → ℝ} {A : RAsy} (h : A.Holds N f) :
+public theorem neg_holds {N : ℕ} {f : ℕ → ℝ} {A : RAsy} (h : A.Holds N f) :
     (neg A).Holds N (fun k => -f k) := by
   cases A with
   | pow a α I J =>
@@ -118,7 +138,7 @@ theorem neg_holds {N : ℕ} {f : ℕ → ℝ} {A : RAsy} (h : A.Holds N f) :
   | top => trivial
 
 /-- `Q ∋ ((k + a) / (k + a'))^α` for all `k ≥ N` -/
-def rebaseQ (p N a a' : ℕ) (α : ℚ) : Ival :=
+@[expose] public def rebaseQ (p N a a' : ℕ) (α : ℚ) : Ival :=
   Ival.hull Ival.one (qpowEncl p (((N + a : ℕ) : ℚ) / ((N + a' : ℕ) : ℚ)) α)
 
 theorem mem_rebaseQ (p : ℕ) {N a a' k : ℕ} (hk : N ≤ k) (hN : 0 < N + a') (hNa : 0 < N + a)
@@ -165,7 +185,7 @@ theorem mem_rebaseQ (p : ℕ) {N a a' k : ℕ} (hk : N ≤ k) (hN : 0 < N + a') 
     · exact le_trans (by simpa using Real.rpow_le_rpow_of_nonpos zero_lt_one b1 hα) (le_max_left _ _)
 
 /-- change the base shift of a `pow` value to `a'` -/
-def rebase (p N a' : ℕ) : RAsy → RAsy
+@[expose] public def rebase (p N a' : ℕ) : RAsy → RAsy
   | pow a α I J =>
     if a = a' then pow a α I J
     else if N + a' = 0 then top
@@ -233,7 +253,7 @@ theorem Dy.one_div_le_divU (p : ℕ) {a : Dy} (ha : 0 < a.toReal) :
   simp only [toReal_def]; exact_mod_cast h
 
 /-- the exact natural-number value of a dyadic, if any -/
-def Dy.natOf? (d : Dy) : Option ℕ :=
+@[expose] public def Dy.natOf? (d : Dy) : Option ℕ :=
   let q := d.toRat
   if q.den = 1 ∧ 0 ≤ q.num then some q.num.toNat else none
 
@@ -258,14 +278,14 @@ namespace RAsy
 /-! ### Addition -/
 
 /-- `(k + a) + c` with `c` a natural-number constant: exact shift -/
-def shiftConst? (a : ℕ) (α : ℚ) (I : Ival) (β : ℚ) (K : Ival) : Option ℕ :=
+@[expose] public def shiftConst? (a : ℕ) (α : ℚ) (I : Ival) (β : ℚ) (K : Ival) : Option ℕ :=
   if α = 1 ∧ β = 0 then
     match I.point?, K.point? with
     | some u, some v => if Dy.leB u Dy.one && Dy.leB Dy.one u then (v.natOf?).map (a + ·) else none
     | _, _ => none
   else none
 
-def addPow (p N a : ℕ) (α : ℚ) (I : Ival) (b : ℕ) (β : ℚ) (K L : Ival) : RAsy :=
+@[expose] public def addPow (p N a : ℕ) (α : ℚ) (I : Ival) (b : ℕ) (β : ℚ) (K L : Ival) : RAsy :=
   match shiftConst? a α I β K with
   | some a' => pow a' 1 Ival.one Ival.one
   | none =>
@@ -285,18 +305,18 @@ def addPow (p N a : ℕ) (α : ℚ) (I : Ival) (b : ℕ) (β : ℚ) (K L : Ival)
     | _ => top
 
 /-- `grow + (bounded)`: `M R^j + v ≥ (M + min(lo, 0)) R^j` for `R ≥ 1` -/
-def growAddConst (p : ℕ) (M R : Dy) (K : Ival) : RAsy :=
+@[expose] public def growAddConst (p : ℕ) (M R : Dy) (K : Ival) : RAsy :=
   if Dy.leB Dy.one R then
     match K.lo with
     | some l => grow (addD p M (Dy.min l Dy.zero)) R
     | none => top
   else top
 
-def isTop : RAsy → Bool
+@[expose] public def isTop : RAsy → Bool
   | top => true
   | _ => false
 
-def add (p N : ℕ) : RAsy → RAsy → RAsy
+@[expose] public def add (p N : ℕ) : RAsy → RAsy → RAsy
   | pow a α I J, pow b β K L =>
     let r := addPow p N a α I b β K L
     if r.isTop then addPow p N b β K a α I J else r
@@ -514,21 +534,21 @@ theorem add_holds {p N : ℕ} {f g : ℕ → ℝ} {A B : RAsy} (hf : A.Holds N f
 
 /-! ### Multiplication -/
 
-def mulPowGeo (p N a : ℕ) (α : ℚ) (J : Ival) (M R : Dy) : RAsy :=
+@[expose] public def mulPowGeo (p N a : ℕ) (α : ℚ) (J : Ival) (M R : Dy) : RAsy :=
   if α ≤ 0 ∧ 0 < N + a ∧ isNonneg R = true then
     match J.hi, (qpowEncl p ((N + a : ℕ) : ℚ) α).hi with
     | some jh, some e => geo (mulU p (mulU p M e) jh) R
     | _, _ => top
   else top
 
-def growMulConst (p : ℕ) (M R : Dy) (K : Ival) : RAsy :=
+@[expose] public def growMulConst (p : ℕ) (M R : Dy) (K : Ival) : RAsy :=
   if isNonneg M && isNonneg R then
     match K.lo with
     | some l => if isNonneg l then grow (mulD p M l) R else top
     | none => top
   else top
 
-def mul (p N : ℕ) : RAsy → RAsy → RAsy
+@[expose] public def mul (p N : ℕ) : RAsy → RAsy → RAsy
   | pow a α I J, pow b β K L =>
     match rebase p N a (pow b β K L) with
     | pow a₀ β' K' L' => if a₀ = a then pow a (α + β') (Ival.mul p I K') (Ival.mul p J L') else top
@@ -731,7 +751,7 @@ theorem mul_holds {p N : ℕ} {f g : ℕ → ℝ} {A B : RAsy} (hf : A.Holds N f
 
 /-! ### Inverse, powers, casts -/
 
-def inv (p : ℕ) : RAsy → RAsy
+@[expose] public def inv (p : ℕ) : RAsy → RAsy
   | pow a α I J => pow a (-α) (Ival.inv p I) (Ival.inv p J)
   | grow M R => if isPos M && isPos R then geo (divU p Dy.one M) (divU p Dy.one R) else top
   | _ => top
@@ -769,7 +789,7 @@ theorem inv_holds {p N : ℕ} {f : ℕ → ℝ} {A : RAsy} (hf : A.Holds N f) :
   | geo => trivial
   | top => trivial
 
-def npowC (p : ℕ) (n : ℕ) : RAsy → RAsy
+@[expose] public def npowC (p : ℕ) (n : ℕ) : RAsy → RAsy
   | pow a α I J => pow a (α * n) (Ival.npow p I n) (Ival.npow p J n)
   | _ => top
 
@@ -788,7 +808,7 @@ theorem npowC_holds {p N n : ℕ} {f : ℕ → ℝ} {A : RAsy} (hf : A.Holds N f
   | _ => trivial
 
 /-- `J = [1, 1]` exactly -/
-def unitJ (J : Ival) : Bool :=
+@[expose] public def unitJ (J : Ival) : Bool :=
   match J.point? with
   | some d => Dy.leB d Dy.one && Dy.leB Dy.one d
   | none => false
@@ -803,7 +823,7 @@ theorem abs_eq_one_of_unitJ {J : Ival} {x : ℝ} (hx : x ∈ J) (h : unitJ J = t
       (by simpa [toReal_def] using toReal_le_of_leB h.2)
   · cases h
 
-def npowKGrow (p N b : ℕ) (I : Ival) : RAsy :=
+@[expose] public def npowKGrow (p N b : ℕ) (I : Ival) : RAsy :=
   match I.lo with
   | some l =>
     if Dy.ltB Dy.one l then
@@ -813,7 +833,7 @@ def npowKGrow (p N b : ℕ) (I : Ival) : RAsy :=
     else top
   | none => top
 
-def npowKGeo (p N b : ℕ) (I J : Ival) : RAsy :=
+@[expose] public def npowKGeo (p N b : ℕ) (I J : Ival) : RAsy :=
   match J.hi with
   | some h =>
     if isNonneg h && Dy.ltB h Dy.one then
@@ -824,13 +844,13 @@ def npowKGeo (p N b : ℕ) (I J : Ival) : RAsy :=
   | none => npowKGrow p N b I
 
 /-- `x^(k+b)` for a base with values in `I`, `|·| ∈ J` (`α = 0`) -/
-def npowKPow (p N b : ℕ) (α : ℚ) (I J : Ival) : RAsy :=
+@[expose] public def npowKPow (p N b : ℕ) (α : ℚ) (I J : Ival) : RAsy :=
   if α = 0 then
     if unitJ J then pow 1 0 ⟨some (Dy.ofInt (-1)), some Dy.one⟩ Ival.one
     else npowKGeo p N b I J
   else top
 
-def npowK (p N b : ℕ) : RAsy → RAsy
+@[expose] public def npowK (p N b : ℕ) : RAsy → RAsy
   | pow _ α I J => npowKPow p N b α I J
   | _ => top
 
@@ -917,7 +937,7 @@ theorem npowK_holds {p N b : ℕ} {f : ℕ → ℝ} {A : RAsy} (hf : A.Holds N f
     · trivial
   | _ => trivial
 
-def natCast (N : ℕ) : NAsy → RAsy
+@[expose] public def natCast (N : ℕ) : NAsy → RAsy
   | .affine b => if N + b = 0 then top else pow b 1 Ival.one Ival.one
   | .const n => const (Ival.pt (Dy.ofNat n))
   | .grow M R => grow M R
@@ -944,12 +964,12 @@ theorem natCast_holds {N : ℕ} {f : ℕ → ℕ} {A : NAsy} (hf : A.Holds N f) 
   | grow M R => intro k hk; exact hf k hk
   | top => trivial
 
-def abs : RAsy → RAsy
+@[expose] public def abs : RAsy → RAsy
   | pow a α I J => pow a α (Ival.abs I) J
   | geo M R => geo M R
   | _ => top
 
-theorem abs_holds {N : ℕ} {f : ℕ → ℝ} {A : RAsy} (hf : A.Holds N f) :
+public theorem abs_holds {N : ℕ} {f : ℕ → ℝ} {A : RAsy} (hf : A.Holds N f) :
     (abs A).Holds N (fun k => |f k|) := by
   cases A with
   | pow a α I J =>
@@ -967,7 +987,7 @@ end RAsy
 
 namespace NAsy
 
-def add : NAsy → NAsy → NAsy
+@[expose] public def add : NAsy → NAsy → NAsy
   | affine b, const n => affine (b + n)
   | const n, affine b => affine (n + b)
   | const m, const n => const (m + n)
@@ -1005,7 +1025,7 @@ theorem add_holds {N : ℕ} {f g : ℕ → ℕ} {A B : NAsy} (hf : A.Holds N f) 
     | grow M R => exact growR hg
     | _ => trivial
 
-def factorial (N : ℕ) : NAsy → NAsy
+@[expose] public def factorial (N : ℕ) : NAsy → NAsy
   | affine b => grow (Dy.ofNat (N + b).factorial) (Dy.ofNat (N + b + 1))
   | const n => const n.factorial
   | _ => top
@@ -1042,7 +1062,7 @@ theorem fib_ge_pow (n : ℕ) (hn : 2 ≤ n) :
     rw [pow_succ]
     nlinarith
 
-def fib (N : ℕ) : NAsy → NAsy
+@[expose] public def fib (N : ℕ) : NAsy → NAsy
   | affine b => if 2 ≤ N + b then grow (Dy.ofNat (Nat.fib (N + b))) ⟨3, -1⟩ else top
   | const n => const (Nat.fib n)
   | _ => top

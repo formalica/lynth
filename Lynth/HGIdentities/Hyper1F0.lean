@@ -1,7 +1,9 @@
+module
+
 import Mathlib
 import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
-import Lynth.HGIdentities.Common
-import Lynth.Hypergeometric
+import all Lynth.HGIdentities.Common
+import all Lynth.Hypergeometric
 
 open scoped BigOperators
 open scoped Real

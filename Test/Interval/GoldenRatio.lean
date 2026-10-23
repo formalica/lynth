@@ -1,5 +1,6 @@
+module
 import Mathlib
-import Lynth
+public import Lynth
 
 open Lynth.Interval
 
@@ -14,7 +15,7 @@ computations.
 
 -- φ² = 2.618033988749895...
 set_option maxHeartbeats 4000 in
-def golden_two : { x : ℚ // abs (Real.goldenRatio ^ 2 - x) < 1 / 10 ^ 6 } := by
+public def golden_two : { x : ℚ // abs (Real.goldenRatio ^ 2 - x) < 1 / 10 ^ 6 } := by
   lynth
 /-- info: 'golden_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
@@ -23,7 +24,7 @@ def golden_two : { x : ℚ // abs (Real.goldenRatio ^ 2 - x) < 1 / 10 ^ 6 } := b
 
 -- φ^(√2+1) ≈ 3.195...
 set_option maxHeartbeats 4000 in
-def golden_sqrt_two : { x : ℚ // abs (Real.goldenRatio ^ (Real.sqrt 2 + 1) - x) < 1 / 10 ^ 6 } := by
+public def golden_sqrt_two : { x : ℚ // abs (Real.goldenRatio ^ (Real.sqrt 2 + 1) - x) < 1 / 10 ^ 6 } := by
   lynth
 /-- info: 'golden_sqrt_two' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
@@ -32,7 +33,7 @@ def golden_sqrt_two : { x : ℚ // abs (Real.goldenRatio ^ (Real.sqrt 2 + 1) - x
 
 -- cos(φ) ≈ -0.049...
 set_option maxHeartbeats 4000 in
-def golden_cos : { x : ℚ // abs (Real.cos Real.goldenRatio - x) < 1 / 10 ^ 6 } := by
+public def golden_cos : { x : ℚ // abs (Real.cos Real.goldenRatio - x) < 1 / 10 ^ 6 } := by
   lynth
 /-- info: 'golden_cos' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
@@ -41,7 +42,7 @@ def golden_cos : { x : ℚ // abs (Real.cos Real.goldenRatio - x) < 1 / 10 ^ 6 }
 
 -- φ^⌊φ⌋ = φ^1: power nested with a Nat floor across types.
 set_option maxHeartbeats 6000 in
-def golden_floor : { x : ℚ // abs (Real.goldenRatio ^ (Nat.floor Real.goldenRatio) - x) < 1 / 10 ^ 6 } := by
+public def golden_floor : { x : ℚ // abs (Real.goldenRatio ^ (Nat.floor Real.goldenRatio) - x) < 1 / 10 ^ 6 } := by
   lynth
 /-- info: 'golden_floor' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in

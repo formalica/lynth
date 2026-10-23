@@ -1,5 +1,6 @@
+module
 import Mathlib
-import Lynth
+public import Lynth
 
 /-!
 # BoundSep — floor/ceil gates at an interval boundary
@@ -39,7 +40,7 @@ open Lynth.Interval
 `Real.log (Real.exp 9)` straddles 9 at every scheduled precision:
 `⌊lo⌋ = 8`, `⌊hi⌋ = 9`, the gate fails. -/
 
-def t1 : { n : Int // n = ⌊Real.log (Real.exp 9)⌋ } := by
+public def t1 : { n : Int // n = ⌊Real.log (Real.exp 9)⌋ } := by
   lynth
 
 #print axioms t1
@@ -51,7 +52,7 @@ enclosure of `2 / (√2)²` strictly straddles 1, so `⌊lo⌋ = 0`, `⌊hi⌋ =
 gate fails.  The whole enclosure `[0, 1]·π = [0, π]` is also far too wide for the
 1e-6 tolerance, so the outer goal cannot be rescued either. -/
 
-def t2 : { x : Rat //
+public def t2 : { x : Rat //
     abs (((⌊2 / Real.sqrt 2 ^ 2⌋ : ℤ) : ℝ) * Real.pi - x) < 1 / 1000000 } := by
   lynth
 
@@ -85,7 +86,7 @@ intended failure.  400 000 (2×) is the smallest round figure that elaborates;
 the file previously used 4 000 000, which is 10× more than needed. -/
 
 set_option maxHeartbeats 400000 in
-def t3 : { x : Rat //
+public def t3 : { x : Rat //
     abs (Real.pi * (⌊((⌈Real.Gamma (1 / 2) / Real.sqrt Real.pi⌉ : ℝ) + Real.Gamma 4)⌋ : ℝ) - x)
         < 1 / 1000000 } := by
   lynth

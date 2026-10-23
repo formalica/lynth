@@ -1,4 +1,6 @@
-import Lynth.Interval.Integral.NestedPrimitiveProof
+module
+
+import all Lynth.Interval.Integral.NestedPrimitiveProof
 
 /-! The numerical power/log moment used by nested endpoint envelopes. -/
 namespace Lynth.Interval.Integral.Nested

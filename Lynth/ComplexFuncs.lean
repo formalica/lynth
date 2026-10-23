@@ -1,6 +1,16 @@
+module
+
+public import Init.Data.Zero
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Ring.Defs
+public import Mathlib.Analysis.Complex.Trigonometric
+public import Mathlib.Analysis.RCLike.Sqrt
+public import Mathlib.Basic.Complex.Basic
 import Mathlib
-import Lynth.HGIdentities.Common
-import Lynth.SeriesTools
+import Mathlib.Analysis.Complex.Basic
+import all Lynth.HGIdentities.Common
+import all Lynth.SeriesTools
 
 /-!
 # Complex inverse trigonometric and inverse hyperbolic functions
@@ -34,11 +44,11 @@ open Metric
 namespace Complex
 
 /-- The principal branch of the complex arcsine, `arcsin z = -i log (i z + √(1 - z²))`. -/
-noncomputable def arcsin (z : ℂ) : ℂ := -I * log (I * z + Complex.sqrt (1 - z ^ 2))
+public noncomputable def arcsin (z : ℂ) : ℂ := -I * log (I * z + Complex.sqrt (1 - z ^ 2))
 
 /-- The principal branch of the complex inverse hyperbolic tangent,
 `artanh z = (log (1 + z) - log (1 - z)) / 2`. -/
-noncomputable def artanh (z : ℂ) : ℂ := (log (1 + z) - log (1 - z)) / 2
+public noncomputable def artanh (z : ℂ) : ℂ := (log (1 + z) - log (1 - z)) / 2
 
 /-- The principal square root of a nonnegative real number is the real square root. -/
 theorem sqrt_ofReal {x : ℝ} (hx : 0 ≤ x) : Complex.sqrt (x : ℂ) = (Real.sqrt x : ℂ) := by
@@ -46,9 +56,9 @@ theorem sqrt_ofReal {x : ℝ} (hx : 0 ≤ x) : Complex.sqrt (x : ℂ) = (Real.sq
     Real.sqrt_eq_rpow]
   norm_num
 
-@[simp] theorem artanh_zero : artanh 0 = 0 := by simp [artanh]
+@[simp] public theorem artanh_zero : artanh 0 = 0 := by simp [artanh]
 
-@[simp] theorem arcsin_zero : arcsin 0 = 0 := by simp [arcsin, Complex.sqrt]
+@[simp] public theorem arcsin_zero : arcsin 0 = 0 := by simp [arcsin, Complex.sqrt]
 
 section Disc
 
@@ -205,7 +215,7 @@ theorem exp_neg_mul_I_arcsin (z : ℂ) :
     exp (-(I * arcsin z)) = Complex.sqrt (1 - z ^ 2) - I * z := by
   rw [Complex.exp_neg, exp_mul_I_arcsin, inv_arcsinArg]
 
-@[simp] theorem sin_arcsin (z : ℂ) : sin (arcsin z) = z := by
+@[simp] public theorem sin_arcsin (z : ℂ) : sin (arcsin z) = z := by
   rw [Complex.sin, show -arcsin z * I = -(I * arcsin z) by ring,
     show arcsin z * I = I * arcsin z by ring, exp_mul_I_arcsin, exp_neg_mul_I_arcsin]
   have hI : I ^ 2 = -1 := Complex.I_sq
@@ -213,7 +223,7 @@ theorem exp_neg_mul_I_arcsin (z : ℂ) :
   field_simp
   linear_combination (-2 * z) * hI
 
-@[simp] theorem cos_arcsin (z : ℂ) : cos (arcsin z) = Complex.sqrt (1 - z ^ 2) := by
+@[simp] public theorem cos_arcsin (z : ℂ) : cos (arcsin z) = Complex.sqrt (1 - z ^ 2) := by
   rw [Complex.cos, show -arcsin z * I = -(I * arcsin z) by ring,
     show arcsin z * I = I * arcsin z by ring, exp_mul_I_arcsin, exp_neg_mul_I_arcsin]
   ring

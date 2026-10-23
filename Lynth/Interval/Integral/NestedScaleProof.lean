@@ -1,10 +1,11 @@
-import Lynth.Interval.Integral.NestedEndpointProof
-import Lynth.Interval.Integral.Math.NestedEnvelope
+module
+
+import all Lynth.Interval.Integral.NestedEndpointProof
+import all Lynth.Interval.Integral.Math.NestedEnvelope
 
 /-! Exact arithmetic for the nested endpoint scale representation. -/
 namespace Lynth.Interval.Integral.Nested
 open Intgrl Fns
-open private unit from Lynth.Interval.Integral.NestedBounds
 
 theorem scaleConst_sound {Z : CBox} {z : ℂ} (hz : z ∈ Z) (t : ℝ) :
     (scaleConst Z).Mem t z := by

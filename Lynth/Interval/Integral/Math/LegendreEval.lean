@@ -1,5 +1,7 @@
-import Lynth.Interval.Integral.Math.Legendre
-import Lynth.Interval.Integral.Math.LegendreAsymp
+module
+
+import all Lynth.Interval.Integral.Math.Legendre
+import all Lynth.Interval.Integral.Math.LegendreAsymp
 
 /-!
 P1: fast evaluation and small roundoff bounds. Send with IntgrlDefs.lean.

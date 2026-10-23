@@ -1,6 +1,8 @@
-import Lynth.Interval.Integral.LegendreFixedProof
-import Lynth.Interval.Integral.LegendreSeriesProof
-import Lynth.Interval.Integral.LegendreAsymptoticProof
+module
+
+import all Lynth.Interval.Integral.LegendreFixedProof
+import all Lynth.Interval.Integral.LegendreSeriesProof
+import all Lynth.Interval.Integral.LegendreAsymptoticProof
 
 /-! Soundness of the hybrid point evaluator, including reflection parity. -/
 namespace Lynth.Interval.Integral

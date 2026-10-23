@@ -1,3 +1,8 @@
+module
+
+public import Init.Data.List.Basic
+public import Init.Prelude
+public import Mathlib.Data.Nat.Prime.Defs
 import Mathlib
 
 /-! Ported from `/tmp/zeta/zeta_eulerprod_thm.lean` (external prover, complete).
@@ -57,7 +62,7 @@ rest is scaffolding of increasing easiness.
 open Real BigOperators Topology Filter Finset Nat
 
 /-- primes `≤ P` (mirrors Lynth's sieve). -/
-def eulerPrimes (P : Nat) : List Nat := (List.range (P + 1)).filter Nat.Prime
+@[expose] public def eulerPrimes (P : Nat) : List Nat := (List.range (P + 1)).filter Nat.Prime
 
 /-- partial Euler product `Π(n, P)` (reals). -/
 noncomputable def eulerProd (n P : Nat) : ℝ :=

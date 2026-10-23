@@ -1,3 +1,5 @@
+module
+
 
 
 /-!
@@ -15,7 +17,7 @@ namespace Lynth.Arith.Fourier
 
 /-- A `≤` constraint `∑ coeffs[i]·xᵢ + const ≤ 0` with lineage `combo`
 (weights over the original system, same length for every constraint). -/
-structure LeC where
+public structure LeC where
   coeffs : List Rat
   const : Rat
   combo : List Rat
@@ -34,7 +36,7 @@ def nVars (sys : List LeC) : Nat :=
   sys.foldl (fun m c => Nat.max m c.coeffs.length) 0
 
 /-- Make a constraint over `nOrig` originals with unit lineage `k`. -/
-def mkLe (coeffs : List Rat) (const : Rat) (nOrig k : Nat) : LeC :=
+public def mkLe (coeffs : List Rat) (const : Rat) (nOrig k : Nat) : LeC :=
   { coeffs, const,
     combo := List.range nOrig |>.map fun i => if i == k then 1 else 0 }
 
@@ -76,7 +78,7 @@ def step (sys : List LeC) (j : Nat) : Except (List Rat) (List LeC) :=
 /-- Eliminate `n` variables starting at `j`, fuel-bounded.
 Returns the Farkas certificate on refutation, `none` otherwise
 (relaxation is incomplete for integers: SAT here is inconclusive). -/
-def solve (sys : List LeC) (fuel : Nat := 128) : Option (List Rat) :=
+public def solve (sys : List LeC) (fuel : Nat := 128) : Option (List Rat) :=
   let n := nVars sys
   match go sys fuel 0 (n + 1) with
   | .error cert => some cert

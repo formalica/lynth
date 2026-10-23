@@ -1,8 +1,10 @@
+module
+
 import Lean
-import Lynth.Procedure
-import Lynth.Witness
-import Lynth.Answer.Procedure
-import Lynth.Sat.Compile
+import all Lynth.Procedure
+import all Lynth.Witness
+import all Lynth.Answer.Procedure
+import all Lynth.Sat.Compile
 
 /-!
 Meta solver-function procedure: synthesize total `I → Option O`

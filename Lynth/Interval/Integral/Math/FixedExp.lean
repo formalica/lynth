@@ -1,3 +1,14 @@
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.Int.Bitwise.Basic
+public import Init.Data.Int.DivMod.Basic
+public import Init.Data.Nat.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Int.Defs
+public import Mathlib.Algebra.Group.Monoid
 import Mathlib.Analysis.SpecialFunctions.Exponential
 
 /-! Integer endpoint arithmetic for exp on [-1/2,1/2]. Mathlib-only proof
@@ -5,7 +16,7 @@ handoff; ordinary scaling and squaring reconstructs the full exponential. -/
 
 namespace Intgrl
 
-def fixedExpLoop (p : ℕ) (a : ℤ) :
+@[expose] public def fixedExpLoop (p : ℕ) (a : ℤ) :
     ℕ → ℕ → ℤ → ℤ → ℤ → ℤ → ℤ × ℤ
   | 0, _, lo, hi, sl, sh =>
       let tail := (2 * max lo.natAbs hi.natAbs : ℕ)
@@ -19,7 +30,7 @@ def fixedExpLoop (p : ℕ) (a : ℤ) :
       if max nextLo.natAbs nextHi.natAbs ≤ 1 then (sl-2, sh+2)
       else fixedExpLoop p a fuel (k+1) nextLo nextHi sl sh
 
-def fixedExpBounds (p : ℕ) (x : ℚ) : ℤ × ℤ :=
+@[expose] public def fixedExpBounds (p : ℕ) (x : ℚ) : ℤ × ℤ :=
   let scale : ℤ := (2 : ℤ)^p
   if x = 0 then (scale,scale) else
     let a := (x * (scale : ℚ)).floor

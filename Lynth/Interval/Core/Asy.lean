@@ -1,4 +1,20 @@
-import Lynth.Interval.Core.Ctx
+module
+
+public import Batteries.Classes.RatCast
+public import Init.Core
+public import Init.Data.Cast
+public import Init.Data.Rat.Basic
+public import Init.Data.Zero
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Basic.Real.Basic
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Core.Ctx
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
@@ -20,14 +36,14 @@ Functions register AIA rules through the `asy` / `asy_sound` fields of
 namespace Lynth.Interval
 
 /-- asymptotic enclosure of a real sequence on `[N, ∞)` -/
-inductive RAsy where
+public inductive RAsy where
   | pow (a : ℕ) (α : ℚ) (I J : Ival)
   | geo (M R : Dy)
   | grow (M R : Dy)
   | top
 
 /-- asymptotic description of a natural-number sequence on `[N, ∞)` -/
-inductive NAsy where
+public inductive NAsy where
   | affine (b : ℕ)
   | const (n : ℕ)
   | grow (M R : Dy)
@@ -35,7 +51,7 @@ inductive NAsy where
 
 namespace RAsy
 
-def Holds (N : ℕ) (f : ℕ → ℝ) : RAsy → Prop
+@[expose] public def Holds (N : ℕ) (f : ℕ → ℝ) : RAsy → Prop
   | pow a α I J => ∀ k, N ≤ k →
       0 < (k : ℝ) + a ∧ ∃ u, u ∈ I ∧ |u| ∈ J ∧ f k = ((k : ℝ) + a) ^ (α : ℝ) * u
   | geo M R => ∀ k, N ≤ k → |f k| ≤ M.toReal * R.toReal ^ (k - N)
@@ -43,7 +59,7 @@ def Holds (N : ℕ) (f : ℕ → ℝ) : RAsy → Prop
   | top => True
 
 /-- a sequence with values in `I` -/
-def const (I : Ival) : RAsy := pow 1 0 I (Ival.abs I)
+@[expose] public def const (I : Ival) : RAsy := pow 1 0 I (Ival.abs I)
 
 theorem const_holds {N : ℕ} {f : ℕ → ℝ} {I : Ival} (h : ∀ k, N ≤ k → f k ∈ I) :
     (const I).Holds N f := by
@@ -55,7 +71,7 @@ end RAsy
 
 namespace NAsy
 
-def Holds (N : ℕ) (f : ℕ → ℕ) : NAsy → Prop
+@[expose] public def Holds (N : ℕ) (f : ℕ → ℕ) : NAsy → Prop
   | affine b => ∀ k, N ≤ k → f k = k + b
   | const n => ∀ k, N ≤ k → f k = n
   | grow M R => ∀ k, N ≤ k → M.toReal * R.toReal ^ (k - N) ≤ (f k : ℝ)
@@ -64,7 +80,7 @@ def Holds (N : ℕ) (f : ℕ → ℕ) : NAsy → Prop
 end NAsy
 
 /-- AIA values by type (complex/int/rat/list: no information yet) -/
-@[reducible] def Ty.Asy : Ty → Type
+@[expose, reducible] public def Ty.Asy : Ty → Type
   | .nat => NAsy
   | .int => Unit
   | .real => RAsy
@@ -72,7 +88,7 @@ end NAsy
   | .rat => Unit
   | .list _ => Unit
 
-def Ty.asyTop : (t : Ty) → t.Asy
+@[expose] public def Ty.asyTop : (t : Ty) → t.Asy
   | .nat => NAsy.top
   | .int => ()
   | .real => RAsy.top
@@ -80,7 +96,7 @@ def Ty.asyTop : (t : Ty) → t.Asy
   | .rat => ()
   | .list _ => ()
 
-def Ty.AsyHolds : (t : Ty) → ℕ → (ℕ → t.Val) → t.Asy → Prop
+@[expose] public def Ty.AsyHolds : (t : Ty) → ℕ → (ℕ → t.Val) → t.Asy → Prop
   | .nat, N, f, A => NAsy.Holds N f A
   | .int, _, _, _ => True
   | .real, N, f, A => RAsy.Holds N f A

@@ -1,4 +1,6 @@
-import Lynth.Interval.Integral.NestedHalflineProof
+module
+
+import all Lynth.Interval.Integral.NestedHalflineProof
 
 /-! Canonical half-line expressions preserve ordinary convergence and values. -/
 namespace Lynth.Interval.Integral.Nested

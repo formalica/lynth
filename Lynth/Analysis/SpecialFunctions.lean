@@ -1,76 +1,27 @@
+module
+
+public import Init.Control.Basic
+public import Init.Control.Id
+public import Init.Core
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.List.Basic
+public import Init.Data.Range.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Data.Nat.Factorial.Basic
 import Mathlib
-import Lynth.Interval.Check.AiryBounds
-import Lynth.Interval.Check.EtaProof
+import all Lynth.Analysis.SpecialFunctionsDefs
+import all Lynth.Interval.Check.AiryBounds
+import all Lynth.Interval.Check.EtaProof
 
 /-! Entire special functions, with independent real and complex definitions.
 The power series are specifications; numerical evaluation uses integer kernels.
 The Airy normalization certificate uses the verified interval Gamma implementation.
 -/
 
-namespace SpecialFunctions
-
-inductive SeriesKind where
-  | erf | si | airy0 | airy1
-deriving BEq, DecidableEq, Repr, Inhabited
-
-def SeriesKind.num : SeriesKind → ℕ → ℕ
-  | .erf, k | .si, k => 2*k+1
-  | .airy0, _ | .airy1, _ => 1
-
-def SeriesKind.den : SeriesKind → ℕ → ℕ
-  | .erf, k => (k+1)*(2*k+3)
-  | .si, k => (2*k+2)*(2*k+3)^2
-  | .airy0, k => (3*k+3)*(3*k+2)
-  | .airy1, k => (3*k+3)*(3*k+4)
-
-def coefficient (kind : SeriesKind) : ℕ → ℚ
-  | 0 => 1
-  | k+1 => coefficient kind k * kind.num k / kind.den k
-
-noncomputable def seriesR (kind : SeriesKind) (x : ℝ) : ℝ :=
-  ∑' k, (coefficient kind k : ℝ) * x^k
-
-noncomputable def seriesC (kind : SeriesKind) (z : ℂ) : ℂ :=
-  ∑' k, (coefficient kind k : ℂ) * z^k
-
-noncomputable def airyA : ℝ := 1 / ((3 : ℝ)^(2/3 : ℝ) * Real.Gamma (2/3))
-noncomputable def airyB : ℝ := -1 / ((3 : ℝ)^(1/3 : ℝ) * Real.Gamma (1/3))
-
-end SpecialFunctions
-
-namespace Real
-
-noncomputable def erf (x : ℝ) : ℝ :=
-  2 / Real.sqrt Real.pi * x * SpecialFunctions.seriesR .erf (-x^2)
-
-/-- Sine integral, with its removable singularity at zero filled in. -/
-noncomputable def Si (x : ℝ) : ℝ := x * SpecialFunctions.seriesR .si (-x^2)
-
-/-- Entire continuation of the alternating zeta function; eta(1) = log 2. -/
-noncomputable def dirichletEta (s : ℝ) : ℝ :=
-  if s = 1 then Real.log 2 else (1 - (2 : ℝ)^(1-s)) * (riemannZeta (s : ℂ)).re
-
-noncomputable def airyAi (x : ℝ) : ℝ :=
-  SpecialFunctions.airyA * SpecialFunctions.seriesR .airy0 (x^3) +
-    SpecialFunctions.airyB * x * SpecialFunctions.seriesR .airy1 (x^3)
-
-end Real
-
-namespace Complex
-
-noncomputable def erf (z : ℂ) : ℂ :=
-  (2 / Real.sqrt Real.pi : ℝ) * z * SpecialFunctions.seriesC .erf (-z^2)
-
-noncomputable def Si (z : ℂ) : ℂ := z * SpecialFunctions.seriesC .si (-z^2)
-
-noncomputable def dirichletEta (s : ℂ) : ℂ :=
-  if s = 1 then (Real.log 2 : ℂ) else (1 - (2 : ℂ)^(1-s)) * riemannZeta s
-
-noncomputable def airyAi (z : ℂ) : ℂ :=
-  (SpecialFunctions.airyA : ℂ) * SpecialFunctions.seriesC .airy0 (z^3) +
-    (SpecialFunctions.airyB : ℂ) * z * SpecialFunctions.seriesC .airy1 (z^3)
-
-end Complex
 
 section
 /- Auxiliary proofs ported from SpecialFunctionsSeries.lean. -/
@@ -2210,9 +2161,9 @@ theorem complex_bounds (z : ℂ) :
     ‖Complex.airyAi z‖ ≤ (1+‖z‖) * Real.exp (‖z‖^2+1) := by
   exact ⟨norm_erf_bound z, norm_Si_bound z, norm_airyAi_bound z⟩
 
-def airyConstScale : ℕ := 10^400
-def airyConstA : ℤ := 3550280538878172392600631860041831763979791741991772405833265103008100424501267129571742460540402716884204487303494958397582926704461619371050402400225853863840099026010357128190515682032902491696447661823279677702418989594796173489086406257323897601417640056780397387733804863176108754520253233492223889696310797677817018407651352099370413155733915331326628757170039713556080491748639102813585025352
-def airyConstB : ℤ := -2588194037928067984051835601892039634790911383549345822100018138561027726767902806541964058272753843133711932117891333812750359521676260147850509898484194466320296448888056018783833051269505251282933424979998835707490792590601589510509443220893840596735777193280251066501701756898365786075255831135478171318620449582927213325913268210520314000118299672244516610304438553000396853595369554995929031115
+@[expose] public def airyConstScale : ℕ := 10^400
+@[expose] public def airyConstA : ℤ := 3550280538878172392600631860041831763979791741991772405833265103008100424501267129571742460540402716884204487303494958397582926704461619371050402400225853863840099026010357128190515682032902491696447661823279677702418989594796173489086406257323897601417640056780397387733804863176108754520253233492223889696310797677817018407651352099370413155733915331326628757170039713556080491748639102813585025352
+@[expose] public def airyConstB : ℤ := -2588194037928067984051835601892039634790911383549345822100018138561027726767902806541964058272753843133711932117891333812750359521676260147850509898484194466320296448888056018783833051269505251282933424979998835707490792590601589510509443220893840596735777193280251066501701756898365786075255831135478171318620449582927213325913268210520314000118299672244516610304438553000396853595369554995929031115
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 100000000 in
@@ -2306,7 +2257,7 @@ noncomputable def hornerR (xs : List ℚ) (x : ℝ) : ℝ :=
   | [] => 0
   | q :: qs => q + x * hornerR qs x
 
-def siCoeffs (n : ℕ) (sine : Bool) : List ℚ :=
+@[expose] public def siCoeffs (n : ℕ) (sine : Bool) : List ℚ :=
   (List.range n).map fun k => (-1 : ℚ)^k * ((2*k + if sine then 1 else 0).factorial : ℚ)
 
 private theorem hornerR_map_range (g : ℕ → ℚ) (y : ℝ) (n : ℕ) :
@@ -2337,7 +2288,7 @@ theorem si_asymptotic_horner (x : ℝ) (hx : 0 < x) (n : ℕ) :
 
 /-- Linear-time weights for the first n Euler-transformed eta terms. -/
 
-def etaWeights (n : ℕ) : List (ℕ × ℚ) := Id.run do
+@[expose] public def etaWeights (n : ℕ) : List (ℕ × ℚ) := Id.run do
   let scale := 2^n
   let mut binom := 1
   let mut total := 0

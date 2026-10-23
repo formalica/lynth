@@ -1,4 +1,19 @@
-import Lynth.Interval.Integral.Math.NestedSubstitution
+module
+
+public import Init.Control.Basic
+public import Init.Core
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Nat.Coprime
+public import Init.Data.Option.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Order.Ring.Unbundled.Rat
+public import Lynth.Interval.Integral.Math.Integrand
+public import Lynth.Interval.Integral.Math.NestedDefs
+public import Lynth.Interval.Integral.Math.NestedSubstitution
+import all Lynth.Interval.Integral.Math.NestedSubstitution
 
 /-! Pure binder-aware syntax transformations. Only the small mathematical
 expression specifications and Mathlib are dependencies; there is no interval
@@ -6,38 +21,38 @@ arithmetic, memo table or checker code here. -/
 namespace Lynth.Interval.Integral.Nested
 open Intgrl
 
-abbrev Expr := NExpr
+public abbrev Expr := NExpr
 
-def _root_.Intgrl.NExpr.size : Expr → Nat
+@[expose] public def _root_.Intgrl.NExpr.size : Expr → Nat
   | .var _ | .rat _ | .pi => 1
   | .unary _ a | .pow a _ | .rpow a _ => a.size+1
   | .binary _ a b => a.size+b.size+1
   | .integral _ a b f => a.size+b.size+f.size+1
 
-def _root_.Intgrl.NExpr.uses (i : Nat) : Expr → Bool
+@[expose] public def _root_.Intgrl.NExpr.uses (i : Nat) : Expr → Bool
   | .var j => i == j
   | .rat _ | .pi => false
   | .unary _ a | .pow a _ | .rpow a _ => a.uses i
   | .binary _ a b => a.uses i || b.uses i
   | .integral _ a b f => a.uses i || b.uses i || f.uses i
 
-def _root_.Intgrl.NExpr.hasIntegral : Expr → Bool
+@[expose] public def _root_.Intgrl.NExpr.hasIntegral : Expr → Bool
   | .integral .. => true
   | .unary _ a | .pow a _ | .rpow a _ => a.hasIntegral
   | .binary _ a b => a.hasIntegral || b.hasIntegral
   | _ => false
 
 /-- Small exact simplifications also expose endpoint cancellations. -/
-def add (a b : Expr) : Expr :=
+@[expose] public def add (a b : Expr) : Expr :=
   match a,b with
   | .rat 0,b => b | a,.rat 0 => a
   | .rat p,.rat q => .rat (p+q)
   | _,_ => .binary .add a b
 
-def neg (a : Expr) : Expr :=
+@[expose] public def neg (a : Expr) : Expr :=
   match a with | .rat q => .rat (-q) | .unary .neg a => a | _ => .unary .neg a
 
-def sub (a b : Expr) : Expr :=
+@[expose] public def sub (a b : Expr) : Expr :=
   if a == b && !a.hasIntegral then .rat 0 else
   match a,b with
   | a,.rat 0 => a | .rat p,.rat q => .rat (p-q)
@@ -47,7 +62,7 @@ def sub (a b : Expr) : Expr :=
   | .binary .add a b,c => if a == c && !a.hasIntegral then b else if b == c && !b.hasIntegral then a else .binary .sub (.binary .add a b) c
   | _,_ => .binary .sub a b
 
-def mul (a b : Expr) : Expr :=
+@[expose] public def mul (a b : Expr) : Expr :=
   match a,b with
   | .rat 0,b => if b.hasIntegral then .binary .mul a b else .rat 0
   | a,.rat 0 => if a.hasIntegral then .binary .mul a b else .rat 0
@@ -55,23 +70,23 @@ def mul (a b : Expr) : Expr :=
   | .rat p,.rat q => .rat (p*q)
   | _,_ => .binary .mul a b
 
-def div (a b : Expr) : Expr :=
+@[expose] public def div (a b : Expr) : Expr :=
   match a,b with
   | a,.rat 1 => a
   | .rat p,.rat q => .rat (p/q)
   | _,_ => .binary .div a b
 
-def pow (a : Expr) (n : Nat) : Expr :=
+@[expose] public def pow (a : Expr) (n : Nat) : Expr :=
   if n == 0 && !a.hasIntegral then .rat 1 else if n == 1 then a else
   match a with
   | .unary .neg a => if n % 2 == 0 then .pow a n else neg (.pow a n)
   | _ => .pow a n
 
-def rpow (a : Expr) (q : ℚ) : Expr :=
+@[expose] public def rpow (a : Expr) (q : ℚ) : Expr :=
   if q == 0 && !a.hasIntegral then .rat 1 else if q == 1 then a else
   if q.den == 1 && q.num ≥ 0 then pow a q.num.toNat else .rpow a q
 
-def simplify : Expr → Expr
+@[expose] public def simplify : Expr → Expr
   | .unary .neg a => neg (simplify a)
   | .unary op a => .unary op (simplify a)
   | .binary .add a b => add (simplify a) (simplify b)
@@ -87,7 +102,7 @@ def simplify : Expr → Expr
 /-- Pull powers of the positive integration variable out of arithmetic.
 Used only after a change of variables on (0,1); endpoint values are null.
 This exposes cancellations such as 2*t/sqrt(t^2) before interval evaluation. -/
-def collectPower (level : Nat) : Expr → ℚ × Expr
+@[expose] public def collectPower (level : Nat) : Expr → ℚ × Expr
   | .var i => if i == level then (1,.rat 1) else (0,.var i)
   | .binary op a b =>
     let (p,A) := collectPower level a
@@ -107,18 +122,18 @@ def collectPower (level : Nat) : Expr → ℚ × Expr
   | .pow a n => let (p,A) := collectPower level a; (p*n,pow A n)
   | e => (0,e)
 
-def regularize (level : Nat) (e : Expr) : Expr :=
+@[expose] public def regularize (level : Nat) (e : Expr) : Expr :=
   let (p,A) := collectPower level (simplify e)
   simplify (mul (rpow (.var level) p) A)
 
 /-- Transformations are verified again during replay; no transformed value
 is inserted by the expression compiler. -/
-inductive Change where
+public inductive Change where
   | identity | affine | right | left
   | power (degree : Nat) (fromRight : Bool)
-  deriving Repr, BEq, Inhabited
+  deriving Repr, @[expose] BEq, Inhabited
 
-def transformed (n : Nat) (how : Change) (a b f : Expr) : Expr :=
+@[expose] public def transformed (n : Nat) (how : Change) (a b f : Expr) : Expr :=
   let t := NExpr.var n
   match how with
   | .identity => f
@@ -146,13 +161,13 @@ def transformed (n : Nat) (how : Change) (a b f : Expr) : Expr :=
 
 /-- Standalone tail/endpoint identities. A returned guard must be checked
 on the complete real parameter domain before the formula can be used. -/
-structure Formula where
+public structure Formula where
   value : Expr
   nonnegative : Option Expr := none
   positive : Option Expr := none
   deriving Repr, Inhabited
 
-def powerKernel (n : Nat) (base : Expr) : Expr → Option ℚ
+@[expose] public def powerKernel (n : Nat) (base : Expr) : Expr → Option ℚ
   | .pow a k => if a == base then some k else none
   | .rpow a q => if a == base then some q else none
   | .unary .sqrt a => if a == base then some (1/2) else none
@@ -164,7 +179,7 @@ def powerKernel (n : Nat) (base : Expr) : Expr → Option ℚ
   | .var i => if base == .var i && i == n then some 1 else none
   | _ => none
 
-def formula (n : Nat) (kind : NDomain) (a b f : Expr) : Option Formula := do
+@[expose] public def formula (n : Nat) (kind : NDomain) (a b f : Expr) : Option Formula := do
   let y := NExpr.var n
   if kind == .right then
     if f == .unary .exp (neg y) then return ⟨.unary .exp (neg a),none,none⟩
@@ -201,7 +216,7 @@ def formula (n : Nat) (kind : NDomain) (a b f : Expr) : Option Formula := do
 
 /-- A whole-line split follows a visible translation, when present. This
 avoids repeatedly bounding a shifted Gaussian on unrelated half-lines. -/
-def center (level : Nat) : Expr → Expr
+@[expose] public def center (level : Nat) : Expr → Expr
   | .binary .sub (.var i) a =>
     if i == level && !a.uses level && !a.hasIntegral then a else .rat 0
   | .unary _ a | .pow a _ | .rpow a _ => center level a
@@ -211,7 +226,7 @@ def center (level : Nat) : Expr → Expr
   | _ => .rat 0
 
 /-- Endpoint-distance expression, with a fresh variable at env.size. -/
-def endpointExpr (n : Nat) (right : Bool) (e : Expr) : Expr :=
+@[expose] public def endpointExpr (n : Nat) (right : Bool) (e : Expr) : Expr :=
   if right then simplify (e.replace n (sub (.rat 1) (.var n))) else e
 
 

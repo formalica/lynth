@@ -1,10 +1,10 @@
-import Lynth.Interval.Integral.Math.NestedSyntax
-import Lynth.Interval.Integral.SyntaxEq
+module
+
+import all Lynth.Interval.Integral.Math.NestedSyntax
+import all Lynth.Interval.Integral.SyntaxEq
 
 /-! Semantics of the pure expression simplifications. -/
 namespace Intgrl
-deriving instance ReflBEq for NDomain, NExpr
-deriving instance LawfulBEq for NDomain, NExpr
 end Intgrl
 
 namespace Lynth.Interval.Integral.Nested

@@ -1,5 +1,7 @@
+module
+
 import Lean
-import Lynth.Procedure
+import all Lynth.Procedure
 import Mathlib.Data.List.Sublists
 
 /-!

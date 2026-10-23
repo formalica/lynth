@@ -1,9 +1,11 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.CrossTerms
-import Lynth.Interval.Fns.EulerGamma.Proof.QIntegral
-import Lynth.Interval.Fns.EulerGamma.Proof.GammaIdentity
-import Lynth.Interval.Fns.EulerGamma.Proof.ChangeOfVariables
-import Lynth.Interval.Fns.EulerGamma.Proof.BesselI0Integral
-import Lynth.Interval.Fns.EulerGamma.Proof.Remainder.Bound
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.CrossTerms
+import all Lynth.Interval.Fns.EulerGamma.Proof.QIntegral
+import all Lynth.Interval.Fns.EulerGamma.Proof.GammaIdentity
+import all Lynth.Interval.Fns.EulerGamma.Proof.ChangeOfVariables
+import all Lynth.Interval.Fns.EulerGamma.Proof.BesselI0Integral
+import all Lynth.Interval.Fns.EulerGamma.Proof.Remainder.Bound
 
 /-!
 # Main theorem: FLINT's Brent–McMillan B3 error bound for Euler's constant

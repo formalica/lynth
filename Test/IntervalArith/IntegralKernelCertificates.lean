@@ -1,7 +1,5 @@
+import Lynth
 import Mathlib
-import Lynth.Interval.Integral.Math.FixedTrig
-import Lynth.Interval.Integral.Math.FixedExp
-import Lynth.Interval.Integral.Panel
 
 /-! Check fixed-point enclosures against independent exact rational series.
 The reference calculation rounds no terms; its geometric tail is much smaller
@@ -9,8 +7,9 @@ than one fixed-point unit. Each test has a separately measured heartbeat cap. -/
 
 namespace IntervalArith.IntegralKernelCertificates
 
-open Lean Elab Command Intgrl
-open Lynth.Interval Lynth.Interval.Integral
+open Lynth.Interval (Ctx Dy Ival)
+open Lynth.Interval.Integral (errorBound needsMemo prepareEval evalR)
+open Intgrl (fixedTrigBounds fixedExpBounds)
 
 private def referenceTrig (sine : Bool) (x : ℚ) (steps : Nat) : ℚ × ℚ := Id.run do
   let mut term := if sine then x else 1
@@ -72,14 +71,14 @@ run_cmd do
   for k in [0,1,2,31,63,64,127,255,256,1024,65535,65536,65537,70000] do
     let base := (1 : Nat) <<< k
     for n in [0,base-1,base,base+1] do
-      let reference := if n == 0 then 0 else Vendor.Dyadic.bitSearchS n 20 0
+      let reference := if n == 0 then 0 else Lynth.Interval.Vendor.Dyadic.bitSearchS n 20 0
         (if (n >>> 256).beq 0 then 256 else 65536)
-      unless Vendor.Dyadic.natBitLength n == reference do
+      unless Lynth.Interval.Vendor.Dyadic.natBitLength n == reference do
         throwError "native bit length disagrees with bounded search: k={k}"
   for k in [0,1,31,63,64,128,1024] do
     for m in [(-((2 : Int)^130)-1),-65,-1,0,1,65,(2 : Int)^130+1] do
-      unless Vendor.Dyadic.shiftLeftInt m k == m*((1 : Nat) <<< k) &&
-          Vendor.Dyadic.shiftRightInt m k == m/((1 : Nat) <<< k) do
+      unless Lynth.Interval.Vendor.Dyadic.shiftLeftInt m k == m*((1 : Nat) <<< k) &&
+          Lynth.Interval.Vendor.Dyadic.shiftRightInt m k == m/((1 : Nat) <<< k) do
         throwError "native signed shift disagrees with exact arithmetic: m={m}, k={k}"
 
 set_option maxHeartbeats 1026 in -- measured: 977; +5%

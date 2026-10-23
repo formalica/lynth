@@ -1,4 +1,20 @@
-import Lynth.Interval.Integral.Eval
+module
+
+public import Init.Control.Basic
+public import Init.Control.Do
+public import Init.Control.Id
+public import Init.Core
+public import Init.Data.List.Basic
+public import Init.Data.List.Control
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Integral.Eval
+public import Lynth.Interval.Integral.Math.Integrand
+public import Lynth.Interval.Integral.Powers
+public import Lynth.Interval.Num.Ival
+import all Lynth.Interval.Integral.Eval
 
 /-! Local common-subexpression evaluation. Entries are scoped to one input
 box; no numerical result is reused at another quadrature point. -/
@@ -7,9 +23,9 @@ namespace Lynth.Interval.Integral
 
 open Intgrl
 
-abbrev EvalCache := List (Term × Ival)
+public abbrev EvalCache := List (Term × Ival)
 
-def cacheLookup (e : Term) : EvalCache → Option Ival
+@[expose] public def cacheLookup (e : Term) : EvalCache → Option Ival
   | [] => none
   | (a,V)::rest => if a = e then some V else cacheLookup e rest
 
@@ -38,7 +54,7 @@ theorem cacheSound_cons {s : EvalCache} {x : ℝ} {e : Term} {V : Ival}
   · cases he; exact h
   · exact hs a W ht
 
-def evalCached (c : Ctx) (e : Term) (X : Ival) (s : EvalCache) : Ival × EvalCache :=
+@[expose] public def evalCached (c : Ctx) (e : Term) (X : Ival) (s : EvalCache) : Ival × EvalCache :=
   match cacheLookup e s with
   | some V => (V,s)
   | none =>
@@ -118,7 +134,7 @@ theorem evalCached_sound {c : Ctx} (hc : c.Valid) (e : Term)
 
 /-- Select caching only for an expression containing a repeated expensive
 subexpression. The common small integrands retain their direct evaluator. -/
-def expensiveTerms : Term → List Term
+@[expose] public def expensiveTerms : Term → List Term
   | .unary op a =>
     let rest := expensiveTerms a
     match op with
@@ -130,14 +146,14 @@ def expensiveTerms : Term → List Term
   | .rpow a q => .rpow a q :: expensiveTerms a
   | _ => []
 
-def needsMemo (e : Term) : Bool := Id.run do
+@[expose] public def needsMemo (e : Term) : Bool := Id.run do
   let mut seen : List Term := []
   for t in expensiveTerms e do
     if seen.contains t then return true
     seen := t::seen
   return false
 
-def prepareEval (c : Ctx) (e : Term) : Ival → Ival :=
+@[expose] public def prepareEval (c : Ctx) (e : Term) : Ival → Ival :=
   if needsMemo e then fun X => (evalCached c e X []).1 else evalR c e
 
 theorem prepareEval_sound {c : Ctx} (hc : c.Valid) (e : Term)

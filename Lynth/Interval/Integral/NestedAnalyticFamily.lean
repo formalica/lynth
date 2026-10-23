@@ -1,6 +1,8 @@
-import Lynth.Interval.Integral.Math.NestedAnalyticEnvelope
-import Lynth.Interval.Integral.NestedAnalyticPrimitive
-import Lynth.Interval.Integral.NestedRangeModel
+module
+
+import all Lynth.Interval.Integral.Math.NestedAnalyticEnvelope
+import all Lynth.Interval.Integral.NestedAnalyticPrimitive
+import all Lynth.Interval.Integral.NestedRangeModel
 
 /-! Uniformly bounded analytic families with continuous auxiliary parameters. -/
 

@@ -1,5 +1,6 @@
 -- Pure SAT-solver checks (no axioms involved).
-import Lynth.Sat.Solver
+module
+import Lynth
 
 open Lynth.Sat
 

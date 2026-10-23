@@ -1,5 +1,16 @@
-import Lynth.Interval.Integral.Math.FixedExp
-import Lynth.Interval.Fns.Exp
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Prelude
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Fns.Exp
+public import Lynth.Interval.Integral.Math.FixedExp
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Integral.Math.FixedExp
+import all Lynth.Interval.Fns.Exp
 
 /-! Integration-local fixed-point exponential kernels. -/
 
@@ -7,7 +18,7 @@ namespace Lynth.Interval.Integral
 
 open Fns
 
-def fastExpSmall (w : Nat) (a : Dy) : Ival :=
+@[expose] public def fastExpSmall (w : Nat) (a : Dy) : Ival :=
   if isSmallArg a then
     let p := w+8
     let (lo,hi) := Intgrl.fixedExpBounds p a.toRat
@@ -24,7 +35,7 @@ theorem mem_fastExpSmall (w : Nat) (a : Dy) : Real.exp a.toReal ∈ fastExpSmall
       Dy.toRat_mk, Rat.cast_mul, Rat.cast_intCast, Rat.cast_zpow, Rat.cast_ofNat] using h
   · exact ⟨by simpa [Dy.toReal_def] using (Real.exp_pos a.toReal).le, by simp⟩
 
-def fastExpPt (w : Nat) (a : Dy) : Ival :=
+@[expose] public def fastExpPt (w : Nat) (a : Dy) : Ival :=
   let s := expRed a
   sqIter (w+s) (fastExpSmall (w+s+8) (Dy.scale2 a (-(s : Int)))) s
 
@@ -39,7 +50,7 @@ theorem mem_fastExpPt (w : Nat) (a : Dy) : Real.exp a.toReal ∈ fastExpPt w a :
   rw [ha, Real.exp_nat_mul]
   exact mem_sqIter (mem_fastExpSmall _ _) s
 
-def fastExpIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def fastExpIval (c : Ctx) (X : Ival) : Ival :=
   let w := c.prec+8
   ⟨some (match X.lo with
       | some a => (fastExpPt w a).lo.getD Dy.zero

@@ -1,5 +1,6 @@
 -- Pure Fourier–Motzkin checks (no axioms): refutation + certificates.
-import Lynth.Arith.Fourier
+module
+import Lynth
 
 open Lynth.Arith.Fourier
 

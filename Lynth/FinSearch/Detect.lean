@@ -1,3 +1,5 @@
+module
+
 /-!
 Finite-domain detector + router (TASKS.md#Q6 parent procedure).
 
@@ -13,7 +15,7 @@ namespace Lynth.FinSearch.Detect
 /-- Max distinct cells the SAT child will encode (one-hot blowup guard).
 Counts board cells plus auxiliary Tseitin-style cells introduced when
 flattening suspended branches (one aux per `ite`/`nite` node). -/
-def maxCells : Nat := 16384
+@[expose] public def maxCells : Nat := 16384
 
 /-- Max CNF variables the encoder may allocate (`none` = yield).
 Sized for 9x9 Sudoku (~40k vars with pairwise-distinct Tseitin gates);
@@ -58,7 +60,7 @@ def exactKCostOk (n k : Nat) : Bool :=
   atMost + atLeast < maxExactKCombos
 
 /-- Search-space estimate: number of board positions. -/
-def estimate (dims : List Nat) : Nat :=
+@[expose] public def estimate (dims : List Nat) : Nat :=
   dims.foldl (· * ·) 1
 
 /-- Max candidates enumerated by list synthesis (`pool ^ length`);
@@ -67,7 +69,7 @@ def maxListCand : Nat := 200000
 
 /-- Route decision: attempt SAT iff function-typed (`isFun`) and within
 the cell budget. Scalars yield to `Witness`. -/
-def route (isFun : Bool) (nCells : Nat) : Bool :=
+@[expose] public def route (isFun : Bool) (nCells : Nat) : Bool :=
   isFun && decide (nCells ≤ maxCells)
 
 end Lynth.FinSearch.Detect

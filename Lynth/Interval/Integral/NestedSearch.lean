@@ -1,4 +1,10 @@
-import Lynth.Interval.Integral.NestedCert
+module
+
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Integral.Math.NestedSyntax
+public import Lynth.Interval.Integral.NestedCert
+
+import all Lynth.Interval.Integral.NestedCert
 
 /-! Untrusted adaptive Petras search. Only real quadrature samples recurse;
 complex range queries use NestedBounds and the shared Legendre table pool. -/
@@ -172,7 +178,7 @@ partial def evaluate (c : Ctx) (e : Expr) (env : Array Ival) (tol : ℚ) : Searc
       let p := {p with pieces := pieces.mergeSort (fun a b => Dy.leB a.a b.a)}
       remember c ⟨e,env,.panels p⟩
 
-def search (c : Ctx) (e : Expr) (tol : ℚ) : Option Cert := do
+public def search (c : Ctx) (e : Expr) (tol : ℚ) : Option Cert := do
   if !e.scoped 0 || tol ≤ 0 then none else do
     let (_,s) ← (evaluate c e #[] (tol/4)).run {}
     return ⟨s.pool.tables,s.entries⟩

@@ -1,4 +1,6 @@
-import Lynth.FinSearch.Syntax
+module
+
+import all Lynth.FinSearch.Syntax
 
 /-!
 Lazy theory layer for the finite-domain procedure (CDCL(T) shape):

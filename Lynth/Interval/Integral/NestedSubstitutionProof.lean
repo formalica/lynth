@@ -1,4 +1,6 @@
-import Lynth.Interval.Integral.NestedSemantics
+module
+
+import all Lynth.Interval.Integral.NestedSemantics
 
 /-! Binder transport of values and recursive ordinary convergence. -/
 namespace Lynth.Interval.Integral.Nested

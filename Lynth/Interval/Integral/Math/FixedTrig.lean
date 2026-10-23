@@ -1,3 +1,14 @@
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.Int.Bitwise.Basic
+public import Init.Data.Int.DivMod.Basic
+public import Init.Data.Nat.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Int.Defs
+public import Mathlib.Algebra.Group.Monoid
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
@@ -9,7 +20,7 @@ namespace Intgrl
 
 /-- The remaining series is bounded by twice the current term from index 1.
 Endpoint products are divided with directed integer rounding. -/
-def fixedTrigLoop (p : ℕ) (a2 : ℤ) (sine : Bool) :
+@[expose] public def fixedTrigLoop (p : ℕ) (a2 : ℤ) (sine : Bool) :
     ℕ → ℕ → ℤ → ℤ → ℤ → ℤ → ℤ × ℤ
   | 0, k, lo, hi, sl, sh =>
       if k = 0 then (-((2 : ℤ)^p), (2 : ℤ)^p) else
@@ -27,7 +38,7 @@ def fixedTrigLoop (p : ℕ) (a2 : ℤ) (sine : Bool) :
 
 /-- Bounds in units of 2^(-p). Rounding the argument down costs at most
 one unit by the Lipschitz bounds for sine and cosine. -/
-def fixedTrigBounds (p : ℕ) (sine : Bool) (x : ℚ) : ℤ × ℤ :=
+@[expose] public def fixedTrigBounds (p : ℕ) (sine : Bool) (x : ℚ) : ℤ × ℤ :=
   let scale : ℤ := (2 : ℤ)^p
   if x = 0 then
     if sine then (0, 0) else (scale, scale)

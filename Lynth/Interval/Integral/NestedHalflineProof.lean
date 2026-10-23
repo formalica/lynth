@@ -1,6 +1,8 @@
-import Lynth.Interval.Integral.NestedPowerProof
-import Lynth.Interval.Integral.NestedSubstitutionProof
-import Lynth.Interval.Integral.NestedMeasurable
+module
+
+import all Lynth.Interval.Integral.NestedPowerProof
+import all Lynth.Interval.Integral.NestedSubstitutionProof
+import all Lynth.Interval.Integral.NestedMeasurable
 
 /-! The real change of variables used by canonical half-line memo keys. -/
 namespace Lynth.Interval.Integral.Nested

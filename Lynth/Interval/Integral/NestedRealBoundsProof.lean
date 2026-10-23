@@ -1,7 +1,9 @@
-import Lynth.Interval.Integral.NestedPrimitiveProof
-import Lynth.Interval.Integral.NestedFormulaProof
-import Lynth.Interval.Integral.NestedCert
-import Lynth.Interval.Integral.Bounds
+module
+
+import all Lynth.Interval.Integral.NestedPrimitiveProof
+import all Lynth.Interval.Integral.NestedFormulaProof
+import all Lynth.Interval.Integral.NestedCert
+import all Lynth.Interval.Integral.Bounds
 
 /-! Real range and convergence lemmas for the recursive integral evaluator. -/
 namespace Lynth.Interval.Integral.Nested

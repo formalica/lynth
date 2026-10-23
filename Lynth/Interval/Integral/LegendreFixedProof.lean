@@ -1,4 +1,6 @@
-import Lynth.Interval.Integral.LegendreBounds
+module
+
+import all Lynth.Interval.Integral.LegendreBounds
 
 /-! Input quantization and interval transport for the integer recurrence. -/
 namespace Lynth.Interval.Integral

@@ -1,4 +1,26 @@
-import Lynth.Interval.Core.Env
+module
+
+public import Batteries.Classes.RatCast
+public import Init.Classical
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Option.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Init.Tactics
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Basic.ExistsUnique
+public import Mathlib.Basic.Real.Basic
+public import Mathlib.Data.Finset.Range
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Env
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Num.NIval
+public import Lynth.Interval.Num.ZIval
+import all Lynth.Interval.Core.Env
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 
 /-!
@@ -17,58 +39,56 @@ reified from closed rational terms; `.list t` positions carry pointwise
 enclosures (`none` is the trivial enclosure). -/
 
 /-- heterogeneous value list -/
-inductive CVal : List Ty → Type where
+public inductive CVal : List Ty → Type where
   | nil : CVal []
   | cons (t : Ty) {ts : List Ty} : t.Val → CVal ts → CVal (t :: ts)
 
 /-- head of a nonempty value list -/
-def CVal.head : {t : Ty} → {ts : List Ty} → CVal (t :: ts) → t.Val
+@[expose] public def CVal.head : {t : Ty} → {ts : List Ty} → CVal (t :: ts) → t.Val
   | _, _, .cons _ v _ => v
 
 /-- tail of a value list with at least one element -/
-def CVal.tail : {t : Ty} → {ts : List Ty} → CVal (t :: ts) → CVal ts
+@[expose] public def CVal.tail : {t : Ty} → {ts : List Ty} → CVal (t :: ts) → CVal ts
   | _, _, .cons _ _ vs => vs
 
 /-- heterogeneous denotation list (what `Expr`s denote to) -/
-inductive CDen : List Ty → Type where
+public inductive CDen : List Ty → Type where
   | nil : CDen []
   | cons (t : Ty) {ts : List Ty} : t.Val → CDen ts → CDen (t :: ts)
 
 /-- heterogeneous enclosure list -/
-inductive CEnc : List Ty → Type where
+public inductive CEnc : List Ty → Type where
   | nil : CEnc []
   | cons (t : Ty) {ts : List Ty} : t.Enc → CEnc ts → CEnc (t :: ts)
 
 /-- heterogeneous asymptotic list -/
-inductive CAsy : List Ty → Type where
+public inductive CAsy : List Ty → Type where
   | nil : CAsy []
   | cons (t : Ty) {ts : List Ty} : t.Asy → CAsy ts → CAsy (t :: ts)
 
 /-- curried Lean function type over `tys` returning `r` -/
-def curriedType : List Ty → Ty → Type
+@[expose] public def curriedType : List Ty → Ty → Type
   | [], r => r.Val
   | t :: ts, r => t.Val → curriedType ts r
 
 /-- apply a curried function to a value list -/
-def applyCurried : (tys : List Ty) → (r : Ty) → curriedType tys r → CVal tys → r.Val
+@[expose] public def applyCurried : (tys : List Ty) → (r : Ty) → curriedType tys r → CVal tys → r.Val
   | [], _ => fun f xs => match xs with | .nil => f
   | _ :: _, _ => fun f xs => match xs with | .cons _ v vs => applyCurried _ _ (f v) vs
 
 /-- pointwise enclosure correctness -/
-@[reducible]
-def CEncHolds : {tys : List Ty} → CEnc tys → CDen tys → Prop
+@[reducible, expose] public def CEncHolds : {tys : List Ty} → CEnc tys → CDen tys → Prop
   | _, .nil, .nil => True
   | _, .cons t X Xs, .cons _ d ds => Ty.Mem t X d ∧ CEncHolds Xs ds
 
 /-- exact values agree with denotations -/
-@[reducible]
-def Agree : {tys : List Ty} → CVal tys → CDen tys → Prop
+@[reducible, expose] public def Agree : {tys : List Ty} → CVal tys → CDen tys → Prop
   | _, .nil, .nil => True
   | (_ :: _), .cons _ v vs, .cons _ d ds => v = d ∧ Agree vs ds
 
 /-- sequence-level enclosure correctness over asymptotic values
 (only `nat`/`real` positions carry information) -/
-def CAsyHolds (N : ℕ) : {tys : List Ty} → (ℕ → CVal tys) → CAsy tys → Prop
+@[expose] public def CAsyHolds (N : ℕ) : {tys : List Ty} → (ℕ → CVal tys) → CAsy tys → Prop
   | _, _, .nil => True
   | (.nat :: _), vs, .cons _ A As =>
     NAsy.Holds N (fun k => CVal.head (vs k)) A ∧
@@ -105,7 +125,7 @@ theorem CAsyHolds_tail : ∀ {t : Ty} {ts : List Ty} {vs : ℕ → CVal (t :: ts
 
 /-- n-ary custom function record. `graph` is over exact values; `ev`
 evaluates enclosures; `sound` connects them. -/
-structure CFn (tys : List Ty) (r : Ty) where
+public structure CFn (tys : List Ty) (r : Ty) where
   name : String
   fn : curriedType tys r
   graph : CVal tys → r.Val → Prop
@@ -124,7 +144,7 @@ structure CFn (tys : List Ty) (r : Ty) where
 namespace CFn
 
 /-- the denoted (choice) function -/
-noncomputable def fn' {tys : List Ty} {r : Ty} (f : CFn tys r)
+@[expose] public noncomputable def fn' {tys : List Ty} {r : Ty} (f : CFn tys r)
     (xs : CVal tys) : r.Val :=
   (f.exu xs).exists.choose
 
@@ -138,7 +158,7 @@ theorem eq_fn {tys : List Ty} {r : Ty} (f : CFn tys r)
   (f.exu xs).unique h (f.fn_spec xs)
 
 /-- graph from a curried function -/
-def graphOf (tys : List Ty) (r : Ty) (F : curriedType tys r) :
+@[expose] public def graphOf (tys : List Ty) (r : Ty) (F : curriedType tys r) :
     CVal tys → r.Val → Prop :=
   fun xs y => y = applyCurried tys r F xs
 
@@ -152,7 +172,7 @@ end CFn
 
 -- Typed expressions over the open function registry (with `CArg`).
 mutual
-inductive Expr : Ty → Type where
+public inductive Expr : Ty → Type where
   /-- exact rational constant -/
   | lit (q : ℚ) : Expr .real
   /-- exact rational (for `.rat` positions) -/
@@ -170,17 +190,17 @@ inductive Expr : Ty → Type where
   /-- `∑ k ∈ Finset.range n, body`; `body` binds a `.nat` variable (index 0) -/
   | sum (t : Ty) (n : Expr .nat) (body : Expr t) : Expr t
 /-- heterogeneous argument-expression list -/
-inductive CArg : List Ty → Type where
+public inductive CArg : List Ty → Type where
   | nil : CArg []
   | cons (t : Ty) {ts : List Ty} : Expr t → CArg ts → CArg (t :: ts)
 /-- heterogeneous expression list (list literals) -/
-inductive ExprList : Ty → Type where
+public inductive ExprList : Ty → Type where
   | nil {t : Ty} : ExprList t
   | cons {t : Ty} (x : Expr t) (xs : ExprList t) : ExprList t
 end
 
 /-- exact values from denotations -/
-noncomputable def toVal : {tys : List Ty} → CDen tys → CVal tys
+@[expose] public noncomputable def toVal : {tys : List Ty} → CDen tys → CVal tys
   | _, .nil => .nil
   | (_ :: _), .cons _ d ds => .cons _ d (toVal ds)
 
@@ -203,7 +223,7 @@ theorem agreeUnique : ∀ {tys : List Ty} {vs vs' : CVal tys} {ds : CDen tys},
     exact congrArg (CVal.cons t _) (agreeUnique h12 h22)
 
 /-- resolve exact values from enclosures alone (real positions never resolve) -/
-def resolveExact : {tys : List Ty} → CEnc tys → Option (CVal tys)
+@[expose] public def resolveExact : {tys : List Ty} → CEnc tys → Option (CVal tys)
   | _, .nil => some .nil
   | (.nat :: _), .cons .nat X Xs =>
     match X.isPoint, resolveExact Xs with
@@ -422,7 +442,7 @@ def CFn.manual (tys : List Ty) (r : Ty) (F : curriedType tys r)
     ev, sound, cost }
 
 /-- lift a nullary record to a `CFn` (unified registry; `fn` is a dummy) -/
-def CFn.ofFn0 {r : Ty} (f : Fn0 r) : CFn [] r :=
+@[expose] public def CFn.ofFn0 {r : Ty} (f : Fn0 r) : CFn [] r :=
   { name := f.name,
     fn := r.defaultVal,
     graph := fun xs y => match xs with | .nil => f.graph y,
@@ -433,10 +453,10 @@ def CFn.ofFn0 {r : Ty} (f : Fn0 r) : CFn [] r :=
       | .nil, .nil, .nil => f.sound c _ hc hg,
     cost := f.cost,
     asy := fun _ _ _ => r.asyTop,
-    asy_sound := fun _ _ _ _ _ _ _ _ => Ty.asyHolds_top _ _ _ }
+    asy_sound := fun _ _ _ _ _ _ _ _ => by exact Ty.asyHolds_top _ _ _ }
 
 /-- lift a unary record to a `CFn` -/
-def CFn.ofFn1 {a r : Ty} (f : Fn1 a r) : CFn [a] r :=
+@[expose] public def CFn.ofFn1 {a r : Ty} (f : Fn1 a r) : CFn [a] r :=
   { name := f.name,
     fn := fun _ => r.defaultVal,
     graph := fun xs y => match xs with | .cons _ x .nil => f.graph x y,
@@ -463,7 +483,7 @@ def CFn.ofFn1 {a r : Ty} (f : Fn1 a r) : CFn [a] r :=
         exact f.asy_sound c N _ _ _ hc hg' hA' }
 
 /-- lift a binary record to a `CFn` -/
-def CFn.ofFn2 {a b r : Ty} (f : Fn2 a b r) : CFn [a, b] r :=
+@[expose] public def CFn.ofFn2 {a b r : Ty} (f : Fn2 a b r) : CFn [a, b] r :=
   { name := f.name,
     fn := fun _ _ => r.defaultVal,
     graph := fun xs y => match xs with | .cons _ x (.cons _ y' .nil) => f.graph x y' y,
@@ -496,7 +516,7 @@ namespace Expr
 
 mutual
 /-- Denotation. -/
-noncomputable def denote : {t : Ty} → Expr t → SEnv → t.Val
+@[expose] public noncomputable def denote : {t : Ty} → Expr t → SEnv → t.Val
   | _, .lit q, _ => (q : ℝ)
   | _, .rlit q, _ => q
   | _, .natLit n, _ => n
@@ -507,12 +527,12 @@ noncomputable def denote : {t : Ty} → Expr t → SEnv → t.Val
   | _, .sum t n body, ρ => ∑ k ∈ Finset.range (n.denote ρ), body.denote (ρ.push .nat k)
 
 /-- denotations of an argument list -/
-noncomputable def CArg.denoteArgs (ρ : SEnv) : {tys : List Ty} → CArg tys → CDen tys
+@[expose] public noncomputable def CArg.denoteArgs (ρ : SEnv) : {tys : List Ty} → CArg tys → CDen tys
   | _, .nil => .nil
   | _ :: _, .cons t e es => .cons t (e.denote ρ) (CArg.denoteArgs ρ es)
 
 /-- denotations of a list literal -/
-noncomputable def denoteList : {t : Ty} → ExprList t → SEnv → List t.Val
+@[expose] public noncomputable def denoteList : {t : Ty} → ExprList t → SEnv → List t.Val
   | _, .nil, _ => []
   | _, .cons x xs, ρ => x.denote ρ :: denoteList xs ρ
 end
@@ -521,19 +541,19 @@ end
 #check @Expr.denote
 
 /-- `f lo + … + f (lo + n - 1)`, linear -/
-def sumLin (t : Ty) (p : Nat) (f : Nat → t.Enc) (lo : Nat) : Nat → t.Enc
+@[expose] public def sumLin (t : Ty) (p : Nat) (f : Nat → t.Enc) (lo : Nat) : Nat → t.Enc
   | 0 => t.zeroE
   | n + 1 => t.addE p (sumLin t p f lo n) (f (lo + n))
 
 /-- `f lo + … + f (lo + n - 1)`, balanced (kernel recursion depth `O(log n)`) -/
-def sumBal (t : Ty) (p : Nat) (f : Nat → t.Enc) : Nat → Nat → Nat → t.Enc
+@[expose] public def sumBal (t : Ty) (p : Nat) (f : Nat → t.Enc) : Nat → Nat → Nat → t.Enc
   | 0, lo, n => sumLin t p f lo n
   | fuel + 1, lo, n =>
     if n ≤ 4 then sumLin t p f lo n
     else t.addE p (sumBal t p f fuel lo (n / 2)) (sumBal t p f fuel (lo + n / 2) (n - n / 2))
 
 /-- `f 0 + … + f (N-1)` -/
-def sumLoop (t : Ty) (p : Nat) (f : Nat → t.Enc) (N : Nat) : t.Enc := sumBal t p f 64 0 N
+@[expose] public def sumLoop (t : Ty) (p : Nat) (f : Nat → t.Enc) (N : Nat) : t.Enc := sumBal t p f 64 0 N
 
 /-- resolve with denotations filling real positions -/
 def resolveFull : {tys : List Ty} → CDen tys → CEnc tys → Option (CVal tys)
@@ -701,7 +721,7 @@ theorem resolveFull_sound : ∀ {tys : List Ty} {ds : CDen tys} {X : CEnc tys}
       exact nomatch he
 
 /-- all discrete positions resolved (other positions skipped) -/
-def allDiscreteResolved : {tys : List Ty} → CEnc tys → Bool
+@[expose] public def allDiscreteResolved : {tys : List Ty} → CEnc tys → Bool
   | _, .nil => true
   | (.nat :: _), .cons .nat X Xs => X.isPoint.isSome && allDiscreteResolved Xs
   | (.int :: _), .cons .int X Xs => X.isPoint.isSome && allDiscreteResolved Xs
@@ -747,7 +767,7 @@ theorem resolveFull_of_guard : ∀ {tys : List Ty} (ds : CDen tys) {X : CEnc tys
 
 -- Interval evaluation (with argument-list evaluation).
 mutual
-def eval (c : Ctx) : {t : Ty} → Expr t → IEnv → t.Enc
+@[expose] public def eval (c : Ctx) : {t : Ty} → Expr t → IEnv → t.Enc
   | _, .lit q, _ => Ival.ofRat c.prec q
   | _, .rlit q, _ => some q
   | _, .natLit n, _ => NIval.pt n
@@ -763,12 +783,12 @@ def eval (c : Ctx) : {t : Ty} → Expr t → IEnv → t.Enc
     | none => t.top
 
 /-- evaluate an argument list -/
-def evalCArgs (c : Ctx) (σ : IEnv) : {tys : List Ty} → CArg tys → CEnc tys
+@[expose] public def evalCArgs (c : Ctx) (σ : IEnv) : {tys : List Ty} → CArg tys → CEnc tys
   | _, .nil => .nil
   | (_ :: _), .cons t e es => .cons t (e.eval c σ) (evalCArgs c σ es)
 
 /-- evaluate a list literal -/
-def evalList (c : Ctx) (σ : IEnv) : {t : Ty} → ExprList t → List t.Enc
+@[expose] public def evalList (c : Ctx) (σ : IEnv) : {t : Ty} → ExprList t → List t.Enc
   | _, .nil => []
   | _, .cons x xs => x.eval c σ :: evalList c σ xs
 end
@@ -876,7 +896,7 @@ theorem eval_sound_call {c : Ctx} (hc : c.Valid) {ρ : SEnv} {σ : IEnv}
   · exact r.mem_top _
 end
 
-theorem call_eq {tys : List Ty} {r : Ty}
+public theorem call_eq {tys : List Ty} {r : Ty}
     (f : CFn tys r) (xs : CArg tys) (ρ : SEnv)
     {vs : CVal tys} {ds : CDen tys} {y : r.Val}
     (hds : ds = CArg.denoteArgs ρ xs) (hag : Agree vs ds)
@@ -907,7 +927,7 @@ theorem natLit_eq (n : ℕ) (ρ : SEnv) {X : ℕ} (h : X = n) : X = (Expr.natLit
 
 theorem intLit_eq (z : ℤ) (ρ : SEnv) {X : ℤ} (h : X = z) : X = (Expr.intLit z).denote ρ := h
 
-theorem sum_eq (t : Ty) (n : Expr .nat) (body : Expr t) (ρ : SEnv) {N : ℕ} {f : ℕ → t.Val}
+public theorem sum_eq (t : Ty) (n : Expr .nat) (body : Expr t) (ρ : SEnv) {N : ℕ} {f : ℕ → t.Val}
     (hN : N = n.denote ρ) (hf : ∀ k, f k = body.denote (ρ.push .nat k)) :
     ∑ k ∈ Finset.range N, f k = (Expr.sum t n body).denote ρ := by
   subst hN

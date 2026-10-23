@@ -1,5 +1,7 @@
+module
+
 import Lean
-import Lynth.Euf.Procedure
+import all Lynth.Euf.Procedure
 
 /-!
 Array theory rules: `select`/`store` internal language over `Array`.

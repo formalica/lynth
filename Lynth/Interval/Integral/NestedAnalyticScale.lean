@@ -1,11 +1,12 @@
-import Lynth.Interval.Integral.NestedAnalyticFamily
+module
+
+import all Lynth.Interval.Integral.NestedAnalyticFamily
 
 /-! Analytic models for normalized endpoint coefficients and their arithmetic. -/
 
 namespace Lynth.Interval.Integral.Nested.AnalyticWork
 open Intgrl Fns MeasureTheory Set Metric
 open scoped Topology
-open private unit from Lynth.Interval.Integral.NestedBounds
 
 noncomputable abbrev weight (A : Scale) (t : ℝ) : ℝ :=
   t^(A.power:ℝ)*(1-Real.log t)^A.logs

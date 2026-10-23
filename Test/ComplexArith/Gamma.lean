@@ -1,5 +1,6 @@
+module
 import Mathlib
-import Lynth
+public import Lynth
 
 open Lynth.Interval
 open Lynth.Interval.Fns
@@ -22,7 +23,7 @@ Real costs for comparison: `gamma_quarter_le` 26834, `gamma_third_ge`
 
 set_option maxHeartbeats 2203 in
 -- CG1: port of `gamma_quarter_approx`: `Γ(1/4) = 3.6256099082`. (3.62561, 0)
-def cx_gamma_quarter : { p : Rat × Rat //
+public def cx_gamma_quarter : { p : Rat × Rat //
     ‖Complex.Gamma ((1 / 4 : ℝ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < (10 : ℝ) ^ (-5 : ℤ) } := by
   lynth
@@ -36,7 +37,7 @@ def cx_gamma_quarter : { p : Rat × Rat //
 
 set_option maxHeartbeats 2200 in
 -- CG2: `Γ(1/3) = 2.6789385347` (via reflection, as in the real case).
-def cx_gamma_third : { p : Rat × Rat //
+public def cx_gamma_third : { p : Rat × Rat //
     ‖Complex.Gamma ((1 / 3 : ℝ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < (10 : ℝ) ^ (-5 : ℤ) } := by
   lynth
@@ -47,7 +48,7 @@ def cx_gamma_third : { p : Rat × Rat //
 
 set_option maxHeartbeats 1682 in
 -- CG3: `Γ(2) = 1`. (1, 0)
-def cx_gamma_two : { p : Rat × Rat //
+public def cx_gamma_two : { p : Rat × Rat //
     ‖Complex.Gamma 2 - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖ < 1 / 1000000 } := by
   lynth
 /-- info: 'cx_gamma_two' depends on axioms: [propext, Classical.choice, Quot.sound, cx_gamma_two._native.native_decide.ax_1] -/
@@ -57,7 +58,7 @@ def cx_gamma_two : { p : Rat × Rat //
 
 set_option maxHeartbeats 2177 in
 -- CG4: `Γ(1/2) = √π = 1.7724538509`. (1.772454, 0)
-def cx_gamma_half : { p : Rat × Rat //
+public def cx_gamma_half : { p : Rat × Rat //
     ‖Complex.Gamma ((1 / 2 : ℝ) : ℂ) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000000 } := by
   lynth
@@ -68,7 +69,7 @@ def cx_gamma_half : { p : Rat × Rat //
 
 set_option maxHeartbeats 2293 in
 -- CG5 (own, complex argument): `Γ(1+I) = 0.4980156681 - 0.1549498283·I`.
-def cx_gamma_one_add_I : { p : Rat × Rat //
+public def cx_gamma_one_add_I : { p : Rat × Rat //
     ‖Complex.Gamma (1 + Complex.I) - ((p.1 : ℂ) + (p.2 : ℂ) * Complex.I)‖
       < 1 / 1000000 } := by
   lynth

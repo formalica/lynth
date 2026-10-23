@@ -1,5 +1,20 @@
-import Lynth.Interval.Integral.SpecialMagnitude
-import Lynth.Interval.Integral.Math.ComplexMagnitude
+module
+
+public import Init.Control.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Option.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Integral.Eval
+public import Lynth.Interval.Integral.Exp
+public import Lynth.Interval.Integral.Math.Integrand
+public import Lynth.Interval.Integral.SpecialMagnitude
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+import all Lynth.Interval.Integral.SpecialMagnitude
+import all Lynth.Interval.Integral.Math.ComplexMagnitude
 
 /-! Direct complex modulus bounds for an outer sine or cosine. -/
 
@@ -7,7 +22,7 @@ namespace Lynth.Interval.Integral
 
 open Intgrl Fns
 
-def trigMagnitude (c : Ctx) (Z : CBox) : Option Dy := do
+@[expose] public def trigMagnitude (c : Ctx) (Z : CBox) : Option Dy := do
   let m ← (Ival.abs Z.im).hi
   if !Dy.leB m (Dy.ofNat 16384) then none else (fastExpPt (c.prec+8) m).hi
 
@@ -25,7 +40,7 @@ theorem trigMagnitude_sound {c : Ctx} {Z : CBox} {z : ℂ} {M : Dy}
     · exact (Real.exp_le_exp.mpr ((Ival.mem_abs hz.2).2 m hm)).trans
         ((mem_fastExpPt (c.prec+8) m).2 M h)
 
-def expMagnitude (c : Ctx) (Z : CBox) : Option Dy := do
+@[expose] public def expMagnitude (c : Ctx) (Z : CBox) : Option Dy := do
   let m ← Z.re.hi
   if !Dy.leB m (Dy.ofNat 16384) then none else (fastExpPt (c.prec+8) m).hi
 
@@ -42,7 +57,7 @@ theorem expMagnitude_sound {c : Ctx} {Z : CBox} {z : ℂ} {M : Dy}
       exact (Real.exp_le_exp.mpr (hz.1.2 m hm)).trans
         ((mem_fastExpPt (c.prec+8) m).2 M h)
 
-def analyticMagnitude (c : Ctx) (e : Term) (Z : CBox) : Option Dy :=
+@[expose] public def analyticMagnitude (c : Ctx) (e : Term) (Z : CBox) : Option Dy :=
   match e with
   | .unary .sin a | .unary .cos a => trigMagnitude c (evalC c a Z)
   | .unary .exp a => expMagnitude c (evalC c a Z)

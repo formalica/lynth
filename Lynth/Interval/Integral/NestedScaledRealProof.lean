@@ -1,5 +1,7 @@
-import Lynth.Interval.Integral.NestedScaleProof
-import Lynth.Interval.Integral.Math.ComplexEndpoint
+module
+
+import all Lynth.Interval.Integral.NestedScaleProof
+import all Lynth.Interval.Integral.Math.ComplexEndpoint
 
 /-! The real branch of scaled endpoint evaluation. -/
 namespace Lynth.Interval.Integral.Nested

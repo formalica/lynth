@@ -1,5 +1,38 @@
-import Lynth.Interval.Goals.Approx
-import Lynth.Interval.Series.ComplexCert
+module
+
+public import Batteries.Classes.RatCast
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Basic
+public import Init.Data.Rat.Basic
+public import Init.Data.Zero
+public import Init.Prelude
+public import Mathlib.Algebra.Group.DivInvMonoid
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Ring.Defs
+public import Mathlib.Analysis.CStarAlgebra.Classes
+public import Mathlib.Analysis.Complex.Norm
+public import Mathlib.Analysis.Normed.Group.Defs
+public import Mathlib.Analysis.Normed.Ring.Basic
+public import Mathlib.Basic.Complex.Basic
+public import Mathlib.Basic.Real.Basic
+public import Mathlib.Data.Nat.Cast.Defs
+public import Mathlib.Data.Nat.Factorial.Basic
+public import Mathlib.Data.Nat.Fib.Basic
+public import Mathlib.Data.Nat.Init
+public import Mathlib.Topology.Algebra.InfiniteSum.Defs
+public import Mathlib.Topology.Algebra.InfiniteSum.SummationFilter
+public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+public import Mathlib.Topology.UniformSpace.Defs
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Env
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Series.ComplexCert
+meta import all Lynth.Interval.Goals.Approx
+import all Lynth.Interval.Goals.Approx
+meta import all Lynth.Interval.Series.ComplexCert
+import all Lynth.Interval.Series.ComplexCert
 
 /-!
 # Complex infinite-series goals.
@@ -11,10 +44,12 @@ the per-family certificates in `ComplexCert.lean`.  Bridges
 real side conditions over literal values by `norm_num`.
 -/
 
+meta section
+
 namespace Lynth.Interval.Series
 
 /-- assembly for family 1 -/
-theorem tele1_subtype_of_check {f : ℕ → ℂ} {tol : ℝ} {c : Ctx} (hc : c.Valid)
+public theorem tele1_subtype_of_check {f : ℕ → ℂ} {tol : ℝ} {c : Ctx} (hc : c.Valid)
     {c0 w1 : ℚ} {q1 q2 : ℚ} {tolE : Expr .real}
     (htol : tol = tolE.denote {})
     (hbridge : ∀ k : ℕ, f k
@@ -28,7 +63,7 @@ theorem tele1_subtype_of_check {f : ℕ → ℂ} {tol : ℝ} {c : Ctx} (hc : c.V
   exact tele1_sound hc hbridge hw h
 
 /-- assembly for family 2 -/
-theorem tele2_subtype_of_check {f : ℕ → ℂ} {tol : ℝ} {c : Ctx} (hc : c.Valid)
+public theorem tele2_subtype_of_check {f : ℕ → ℂ} {tol : ℝ} {c : Ctx} (hc : c.Valid)
     {c0 b0 : ℚ} {q1 q2 : ℚ} {tolE : Expr .real}
     (htol : tol = tolE.denote {})
     (hbridge : ∀ k : ℕ, f k
@@ -42,7 +77,7 @@ theorem tele2_subtype_of_check {f : ℕ → ℂ} {tol : ℝ} {c : Ctx} (hc : c.V
   exact tele2_sound hc hbridge hw h
 
 /-- assembly for factorial family -/
-theorem fact_subtype_of_check {f : ℕ → ℂ} {tol : ℝ} {c : Ctx} (hc : c.Valid)
+public theorem fact_subtype_of_check {f : ℕ → ℂ} {tol : ℝ} {c : Ctx} (hc : c.Valid)
     {body : Expr .cplx} {N : ℕ} {q1 q2 : ℚ} {tolE : Expr .real}
     (hf : ∀ k, f k = body.denote (({} : SEnv).push .nat k))
     (htol : tol = tolE.denote {})
@@ -54,7 +89,7 @@ theorem fact_subtype_of_check {f : ℕ → ℂ} {tol : ℝ} {c : Ctx} (hc : c.Va
   exact fact_sound (c := c) hc (f := f) (body := body) hf hbridge h
 
 /-- assembly for selfpow family -/
-theorem self_subtype_of_check {f : ℕ → ℂ} {tol : ℝ} {c : Ctx} (hc : c.Valid)
+public theorem self_subtype_of_check {f : ℕ → ℂ} {tol : ℝ} {c : Ctx} (hc : c.Valid)
     {body : Expr .cplx} {N : ℕ} {q1 q2 : ℚ} {tolE : Expr .real}
     (hf : ∀ k, f k = body.denote (({} : SEnv).push .nat k))
     (htol : tol = tolE.denote {})
@@ -66,7 +101,7 @@ theorem self_subtype_of_check {f : ℕ → ℂ} {tol : ℝ} {c : Ctx} (hc : c.Va
   exact self_sound (c := c) hc (f := f) (body := body) hf hbridge h
 
 /-- assembly for mersenne family -/
-theorem mers_subtype_of_check {f : ℕ → ℂ} {tol : ℝ} {c : Ctx} (hc : c.Valid)
+public theorem mers_subtype_of_check {f : ℕ → ℂ} {tol : ℝ} {c : Ctx} (hc : c.Valid)
     {body : Expr .cplx} {N : ℕ} {q1 q2 : ℚ} {tolE : Expr .real}
     (hf : ∀ k, f k = body.denote (({} : SEnv).push .nat k))
     (htol : tol = tolE.denote {})
@@ -78,7 +113,7 @@ theorem mers_subtype_of_check {f : ℕ → ℂ} {tol : ℝ} {c : Ctx} (hc : c.Va
   exact mers_sound (c := c) hc (f := f) (body := body) hf hbridge h
 
 /-- assembly for fib family -/
-theorem fib_subtype_of_check {f : ℕ → ℂ} {tol : ℝ} {c : Ctx} (hc : c.Valid)
+public theorem fib_subtype_of_check {f : ℕ → ℂ} {tol : ℝ} {c : Ctx} (hc : c.Valid)
     {body : Expr .cplx} {N : ℕ} {q1 q2 : ℚ} {tolE : Expr .real} (hN : 1 ≤ N)
     (hf : ∀ k, f k = body.denote (({} : SEnv).push .nat k))
     (htol : tol = tolE.denote {})

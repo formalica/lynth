@@ -1,5 +1,6 @@
+module
 import Mathlib
-import Lynth
+public import Lynth
 
 open Lynth.Interval
 open Lynth.Interval.Fns
@@ -20,7 +21,7 @@ prefixes, and direct-series cross-checks in Python.  Analytic bounds are
 
 set_option maxHeartbeats 2935 in
 -- H1: ₂F₁(1,1;2;-1/2) = 2ln(3/2), via Pfaff (|w|=1/3<|z|). 0.8109302162
-def hyp_2f1_neg : { x : Rat //
+public def hyp_2f1_neg : { x : Rat //
     abs ((Complex.HGFun {1, 1} {2} (-1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'hyp_2f1_neg' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_2f1_neg._native.native_decide.ax_1] -/
@@ -30,7 +31,7 @@ def hyp_2f1_neg : { x : Rat //
 
 set_option maxHeartbeats 2725 in
 -- H2: ₂F₁(1,1;2;1/2) = 2ln2. 1.3862943611
-def hyp_2f1_pos : { x : Rat //
+public def hyp_2f1_pos : { x : Rat //
     abs ((Complex.HGFun {1, 1} {2} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'hyp_2f1_pos' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_2f1_pos._native.native_decide.ax_1] -/
@@ -40,7 +41,7 @@ def hyp_2f1_pos : { x : Rat //
 
 set_option maxHeartbeats 2822 in
 -- H3: ₂F₁(-2,1;2;1/2) = 7/12, terminating. 0.583333
-def hyp_2f1_term : { x : Rat //
+public def hyp_2f1_term : { x : Rat //
     abs ((Complex.HGFun {-2, 1} {2} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'hyp_2f1_term' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_2f1_term._native.native_decide.ax_1] -/
@@ -50,7 +51,7 @@ def hyp_2f1_term : { x : Rat //
 
 set_option maxHeartbeats 2402 in
 -- H4: ₂F₁(1,2;3;0) = 1.
-def hyp_2f1_zero : { x : Rat //
+public def hyp_2f1_zero : { x : Rat //
     abs ((Complex.HGFun {1, 2} {3} (0 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'hyp_2f1_zero' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_2f1_zero._native.native_decide.ax_1] -/
@@ -60,7 +61,7 @@ def hyp_2f1_zero : { x : Rat //
 
 set_option maxHeartbeats 2601 in
 -- H5: ₁F₁(1;2;1/2) = 2(√e-1). 1.2974425414
-def hyp_1f1 : { x : Rat //
+public def hyp_1f1 : { x : Rat //
     abs ((Complex.HGFun {1} {2} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'hyp_1f1' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_1f1._native.native_decide.ax_1] -/
@@ -70,7 +71,7 @@ def hyp_1f1 : { x : Rat //
 
 set_option maxHeartbeats 2589 in
 -- H6: ₀F₁(;1/2;1/4) = cosh 1, empty tops. 1.5430806348
-def hyp_0f1 : { x : Rat //
+public def hyp_0f1 : { x : Rat //
     abs ((Complex.HGFun {} {(1 / 2 : ℂ)} (1 / 4 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'hyp_0f1' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_0f1._native.native_decide.ax_1] -/
@@ -80,7 +81,7 @@ def hyp_0f1 : { x : Rat //
 
 set_option maxHeartbeats 3026 in
 -- H7: ₂F₂(1,3;2,3;1/2) = ₁F₁(1;2;1/2), cancellation. 1.2974425414
-def hyp_2f2_cancel : { x : Rat //
+public def hyp_2f2_cancel : { x : Rat //
     abs ((Complex.HGFun {1, 3} {2, 3} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'hyp_2f2_cancel' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_2f2_cancel._native.native_decide.ax_1] -/
@@ -90,7 +91,7 @@ def hyp_2f2_cancel : { x : Rat //
 
 set_option maxHeartbeats 2952 in
 -- H8: ₃F₂(1,1,2;2,2;1/2) = ₂F₁(1,1;2;1/2), cancellation. 1.3862943611
-def hyp_3f2_cancel : { x : Rat //
+public def hyp_3f2_cancel : { x : Rat //
     abs ((Complex.HGFun {1, 1, 2} {2, 2} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'hyp_3f2_cancel' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_3f2_cancel._native.native_decide.ax_1] -/
@@ -100,7 +101,7 @@ def hyp_3f2_cancel : { x : Rat //
 
 set_option maxHeartbeats 3561 in
 -- H9: ₃F₂(-1/2,1,1;2,2;1/2), direct. 0.9334086350
-def hyp_3f2_direct : { x : Rat //
+public def hyp_3f2_direct : { x : Rat //
     abs ((Complex.HGFun {(-1 / 2 : ℂ), 1, 1} {2, 2} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'hyp_3f2_direct' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_3f2_direct._native.native_decide.ax_1] -/
@@ -110,7 +111,7 @@ def hyp_3f2_direct : { x : Rat //
 
 set_option maxHeartbeats 3017 in
 -- H10: ₃F₂(-2,1,1;2,2;1/2) = 7/9, terminating. 0.777778
-def hyp_3f2_term : { x : Rat //
+public def hyp_3f2_term : { x : Rat //
     abs ((Complex.HGFun {-2, 1, 1} {2, 2} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'hyp_3f2_term' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_3f2_term._native.native_decide.ax_1] -/
@@ -120,7 +121,7 @@ def hyp_3f2_term : { x : Rat //
 
 set_option maxHeartbeats 2649 in
 -- H11: ₀F₂(;1,3;1/2), empty tops, direct. 1.1719331726
-def hyp_0f2 : { x : Rat //
+public def hyp_0f2 : { x : Rat //
     abs ((Complex.HGFun {} {1, 3} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'hyp_0f2' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_0f2._native.native_decide.ax_1] -/
@@ -130,7 +131,7 @@ def hyp_0f2 : { x : Rat //
 
 set_option maxHeartbeats 2919 in
 -- H12: ₁F₂(1;2,3;1/2), direct. 1.0868938252
-def hyp_1f2 : { x : Rat //
+public def hyp_1f2 : { x : Rat //
     abs ((Complex.HGFun {1} {2, 3} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'hyp_1f2' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_1f2._native.native_decide.ax_1] -/
@@ -140,7 +141,7 @@ def hyp_1f2 : { x : Rat //
 
 set_option maxHeartbeats 3237 in
 -- H13: ₂F₂(1,2;3,4;1/2), direct. 1.0900261978
-def hyp_2f2_direct : { x : Rat //
+public def hyp_2f2_direct : { x : Rat //
     abs ((Complex.HGFun {1, 2} {3, 4} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'hyp_2f2_direct' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_2f2_direct._native.native_decide.ax_1] -/
@@ -150,7 +151,7 @@ def hyp_2f2_direct : { x : Rat //
 
 set_option maxHeartbeats 2108 in
 -- H14: ₁F₁(2;3;1) = 2, larger `z`.
-def hyp_1f1_two : { x : Rat //
+public def hyp_1f1_two : { x : Rat //
     abs ((Complex.HGFun {2} {3} (1 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'hyp_1f1_two' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_1f1_two._native.native_decide.ax_1] -/
@@ -160,7 +161,7 @@ def hyp_1f1_two : { x : Rat //
 
 set_option maxHeartbeats 2569 in
 -- H15: ₂F₁(1,1;2;-5) = ln6/5, via Pfaff (direct diverges). 0.3583518938
-def hyp_2f1_pfaff : { x : Rat //
+public def hyp_2f1_pfaff : { x : Rat //
     abs ((Complex.HGFun {1, 1} {2} (-5 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'hyp_2f1_pfaff' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_2f1_pfaff._native.native_decide.ax_1] -/
@@ -170,7 +171,7 @@ def hyp_2f1_pfaff : { x : Rat //
 
 set_option maxHeartbeats 2171 in
 -- H16: ₁F₁(2;1;5) = 6e^5, via Kummer (transformed series terminates). 890.4789546155
-def hyp_1f1_kummer : { x : Rat //
+public def hyp_1f1_kummer : { x : Rat //
     abs ((Complex.HGFun {2} {1} (5 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'hyp_1f1_kummer' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_1f1_kummer._native.native_decide.ax_1] -/
@@ -180,7 +181,7 @@ def hyp_1f1_kummer : { x : Rat //
 
 set_option maxHeartbeats 4637 in
 -- H17: ₉F₈(1⁹;2⁸;1/2), 17 params, direct. 1.0019933182
-def hyp_9f8_direct : { x : Rat //
+public def hyp_9f8_direct : { x : Rat //
     abs ((Complex.HGFun {1, 1, 1, 1, 1, 1, 1, 1, 1} {2, 2, 2, 2, 2, 2, 2, 2} (1 / 2 : ℂ)).re - x) < 1 / 1000000 } := by
   lynth
 /-- info: 'hyp_9f8_direct' depends on axioms: [propext, Classical.choice, Quot.sound, hyp_9f8_direct._native.native_decide.ax_1] -/

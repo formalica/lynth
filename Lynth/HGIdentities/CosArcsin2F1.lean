@@ -1,9 +1,11 @@
+module
+
 import Mathlib
 import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
-import Lynth.HGIdentities.Common
-import Lynth.Hypergeometric
-import Lynth.ComplexFuncs
-import Lynth.SeriesTools
+import all Lynth.HGIdentities.Common
+import all Lynth.Hypergeometric
+import all Lynth.ComplexFuncs
+import all Lynth.SeriesTools
 
 /-!
 # `₂F₁(a, -a; 1/2; z) = cos(2a asin √z)`

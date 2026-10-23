@@ -1,6 +1,8 @@
-import Lynth.Interval.Integral.NestedShiftProof
-import Lynth.Interval.Integral.NestedMeasurable
-import Lynth.Interval.Integral.Math.NestedAnalysis
+module
+
+import all Lynth.Interval.Integral.NestedShiftProof
+import all Lynth.Interval.Integral.NestedMeasurable
+import all Lynth.Interval.Integral.Math.NestedAnalysis
 
 /-! Soundness of the elementary integral formula recognizers. -/
 namespace Lynth.Interval.Integral.Nested

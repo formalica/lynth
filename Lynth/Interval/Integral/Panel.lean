@@ -1,11 +1,36 @@
-import Lynth.Interval.Integral.LegendrePointProof
-import Lynth.Interval.Integral.Math.GaussError
-import Lynth.Interval.Integral.Math.IntegralBounds
-import Lynth.Interval.Integral.Math.Legendre
-import Lynth.Interval.Integral.Bounds
-import Lynth.Interval.Integral.Magnitude
-import Lynth.Interval.Integral.Endpoint
-import Lynth.Interval.Integral.Memo
+module
+
+public import Init.Control.Basic
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.List.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Option.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Fns.Floor
+public import Lynth.Interval.Fns.Trig
+public import Lynth.Interval.Integral.Endpoint
+public import Lynth.Interval.Integral.Eval
+public import Lynth.Interval.Integral.Legendre
+public import Lynth.Interval.Integral.Magnitude
+public import Lynth.Interval.Integral.Math.Integrand
+public import Lynth.Interval.Integral.Memo
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Integral.LegendrePointProof
+import all Lynth.Interval.Integral.Math.GaussError
+import all Lynth.Interval.Integral.Math.IntegralBounds
+import all Lynth.Interval.Integral.Math.Legendre
+import all Lynth.Interval.Integral.Bounds
+import all Lynth.Interval.Integral.Magnitude
+import all Lynth.Interval.Integral.Endpoint
+import all Lynth.Interval.Integral.Memo
 
 /-! Certified direct and analytic Gauss-Legendre panels. -/
 
@@ -13,7 +38,7 @@ namespace Lynth.Interval.Integral
 
 open Intgrl Fns
 
-def specialize (c : Ctx) (X : Ival) : Term → Option Term
+@[expose] public def specialize (c : Ctx) (X : Ival) : Term → Option Term
   | .unary .inv (.unary .cosh a) => do
     let A ← specialize c X a
     let V := evalR c A X
@@ -554,7 +579,7 @@ theorem NodeTable.sound {c : Ctx} (hc : c.Valid) (t : NodeTable)
     rw [List.getD_eq_getElem (t.weights c) Ival.top hiw]
     exact (hi i).2 _ (hx i)
 
-def balancedSum (p : Nat) (xs : List Ival) : Ival :=
+@[expose] public def balancedSum (p : Nat) (xs : List Ival) : Ival :=
   let rec go : Nat → List Ival → Ival
     | 0, xs => xs.foldl (Ival.add p) Ival.zero
     | fuel + 1, xs =>
@@ -590,21 +615,21 @@ theorem balancedSum_mem {p : Nat} {xs : List ℝ} {Is : List Ival}
             (ih _ _ (List.forall₂_drop (Is.length/2) h))
   exact hgo 64 xs Is h
 
-def panelBox (a b : Dy) : Ival := ⟨some a, some b⟩
+@[expose] public def panelBox (a b : Dy) : Ival := ⟨some a, some b⟩
 
-def directPanelSpecialized (c : Ctx) (ext : Term) (a b : Dy) : Option Ival :=
+@[expose] public def directPanelSpecialized (c : Ctx) (ext : Term) (a b : Dy) : Option Ival :=
   let V := prepareEval c ext (panelBox a b)
   if V.isFinite then
     some (Ival.mul c.prec (Ival.ofRat c.prec (b.toRat - a.toRat)) V)
   else none
 
-def directPanelCoarse (c : Ctx) (e : Term) (a b : Dy) : Option Ival :=
+@[expose] public def directPanelCoarse (c : Ctx) (e : Term) (a b : Dy) : Option Ival :=
   directPanelSpecialized c ((specialize c (panelBox a b) e).getD e) a b
 
-def directPanel (c : Ctx) (e : Term) (a b : Dy) : Option Ival :=
+@[expose] public def directPanel (c : Ctx) (e : Term) (a b : Dy) : Option Ival :=
   (oscillatoryPanel c e a b).orElse fun _ => directPanelCoarse c e a b
 
-def ellipseBox (c : Ctx) (a b ρ : Dy) : CBox :=
+@[expose] public def ellipseBox (c : Ctx) (a b ρ : Dy) : CBox :=
   let p := c.prec
   let r := ρ.toRat
   let x := (r + 1/r) / 2
@@ -618,7 +643,7 @@ def ellipseBox (c : Ctx) (a b ρ : Dy) : CBox :=
 /-- Search uses binary ellipses. Exact binary scaling replaces repeated
 interval exponentiation in their geometric remainder. Other ellipses keep
 the general interval formula. -/
-def binaryRho (ρ : Dy) : Option Nat :=
+@[expose] public def binaryRho (ρ : Dy) : Option Nat :=
   if ρ.mantissa == 1 && 1 ≤ ρ.exponent && ρ.exponent ≤ 4 then
     some ρ.exponent.toNat else none
 
@@ -637,14 +662,14 @@ theorem binaryRho_sound {ρ : Dy} {k : Nat} (h : binaryRho ρ = some k) :
     simp
   · simp at h
 
-def binaryErrorBase (c : Ctx) (a b M : Dy) (k : Nat) : Dy :=
+@[expose] public def binaryErrorBase (c : Ctx) (a b M : Dy) (k : Nat) : Dy :=
   let numerator := Dy.scale2 ((b.add a.neg).mul M) 5
   Dy.divU c.prec numerator (Dy.ofNat (15 * (2^k-1)))
 
-def binaryError (base : Dy) (k n : Nat) : Dy :=
+@[expose] public def binaryError (base : Dy) (k n : Nat) : Dy :=
   Dy.scale2 base (-((k * (2*n-1) : Nat) : Int))
 
-def errorBound (c : Ctx) (n : Nat) (a b ρ : Dy) (M : Dy) : Option Dy :=
+@[expose] public def errorBound (c : Ctx) (n : Nat) (a b ρ : Dy) (M : Dy) : Option Dy :=
   if let some k := binaryRho ρ then
     some (binaryError (binaryErrorBase c a b M k) k n)
   else
@@ -658,18 +683,18 @@ def errorBound (c : Ctx) (n : Nat) (a b ρ : Dy) (M : Dy) : Option Dy :=
 
 /-- Range check for an already selected real branch. Search shares this
 branch across ellipse trials; certificate replay selects it independently. -/
-def analyticBoundSpecialized (c : Ctx) (ext : Term) (a b ρ : Dy) : Option Dy := do
+@[expose] public def analyticBoundSpecialized (c : Ctx) (ext : Term) (a b ρ : Dy) : Option Dy := do
   if !(Dy.ltB Dy.one ρ) then none else do
     let Z := ellipseBox c a b ρ
     if !regularCheck c ext Z then none else
       analyticMagnitude c ext Z
 
 /-- Analytic test and remainder do not evaluate any quadrature nodes. -/
-def analyticBound (c : Ctx) (e : Term) (a b ρ : Dy) : Option Dy := do
+@[expose] public def analyticBound (c : Ctx) (e : Term) (a b ρ : Dy) : Option Dy := do
   let ext ← specialize c (panelBox a b) e
   analyticBoundSpecialized c ext a b ρ
 
-def gaussSamples (c : Ctx) (e : Term) (a b : Dy)
+@[expose] public def gaussSamples (c : Ctx) (e : Term) (a b : Dy)
     (t : NodeTable) (weights : List Ival) : Ival :=
   let p := c.prec
   let mid := Ival.ofRat p ((a.toRat+b.toRat)/2)
@@ -679,7 +704,7 @@ def gaussSamples (c : Ctx) (e : Term) (a b : Dy)
     mulSigned p w (evaluate (Ival.add p mid (Ival.mul p delta (rootIval r))))
   mulSigned p delta (balancedSum p vals)
 
-def gaussPanel (c : Ctx) (e : Term) (a b ρ : Dy)
+@[expose] public def gaussPanel (c : Ctx) (e : Term) (a b ρ : Dy)
     (t : NodeTable) (weights : List Ival) : Option Ival := do
   let M ← analyticBound c e a b ρ
   let err ← errorBound c t.roots.length a b ρ M

@@ -1,4 +1,6 @@
-import Lynth.Interval.Integral.NestedSubstitutionProof
+module
+
+import all Lynth.Interval.Integral.NestedSubstitutionProof
 
 /-! Inserting unused binder levels preserves values and recursive convergence,
 including the binders owned by endpoint expressions. -/

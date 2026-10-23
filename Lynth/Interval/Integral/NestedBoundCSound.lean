@@ -1,10 +1,11 @@
-import Lynth.Interval.Integral.NestedEndpointSound
+module
+
+import all Lynth.Interval.Integral.NestedEndpointSound
 
 /-! Recursive convergence, real enclosures, and parameter continuity for complex bounds. -/
 namespace Lynth.Interval.Integral.Nested
 open Intgrl Fns MeasureTheory Set Filter
 open scoped Topology
-open private unit from Lynth.Interval.Integral.NestedBounds
 
 set_option maxHeartbeats 2400000 in
 theorem boundC_real_model {c : Ctx} (hc : c.Valid) :

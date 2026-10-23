@@ -1,7 +1,40 @@
-import Lynth.Interval.Fns.Zeta
-import Lynth.Interval.Fns.Exp
-import Lynth.Interval.Fns.ComplexElem
-import Lynth.Hypergeometric
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Data.List.Basic
+public import Init.Data.List.BasicAux
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Data.Zero
+public import Init.Prelude
+public import Mathlib.Algebra.Field.Defs
+public import Mathlib.Algebra.Field.Rat
+public import Mathlib.Algebra.Order.Floor.Defs
+public import Mathlib.Algebra.Order.Ring.Unbundled.Rat
+public import Mathlib.Basic.Complex.Basic
+public import Mathlib.Data.Multiset.Defs
+public import Mathlib.Data.Nat.Factorial.Basic
+public import Mathlib.Data.Rat.Floor
+public import Lynth.Hypergeometric.Defs
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.ComplexElem
+public import Lynth.Interval.Fns.Elem
+public import Lynth.Interval.Fns.Exp
+public import Lynth.Interval.Fns.Zeta
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Vendor.Dyadic
+import Mathlib.Analysis.Complex.Basic
+import all Lynth.Interval.Fns.Zeta
+import all Lynth.Interval.Fns.Exp
+import all Lynth.Interval.Fns.ComplexElem
+import all Lynth.Hypergeometric
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 
 /-!
@@ -317,7 +350,7 @@ theorem pfqTerm_zero (p q : Nat) (a b : ℕ → ℝ) (z : ℝ) :
   simp [pfqTerm]
 
 /-- one recurrence step as interval arithmetic. -/
-def pfqStepIval (c : Ctx) (A B : List Ival) (p q : Nat) (Z : Ival) (k : Nat)
+@[expose] public def pfqStepIval (c : Ctx) (A B : List Ival) (p q : Nat) (Z : Ival) (k : Nat)
     (T : Ival) : Ival :=
   let num := iprod c ((List.range p).map fun i =>
     Ival.add c.prec (A.getD i Ival.top) (Ival.ofRat c.prec ((k : Nat) : ℚ)))
@@ -327,13 +360,13 @@ def pfqStepIval (c : Ctx) (A B : List Ival) (p q : Nat) (Z : Ival) (k : Nat)
     (Ival.mul c.prec den (Ival.ofRat c.prec ((k + 1 : Nat) : ℚ)))
 
 /-- paired rising factor `|aᵢ-bᵢ|/Dᵢ + 1` as interval arithmetic. -/
-def pfqPairIval (c : Ctx) (Ai Bi Di : Ival) : Ival :=
+@[expose] public def pfqPairIval (c : Ctx) (Ai Bi Di : Ival) : Ival :=
   Ival.add c.prec
     (Ival.div c.prec (Ival.abs (Ival.sub c.prec Ai Bi)) Di)
     (Ival.ofRat c.prec 1)
 
 /-- fuel loop: `(sum of terms k..k+f-1, T_{k+f})`, structural on fuel. -/
-def pfqLoop (c : Ctx) (A B : List Ival) (p q : Nat) (Z : Ival) :
+@[expose] public def pfqLoop (c : Ctx) (A B : List Ival) (p q : Nat) (Z : Ival) :
     Nat → Nat → Ival → Ival → Ival × Ival
   | 0, _, S, T => (S, T)
   | f + 1, k, S, T =>
@@ -341,7 +374,7 @@ def pfqLoop (c : Ctx) (A B : List Ival) (p q : Nat) (Z : Ival) :
       (pfqStepIval c A B p q Z k T)
 
 /-- bottom guards: shifted bottoms positive + no pole integer in range. -/
-def pfqGuard (B : List Ival) (n : Nat) : Bool :=
+@[expose] public def pfqGuard (B : List Ival) (n : Nat) : Bool :=
   B.all fun J => match J.lo, J.hi with
     | some lo, some hi =>
       decide ((n : ℚ) + lo.toRat > 0
@@ -453,7 +486,7 @@ theorem mem_pfqLoop (c : Ctx) (hc : c.Valid)
 
 /-- terminating-top search: first `(index, m)` with point value `-m`
 (any terminating top makes the series exact; first match keeps it fast). -/
-def pfqFindTerm : List Ival → Nat → Option (Nat × Nat)
+@[expose] public def pfqFindTerm : List Ival → Nat → Option (Nat × Nat)
   | [], _ => none
   | I :: Is, i =>
     match I.lo, I.hi with
@@ -597,20 +630,20 @@ theorem pfqFindTerm_ok (a : ℕ → ℝ) :
           exact ⟨by omega, hval⟩
 
 /-- `R` numerator: paired factors over `i < min p q`. -/
-def pfqRNumIval (c : Ctx) (A B : List Ival) (p q n : Nat) : Ival :=
+@[expose] public def pfqRNumIval (c : Ctx) (A B : List Ival) (p q n : Nat) : Ival :=
   iprod c ((List.range (min p q)).map fun i =>
     pfqPairIval c (A.getD i Ival.top) (B.getD i Ival.top)
       (Ival.add c.prec (B.getD i Ival.top) (Ival.ofRat c.prec ((n : Nat) : ℚ))))
 
 /-- `R` denominator extras over `j ∈ [p, q)`, fuel-indexed. -/
-def pfqRDenAux (c : Ctx) (B : List Ival) (n : Nat) : Nat → Nat → List Ival
+@[expose] public def pfqRDenAux (c : Ctx) (B : List Ival) (n : Nat) : Nat → Nat → List Ival
   | _, 0 => []
   | p, f + 1 => pfqRDenAux c B n p f
     ++ [Ival.add c.prec (B.getD (p + f) Ival.top)
       (Ival.ofRat c.prec ((n : Nat) : ℚ))]
 
 /-- full `R` interval (mirrors `pfqRatio`, same `if`). -/
-def pfqRIval (c : Ctx) (A B : List Ival) (p q : Nat) (Zabs : Ival)
+@[expose] public def pfqRIval (c : Ctx) (A B : List Ival) (p q : Nat) (Zabs : Ival)
     (aq : Ival) (n : Nat) : Ival :=
   let base := Ival.div c.prec
     (Ival.mul c.prec Zabs (pfqRNumIval c A B p q n))
@@ -623,7 +656,7 @@ def pfqRIval (c : Ctx) (A B : List Ival) (p q : Nat) (Zabs : Ival)
   else base
 
 /-- closed-form term `T_k` as interval arithmetic. -/
-def pfqTermIval (c : Ctx) (A B : List Ival) (p q : Nat) (Z : Ival) (k : Nat) : Ival :=
+@[expose] public def pfqTermIval (c : Ctx) (A B : List Ival) (p q : Nat) (Z : Ival) (k : Nat) : Ival :=
   Ival.div c.prec
     (Ival.div c.prec
       (Ival.mul c.prec
@@ -686,7 +719,7 @@ theorem mem_pfqTermIval (c : Ctx) (hc : c.Valid)
     (Ival.mem_div (Ival.mem_mul hnum hpow) hden) hfact
 
 /-- finite-prefix enclosure (terminating path). -/
-def pfqFiniteIval (c : Ctx) (A B : List Ival) (p q : Nat) (Z : Ival)
+@[expose] public def pfqFiniteIval (c : Ctx) (A B : List Ival) (p q : Nat) (Z : Ival)
     (m : Nat) : Ival :=
   isum c ((List.range (m + 1)).map fun k => pfqTermIval c A B p q Z k)
 
@@ -934,7 +967,7 @@ theorem mem_pfqRIval (c : Ctx) (hc : c.Valid)
     exact Ival.mem_div (Ival.mem_mul hZabs hN) hDen
 
 /-- real part of a complex enclosure with exactly-zero imaginary part. -/
-def CBox.realOfZeroIm (B : CBox) : Option Ival :=
+@[expose] public def CBox.realOfZeroIm (B : CBox) : Option Ival :=
   match B.im.lo, B.im.hi with
   | some lo, some hi => if lo = hi ∧ lo.toRat = 0 then some B.re else none
   | _, _ => none
@@ -1029,7 +1062,7 @@ theorem extract_real_params (A : List CBox) :
 The loop returns `(Σ_{k<n} T_k, T_n)`; the enclosure is centered at
 `Σ_{k<n+1} T_k = S + T_n` with radius `|T_n|·R/(1-R)`
 (`pfqTail_corrected_succ`). -/
-def pfqCoreIval (c : Ctx) (A B : List Ival) (Z : Ival) (n : Nat) : Ival :=
+@[expose] public def pfqCoreIval (c : Ctx) (A B : List Ival) (Z : Ival) (n : Nat) : Ival :=
   match pfqFindTerm A 0 with
   | some (_, m) =>
     -- finite path needs bottom cleanliness too: the `HGFun` bridge only holds
@@ -1280,21 +1313,21 @@ noncomputable def cpfqComplex (p q : Nat) (a b : ℕ → ℂ) (z : ℂ) : ℂ :=
   ∑' k, cpfqTerm p q a b z k
 
 /-- product of boxes (`1` on `[]`). -/
-def cprod (c : Ctx) : List CBox → CBox
+@[expose] public def cprod (c : Ctx) : List CBox → CBox
   | [] => ⟨Ival.one, Ival.zero⟩
   | B :: Bs => CBox.mul c.prec B (cprod c Bs)
 
 /-- sum of boxes (`0` on `[]`). -/
-def csum (c : Ctx) : List CBox → CBox
+@[expose] public def csum (c : Ctx) : List CBox → CBox
   | [] => ⟨Ival.zero, Ival.zero⟩
   | B :: Bs => CBox.add c.prec B (csum c Bs)
 
 /-- `((k : ℕ) : ℂ)` as a box. -/
-def cNatBox (c : Ctx) (k : Nat) : CBox :=
+@[expose] public def cNatBox (c : Ctx) (k : Nat) : CBox :=
   ⟨Ival.ofRat c.prec (k : ℚ), Ival.zero⟩
 
 /-- one step of the forward recurrence. -/
-def cpfqStepBox (c : Ctx) (A B : List CBox) (p q : Nat) (Z T : CBox) (k : Nat) : CBox :=
+@[expose] public def cpfqStepBox (c : Ctx) (A B : List CBox) (p q : Nat) (Z T : CBox) (k : Nat) : CBox :=
   let num := cprod c ((List.range p).map fun i =>
     CBox.add c.prec (A.getD i CBox.top) (cNatBox c k))
   let den := cprod c ((List.range q).map fun j =>
@@ -1303,7 +1336,7 @@ def cpfqStepBox (c : Ctx) (A B : List CBox) (p q : Nat) (Z T : CBox) (k : Nat) :
     (CBox.mul c.prec den (cNatBox c (k + 1)))
 
 /-- fuel loop: `(sum of terms k..k+f-1, T_{k+f})`, structural on fuel. -/
-def cpfqLoop (c : Ctx) (A B : List CBox) (p q : Nat) (Z : CBox) :
+@[expose] public def cpfqLoop (c : Ctx) (A B : List CBox) (p q : Nat) (Z : CBox) :
     Nat → Nat → CBox → CBox → CBox × CBox
   | 0, _, S, T => (S, T)
   | f + 1, k, S, T =>
@@ -1311,19 +1344,19 @@ def cpfqLoop (c : Ctx) (A B : List CBox) (p q : Nat) (Z : CBox) :
       (cpfqStepBox c A B p q Z T k)
 
 /-- paired norm factor `‖aᵢ-bᵢ‖/Dᵢ + 1`. -/
-def cpfqPairBox (c : Ctx) (Ai Bi : CBox) (Di : Ival) : Ival :=
+@[expose] public def cpfqPairBox (c : Ctx) (Ai Bi : CBox) (Di : Ival) : Ival :=
   Ival.add c.prec
     (Ival.div c.prec (CBox.norm c.prec (CBox.sub c.prec Ai Bi)) Di)
     (Ival.ofRat c.prec 1)
 
 /-- `R` denominator extras over `j ∈ [p, q)`, fuel-indexed. -/
-def cpfqRDenAux (c : Ctx) (B : List CBox) (n : Nat) : Nat → Nat → List Ival
+@[expose] public def cpfqRDenAux (c : Ctx) (B : List CBox) (n : Nat) : Nat → Nat → List Ival
   | _, 0 => []
   | p, f + 1 => cpfqRDenAux c B n p f
     ++ [CBox.norm c.prec (CBox.add c.prec (B.getD (p + f) CBox.top) (cNatBox c n))]
 
 /-- full `R` norm-ratio bound (mirrors `pfqRatio`, same `if`). -/
-def cpfqRBox (c : Ctx) (A B : List CBox) (p q : Nat) (Zabs : Ival)
+@[expose] public def cpfqRBox (c : Ctx) (A B : List CBox) (p q : Nat) (Zabs : Ival)
     (aq : Ival) (n : Nat) : Ival :=
   let base := Ival.div c.prec
     (Ival.mul c.prec Zabs (iprod c ((List.range (min p q)).map fun i =>
@@ -1338,7 +1371,7 @@ def cpfqRBox (c : Ctx) (A B : List CBox) (p q : Nat) (Zabs : Ival)
   else base
 
 /-- one bottom-box × shift avoids `0` (endpoint check). -/
-def cpfqGuardElem (J : CBox) (k : Nat) : Bool :=
+@[expose] public def cpfqGuardElem (J : CBox) (k : Nat) : Bool :=
   match J.re.lo, J.re.hi, J.im.lo, J.im.hi with
   | some rlo, some rhi, some ilo, some ihi =>
     decide ((rhi.toRat + (k : ℚ) < 0 ∨ 0 < rlo.toRat + (k : ℚ))
@@ -1347,25 +1380,25 @@ def cpfqGuardElem (J : CBox) (k : Nat) : Bool :=
 
 /-- real part of a bottom box stays positive past the shift (for the
 ratio monotonicity `‖b+k‖ ≥ ‖b+n‖`, `k ≥ n`). -/
-def cpfqGuardRe (J : CBox) (n : Nat) : Bool :=
+@[expose] public def cpfqGuardRe (J : CBox) (n : Nat) : Bool :=
   match J.re.lo with
   | some rlo => decide (0 < rlo.toRat + (n : ℚ))
   | none => false
 
 /-- bottom guard: shifted bottoms keep positive real part, and no pole
 in range. -/
-def cpfqGuard (B : List CBox) (n : Nat) : Bool :=
+@[expose] public def cpfqGuard (B : List CBox) (n : Nat) : Bool :=
   B.all (fun J => cpfqGuardRe J n) &&
   (List.range n).all (fun k => B.all (fun J => cpfqGuardElem J k))
 
 /-- rising product box `∏_{j<k} (S + j)`. -/
-def risingCBox (c : Ctx) (S : CBox) : Nat → CBox
+@[expose] public def risingCBox (c : Ctx) (S : CBox) : Nat → CBox
   | 0 => ⟨Ival.one, Ival.zero⟩
   | k + 1 => CBox.mul c.prec (risingCBox c S k)
     (CBox.add c.prec S (cNatBox c k))
 
 /-- closed-form term box. -/
-def cpfqTermBox (c : Ctx) (A B : List CBox) (p q : Nat) (Z : CBox) (k : Nat) : CBox :=
+@[expose] public def cpfqTermBox (c : Ctx) (A B : List CBox) (p q : Nat) (Z : CBox) (k : Nat) : CBox :=
   CBox.div c.prec
     (CBox.div c.prec
       (CBox.mul c.prec
@@ -1376,7 +1409,7 @@ def cpfqTermBox (c : Ctx) (A B : List CBox) (p q : Nat) (Z : CBox) (k : Nat) : C
 
 /-- terminating-top search: first `(index, m)` with point value `-m`
 (imaginary part exactly zero). -/
-def cpfqFindTerm : List CBox → Nat → Option (Nat × Nat)
+@[expose] public def cpfqFindTerm : List CBox → Nat → Option (Nat × Nat)
   | [], _ => none
   | B :: Bs, i =>
     match B.re.lo, B.re.hi, B.im.lo, B.im.hi with
@@ -1389,14 +1422,14 @@ def cpfqFindTerm : List CBox → Nat → Option (Nat × Nat)
     | _, _, _, _ => cpfqFindTerm Bs (i + 1)
 
 /-- finite prefix enclosure (exact identity, no tail). -/
-def cpfqFiniteBox (c : Ctx) (A B : List CBox) (p q : Nat) (Z : CBox)
+@[expose] public def cpfqFiniteBox (c : Ctx) (A B : List CBox) (p q : Nat) (Z : CBox)
     (m : Nat) : CBox :=
   csum c ((List.range (m + 1)).map fun k => cpfqTermBox c A B p q Z k)
 
 /-- core evaluator: finite prefix or (`n+1` terms) + symmetric tail disc.
 The loop returns `(Σ_{k<n} T_k, T_n)`; the enclosure is centered at
 `Σ_{k<n+1} T_k = S + T_n` with disc radius `‖T_n‖·R/(1-R)`. -/
-def cpfqCoreBox (c : Ctx) (A B : List CBox) (Z : CBox) (n : Nat) : CBox :=
+@[expose] public def cpfqCoreBox (c : Ctx) (A B : List CBox) (Z : CBox) (n : Nat) : CBox :=
   match cpfqFindTerm A 0 with
   | some (_, m) =>
     -- finite path needs bottom cleanliness too: the `HGFun` bridge only holds
@@ -2978,7 +3011,7 @@ theorem pfqReal_kummer (a₀ b₀ z : ℝ)
   exact Complex.ofReal_injective hk
 
 /-- midpoint squared modulus of a real interval (`none` if unbounded). -/
-def ivalMidSq (X : Ival) : Option ℚ :=
+@[expose] public def ivalMidSq (X : Ival) : Option ℚ :=
   match X.lo, X.hi with
   | some lo, some hi =>
     let m := (lo.toRat + hi.toRat) / 2
@@ -2987,7 +3020,7 @@ def ivalMidSq (X : Ival) : Option ℚ :=
 
 /-- Pfaff-transformed problem, when the direct 2F1 does not terminate and
 `|z/(z-1)| < |z|` with `Re z < -1`. -/
-def pfqPfaffArgs (c : Ctx) (A B : List Ival) (Z : Ival) (n : Nat) :
+@[expose] public def pfqPfaffArgs (c : Ctx) (A B : List Ival) (Z : Ival) (n : Nat) :
     Option (List Ival × List Ival × Ival × Ival) :=
   match A, B with
   | [A0, A1], [B0] =>
@@ -3009,7 +3042,7 @@ def pfqPfaffArgs (c : Ctx) (A B : List Ival) (Z : Ival) (n : Nat) :
 
 /-- Kummer-transformed problem, when the direct 1F1 does not terminate but
 the transformed one does (`b - a = -m`, `m ≤ n`). -/
-def pfqKummerArgs (c : Ctx) (A B : List Ival) (Z : Ival) (n : Nat) :
+@[expose] public def pfqKummerArgs (c : Ctx) (A B : List Ival) (Z : Ival) (n : Nat) :
     Option (List Ival × List Ival × Ival × Ival) :=
   match A, B with
   | [A0], [B0] =>
@@ -3250,7 +3283,7 @@ not terminate but the transformed one does. Prefactors use the `cpow`
 pattern (`exp (log · * ·)`, nonzero-modulus gate) mirroring `cpowC.ev`. -/
 
 /-- midpoint squared modulus of a complex box (`none` if unbounded). -/
-def cboxMidSq (B : CBox) : Option ℚ :=
+@[expose] public def cboxMidSq (B : CBox) : Option ℚ :=
   match B.re.lo, B.re.hi, B.im.lo, B.im.hi with
   | some rlo, some rhi, some ilo, some ihi =>
     let rx := (rlo.toRat + rhi.toRat) / 2
@@ -3259,7 +3292,7 @@ def cboxMidSq (B : CBox) : Option ℚ :=
   | _, _, _, _ => none
 
 /-- Pfaff-transformed problem, complex version. -/
-def cpfqPfaffArgs (c : Ctx) (A B : List CBox) (Z : CBox) (n : Nat) :
+@[expose] public def cpfqPfaffArgs (c : Ctx) (A B : List CBox) (Z : CBox) (n : Nat) :
     Option (List CBox × List CBox × CBox × CBox) :=
   let one : CBox := ⟨Ival.ofRat c.prec 1, Ival.zero⟩
   match A, B with
@@ -3285,7 +3318,7 @@ def cpfqPfaffArgs (c : Ctx) (A B : List CBox) (Z : CBox) (n : Nat) :
   | _, _ => none
 
 /-- Kummer-transformed problem, complex version. -/
-def cpfqKummerArgs (c : Ctx) (A B : List CBox) (Z : CBox) (n : Nat) :
+@[expose] public def cpfqKummerArgs (c : Ctx) (A B : List CBox) (Z : CBox) (n : Nat) :
     Option (List CBox × List CBox × CBox × CBox) :=
   match A, B with
   | [A0], [B0] =>
@@ -3731,11 +3764,11 @@ theorem HGFunL_sound_complex (c : Ctx) (hc : c.Valid)
       A B XZ z (64 + 2 * c.prec) hlenA hlenB hmA hmB hhZ
 
 /-- list-based `HGFun` mirror (registry vocabulary). -/
-noncomputable def HGFunL (a b : List ℂ) (z : ℂ) : ℂ :=
+@[expose] public noncomputable def HGFunL (a b : List ℂ) (z : ℂ) : ℂ :=
   Complex.HGFun ↑a ↑b z
 
 /-- project real intervals elementwise (`none` on any nonzero imaginary part). -/
-def projectReal : List CBox → Option (List Ival)
+@[expose] public def projectReal : List CBox → Option (List Ival)
   | [] => some []
   | B :: Bs =>
     match CBox.realOfZeroIm B with
@@ -3765,7 +3798,7 @@ theorem projectReal_some (A : List CBox) (Ar : List Ival)
         subst h2
         exact List.Forall₂.cons hB (ih _ hRs)
 
-def HGFunL_ev (c : Ctx) : CEnc [.list .cplx, .list .cplx, .cplx] → CBox
+@[expose] public def HGFunL_ev (c : Ctx) : CEnc [.list .cplx, .list .cplx, .cplx] → CBox
   | .cons _ (some A) (.cons _ (some B) (.cons _ Z .nil)) =>
     match projectReal A, projectReal B, CBox.realOfZeroIm Z with
     | some Ar, some Br, some Zr =>
@@ -4130,13 +4163,13 @@ theorem HGFunL_sound (c : Ctx) :
                       | none => exact CBox.mem_top _
                       | some _ => exact CBox.mem_def.mpr ⟨hcore, hyim⟩
 
-@[lynth_cfn] def HGFunLR : CFn [.list .cplx, .list .cplx, .cplx] .cplx :=
+@[expose, lynth_cfn] public def HGFunLR : CFn [.list .cplx, .list .cplx, .cplx] .cplx :=
   { name := "HGFun",
     fn := fun _ _ _ => (0 : ℂ),
     graph := CFn.graphOf [.list .cplx, .list .cplx, .cplx] .cplx HGFunL,
-    exu := CFn.exuOf (tys := [.list .cplx, .list .cplx, .cplx]) .cplx HGFunL,
+    exu := by exact CFn.exuOf (tys := [.list .cplx, .list .cplx, .cplx]) .cplx HGFunL,
     ev := HGFunL_ev,
-    sound := HGFunL_sound,
+    sound := by exact HGFunL_sound,
     cost := 1500 }
 
 

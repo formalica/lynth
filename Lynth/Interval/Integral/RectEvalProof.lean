@@ -1,4 +1,6 @@
-import Lynth.Interval.Integral.Legendre
+module
+
+import all Lynth.Interval.Integral.Legendre
 
 /-! Correctness of the rectangular polynomial evaluation loops. -/
 namespace Lynth.Interval.Integral

@@ -1,4 +1,13 @@
-import Lynth.Sat.Gates
+module
+
+public import Init.Data.Int.Basic
+public import Init.Data.List.Basic
+public import Init.Data.List.FinRange
+public import Init.Prelude
+public import Lynth.Sat.Gates
+public import Lynth.Sat.Solver
+public import Lynth.Sat.Syntax
+import all Lynth.Sat.Gates
 
 /-!
 Generic finite-value layer: one-hot cells for `Fin k` values.
@@ -22,14 +31,14 @@ open Lynth.Sat
 open Lynth.Sat.Gates
 
 /-- 1-based SAT variable for `(cell, val)` with `k` values per cell. -/
-def idxVar (k cell val : Nat) : Nat := cell * k + val + 1
+@[expose] public def idxVar (k cell val : Nat) : Nat := cell * k + val + 1
 
 /-- Row literals for one cell. -/
-def rowLits (k cell : Nat) : List Lit :=
+@[expose] public def rowLits (k cell : Nat) : List Lit :=
   (List.finRange k).map fun c => Int.ofNat (idxVar k cell c.val)
 
 /-- One-hot CNF for `n` cells of `k` values each. -/
-def cellsCNF (n k : Nat) : CNF :=
+@[expose] public def cellsCNF (n k : Nat) : CNF :=
   (List.finRange n).flatMap fun v => oneHotRowCNF (rowLits k v.val)
 
 /-- `idxVar` is injective in the value (fixed `k`, `cell`):
@@ -51,7 +60,7 @@ theorem rowLits_nodup (k cell : Nat) : (rowLits k cell).Nodup := by
 
 /-- Read cell `v`'s value off a model: first true in its row,
 defaulting to `0` (needs `0 < k`). -/
-def decodeVal (n k : Nat) (hk : 0 < k) (m : Assignment) (v : Fin n) :
+@[expose] public def decodeVal (n k : Nat) (hk : 0 < k) (m : Assignment) (v : Fin n) :
     Fin k :=
   match _hm : (List.finRange k).find?
       (fun c => checkSat [[Int.ofNat (idxVar k v.val c.val)]] m) with
@@ -60,7 +69,7 @@ def decodeVal (n k : Nat) (hk : 0 < k) (m : Assignment) (v : Fin n) :
 
 /-- Decode reads a true literal: the decoded value's row-lit holds
 whenever some value's does. -/
-theorem decodeVal_true (n k : Nat) (hk : 0 < k) (m : Assignment)
+public theorem decodeVal_true (n k : Nat) (hk : 0 < k) (m : Assignment)
     (v : Fin n)
     (hexists : ∃ c : Fin k,
       checkSat [[Int.ofNat (idxVar k v.val c.val)]] m = true) :
@@ -84,7 +93,7 @@ theorem decodeVal_true (n k : Nat) (hk : 0 < k) (m : Assignment)
     exact absurd hc (hall c hmem)
 
 /-- Every satisfied cell-block yields a decoded true literal. -/
-theorem decodeVal_of_row (n k : Nat) (hk : 0 < k) (m : Assignment)
+public theorem decodeVal_of_row (n k : Nat) (hk : 0 < k) (m : Assignment)
     (v : Fin n)
     (hrow : checkSat (oneHotRowCNF (rowLits k v.val)) m = true) :
     checkSat [[Int.ofNat (idxVar k v.val (decodeVal n k hk m v).val)]]
@@ -97,7 +106,7 @@ theorem decodeVal_of_row (n k : Nat) (hk : 0 < k) (m : Assignment)
   exact ⟨c, (checkSat_single m _).mpr hcuT⟩
 
 /-- Model from a function: cell `(v,c)` true iff `f v = c`. -/
-def modelOf (n k : Nat) (f : Fin n → Fin k) : Assignment :=
+@[expose] public def modelOf (n k : Nat) (f : Fin n → Fin k) : Assignment :=
   (List.finRange n).flatMap fun v =>
     (List.finRange k).map fun c => some (decide (f v = c))
 
@@ -117,7 +126,7 @@ theorem length_flatMap_const (l : List α) (f : α → List β) (k : Nat)
     ring
 
 /-- Rows from a held cell block: every vertex row holds. -/
-theorem cellsRows (n k : Nat) (m : Assignment)
+public theorem cellsRows (n k : Nat) (m : Assignment)
     (h : checkSat (cellsCNF n k) m = true) (v : Fin n) :
     checkSat (oneHotRowCNF (rowLits k v.val)) m = true := by
   apply checkSat_of_all_single
@@ -134,7 +143,7 @@ theorem modelOf_length (n k : Nat) (f : Fin n → Fin k) :
   simp [List.length_finRange]
 
 /-- Row uniqueness: two true readings in one held row agree. -/
-theorem rowLit_unique (m : Assignment) (k cell : Nat)
+public theorem rowLit_unique (m : Assignment) (k cell : Nat)
     (hrow : checkSat (oneHotRowCNF (rowLits k cell)) m = true)
     (c1 c2 : Fin k)
     (h1 : evalLit m (Int.ofNat (idxVar k cell c1.val)) = some true)
@@ -180,7 +189,7 @@ Proof: split the flat model at vertex `v`'s chunk via take/drop,
 resolve the lookup condition by `simp` (not `rw [dif_pos]`, which
 fails the dependent motive since the proof mentions the model),
 then read positionally inside the chunk. -/
-theorem modelOf_eval (n k : Nat) (_hk : 0 < k) (f : Fin n → Fin k)
+public theorem modelOf_eval (n k : Nat) (_hk : 0 < k) (f : Fin n → Fin k)
     (v : Fin n) (c : Fin k) :
     evalLit (modelOf n k f)
       (Int.ofNat (idxVar k v.val c.val))
@@ -285,7 +294,7 @@ theorem modelOf_eval (n k : Nat) (_hk : 0 < k) (f : Fin n → Fin k)
 
 /-- At-most-one completeness: the canonical model respects mutual
 exclusion on rows. -/
-theorem atMostOneComplete (n k v : Nat) (hk : 0 < k)
+public theorem atMostOneComplete (n k v : Nat) (hk : 0 < k)
     (f : Fin n → Fin k) (w : Fin n) (hw : w.val = v) :
     checkSat (atMostOneCNF (rowLits k v)) (modelOf n k f) = true := by
   apply checkSat_of_all_single
@@ -332,7 +341,7 @@ theorem atMostOneComplete (n k v : Nat) (hk : 0 < k)
     exact checkSat_pair_of_true_left _ _ _ heu
 
 /-- Single-row completeness: the canonical model satisfies one row. -/
-theorem rowComplete (n k : Nat) (hk : 0 < k)
+public theorem rowComplete (n k : Nat) (hk : 0 < k)
     (f : Fin n → Fin k) (w : Fin n) :
     checkSat (oneHotRowCNF (rowLits k w.val)) (modelOf n k f) = true := by
   have h1 : checkSat (atLeastOneCNF (rowLits k w.val)) (modelOf n k f)
@@ -352,7 +361,7 @@ theorem rowComplete (n k : Nat) (hk : 0 < k)
   simp [h1, h2]
 
 /-- Cell-block completeness: the canonical model satisfies all rows. -/
-theorem cellsComplete (n k : Nat) (hk : 0 < k) (f : Fin n → Fin k) :
+public theorem cellsComplete (n k : Nat) (hk : 0 < k) (f : Fin n → Fin k) :
     checkSat (cellsCNF n k) (modelOf n k f) = true := by
   apply checkSat_flatMap
   intro v hv

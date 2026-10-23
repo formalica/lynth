@@ -1,8 +1,10 @@
+module
+
 import Lean
 import Std.Tactic.BVDecide
-import Lynth.Procedure
-import Lynth.BV.Blast
-import Lynth.BV.Recognize
+import all Lynth.Procedure
+import all Lynth.BV.Blast
+import all Lynth.BV.Recognize
 
 /-!
 Bitvector procedure: fixed-width `BitVec` goals via bit-blasting.

@@ -1,10 +1,36 @@
-import Lynth.Interval.Fns.Special.Common
+module
+
+public import Init.Data.Cast
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Algebra.Order.Ring.Unbundled.Rat
+public import Mathlib.Data.Nat.Factorial.Basic
+public import Mathlib.Data.Rat.Defs
+public import Lynth.Interval.Core.Expr
+public import Lynth.Analysis.SpecialFunctions
+public import Lynth.Analysis.SpecialFunctionsDefs
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.Special.Common
+public import Lynth.Interval.Integral.Exp
+public import Lynth.Interval.Integral.Trig
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Series.Tail
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Fns.Special.Common
 
 namespace Lynth.Interval.Fns
 
 open SpecialFunctions Integral
 
-def specialHorner (p : ℕ) (xs : List ℚ) (X : Ival) : Ival :=
+@[expose] public def specialHorner (p : ℕ) (xs : List ℚ) (X : Ival) : Ival :=
   match xs with
   | [] => Ival.zero
   | q :: qs => Ival.add p (Ival.ofRat p q) (Ival.mul p X (specialHorner p qs X))
@@ -15,7 +41,7 @@ theorem mem_specialHorner {p : ℕ} (xs : List ℚ) {x : ℝ} {X : Ival} (hx : x
   | nil => exact Ival.mem_zero
   | cons q qs ih => exact Ival.mem_add (Ival.mem_ofRat p q) (Ival.mem_mul hx ih)
 
-def siAsymptotic (c : Ctx) (x : ℚ) : Ival :=
+@[expose] public def siAsymptotic (c : Ctx) (x : ℚ) : Ival :=
   let p := c.prec+16
   let n := c.prec/2+8
   let X := Ival.ofRat p x
@@ -45,13 +71,13 @@ theorem mem_siAsymptotic {c : Ctx} (hc : c.Valid) (x : ℚ) (hx : 0 < x) :
   simpa only [Rat.cast_natCast] using
     si_asymptotic_horner (x : ℝ) (by exact_mod_cast hx) (c.prec/2+8)
 
-def siPositive (c : Ctx) (x : ℚ) : Ival :=
+@[expose] public def siPositive (c : Ctx) (x : ℚ) : Ival :=
   if (c.prec+16 : ℚ) ≤ x then siAsymptotic c x
   else
     let p := specialPrec c.prec .si |x|
     Ival.mul p (Ival.ofRat p x) (specialSeriesR p .si (-x^2))
 
-def siPoint (c : Ctx) (x : ℚ) : Ival :=
+@[expose] public def siPoint (c : Ctx) (x : ℚ) : Ival :=
   if x < 0 then Ival.neg (siPositive c (-x)) else siPositive c x
 
 theorem mem_siPositive {c : Ctx} (hc : c.Valid) (x : ℚ) :
@@ -74,7 +100,7 @@ theorem mem_siPoint {c : Ctx} (hc : c.Valid) (x : ℚ) :
   · simpa only [Rat.cast_neg, si_odd, neg_neg] using Ival.mem_neg (mem_siPositive hc (-x))
   · exact mem_siPositive hc x
 
-def siIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def siIval (c : Ctx) (X : Ival) : Ival :=
   match X.mid with
   | some m => specialWiden c.prec (siPoint c m.toRat)
       (Ival.abs (Ival.sub c.prec X (Ival.pt m)))
@@ -88,7 +114,7 @@ theorem mem_siIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X) 
       (Ival.mem_abs (Ival.mem_sub hx (Ival.mem_pt _))) (real_lipschitz x _).2.1
   · exact Ival.mem_top _
 
-def siBoxPoint (c : Ctx) (a b : ℚ) : CBox :=
+@[expose] public def siBoxPoint (c : Ctx) (a b : ℚ) : CBox :=
   let p := specialPrec c.prec .si (|a|+|b|)
   let q := specialPower .si a b
   CBox.mul p (rationalBox p a b) (specialSeriesC p .si q.1 q.2)
@@ -100,7 +126,7 @@ theorem mem_siBoxPoint (c : Ctx) (a b : ℚ) :
   rw [specialPower_cast] at h
   exact CBox.mem_mul (mem_rationalBox _ a b) h
 
-def siCBox (c : Ctx) (Z : CBox) : CBox :=
+@[expose] public def siCBox (c : Ctx) (Z : CBox) : CBox :=
   match Z.re.mid, Z.im.mid with
   | some a, some b =>
     let m := rationalBox c.prec a.toRat b.toRat
@@ -120,18 +146,18 @@ theorem mem_siCBox (c : Ctx) {z : ℂ} {Z : CBox} (hz : z ∈ Z) :
         (CBox.mem_norm (CBox.mem_sub hz hm))) (complex_lipschitz_pair z _).2.1
   · exact CBox.mem_top _
 
-@[lynth_cfn] def siR : Fn1 .real .real where
+@[expose, lynth_cfn] public def siR : Fn1 .real .real where
   name := "Si"
   graph x y := y = Real.Si x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := siIval
   sound := fun _ _ _ _ hc hy hx => by cases hy; exact mem_siIval hc hx
   cost := 500000
 
-@[lynth_cfn] def siC : Fn1 .cplx .cplx where
+@[expose, lynth_cfn] public def siC : Fn1 .cplx .cplx where
   name := "Si"
   graph x y := y = Complex.Si x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := siCBox
   sound := fun c _ _ _ _ hy hx => by cases hy; exact mem_siCBox c hx
   cost := 1000000

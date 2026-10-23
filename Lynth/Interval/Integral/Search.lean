@@ -1,4 +1,6 @@
-import Lynth.Interval.Integral.Cert
+module
+
+import all Lynth.Interval.Integral.Cert
 
 /-! Untrusted native Petras search. Only the final partition is replayed. -/
 

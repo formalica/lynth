@@ -1,5 +1,7 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.PowerSeries
-import Lynth.Interval.Fns.EulerGamma.Proof.BesselK0Limit
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.PowerSeries
+import all Lynth.Interval.Fns.EulerGamma.Proof.BesselK0Limit
 
 /-!
 # The Brent–McMillan identity `γ = S(x)/I(x) - log x - K0(x)/I(x)`

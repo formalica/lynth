@@ -1,7 +1,30 @@
-import Lynth.Interval.Fns.Zeta
-import Lynth.Interval.Fns.ComplexGamma
-import Lynth.Interval.Fns.ComplexZetaEM
-import Lynth.Interval.Fns.ComplexElem
+module
+
+public import Init.Data.Cast
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.NumberTheory.LSeries.RiemannZeta
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.ComplexElem
+public import Lynth.Interval.Fns.ComplexGamma
+public import Lynth.Interval.Fns.ComplexZetaEM
+public import Lynth.Interval.Fns.Elem
+public import Lynth.Interval.Fns.ZetaEulerProd
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Series.Tail
+public import Lynth.Interval.Vendor.Dyadic
+import Mathlib
+import all Lynth.Interval.Fns.Zeta
+import all Lynth.Interval.Fns.ComplexGamma
+import all Lynth.Interval.Fns.ComplexZetaEM
+import all Lynth.Interval.Fns.ComplexElem
 
 /-!
 # Complex Riemann zeta via Euler product (`2 ≤ Re`) and functional equation.
@@ -148,8 +171,8 @@ theorem eulerprod_tail (s : ℂ) (hs : 2 ≤ s.re) (P : ℕ) (hP : 2 ≤ P) :
     field_simp
     nlinarith
 
-/-- info: 'Complex.eulerprod_tail' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+/-- info: '_private.Lynth.Interval.Fns.ComplexZeta.0.Complex.eulerprod_tail' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
 #print axioms Complex.eulerprod_tail
 
 /-- COMPLEX FUNCTIONAL EQUATION (solved for `ζ s`).
@@ -183,8 +206,8 @@ theorem zeta_neg_fe (s : ℂ) (hs : s.re < 0) :
   rw [hc, hp, ← h2s]
   ring
 
-/-- info: 'Complex.zeta_neg_fe' depends on axioms: [propext, Classical.choice, Quot.sound] -/
-#guard_msgs in
+/-- info: '_private.Lynth.Interval.Fns.ComplexZeta.0.Complex.zeta_neg_fe' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
 #print axioms Complex.zeta_neg_fe
 
 end Complex
@@ -196,7 +219,7 @@ open Lynth.Interval Dy
 /-! ### Euler product -/
 
 /-- fold `CBox.mul` over interval factors. -/
-def cprodC (w : Nat) : List CBox → CBox
+@[expose] public def cprodC (w : Nat) : List CBox → CBox
   | [] => oneCBox
   | B :: Bs => CBox.mul w B (cprodC w Bs)
 
@@ -213,7 +236,7 @@ theorem mem_cprodC (w : Nat) (xs : List ℂ) (Bs : List CBox)
 noncomputable def eulerFactorVal (s : ℂ) (p : Nat) : ℂ := (1 - (p : ℂ) ^ (-s))⁻¹
 
 /-- one Euler factor box. -/
-def eulerFactorC (c : Ctx) (S : CBox) (p : Nat) : CBox :=
+@[expose] public def eulerFactorC (c : Ctx) (S : CBox) (p : Nat) : CBox :=
   let w := c.prec + 16
   CBox.div w oneCBox
     (CBox.sub w oneCBox
@@ -245,7 +268,7 @@ theorem eulerProdC_eq (s : ℂ) (P : Nat) :
   rfl
 
 /-- interval tail bound `2/(P^{σ-1}·(σ-1))` over the `Re` enclosure. -/
-def zetaTailC (c : Ctx) (S : CBox) (P : Nat) : Ival :=
+@[expose] public def zetaTailC (c : Ctx) (S : CBox) (P : Nat) : Ival :=
   let w := c.prec + 16
   let sigM1 := Ival.sub w S.re (Ival.ofRat w 1)
   let pw := rpowIval c (Ival.ofRat w (P : ℚ)) sigM1
@@ -275,7 +298,7 @@ theorem mem_zetaTailC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox} (hx : z ∈ 
   exact Ival.mem_div h2m (Ival.mem_mul hpw hsig)
 
 /-- Euler-product enclosure at cutoff `P`. -/
-def zetaEulerProdC (c : Ctx) (S : CBox) (P : Nat) : CBox :=
+@[expose] public def zetaEulerProdC (c : Ctx) (S : CBox) (P : Nat) : CBox :=
   let w := c.prec + 16
   let prod := cprodC w ((eulerPrimes P).map (eulerFactorC c S))
   widenCBox w prod (Ival.magHi (zetaTailC c S P))
@@ -315,7 +338,7 @@ theorem mem_zetaEulerProdC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox} {P : Na
 /-! ### Closed form `ζ(2) = π²/6` (point boxes) -/
 
 /-- `π²/6` box. -/
-def closedTwoC (c : Ctx) : CBox :=
+@[expose] public def closedTwoC (c : Ctx) : CBox :=
   let w := c.prec + 16
   CBox.div w (CBox.npow w (CBox.ofReal c.pi) 2) (sixC w)
 
@@ -350,7 +373,7 @@ theorem mem_closedTwoC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox}
 /-- `ζ` on boxes with `Re ≥ 2`: point `2` → closed form, `Re ≥ 6` →
 Euler product (fast tail), else Euler–Maclaurin (the Euler tail at
 `σ < 6` is too wide to be useful). -/
-def zetaPosC (c : Ctx) (S : CBox) : CBox :=
+@[expose] public def zetaPosC (c : Ctx) (S : CBox) : CBox :=
   let w := c.prec + 16
   match S.re.lo, S.re.hi, S.im.lo, S.im.hi with
   | some lo, some hi, some ilo, some ihi =>
@@ -451,7 +474,7 @@ theorem mem_zetaPosC {c : Ctx} (hc : c.Valid) {z : ℂ} {S : CBox}
 /-- inner values (`Re > 1` always here): Euler product at `Re ≥ 2`,
 Euler–Maclaurin on `(1, 2)`. (Non-recursive: the outer `Re < 0` rules out
 a second reflection.) -/
-def zetaInnerC (c : Ctx) (Y : CBox) : CBox :=
+@[expose] public def zetaInnerC (c : Ctx) (Y : CBox) : CBox :=
   match Y.re.lo, Y.re.hi with
   | some lo, some hi =>
     if 2 ≤ lo.toRat then zetaPosC c Y
@@ -491,7 +514,7 @@ theorem mem_zetaInnerC {c : Ctx} (hc : c.Valid) {z : ℂ} {Y : CBox}
 /-! ### Reflection (`Re < 0`) -/
 
 /-- `ζ` via `ζ(s) = 2^s·π^{s-1}·sin(πs/2)·Γ(1-s)·ζ(1-s)`. -/
-def zetaNegC (c : Ctx) (X : CBox) : CBox :=
+@[expose] public def zetaNegC (c : Ctx) (X : CBox) : CBox :=
   let w := c.prec + 16
   let A := expBox c (CBox.mul c.prec (logBox c (twoC w)) X)
   let B := expBox c (CBox.mul c.prec (logBox c (CBox.ofReal c.pi))
@@ -533,7 +556,7 @@ theorem mem_zetaNegC {c : Ctx} (hc : c.Valid) {z : ℂ} {X : CBox}
 
 /-- `ζ` on any box: Euler product at `Re ≥ 2`, reflection at `Re < 0`,
 Euler–Maclaurin at `0 < Re ≠ 1`, `⊤` elsewhere (poles, `Re = 0`). -/
-def zetaCBox (c : Ctx) (X : CBox) : CBox :=
+@[expose] public def zetaCBox (c : Ctx) (X : CBox) : CBox :=
   match X.re.lo, X.re.hi with
   | some lo, some hi =>
     if 2 ≤ lo.toRat then zetaPosC c X
@@ -603,10 +626,10 @@ theorem mem_zetaCBox {c : Ctx} (hc : c.Valid) {z : ℂ} {X : CBox}
                   simp [zetaCBox, hlo, hhi, hge, hneg, hilo, hhii, hem]
                 rw [hev]; exact CBox.mem_top _
 
-@[lynth_cfn] def zetaC : Fn1 .cplx .cplx where
+@[expose, lynth_cfn] public def zetaC : Fn1 .cplx .cplx where
   name := "riemannZeta"
   graph x y := y = riemannZeta x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := zetaCBox
   sound := fun _ _ _ _ hc hy hx => by obtain rfl := hy; exact mem_zetaCBox hc hx
   cost := 500

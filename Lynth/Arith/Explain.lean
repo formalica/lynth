@@ -1,4 +1,8 @@
-import Lynth.Arith.Simplex
+module
+
+public import Lynth.Arith.Simplex
+
+import all Lynth.Arith.Simplex
 
 /-!
 DdM explanation checker: independent validation of Simplex refutations.
@@ -54,7 +58,7 @@ def atBeta (beta : List Rat) (v : Nat) : Rat :=
   beta.getD v 0
 
 /-- Validate a `DdMExplanation` against its system. -/
-def checkExplanation (sys : List (List Rat × Rat))
+public def checkExplanation (sys : List (List Rat × Rat))
     (e : DdMExplanation) : Bool :=
   let m := sys.length
   let n := sys.foldl (fun m (cs, _) => Nat.max m cs.length) 0

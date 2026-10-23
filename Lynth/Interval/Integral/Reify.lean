@@ -1,7 +1,13 @@
-import Lynth.Interval.Integral.Engine
-import Lynth.Interval.Goals.Approx
+module
+
+meta import all Lynth.Interval.Integral.Engine
+import all Lynth.Interval.Integral.Engine
+meta import all Lynth.Interval.Goals.Approx
+import all Lynth.Interval.Goals.Approx
 
 /-! Proof-producing compiler from real functions to integration expressions. -/
+
+meta section
 
 namespace Lynth.Interval.Integral
 

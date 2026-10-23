@@ -1,5 +1,7 @@
+module
+
 import Lean
-import Lynth.Procedure
+import all Lynth.Procedure
 import Lean.Meta.Tactic.Grind.Main
 import Lean.Meta.Tactic.Grind.Action
 import Lean.Meta.Tactic.Grind.EMatchAction

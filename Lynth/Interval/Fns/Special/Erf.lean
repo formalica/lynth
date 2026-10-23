@@ -1,17 +1,39 @@
-import Lynth.Interval.Fns.Special.Common
+module
+
+public import Init.Data.Cast
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Algebra.Order.Ring.Unbundled.Rat
+public import Mathlib.Data.Rat.Defs
+public import Lynth.Interval.Core.Expr
+public import Lynth.Analysis.SpecialFunctionsDefs
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.Special.Common
+public import Lynth.Interval.Integral.Exp
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Fns.Special.Common
 
 namespace Lynth.Interval.Fns
 
 open SpecialFunctions Integral
 
-def erfScale (c : Ctx) : Ival :=
+@[expose] public def erfScale (c : Ctx) : Ival :=
   Ival.div c.prec (Ival.ofRat c.prec 2) (Ival.sqrt c.prec c.pi)
 
 theorem mem_erfScale {c : Ctx} (hc : c.Valid) :
     2 / Real.sqrt Real.pi ∈ erfScale c := by
   exact Ival.mem_div (by simpa using Ival.mem_ofRat c.prec 2) (Ival.mem_sqrt hc.pi_mem)
 
-def erfPositive (c : Ctx) (x : ℚ) : Ival :=
+@[expose] public def erfPositive (c : Ctx) (x : ℚ) : Ival :=
   if 1 < x && (c.prec+16 : ℚ) ≤ x*x then
     specialWiden c.prec Ival.one
       (Ival.div c.prec (fastExpIval c (Ival.ofRat (c.prec+16) (-x*x)))
@@ -22,7 +44,7 @@ def erfPositive (c : Ctx) (x : ℚ) : Ival :=
       (specialSeriesR p .erf (-x^2))
 
 /-- Evaluate negative inputs by oddness; large positive inputs use a Gaussian tail. -/
-def erfPoint (c : Ctx) (x : ℚ) : Ival :=
+@[expose] public def erfPoint (c : Ctx) (x : ℚ) : Ival :=
   if x < 0 then Ival.neg (erfPositive c (-x)) else erfPositive c x
 
 theorem mem_erfPositive {c : Ctx} (hc : c.Valid) (x : ℚ) :
@@ -48,7 +70,7 @@ theorem mem_erfPoint {c : Ctx} (hc : c.Valid) (x : ℚ) :
   · simpa only [Rat.cast_neg, erf_odd, neg_neg] using Ival.mem_neg (mem_erfPositive hc (-x))
   · exact mem_erfPositive hc x
 
-def erfIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def erfIval (c : Ctx) (X : Ival) : Ival :=
   match X.mid with
   | some m => specialWiden c.prec (erfPoint c m.toRat)
       (Ival.mul c.prec (Ival.ofRat c.prec 2) (Ival.abs (Ival.sub c.prec X (Ival.pt m))))
@@ -64,7 +86,7 @@ theorem mem_erfIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X)
   · have h := erf_range x
     exact Ival.mem_ofRats (by simpa using h.1) (by simpa using h.2)
 
-def erfBoxPoint (c : Ctx) (a b : ℚ) : CBox :=
+@[expose] public def erfBoxPoint (c : Ctx) (a b : ℚ) : CBox :=
   let p := specialPrec c.prec .erf (|a|+|b|)
   let z := rationalBox p a b
   let q := specialPower .erf a b
@@ -81,7 +103,7 @@ theorem mem_erfBoxPoint {c : Ctx} (hc : c.Valid) (a b : ℚ) :
 
 /-- Broad rectangles use the vertical-integral bound; narrow boxes evaluate at
 an exact rational midpoint and propagate the analytic derivative bound. -/
-def erfCBox (c : Ctx) (Z : CBox) : CBox :=
+@[expose] public def erfCBox (c : Ctx) (Z : CBox) : CBox :=
   match Z.re.mid, Z.im.mid with
   | some a, some b =>
     let m := rationalBox c.prec a.toRat b.toRat
@@ -104,18 +126,18 @@ theorem mem_erfCBox {c : Ctx} (hc : c.Valid) {z : ℂ} {Z : CBox} (hz : z ∈ Z)
         (CBox.mem_norm (CBox.mem_sub hz hm))) (complex_lipschitz_pair z _).1
   · exact CBox.mem_top _
 
-@[lynth_cfn] def erfR : Fn1 .real .real where
+@[expose, lynth_cfn] public def erfR : Fn1 .real .real where
   name := "erf"
   graph x y := y = Real.erf x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := erfIval
   sound := fun _ _ _ _ hc hy hx => by cases hy; exact mem_erfIval hc hx
   cost := 500000
 
-@[lynth_cfn] def erfC : Fn1 .cplx .cplx where
+@[expose, lynth_cfn] public def erfC : Fn1 .cplx .cplx where
   name := "erf"
   graph x y := y = Complex.erf x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := erfCBox
   sound := fun _ _ _ _ hc hy hx => by cases hy; exact mem_erfCBox hc hx
   cost := 1000000

@@ -1,4 +1,24 @@
-import Lynth.Interval.Fns.Elem
+module
+
+public import Init.Data.Int.Basic
+public import Init.Prelude
+public import Mathlib.Algebra.Order.Archimedean.Real.Basic
+public import Mathlib.Algebra.Order.Floor.Defs
+public import Mathlib.Algebra.Order.Round
+public import Mathlib.Basic.Real.Basic
+public import Mathlib.Data.Nat.Basic
+public import Mathlib.Order.Monotone.Defs
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.Trig
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Num.NIval
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Fns.Elem
 import Mathlib.Algebra.Order.Floor.Semiring
 import Mathlib.Algebra.Order.Floor.Ring
 import Mathlib.Algebra.Order.Round
@@ -108,7 +128,7 @@ theorem Dy.floor_real (d : Dy) : ⌊d.toReal⌋ = Dy.floor d := by
     exact_mod_cast h
 
 /-- real ceiling via negated floor. -/
-def Dy.ceil (d : Dy) : Int := -(Dy.floor (d.neg))
+@[expose] public def Dy.ceil (d : Dy) : Int := -(Dy.floor (d.neg))
 
 /-- real ceiling of a dyadic endpoint. -/
 theorem Dy.ceil_real (d : Dy) : ⌈d.toReal⌉ = Dy.ceil d := by
@@ -130,10 +150,10 @@ theorem Dy.ceil_real (d : Dy) : ⌈d.toReal⌉ = Dy.ceil d := by
   · rw [e]; linarith
 
 /-- dyadic half for rounding. -/
-def Dy.half : Dy := ⟨1, -1⟩
+@[expose] public def Dy.half : Dy := ⟨1, -1⟩
 
 /-- round a dyadic to `ℤ` (ties up): `⌊d + 1/2⌋`. -/
-def Dy.roundInt (d : Dy) : Int := Dy.floor (d.add Dy.half)
+@[expose] public def Dy.roundInt (d : Dy) : Int := Dy.floor (d.add Dy.half)
 
 theorem Dy.half_toRat : Dy.half.toRat = 1 / 2 := by
   simp [Dy.half, toRat_mk]
@@ -202,7 +222,7 @@ theorem mem_monoNIval {F : ℝ → ℕ} {e : Dy → Nat} (hpt : ∀ a, e a = F a
 /-! ### Entries -/
 
 /-- `⌊·⌋₊`, exact on endpoints. -/
-def natFloorIval (X : Ival) : NIval :=
+@[expose] public def natFloorIval (X : Ival) : NIval :=
   ⟨match X.lo with | some a => (Dy.floor a).toNat | none => 0,
    X.hi.map (fun b => (Dy.floor b).toNat)⟩
 
@@ -210,16 +230,16 @@ theorem mem_natFloor {x : ℝ} {X : Ival} (hx : x ∈ X) : ⌊x⌋₊ ∈ natFlo
   unfold natFloorIval
   exact mem_monoNIval (fun a => Dy.floor_nat a) Nat.floor_mono hx
 
-@[lynth_cfn] def natFloorR : Fn1 .real .nat where
+@[expose, lynth_cfn] public def natFloorR : Fn1 .real .nat where
   name := "⌊·⌋₊"
   graph x n := n = ⌊x⌋₊
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev _ := natFloorIval
   sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact mem_natFloor hx
   cost := 5
 
 /-- `⌈·⌉₊`, exact on endpoints. -/
-def natCeilIval (X : Ival) : NIval :=
+@[expose] public def natCeilIval (X : Ival) : NIval :=
   ⟨match X.lo with | some a => (Dy.ceil a).toNat | none => 0,
    X.hi.map (fun b => (Dy.ceil b).toNat)⟩
 
@@ -227,16 +247,16 @@ theorem mem_natCeil {x : ℝ} {X : Ival} (hx : x ∈ X) : ⌈x⌉₊ ∈ natCeil
   unfold natCeilIval
   exact mem_monoNIval (fun a => Dy.ceil_nat a) Nat.ceil_mono hx
 
-@[lynth_cfn] def natCeilR : Fn1 .real .nat where
+@[expose, lynth_cfn] public def natCeilR : Fn1 .real .nat where
   name := "⌈·⌉₊"
   graph x n := n = ⌈x⌉₊
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev _ := natCeilIval
   sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact mem_natCeil hx
   cost := 5
 
 /-- `↑⌊·⌋`, real-valued for free nesting. -/
-def intFloorIval (X : Ival) : Ival :=
+@[expose] public def intFloorIval (X : Ival) : Ival :=
   ⟨X.lo.map (fun a => Dy.ofInt (Dy.floor a)), X.hi.map (fun b => Dy.ofInt (Dy.floor b))⟩
 
 theorem mem_intFloor {x : ℝ} {X : Ival} (hx : x ∈ X) :
@@ -253,16 +273,16 @@ theorem mem_intFloor {x : ℝ} {X : Ival} (hx : x ∈ X) :
     exact_mod_cast Int.floor_mono h
   exact mem_monoIval hpt hmono hx
 
-@[lynth_cfn] def intFloorR : Fn1 .real .real where
+@[expose, lynth_cfn] public def intFloorR : Fn1 .real .real where
   name := "⌊·⌋"
   graph x y := y = ((⌊x⌋ : ℤ) : ℝ)
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev _ := intFloorIval
   sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact mem_intFloor hx
   cost := 10
 
 /-- `↑⌈·⌉`, real-valued for free nesting. -/
-def intCeilIval (X : Ival) : Ival :=
+@[expose] public def intCeilIval (X : Ival) : Ival :=
   ⟨X.lo.map (fun a => Dy.ofInt (Dy.ceil a)), X.hi.map (fun b => Dy.ofInt (Dy.ceil b))⟩
 
 theorem mem_intCeil {x : ℝ} {X : Ival} (hx : x ∈ X) :
@@ -279,16 +299,16 @@ theorem mem_intCeil {x : ℝ} {X : Ival} (hx : x ∈ X) :
     exact_mod_cast Int.ceil_mono h
   exact mem_monoIval hpt hmono hx
 
-@[lynth_cfn] def intCeilR : Fn1 .real .real where
+@[expose, lynth_cfn] public def intCeilR : Fn1 .real .real where
   name := "⌈·⌉"
   graph x y := y = ((⌈x⌉ : ℤ) : ℝ)
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev _ := intCeilIval
   sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact mem_intCeil hx
   cost := 10
 
 /-- `↑round(·)`, real-valued for free nesting. -/
-def intRoundIval (X : Ival) : Ival :=
+@[expose] public def intRoundIval (X : Ival) : Ival :=
   ⟨X.lo.map (fun a => Dy.ofInt (Dy.roundInt a)), X.hi.map (fun b => Dy.ofInt (Dy.roundInt b))⟩
 
 theorem round_mono' : Monotone (fun x : ℝ => ((round x : ℤ) : ℝ)) := by
@@ -308,10 +328,10 @@ theorem mem_intRound {x : ℝ} {X : Ival} (hx : x ∈ X) :
     rw [e, ← Dy.round_real a]
   exact mem_monoIval hpt round_mono' hx
 
-@[lynth_cfn] def intRoundR : Fn1 .real .real where
+@[expose, lynth_cfn] public def intRoundR : Fn1 .real .real where
   name := "round"
   graph x y := y = ((round x : ℤ) : ℝ)
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev _ := intRoundIval
   sound := fun _ _ _ _ _ hy hx => by obtain rfl := hy; exact mem_intRound hx
   cost := 10

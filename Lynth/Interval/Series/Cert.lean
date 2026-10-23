@@ -1,7 +1,26 @@
-import Lynth.Interval.Core.ExprAsy
-import Lynth.Interval.Series.PowTail
-import Lynth.Interval.Fns.Elem
-import Lynth.Interval.Core.Prop
+module
+
+public import Init.Data.Cast
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Env
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.ExprAsy
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Fns.Elem
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Num.NIval
+public import Lynth.Interval.Num.ZIval
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Core.ExprAsy
+import all Lynth.Interval.Series.PowTail
+import all Lynth.Interval.Fns.Elem
+import all Lynth.Interval.Core.Prop
 
 /-!
 # Series certificates
@@ -17,7 +36,7 @@ namespace Lynth.Interval.Series
 open Lynth.Interval Dy
 
 /-- enclosure of `∑_{j ≥ 0} f (j + N)` from an AIA value on `[N, ∞)` -/
-def tailEncl (c : Ctx) (N : ℕ) : RAsy → Option Ival
+@[expose] public def tailEncl (c : Ctx) (N : ℕ) : RAsy → Option Ival
   | .geo M R =>
     let D := subD c.prec Dy.one R
     if isNonneg M && isNonneg R && isPos D then
@@ -162,7 +181,7 @@ theorem tailEncl_sound {c : Ctx} (hc : c.Valid) {N : ℕ} {f : ℕ → ℝ} {A :
   | top => cases hT
 
 /-- enclosure of `∑' k, f k` (partial sum of `N` terms + tail) -/
-def seriesEncl (c : Ctx) (body : Expr .real) (N : ℕ) : Option Ival :=
+@[expose] public def seriesEncl (c : Ctx) (body : Expr .real) (N : ℕ) : Option Ival :=
   match tailEncl c N (body.asy c N) with
   | some T => some (Ival.add c.prec ((Expr.sum .real (.natLit N) body).eval c {}) T)
   | none => none
@@ -192,7 +211,7 @@ theorem seriesEncl_sound {c : Ctx} (hc : c.Valid) {body : Expr .real} {N : ℕ} 
   · cases h
 
 /-- the value check: `|tsum f - q| < tol` -/
-def seriesCheck (c : Ctx) (body : Expr .real) (N : ℕ) (q : ℚ) (tol : Expr .real) : Bool :=
+@[expose] public def seriesCheck (c : Ctx) (body : Expr .real) (N : ℕ) (q : ℚ) (tol : Expr .real) : Bool :=
   match seriesEncl c body N with
   | some S => Ival.ltB (Ival.abs (Ival.sub c.prec S (Ival.ofRat c.prec q))) (tol.eval c {})
   | none => false
@@ -210,13 +229,13 @@ theorem seriesCheck_sound {c : Ctx} (hc : c.Valid) {body : Expr .real} {N : ℕ}
   · cases h
 
 /-- AIA values certifying divergence -/
-def divergeOk (N : ℕ) : RAsy → Bool
+@[expose] public def divergeOk (N : ℕ) : RAsy → Bool
   | .pow a α _ J => decide (-1 ≤ α) && decide (0 < N + a) && J.pos
   | .grow M R => isPos M && Dy.leB Dy.one R
   | _ => false
 
 /-- divergence check -/
-def divergeCheck (c : Ctx) (body : Expr .real) (N : ℕ) : Bool := divergeOk N (body.asy c N)
+@[expose] public def divergeCheck (c : Ctx) (body : Expr .real) (N : ℕ) : Bool := divergeOk N (body.asy c N)
 
 theorem not_summable_of_asy {N : ℕ} {f : ℕ → ℝ} {A : RAsy} (hA : A.Holds N f)
     (h : divergeOk N A = true) : ¬ Summable f := by

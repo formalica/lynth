@@ -1,4 +1,6 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.BinomialRemainder
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.BinomialRemainder
 
 /-!
 # The integral `QQ n` and its asymptotic expansion

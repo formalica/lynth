@@ -1,5 +1,6 @@
 -- Branch-and-bound checks: integrality refutations, models, depth limits.
-import Lynth.Arith.BranchBound
+module
+import Lynth
 
 open Lynth.Arith.BranchBound
 

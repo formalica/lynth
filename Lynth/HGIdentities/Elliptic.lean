@@ -1,7 +1,10 @@
+module
+
+import all Lynth.Analysis.ClassicalFunctions
 import Mathlib
 import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
-import Lynth.HGIdentities.Common
-import Lynth.Hypergeometric
+import all Lynth.HGIdentities.Common
+import all Lynth.Hypergeometric
 
 /-!
 # The complete elliptic integrals `K` and `E` as hypergeometric functions
@@ -35,13 +38,9 @@ namespace Complex
 Wallis integral `∫₀^{π/2} sin²ⁿ t dt`. -/
 private noncomputable def wallisCoeff (n : ℕ) : ℂ := (ascPochhammer ℂ n).eval (1 / 2) / (n ! : ℂ)
 
-/-- The complete elliptic integral of the first kind, in the parameter convention `m = k²`. -/
-noncomputable def ellipticK (m : ℂ) : ℂ :=
-  ∫ t in (0 : ℝ)..(Real.pi / 2), (1 - m * (Real.sin t : ℂ) ^ 2) ^ (-(1 / 2) : ℂ)
 
-/-- The complete elliptic integral of the second kind, in the parameter convention `m = k²`. -/
-noncomputable def ellipticE (m : ℂ) : ℂ :=
-  ∫ t in (0 : ℝ)..(Real.pi / 2), (1 - m * (Real.sin t : ℂ) ^ 2) ^ ((1 / 2) : ℂ)
+
+
 
 section Wallis
 

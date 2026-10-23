@@ -1,5 +1,6 @@
 -- Tseitin oracle validation: `isTautology` vs brute-force truth tables.
-import Lynth.Sat.Encode
+module
+import Lynth
 
 open Lynth.Sat.Encode
 

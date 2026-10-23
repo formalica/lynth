@@ -1,4 +1,6 @@
-import Lynth.Interval.Integral.Math.Legendre
+module
+
+import all Lynth.Interval.Integral.Math.Legendre
 
 /-!
 P0: analytic error bound, real affine specialization, and ellipse geometry.

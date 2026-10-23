@@ -1,4 +1,6 @@
-import Lynth.Interval.Integral.NestedScaledRealProof
+module
+
+import all Lynth.Interval.Integral.NestedScaledRealProof
 
 /-! Interval adapters for logarithmic endpoint models. -/
 namespace Lynth.Interval.Integral.Nested

@@ -1,6 +1,8 @@
+module
+
 import Lean
-import Lynth.Procedure
-import Lynth.Euf.Procedure
+import all Lynth.Procedure
+import all Lynth.Euf.Procedure
 
 /-!
 Datatypes theory procedure: constructor injectivity + discrimination

@@ -1,6 +1,18 @@
-import Lynth.Sat.Syntax
-import Lynth.Sat.Solver
-import Lynth.Sat.Watch
+module
+
+public import Init.Core
+public import Init.Data.Hashable
+public import Init.Data.Int.Basic
+public import Init.Data.List.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Prelude
+public import Std.Data.HashSet.Basic
+public import Lynth.Sat.Solver
+public import Lynth.Sat.Syntax
+public import Lynth.Sat.Watch
+import all Lynth.Sat.Syntax
+import all Lynth.Sat.Solver
+import all Lynth.Sat.Watch
 
 /-!
 CDCL SAT solver: conflict-driven clause learning over `Syntax.CNF`.
@@ -22,16 +34,16 @@ open Lynth.Sat
 
 /-- A resolution step: resolve `current` (∋ `pivot`) with `reason`
 (∋ `¬pivot`). The resolvent is recomputed by the checker. -/
-abbrev ResStep := Clause × Lit
+public abbrev ResStep := Clause × Lit
 
 /-- Resolution trace: the conflict clause plus derivation steps. -/
-abbrev ResTrace := List ResStep
+public abbrev ResTrace := List ResStep
 
 /-- A validated learning event: conflict, steps, and final learnt clause. -/
-abbrev TraceEntry := Clause × ResTrace × Clause
+public abbrev TraceEntry := Clause × ResTrace × Clause
 
 /-- CDCL output bundle. -/
-structure CdclOut where
+public structure CdclOut where
   result : Option SatResult
   learnt : Nat
   restarts : Nat
@@ -40,7 +52,7 @@ structure CdclOut where
 
 /-- Independent trace checker: replay the derivation, verifying every
 parent against the clause database. -/
-def checkTrace (db : CNF) (conflict : Clause) (steps : ResTrace)
+public def checkTrace (db : CNF) (conflict : Clause) (steps : ResTrace)
     (learnt : Clause) : Bool :=
   if !(db.contains conflict) then false
   else match go conflict steps with
@@ -64,7 +76,7 @@ that fails the gate is reported as unknown, never as SAT).
 `branch` (default empty = all vars) restricts branching to the
 given SAT variables (the grid cells' one-hot bits); other callers
 keep the default. -/
-def cdclSolve (cnf : CNF) (fuel : Nat := 10000) (restartBase : Nat := 100)
+@[expose] public def cdclSolve (cnf : CNF) (fuel : Nat := 10000) (restartBase : Nat := 100)
     (branch : Std.HashSet Nat := ∅) : CdclOut :=
   let cnf := cnf.map (·.eraseDups)
   match Watch.mkWS cnf branch with

@@ -1,4 +1,6 @@
-import Lynth.Arith.Simplex
+module
+
+import all Lynth.Arith.Simplex
 
 /-!
 Branch-and-bound over `Simplex.solve` for integer completeness.
@@ -17,7 +19,7 @@ namespace Lynth.Arith.BranchBound
 open Lynth.Arith.Simplex
 
 /-- Branch-and-bound verdict. -/
-inductive BbResult where
+public inductive BbResult where
   | sat : List Rat → BbResult
   | unsat : BbResult
   | unknown : BbResult
@@ -44,7 +46,7 @@ def findFractional (model : List Rat) (intVars : List Nat) : Option (Nat × Int)
     (j, v.num.ediv v.den)
 
 /-- Branch-and-bound search. `intVars` are indices constrained to `ℤ`. -/
-def bb (sys : List (List Rat × Rat)) (intVars : List Nat) :
+public def bb (sys : List (List Rat × Rat)) (intVars : List Nat) :
     Nat → Nat → BbResult
   | 0, _ => .unknown
   | _, 0 => .unknown

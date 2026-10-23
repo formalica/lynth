@@ -1,4 +1,6 @@
-import Lynth.Interval.Fns.EulerGamma.Proof.NumericalBounds
+module
+
+import all Lynth.Interval.Fns.EulerGamma.Proof.NumericalBounds
 
 /-!
 # The cross terms of the product of the two truncated expansions

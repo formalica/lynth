@@ -1,5 +1,10 @@
-import Lynth.Interval.Check.AiryProof
-import Lynth.Interval.Core.Expr
+module
+
+public import Lean.Elab.Tactic.Cbv
+public meta import Lean
+public meta import Lynth.Interval.Reify.Registry
+import all Lynth.Interval.Check.AiryProof
+import all Lynth.Interval.Core.Expr
 
 /-!
 Kernel-checked arithmetic for the fixed eta bound certificate. Horner evaluation
@@ -36,6 +41,8 @@ theorem horner_sound {p : ℕ} {X : Ival} {x : ℝ} {A : ℕ → Ival} {a : ℕ 
 
 namespace Kernel
 
+public section
+
 open Lean Meta Sym Sym.Simp
 private meta def checkpoint (e : Lean.Expr) : Sym.Simp.SimpM Result := do
   if e.hasFVar || e.hasMVar || e.hasLooseBVars then return .rfl
@@ -70,6 +77,8 @@ scoped cbv_simproc ↓ listGetD (List.getD _ _ _) := fun e => do
 private theorem choose_fast (n k : ℕ) : n.choose k = Nat.fast_choose n k :=
   congrFun (congrFun Nat.choose_eq_fast_choose n) k
 attribute [scoped cbv_eval] choose_fast
+
+end
 
 end Kernel
 end Lynth.Interval.EtaProof

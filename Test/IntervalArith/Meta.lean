@@ -1,5 +1,6 @@
+module
 import Mathlib
-import Lynth
+public import Lynth
 
 /-! Unsupported interval goals stop before the precision retry loop, or at
 their first structural failure. Numerical uncertainty still permits retries. -/
@@ -81,7 +82,7 @@ example (f : ℝ → ℝ) : True := by
 
 /-- This supported comparison needs more than 64 bits; structural rejection
 must not disable the normal numerical precision schedule. -/
-theorem preciseFiniteSum :
+public theorem preciseFiniteSum :
     (∑ _k ∈ Finset.range 1, Real.exp 1) <
       (27182818284590452353602874713526624977572470936999595749669676277240767 : ℝ) /
         10 ^ 70 := by
@@ -100,7 +101,7 @@ theorem preciseFiniteSum :
 
 /-- Rounding a ratio just below one up to one must still request more
 precision, rather than being classified as an unsupported series. -/
-theorem geometricRatioNeedsPrecision :
+public theorem geometricRatioNeedsPrecision :
     (∑' k : ℕ, (1 - 1 / (2 : ℝ) ^ 100) ^ k) < (2 : ℝ) ^ 120 := by
   run_tac withMainContext do
     let goal ← getMainGoal

@@ -1,5 +1,7 @@
-import Lynth.Sat.Solver
-import Lynth.Certificates
+module
+
+import all Lynth.Sat.Solver
+import all Lynth.Certificates
 
 /-!
 Proof reconstruction for `Lynth.Sat`: checking certificates.

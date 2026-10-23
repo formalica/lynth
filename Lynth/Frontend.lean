@@ -1,21 +1,41 @@
+module
+
+meta import Lean
 import Lean
-import Lynth.Procedure
-import Lynth.Answer.Procedure
-import Lynth.Meta.Procedure
-import Lynth.FinSearch.Procedure
-import Lynth.FinSearch.ListInfer
-import Lynth.Euf.Procedure
-import Lynth.Egraph.Procedure
-import Lynth.Quant.Procedure
-import Lynth.Array.Procedure
-import Lynth.Datatypes.Procedure
-import Lynth.BV.Procedure
-import Lynth.Ring.Procedure
-import Lynth.Nlin.Procedure
-import Lynth.Witness
-import Lynth.Sat.Procedure
-import Lynth.Arith.Procedure
-import Lynth.Interval
+meta import all Lynth.Procedure
+import all Lynth.Procedure
+meta import all Lynth.Answer.Procedure
+import all Lynth.Answer.Procedure
+meta import all Lynth.Meta.Procedure
+import all Lynth.Meta.Procedure
+meta import all Lynth.FinSearch.Procedure
+import all Lynth.FinSearch.Procedure
+meta import all Lynth.FinSearch.ListInfer
+import all Lynth.FinSearch.ListInfer
+meta import all Lynth.Euf.Procedure
+import all Lynth.Euf.Procedure
+meta import all Lynth.Egraph.Procedure
+import all Lynth.Egraph.Procedure
+meta import all Lynth.Quant.Procedure
+import all Lynth.Quant.Procedure
+meta import all Lynth.Array.Procedure
+import all Lynth.Array.Procedure
+meta import all Lynth.Datatypes.Procedure
+import all Lynth.Datatypes.Procedure
+meta import all Lynth.BV.Procedure
+import all Lynth.BV.Procedure
+meta import all Lynth.Ring.Procedure
+import all Lynth.Ring.Procedure
+meta import all Lynth.Nlin.Procedure
+import all Lynth.Nlin.Procedure
+meta import all Lynth.Witness
+import all Lynth.Witness
+meta import all Lynth.Sat.Procedure
+import all Lynth.Sat.Procedure
+meta import all Lynth.Arith.Procedure
+import all Lynth.Arith.Procedure
+meta import all Lynth.Interval
+import all Lynth.Interval
 
 /-!
 `lynth` dispatcher: runs procedures in order, threading explanations.
@@ -32,6 +52,8 @@ lynth fills data + proofs):
 Each failure returns an explanation usable by the next procedure
 (variable sharing = equality facts with proofs); all are traced.
 -/
+meta section
+
 namespace Lynth.Frontend
 
 open Lean Elab Tactic

@@ -1,4 +1,17 @@
-import Lynth.Interval.Fns.ComplexElem
+module
+
+public import Init.Data.Int.Basic
+public import Init.Data.Rat.Basic
+public import Init.Prelude
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Fns.ComplexElem
+public import Lynth.Interval.Fns.Elem
+public import Lynth.Interval.Num.CBox
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Series.Tail
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Fns.ComplexElem
 import Mathlib.Analysis.RCLike.Sqrt
 
 /-! Rational powers with inexpensive, outward-rounded half-integer kernels. -/
@@ -7,7 +20,7 @@ namespace Lynth.Interval.Integral
 
 open Fns
 
-def naturalPowerR (p : Nat) (X : Ival) (n : Nat) : Ival :=
+@[expose] public def naturalPowerR (p : Nat) (X : Ival) (n : Nat) : Ival :=
   if n = 0 then Ival.one else if n = 1 then X else if n = 2 then Ival.sq p X
   else if n = 3 then Ival.mul p X (Ival.sq p X) else Ival.npow p X n
 
@@ -27,7 +40,7 @@ theorem mem_naturalPowerR {p : Nat} {x : ℝ} {X : Ival} (hx : x ∈ X) (n : Nat
 
 /-- Reuse the real square-root component in the imaginary component.
 This is definitionally the existing principal-square-root enclosure. -/
-def sharedSqrtBox (c : Ctx) (B : CBox) : CBox :=
+@[expose] public def sharedSqrtBox (c : Ctx) (B : CBox) : CBox :=
   match B.re.lo with
   | some xl =>
     if 0 < xl.toRat then
@@ -42,7 +55,7 @@ theorem mem_sharedSqrtBox (c : Ctx) (hc : c.Valid) {z : ℂ} {B : CBox} (hz : z 
 
 /-- Dependency-aware complex squaring. Repeated multiplication loses the
 nonnegativity of a real square on boxes crossing the imaginary axis. -/
-def squareC (p : Nat) (Z : CBox) : CBox :=
+@[expose] public def squareC (p : Nat) (Z : CBox) : CBox :=
   let product := Ival.mul p Z.re Z.im
   ⟨Ival.sub p (Ival.sq p Z.re) (Ival.sq p Z.im), Ival.add p product product⟩
 
@@ -61,7 +74,7 @@ theorem mem_squareC {p : Nat} {z : ℂ} {Z : CBox} (hz : z ∈ Z) :
     exact Ival.mem_add (p := p) (Ival.mem_mul (p := p) hz.1 hz.2)
       (Ival.mem_mul (p := p) hz.1 hz.2)
 
-def naturalPowerC (p : Nat) (Z : CBox) (n : Nat) : CBox :=
+@[expose] public def naturalPowerC (p : Nat) (Z : CBox) (n : Nat) : CBox :=
   if n = 1 then Z else if n = 2 then squareC p Z
   else if n = 3 then CBox.mul p Z (squareC p Z) else CBox.npow p Z n
 
@@ -77,7 +90,7 @@ theorem mem_naturalPowerC {p : Nat} {z : ℂ} {Z : CBox} (hz : z ∈ Z) (n : Nat
         simpa only [← pow_succ'] using CBox.mem_mul (p := p) hz (mem_squareC (p := p) hz)
       · exact CBox.mem_npow hz n
 
-def intPowerR (p : Nat) (X : Ival) : Int → Ival
+@[expose] public def intPowerR (p : Nat) (X : Ival) : Int → Ival
   | .ofNat n => naturalPowerR p X n
   | .negSucc n => Ival.inv p (naturalPowerR p X (n + 1))
 
@@ -88,7 +101,7 @@ theorem mem_intPowerR {p : Nat} {x : ℝ} {X : Ival} (hx : x ∈ X) (n : Int) :
   | negSucc n => simpa [intPowerR, zpow_negSucc] using
       Ival.mem_inv (p := p) (mem_naturalPowerR (p := p) hx (n + 1))
 
-def intPowerC (p : Nat) (Z : CBox) : Int → CBox
+@[expose] public def intPowerC (p : Nat) (Z : CBox) : Int → CBox
   | .ofNat n => naturalPowerC p Z n
   | .negSucc n => CBox.inv p (naturalPowerC p Z (n + 1))
 
@@ -101,7 +114,7 @@ theorem mem_intPowerC {p : Nat} {z : ℂ} {Z : CBox} (hz : z ∈ Z) (n : Int) :
 
 /-- Positive half-integer powers use a square root and integer powers.
 Other inputs retain the general real-power enclosure. -/
-def rationalPowerR (c : Ctx) (X : Ival) (q : ℚ) : Ival :=
+@[expose] public def rationalPowerR (c : Ctx) (X : Ival) (q : ℚ) : Ival :=
   if q.den = 2 ∧ X.pos = true then intPowerR c.prec (Ival.sqrt c.prec X) q.num
   else rpowIval c X (Ival.ofRat c.prec q)
 
@@ -119,7 +132,7 @@ theorem mem_rationalPowerR {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival}
 
 /-- The principal complex square root agrees with the half-integer power,
 including for negative integer exponents. -/
-def rationalPowerC (c : Ctx) (Z : CBox) (q : ℚ) : CBox :=
+@[expose] public def rationalPowerC (c : Ctx) (Z : CBox) (q : ℚ) : CBox :=
   if q.den = 2 then intPowerC c.prec (sharedSqrtBox c Z) q.num
   else expBox c (CBox.mul c.prec (logBox c Z) (CBox.ofReal (Ival.ofRat c.prec q)))
 

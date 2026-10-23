@@ -1,5 +1,49 @@
-import Lynth.Analysis.SpecialFunctions
-import Lynth.Analysis.SpecialFunctionsSeriesProofs
+module
+
+public import Batteries.Classes.RatCast
+public import Init.Data.Int.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import Init.Data.Rat.Basic
+public import Init.Data.Zero
+public import Init.Prelude
+public import Mathlib.Algebra.Group.DivInvMonoid
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Order.Archimedean.Real.Basic
+public import Mathlib.Algebra.Order.Floor.Defs
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Analysis.Complex.Exponential
+public import Mathlib.Analysis.Complex.Trigonometric
+public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Analysis.InnerProductSpace.Defs
+public import Mathlib.Analysis.Normed.Group.Continuity
+public import Mathlib.Analysis.Normed.Group.Defs
+public import Mathlib.Analysis.Normed.Group.Real
+public import Mathlib.Analysis.Normed.Ring.Basic
+public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Analysis.RCLike.Sqrt
+public import Mathlib.Analysis.Real.Sqrt
+public import Mathlib.Analysis.SpecialFunctions.Complex.Arctan
+public import Mathlib.Analysis.SpecialFunctions.Complex.Log
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import Mathlib.Basic.Complex.Basic
+public import Mathlib.Basic.Real.Basic
+public import Mathlib.Data.Set.Defs
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+public import Mathlib.MeasureTheory.Measure.MeasureSpaceDef
+public import Mathlib.MeasureTheory.Measure.Restrict
+public import Mathlib.Order.Interval.Set.Defs
+public import Mathlib.Order.Interval.Set.UnorderedInterval
+public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+public import Mathlib.Topology.UniformSpace.Defs
+public import Lynth.Analysis.SpecialFunctionsDefs
+import all Lynth.Analysis.SpecialFunctions
+import all Lynth.Analysis.SpecialFunctionsSeriesProofs
 
 /-!
 Small mathematical expression language used by the integration compiler.
@@ -9,37 +53,37 @@ This module depends only on Mathlib; its proof obligations are mirrored in
 
 namespace Intgrl
 
-inductive Region where
+public inductive Region where
   | interval | icc | ioc | ico | ioo | ioi | ici | univ
-deriving Repr, BEq, Inhabited
+deriving Repr, @[expose] BEq, Inhabited
 
-noncomputable def Region.set : Region → ℝ → ℝ → Set ℝ
+@[expose] public noncomputable def Region.set : Region → ℝ → ℝ → Set ℝ
   | .interval, a, b => Set.uIcc a b
   | .icc, a, b => Set.Icc a b | .ioc, a, b => Set.Ioc a b
   | .ico, a, b => Set.Ico a b | .ioo, a, b => Set.Ioo a b
   | .ioi, a, _ => Set.Ioi a | .ici, a, _ => Set.Ici a
   | .univ, _, _ => Set.univ
 
-noncomputable def Region.Converges (k : Region) (f : ℝ → ℝ) (a b : ℝ) : Prop :=
+@[expose] public noncomputable def Region.Converges (k : Region) (f : ℝ → ℝ) (a b : ℝ) : Prop :=
   match k with
   | .interval => IntervalIntegrable f MeasureTheory.volume a b
   | _ => MeasureTheory.IntegrableOn f (k.set a b) MeasureTheory.volume
 
-noncomputable def Region.value (k : Region) (f : ℝ → ℝ) (a b : ℝ) : ℝ :=
+@[expose] public noncomputable def Region.value (k : Region) (f : ℝ → ℝ) (a b : ℝ) : ℝ :=
   match k with
   | .interval => ∫ x in a..b, f x
   | _ => ∫ x in k.set a b, f x
 
-inductive Unary where
+public inductive Unary where
   | neg | inv | exp | sin | cos | sinh | cosh | log | sqrt | abs | floor | atan
   | erf | si | eta | airyAi
-deriving Repr, BEq, DecidableEq, Inhabited
+deriving Repr, @[expose] BEq, @[expose] DecidableEq, Inhabited
 
-inductive Binary where
+public inductive Binary where
   | add | sub | mul | div | max | min
-deriving Repr, BEq, DecidableEq, Inhabited
+deriving Repr, @[expose] BEq, @[expose] DecidableEq, Inhabited
 
-inductive Term where
+public inductive Term where
   | var
   | rat (q : ℚ)
   | pi
@@ -47,27 +91,27 @@ inductive Term where
   | binary (op : Binary) (a b : Term)
   | pow (a : Term) (n : ℕ)
   | rpow (a : Term) (q : ℚ)
-deriving Repr, BEq, DecidableEq, Inhabited
+deriving Repr, @[expose] BEq, @[expose] DecidableEq, Inhabited
 
-noncomputable def Unary.real : Unary → ℝ → ℝ
+@[expose] public noncomputable def Unary.real : Unary → ℝ → ℝ
   | .neg => Neg.neg | .inv => Inv.inv | .exp => Real.exp
   | .sin => Real.sin | .cos => Real.cos | .sinh => Real.sinh | .cosh => Real.cosh
   | .log => Real.log | .sqrt => Real.sqrt | .abs => fun x => |x|
   | .floor => fun x => (⌊x⌋ : ℤ) | .atan => Real.arctan
   | .erf => Real.erf | .si => Real.Si | .eta => Real.dirichletEta | .airyAi => Real.airyAi
 
-noncomputable def Binary.real : Binary → ℝ → ℝ → ℝ
+@[expose] public noncomputable def Binary.real : Binary → ℝ → ℝ → ℝ
   | .add => (· + ·) | .sub => (· - ·) | .mul => (· * ·)
   | .div => (· / ·) | .max => Max.max | .min => Min.min
 
-noncomputable def Term.real : Term → ℝ → ℝ
+@[expose] public noncomputable def Term.real : Term → ℝ → ℝ
   | .var, x => x | .rat q, _ => q | .pi, _ => Real.pi
   | .unary op a, x => op.real (a.real x)
   | .binary op a b, x => op.real (a.real x) (b.real x)
   | .pow a n, x => a.real x ^ n
   | .rpow a q, x => a.real x ^ (q : ℝ)
 
-noncomputable def Unary.complex : Unary → ℂ → ℂ
+@[expose] public noncomputable def Unary.complex : Unary → ℂ → ℂ
   | .neg => Neg.neg | .inv => Inv.inv | .exp => Complex.exp
   | .sin => Complex.sin | .cos => Complex.cos
   | .sinh => Complex.sinh | .cosh => Complex.cosh
@@ -77,7 +121,7 @@ noncomputable def Unary.complex : Unary → ℂ → ℂ
   | .eta => Complex.dirichletEta | .airyAi => Complex.airyAi
   | .abs => id | .floor => fun _ => 0
 
-noncomputable def Binary.complex : Binary → ℂ → ℂ → ℂ
+@[expose] public noncomputable def Binary.complex : Binary → ℂ → ℂ → ℂ
   | .add => (· + ·) | .sub => (· - ·) | .mul => (· * ·) | .div => (· / ·)
   | .max => fun a _ => a | .min => fun a _ => a
 
@@ -343,5 +387,8 @@ theorem Term.agrees {e : Term} {s : Set ℂ} (h : e.Regular s)
     | div => show a.complex x / b.complex x = ((a.real x / b.real x : ℝ) : ℂ); rw [hxa, hxb, Complex.ofReal_div]
     | max => exact h.2.2.elim
     | min => exact h.2.2.elim
+
+deriving instance ReflBEq for Unary, Binary, Term, Region
+deriving instance LawfulBEq for Unary, Binary, Term, Region
 
 end Intgrl

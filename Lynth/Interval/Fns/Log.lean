@@ -1,6 +1,21 @@
-import Lynth.Interval.Series.Atanh
-import Lynth.Interval.Reify.Registry
-import Lynth.Interval.Fns.Exp
+module
+
+public import Init.Data.Cast
+public import Init.Data.Int.Basic
+public import Init.Prelude
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+public import Lynth.Interval.Core.Expr
+public import Lynth.Interval.Core.Asy
+public import Lynth.Interval.Core.Ctx
+public import Lynth.Interval.Core.Fn
+public import Lynth.Interval.Core.Ty
+public import Lynth.Interval.Num.Dy
+public import Lynth.Interval.Num.Ival
+public import Lynth.Interval.Series.Atanh
+public import Lynth.Interval.Vendor.Dyadic
+import all Lynth.Interval.Series.Atanh
+import all Lynth.Interval.Reify.Registry
+import all Lynth.Interval.Fns.Exp
 
 /-!
 # Natural logarithm
@@ -17,10 +32,10 @@ namespace Lynth.Interval.Fns
 open Lynth.Interval Dy
 
 /-- `k` with `a / 2^k ∈ [1, 2)` for `a > 0` -/
-def logRed (a : Dy) : Int := (bits a.mantissa : Int) + a.exponent - 1
+@[expose] public def logRed (a : Dy) : Int := (bits a.mantissa : Int) + a.exponent - 1
 
 /-- enclosure of `log a` for `a > 0` (junk-free: `top` if `a ≤ 0`) -/
-def logPt (c : Ctx) (w : Nat) (a : Dy) : Ival :=
+@[expose] public def logPt (c : Ctx) (w : Nat) (a : Dy) : Ival :=
   if isPos a then
     let k := logRed a
     let T := Ival.pt (Dy.scale2 a (-k))
@@ -57,7 +72,7 @@ theorem mem_logPt {c : Ctx} (hc : c.Valid) (w : Nat) (a : Dy) : Real.log a.toRea
   · exact Ival.mem_top _
 
 /-- interval extension of `log` (monotone on `(0, ∞)`) -/
-def logIval (c : Ctx) (X : Ival) : Ival :=
+@[expose] public def logIval (c : Ctx) (X : Ival) : Ival :=
   let w := c.prec + 8
   match X.lo with
   | some a =>
@@ -89,10 +104,10 @@ theorem mem_logIval {c : Ctx} (hc : c.Valid) {x : ℝ} {X : Ival} (hx : x ∈ X)
     · exact Ival.mem_top _
   · exact Ival.mem_top _
 
-@[lynth_cfn] def logR : Fn1 .real .real where
+@[expose, lynth_cfn] public def logR : Fn1 .real .real where
   name := "log"
   graph x y := y = Real.log x
-  exu := exu_eq _
+  exu := by exact exu_eq _
   ev := logIval
   sound := fun _ _ _ _ hc hy hx => by obtain rfl := hy; exact mem_logIval hc hx
   cost := 40
